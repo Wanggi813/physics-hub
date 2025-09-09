@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>광전효과 시뮬레이션 | 왕왕물리시뮬레이션</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root{ --card:#111; --ink:#e8e8e8; --muted:#9aa0a6; --accent:#6ee7b7; --brand:#c7f36b; }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:#0a0a0a;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,sans-serif}
+  .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
+  .grid{display:grid;gap:16px;grid-template-columns:minmax(280px,360px) 1fr}
+  .panel,.card{background:var(--card);border:1px solid #1c1c1c;border-radius:14px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+  .panel h2{margin:0 0 8px;font-size:18px}
+  .row{display:grid;grid-template-columns:110px 1fr 64px;gap:8px;align-items:center;margin:8px 0}
+  .row label{color:var(--muted)}
+  input[type="range"]{width:100%}
+  select, input[type="range"] + output{
+    color:#fff;background:#151515;border:1px solid #242424;border-radius:10px;padding:6px 8px;
+    text-align:center;font-variant-numeric:tabular-nums
+  }
+  .readout{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .readout .item{background:#0f0f0f;border:1px solid #202020;border-radius:10px;padding:8px}
+  .readout .key{color:var(--muted);font-size:12px}
+  .readout .val{font-weight:700}
+  .simShell{position:relative;aspect-ratio:16/10;border-radius:14px;overflow:hidden;background:#000}
+  canvas#sim{width:100%;height:100%;display:block}
+  .card h3{margin:0 0 8px;font-size:15px;color:var(--muted)}
+  .legend{font-size:12px;color:var(--muted);display:flex;gap:10px;margin-top:4px}
+  .legend span i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+  .brand{margin:18px auto 36px;text-align:center;color:var(--brand);font-weight:800;letter-spacing:.02em;text-shadow:0 1px 10px rgba(199,243,107,.25)}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  .controlsFlex{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{appearance:none;border:1px solid #2a2a2a;background:#141414;color:#fff;border-radius:10px;padding:8px 10px;cursor:pointer}
+  .btn:hover{border-color:#3a3a3a}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 style="margin:0 0 12px">광전효과 시뮬레이션</h1>
+  <div class="grid">
+    <!-- Controls -->
+    <div class="panel">
+      <h2>실험 설정</h2>
+
+      <div class="row">
+        <label>재질(φ, eV)</label>
+        <select id="material">
+          <option value="Cesium|1.90">세슘 (≈1.90)</option>
+          <option value="Potassium|2.30">칼륨 (≈2.30)</option>
+          <option value="Sodium|2.28" selected>나트륨 (≈2.28)</option>
+          <option value="Calcium|2.90">칼슘 (≈2.90)</option>
+          <option value="Aluminum|4.08">알루미늄 (≈4.08)</option>
+          <option value="Zinc|4.30">아연 (≈4.30)</option>
+          <option value="Copper|4.70">구리 (≈4.70)</option>
+        </select>
+        <output id="phiOut">2.28</output>
+      </div>
+
+      <div class="row">
+        <label>파장 λ (nm)</label>
+        <input id="lambda" type="range" min="200" max="800" step="1" value="500">
+        <output id="lambdaOut">500</output>
+      </div>
+
+      <div class="row">
+        <label>세기 I (상대)</label>
+        <input id="intensity" type="range" min="0" max="1" step="0.01" value="0.50">
+        <output id="intensityOut">0.50</output>
+      </div>
+
+      <div class="row">
+        <label>전압 V (V)</label>
+        <input id="voltage" type="range" min="-5" max="5" step="0.1" value="0">
+        <output id="voltageOut">0.0</output>
+      </div>
+
+      <div class="controlsFlex" style="margin-top:8px">
+        <button id="toggle" class="btn">⏸︎ 일시정지</button>
+        <button id="reset" class="btn">↺ 초기화</button>
+      </div>
+
+      <div class="readout">
+        <div class="item"><div class="key">광자 에너지 E (eV)</div><div class="val" id="Eev">—</div></div>
+        <div class="item"><div class="key">문턱 파장 λ₀ (nm)</div><div class="val" id="lam0">—</div></div>
+        <div class="item"><div class="key">K<sub>max</sub> (eV)</div><div class="val" id="Kmax">—</div></div>
+        <div class="item"><div class="key">정지전압 V<sub>stop</sub> (V)</div><div class="val" id="Vstop">—</div></div>
+        <div class="item"><div class="key">전자/초 (추정)</div><div class="val" id="rate">—</div></div>
+        <div class="item"><div class="key">전류 I (µA, 추정)</div><div class="val" id="Iamp">—</div></div>
+      </div>
+
+      <div class="hint">* 값들은 교육용 근사치입니다.</div>
+    </div>
+
+    <!-- Simulation -->
+    <div class="card">
+      <div class="simShell">
+        <canvas id="sim"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Graph separated under sim -->
+  <div class="card" style="margin-top:16px">
+    <h3>K<sub>max</sub>–f 선형 관계 (기울기 = h/e)</h3>
+    <canvas id="mini" width="800" height="220"></canvas>
+    <div class="legend">
+      <span><i style="background:var(--accent)"></i>아인슈타인 예측</span>
+      <span><i style="background:#fff"></i>현재 설정</span>
+    </div>
+  </div>
+
+  <div class="brand">왕왕물리시뮬레이션</div>
+</div>
+
+<script>
+(() => {
+  // ===== 물리 상수 =====
+  const h = 6.62607015e-34;            // J·s
+  const c = 299792458;                  // m/s
+  const eC = 1.602176634e-19;           // C
+  const h_over_e_eVs = 4.135667696e-15; // eV·s (h/e)
+
+  // ===== DOM =====
+  const $mat = document.getElementById('material');
+  const $phiOut = document.getElementById('phiOut');
+  const $lam = document.getElementById('lambda');
+  const $lamOut = document.getElementById('lambdaOut');
+  const $int = document.getElementById('intensity');
+  const $intOut = document.getElementById('intensityOut');
+  const $vol = document.getElementById('voltage');
+  const $volOut = document.getElementById('voltageOut');
+  const $Eev = document.getElementById('Eev');
+  const $lam0 = document.getElementById('lam0');
+  const $Kmax = document.getElementById('Kmax');
+  const $Vstop = document.getElementById('Vstop');
+  const $rate = document.getElementById('rate');
+  const $Iamp = document.getElementById('Iamp');
+  const $toggle = document.getElementById('toggle');
+  const $reset = document.getElementById('reset');
+
+  const sim = document.getElementById('sim');
+  const ctx = sim.getContext('2d');
+  const mini = document.getElementById('mini');
+  const mtx = mini.getContext('2d');
+
+  // ===== 상태 =====
+  let phi_eV = 2.28;                    // 초기: 나트륨
+  let lambda_nm = +$lam.value;
+  let intensity = +$int.value;
+  let V = +$vol.value;
+  let playing = true;
+
+  const electrons = [];
+  const photons = [];
+  const MAX_E = 800;                    // 전자 최대
+  const MAX_P = 1200;                   // 광자 최대
+  let hitWindow = [];                   // 최근 1초 전자 도착 타임스탬프
+  let lastTime = performance.now();
+
+  // 기하
+  let W=0, H=0, cathX=0, anodeX=0, gap=0;
+
+  // ===== 유틸 =====
+  const rng = (a,b)=>a+Math.random()*(b-a);
+  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+  function wavelengthToRGB(wl){
+    let R=0,G=0,B=0;
+    if (wl>=380 && wl<440){ R=-(wl-440)/(440-380); G=0; B=1; }
+    else if (wl<490){ R=0; G=(wl-440)/(490-440); B=1; }
+    else if (wl<510){ R=0; G=1; B=-(wl-510)/(510-490); }
+    else if (wl<580){ R=(wl-510)/(580-510); G=1; B=0; }
+    else if (wl<645){ R=1; G=-(wl-645)/(645-580); B=0; }
+    else if (wl<=780){ R=1; G=0; B=0; }
+    const s = (wl<420)?0.3+0.7*(wl-380)/40 : (wl>700)?0.3+0.7*(780-wl)/80 : 1;
+    return `rgb(${Math.round(R*255*s)},${Math.round(G*255*s)},${Math.round(B*255*s)})`;
+  }
+
+  // ===== 물리량 계산 =====
+  function physics(){
+    const lambda_m = lambda_nm*1e-9;
+    const f = c/lambda_m;
+    const E_eV = (h*f)/eC;
+    const f0 = (phi_eV)/h_over_e_eVs;
+    const lam0_nm = (c/f0)*1e9;
+    const Kmax_eV = Math.max(0, E_eV - phi_eV);
+    const Vstop_V = Kmax_eV; // eV ↔ V 등가
+    return { f, E_eV, f0, lam0_nm, Kmax_eV, Vstop_V };
+  }
+
+  // ===== 리사이즈 =====
+  function resize(){
+    const dpr = Math.max(1, window.devicePixelRatio||1);
+    const rect = sim.getBoundingClientRect();
+    W = Math.round(rect.width*dpr);
+    H = Math.round(rect.height*dpr);
+    sim.width = W; sim.height = H;
+
+    cathX = Math.round(W*0.14);
+    anodeX = Math.round(W*0.86);
+    gap = anodeX - cathX - 40;
+
+    electrons.length = 0;
+    photons.length = 0;
+    hitWindow.length = 0;
+  }
+
+  // ===== 광자 생성 (절반 속도 & 1:1 트리거) =====
+  function spawnPhotons(dt){
+    const basePhotonsPerSec = 400; // I=1일 때 400개/초 (절반)
+    let want = basePhotonsPerSec * intensity * dt;
+    let n = Math.floor(want);
+    if (Math.random() < want - n) n++;
+
+    const color = wavelengthToRGB(lambda_nm);
+    for (let i=0; i<n && photons.length<MAX_P; i++){
+      photons.push({
+        x: rng(-W*0.05, 0),
+        y: rng(H*0.18, H*0.82),
+        vx: rng(W*0.8, W*1.2),
+        life: 0,
+        color
+      });
+    }
+  }
+
+  // ===== 광자→금속 도달 처리 (문턱 만족 시 전자 1개 생성) =====
+  function processPhotonHits(){
+    const { Kmax_eV } = physics();
+    for (let i=photons.length-1; i>=0; i--){
+      const p = photons[i];
+      if (p.x >= cathX){
+        if (Kmax_eV > 0 && electrons.length < MAX_E){
+          spawnElectronFromPhoton(Kmax_eV); // 확률 X, 1:1
+        }
+        photons.splice(i,1); // 흡수
+      } else if (p.life>2.5 || p.x > anodeX) {
+        photons.splice(i,1); // 화면 이탈
+      }
+    }
+  }
+
+  function spawnElectronFromPhoton(Kmax_eV){
+    // 전압이 음(-)이라도 '방출'은 일어난다고 가정 (수집만 줄어듦)
+    const KE = Math.max(0.02, Kmax_eV + Math.max(0,V) - Math.max(0,-V));
+    const speed = 60 + 160*Math.sqrt(KE/5); // 시각 스케일
+    electrons.push({
+      x: cathX+40, y: rng(H*0.18, H*0.82),
+      vx: speed, vy: rng(-15,15),
+      life: 0, KE
+    });
+  }
+
+  // ===== 스텝 =====
+  function step(dt){
+    // 광자 이동
+    for (let i=photons.length-1; i>=0; i--){
+      const p = photons[i];
+      p.x += p.vx*dt;
+      p.life += dt;
+      if (p.y < H*0.12 || p.y > H*0.88) p.y = clamp(p.y, H*0.12, H*0.88);
+    }
+    processPhotonHits();
+
+    // 전자 이동 & 수집
+    for (let i=electrons.length-1; i>=0; i--){
+      const e = electrons[i];
+      const ax = V*8; // 전압 가속 근사
+      e.vx += ax*dt;
+      e.x  += e.vx*dt;
+      e.y  += e.vy*dt;
+      e.vy *= 0.98;
+      e.life += dt;
+
+      if (e.y < H*0.12 || e.y > H*0.88) e.vy *= -1;
+
+      if (e.x >= anodeX-40){
+        electrons.splice(i,1);
+        hitWindow.push(performance.now());
+      } else if (e.x < 0 || e.life>4){
+        electrons.splice(i,1);
+      }
+    }
+
+    // 1초 윈도우 유지
+    const cutoff = performance.now()-1000;
+    while (hitWindow.length && hitWindow[0] < cutoff) hitWindow.shift();
+  }
+
+  // ===== 그리기 =====
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = "#000"; ctx.fillRect(0,0,W,H);
+
+    // 전극
+    ctx.fillStyle = "#1f2937";
+    ctx.fillRect(cathX, H*0.12, 40, H*0.76);
+    ctx.fillRect(anodeX-40, H*0.12, 40, H*0.76);
+    ctx.fillStyle = "#9aa0a6";
+    ctx.font = `${Math.round(12*(window.devicePixelRatio||1))}px system-ui`;
+    ctx.fillText("금속(광전면)", cathX-10, H*0.11);
+    ctx.fillText("수집전극", anodeX-30, H*0.11);
+
+    // 전압 시각효과
+    if (V !== 0){
+      const g2 = ctx.createLinearGradient(cathX+40,0,anodeX-40,0);
+      if (V>0){ g2.addColorStop(0,"rgba(110,231,183,0.15)"); g2.addColorStop(1,"rgba(110,231,183,0.35)"); }
+      else    { g2.addColorStop(0,"rgba(251,191,36,0.35)");  g2.addColorStop(1,"rgba(251,191,36,0.05)"); }
+      ctx.fillStyle = g2;
+      ctx.fillRect(cathX+40, H*0.12, gap, H*0.76);
+    }
+
+    // 광자(파장 색)
+    const photonColor = wavelengthToRGB(lambda_nm);
+    for (const p of photons){
+      ctx.fillStyle = photonColor;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2.3*(window.devicePixelRatio||1), 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // 전자
+    ctx.fillStyle = "#a3e635";
+    for (const e of electrons){
+      ctx.beginPath(); ctx.arc(e.x, e.y, 3*(window.devicePixelRatio||1), 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "rgba(163,230,53,0.25)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(e.x- e.vx*0.02, e.y- e.vy*0.02); ctx.lineTo(e.x, e.y); ctx.stroke();
+    }
+
+    // 가이드선
+    ctx.strokeStyle = "#222"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cathX+40, H*0.12); ctx.lineTo(cathX+40, H*0.88); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(anodeX-40, H*0.12); ctx.lineTo(anodeX-40, H*0.88); ctx.stroke();
+  }
+
+  // ===== 그래프 (분리된 캔버스) =====
+  function drawMini(){
+    const pad=40, w=mini.width, h=mini.height;
+    // HiDPI 보정(선택): 스타일 크기 기반으로 스케일
+    const styleWidth = mini.clientWidth || w;
+    const dpr = Math.max(1, window.devicePixelRatio||1);
+    if (mini.width !== Math.round(styleWidth*dpr)){
+      mini.width = Math.round(styleWidth*dpr);
+      mini.height = Math.round(220*dpr);
+    }
+    mtx.setTransform(1,0,0,1,0,0);
+    mtx.clearRect(0,0,mini.width,mini.height);
+    mtx.fillStyle="#0b0b0b"; mtx.fillRect(0,0,mini.width,mini.height);
+
+    const fMin = c/(800e-9), fMax = c/(200e-9);
+    const { f0 } = physics();
+    const slope = h_over_e_eVs; // eV/Hz
+    const x = f => pad + (f - fMin)*(mini.width-2*pad)/(fMax-fMin);
+    const y = eV => (mini.height-pad) - (eV)*(mini.height-2*pad)/6; // 0~6 eV 범위
+
+    // 축
+    mtx.strokeStyle="#222"; mtx.lineWidth=1;
+    mtx.beginPath(); mtx.moveTo(pad, pad); mtx.lineTo(pad, mini.height-pad); mtx.lineTo(mini.width-pad, mini.height-pad); mtx.stroke();
+    mtx.fillStyle="#9aa0a6"; mtx.font=`${12*dpr}px system-ui`;
+    mtx.fillText("f (Hz)", mini.width-pad+8, mini.height-8);
+    mtx.fillText("Kmax (eV)", 6, pad-12);
+
+    // 직선: K = (h/e) f - φ
+    mtx.strokeStyle="rgba(110,231,183,0.9)"; mtx.lineWidth=2*dpr;
+    mtx.beginPath();
+    const yAtMin = Math.max(0, slope*fMin - phi_eV);
+    const yAtMax = Math.max(0, slope*fMax - phi_eV);
+    mtx.moveTo(x(fMin), y(yAtMin));
+    mtx.lineTo(x(fMax), y(yAtMax));
+    mtx.stroke();
+
+    // 현재 점
+    const { f, Kmax_eV } = physics();
+    mtx.fillStyle="#fff";
+    mtx.beginPath(); mtx.arc(x(f), y(Kmax_eV), 3.5*dpr, 0, Math.PI*2); mtx.fill();
+
+    // 문턱 f0
+    const xf0 = Math.min(Math.max(x(f0), pad), mini.width-pad);
+    mtx.fillStyle="#fbbf24"; mtx.fillRect(xf0-1, pad, 2, mini.height-2*pad);
+    mtx.fillStyle="#fbbf24"; mtx.fillText("f₀", xf0+4, pad+12);
+  }
+
+  // ===== Readout & UI =====
+  function refreshReadout(){
+    const {E_eV, lam0_nm, Kmax_eV, Vstop_V} = physics();
+    $phiOut.textContent = phi_eV.toFixed(2);
+    $lamOut.textContent = lambda_nm.toFixed(0);
+    $intOut.textContent = intensity.toFixed(2);
+    $volOut.textContent = V.toFixed(1);
+    $Eev.textContent = E_eV.toFixed(2);
+    $lam0.textContent = lam0_nm.toFixed(0);
+    $Kmax.textContent = Kmax_eV.toFixed(2);
+    $Vstop.textContent = Vstop_V.toFixed(2);
+
+    const rate = hitWindow.length; // 최근 1초 도착 전자 수
+    $rate.textContent = rate.toFixed(0);
+    $Iamp.textContent = (rate*1.602176634e-19*1e6).toFixed(3);
+  }
+
+  $mat.addEventListener('change', () => {
+    const [, phi] = $mat.value.split('|');
+    phi_eV = parseFloat(phi);
+    electrons.length = 0; photons.length = 0; hitWindow.length=0;
+  });
+  $lam.addEventListener('input', e=>{ lambda_nm=+e.target.value; });
+  $int.addEventListener('input', e=>{ intensity=+e.target.value; });
+  $vol.addEventListener('input', e=>{ V=+e.target.value; });
+  $toggle.addEventListener('click', ()=>{
+    playing=!playing;
+    $toggle.textContent = playing ? "⏸︎ 일시정지" : "▶ 재생";
+    if (playing) lastTime = performance.now(), loop();
+  });
+  $reset.addEventListener('click', ()=>{
+    electrons.length=0; photons.length=0; hitWindow.length=0;
+  });
+
+  // ===== 메인 루프 =====
+  function loop(){
+    const now = performance.now();
+    const dt = clamp((now - lastTime)/1000, 0, 0.05);
+    lastTime = now;
+
+    spawnPhotons(dt);
+    step(dt);
+    draw();
+    drawMini();
+    refreshReadout();
+
+    if (playing) requestAnimationFrame(loop);
+  }
+
+  // 시작
+  function init(){
+    // 레이아웃 반영 후 크기 산출
+    setTimeout(()=>{ resize(); lastTime = performance.now(); loop(); }, 0);
+    window.addEventListener('resize', resize);
+  }
+  init();
+})();
+</script>
+</body>
+</html>

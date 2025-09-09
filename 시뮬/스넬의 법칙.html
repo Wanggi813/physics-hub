@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>굴절·전반사 시뮬레이션 - 왕왕물리시뮬레이션</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.2/p5.min.js"></script>
+    <style>
+      body{margin:0;padding:0;background:#eef6ff;font-family:"Noto Sans KR",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#0f172a}
+      header{padding:14px 12px;background:#dceeff;border-bottom:1px solid #c7defd}
+      header h2{margin:0 0 6px 0;font-size:22px}
+      header small{display:block;margin-top:6px;font-size:14px;color:#334155}
+      #footer{text-align:center;padding:12px;font-size:1.1rem;background:#dceeff;color:#333}
+      canvas{display:block}
+      .legend{position:absolute;right:12px;top:78px;background:rgba(255,255,255,.9);border:1px solid #c7defd;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.5}
+      .sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:8px;vertical-align:middle;border:1px solid #94a3b8}
+    </style>
+  </head>
+  <body>
+    <header>
+      <h2>굴절·전반사 시뮬레이션</h2>
+      <div id="ui"></div>
+      <small>빨간 레이저 포인터(●)를 드래그해 입사각을 조절하세요.</small>
+    </header>
+    <main id="sketch"></main>
+    <div class="legend" id="legend"></div>
+    <div id="footer">왕왕물리시뮬레이션</div>
+
+    <script>
+      // --- 물질 데이터 & 색상 ---
+      const MATERIALS = {
+        공기:1.0003, 물:1.333, 얼음:1.309, 아크릴:1.49,
+        크라운유리:1.52, 플린트유리:1.62, 다이아몬드:2.417
+      };
+      const REGION_COLORS = {
+        공기:'#93c5fd', 물:'#60a5fa', 얼음:'#7dd3fc',
+        아크릴:'#86efac', 크라운유리:'#a78bfa',
+        플린트유리:'#f59e0b', 다이아몬드:'#f472b6'
+      };
+
+      // 광선/호 색
+      const COLOR_INCIDENT = '#ff5050';
+      const COLOR_REFLECT  = '#ffaa00';
+      const COLOR_REFRACT  = '#2563eb';
+
+      // 아크 반지름
+      const R_INCIDENT = 100;
+      const R_REFLECT  = 120;   // 위쪽(반사)
+      const R_REFRACT  = 100;   // 아래쪽(굴절)
+      const R_CRIT     = 140;   // 임계각
+
+      // 상태
+      let topName = '공기';
+      let botName = '크라운유리';
+      let showReflection = true;   // ★ 반사선 표시 토글
+      let selTop, selBottom, cbReflect;
+
+      // 기하
+      let cx, cy;
+      let handle = { x:0, y:0, r:14, dragging:false };
+
+      function setup(){
+        const canvas = createCanvas(windowWidth, windowHeight - 130);
+        canvas.parent('sketch');
+        cx = width/2; cy = height/2;
+        handle.x = cx - 180; handle.y = cy - 180;
+        buildUI();
+        drawLegend();
+      }
+
+      function buildUI(){
+        const uiDiv = document.getElementById('ui'); uiDiv.innerHTML = '';
+
+        const l1 = document.createElement('span'); l1.textContent = '위 매질: '; l1.style.marginRight='6px'; uiDiv.appendChild(l1);
+        selTop = createSelect(); selTop.parent(uiDiv);
+        Object.keys(MATERIALS).forEach(n=> selTop.option(`${n} (n=${MATERIALS[n]})`, n));
+        selTop.selected(topName);
+        selTop.changed(()=>{ topName = selTop.value(); drawLegend(); });
+
+        const gap = document.createElement('span'); gap.style.margin='0 10px'; uiDiv.appendChild(gap);
+        const l2 = document.createElement('span'); l2.textContent = '아래 매질: '; l2.style.marginRight='6px'; uiDiv.appendChild(l2);
+        selBottom = createSelect(); selBottom.parent(uiDiv);
+        Object.keys(MATERIALS).forEach(n=> selBottom.option(`${n} (n=${MATERIALS[n]})`, n));
+        selBottom.selected(botName);
+        selBottom.changed(()=>{ botName = selBottom.value(); drawLegend(); });
+
+        // ★ 반사 토글 체크박스
+        const spacer = document.createElement('span'); spacer.style.margin='0 14px'; uiDiv.appendChild(spacer);
+        cbReflect = createCheckbox('반사 표시', showReflection);
+        cbReflect.parent(uiDiv);
+        cbReflect.changed(()=> { showReflection = cbReflect.checked(); });
+      }
+
+      function draw(){
+        background('#eef6ff');     // 잔상 제거
+        drawRegions();             // 매질 영역색
+
+        const nTop = MATERIALS[topName];
+        const nBottom = MATERIALS[botName];
+
+        // 경계면
+        stroke(120); strokeWeight(2.5); line(0, cy, width, cy);
+
+        // 각도 눈금자 (요청: 위쪽=R_REFLECT/2, 아래쪽=R_REFRACT/2)
+        drawAngleTicks(R_REFLECT*1.5/2, R_REFRACT*1.5/2);
+
+        // 법선
+        drawDashedLine(cx, cy-160, cx, cy+160, 8);
+        noStroke(); fill(50); textSize(18); text('법선', cx+10, cy-130);
+
+        // 라벨
+        noStroke(); fill(20); textSize(20);
+        text(`위 매질 n₁ = ${nTop.toFixed(3)} (${topName})`, 20, 22);
+        text(`아래 매질 n₂ = ${nBottom.toFixed(3)} (${botName})`, 20, 46);
+
+        // 입사 벡터
+        handle.y = Math.min(handle.y, cy-12);
+        const v = createVector(cx - handle.x, cy - handle.y);
+        if (v.mag() < 1) return;
+        const vUnit = v.copy().normalize();
+        const signX = Math.sign(vUnit.x) || 1;     // 좌/우
+        const normal = createVector(0,1);
+        const cos1 = constrain(vUnit.dot(normal), -1, 1);
+        const theta1 = degrees(Math.acos(cos1));
+        const sin1 = Math.sin(radians(theta1));
+
+        // 스넬/임계각
+        const sin2 = (nTop / nBottom) * sin1;
+        const isTIR = (nTop > nBottom && sin2 > 1 - 1e-12);
+        const theta2 = isTIR ? null : degrees(Math.asin(constrain(sin2, -1, 1)));
+        let thetaC = null;
+        if (nTop > nBottom) thetaC = degrees(Math.asin(constrain(nBottom / nTop, -1, 1)));
+
+        // 광선
+        stroke(COLOR_INCIDENT); strokeWeight(3.5);
+        line(handle.x, handle.y, cx, cy);
+        noStroke(); fill('#ff4444'); circle(handle.x, handle.y, handle.r*1.6);
+
+        if (showReflection) {
+          const reflectDir = createVector(vUnit.x, -vUnit.y);
+          drawRay(cx, cy, reflectDir, COLOR_REFLECT);
+        }
+        if (!isTIR && theta2 !== null){
+          const tDir = createVector(signX * Math.sin(radians(theta2)), Math.cos(radians(theta2)));
+          drawRay(cx, cy, tDir, COLOR_REFRACT);
+        }
+
+        // 각도 호 + 라벨
+        drawAngleArcs(theta1, theta2, isTIR, signX, thetaC, showReflection);
+
+        // 정보
+        fill(20); noStroke(); textSize(20);
+        text(`입사각 θ₁ = ${nf(theta1,1,1)}°`, 20, 80);
+        text(`반사각 θᵣ = ${nf(theta1,1,1)}°`, 20, 105);
+        if (isTIR) text(`굴절각 θ₂ = — (전반사)`, 20, 130);
+        else text(`굴절각 θ₂ = ${nf(theta2,1,1)}°`, 20, 130);
+        if (thetaC !== null) text(`임계각 θ_c = ${nf(thetaC,1,1)}°`, 20, 155);
+        else text(`임계각: 없음 (n₁ ≤ n₂)`, 20, 155);
+        textSize(22); fill(17,94,89);
+        text(`스넬의 법칙:  n₁·sinθ₁ = n₂·sinθ₂`, 20, 185);
+      }
+
+      // ====== 보조 함수들 ======
+      function drawRegions(){
+        const colTop = REGION_COLORS[topName] || '#cbd5e1';
+        const colBot = REGION_COLORS[botName] || '#cbd5e1';
+        push(); noStroke(); fill(hexToRGBA(colTop, 0.28)); rect(0, 0, width, cy); pop();
+        push(); noStroke(); fill(hexToRGBA(colBot, 0.24)); rect(0, cy, width, height-cy); pop();
+      }
+
+      // 눈금선: 위쪽/아래쪽 최대 길이를 인자로 받아 5°/10° 간격 표시
+      function drawAngleTicks(topLen, botLen){
+        // 필요하면 길이 스케일(예: 1.5배) 여기서 곱할 수 있음
+        const SCALE = 1.0; // ← 1.5로 바꾸면 전체 눈금 길이 1.5배
+        topLen *= SCALE; botLen *= SCALE;
+
+        push();
+        for (let d=5; d<=85; d+=5){
+          const bold = (d % 10 === 0);
+          const Ltop = bold ? topLen : topLen*0.65;
+          const Lbot = bold ? botLen : botLen*0.65;
+          stroke(120, bold ? 220 : 160); strokeWeight(bold ? 1.8 : 1.2);
+
+          // 각도 -> 라디안
+          const aTopR = -HALF_PI + radians(d);   // 위 오른쪽
+          const aTopL = -HALF_PI - radians(d);   // 위 왼쪽
+          const aBotR =  HALF_PI - radians(d);   // 아래 오른쪽
+          const aBotL =  HALF_PI + radians(d);   // 아래 왼쪽
+
+          // 위쪽
+          line(cx, cy, cx + Ltop*Math.cos(aTopR), cy + Ltop*Math.sin(aTopR));
+          line(cx, cy, cx + Ltop*Math.cos(aTopL), cy + Ltop*Math.sin(aTopL));
+          // 아래쪽
+          line(cx, cy, cx + Lbot*Math.cos(aBotR), cy + Lbot*Math.sin(aBotR));
+          line(cx, cy, cx + Lbot*Math.cos(aBotL), cy + Lbot*Math.sin(aBotL));
+        }
+        pop();
+      }
+
+      // 아크 + 라벨(중심각 바깥쪽 자동 배치)
+      function arcWithLabel(r, start, end, col, label, offset=14, textSizePx=18){
+        push();
+        noFill(); stroke(col); strokeWeight(2);
+        arc(cx, cy, r*2, r*2, start, end);
+        const mid = (start + end)/2;
+        const lx = cx + (r + offset) * Math.cos(mid);
+        const ly = cy + (r + offset) * Math.sin(mid);
+        noStroke(); fill(col); textSize(textSizePx); textAlign(CENTER, CENTER);
+        text(label, lx, ly);
+        pop();
+      }
+
+      function drawAngleArcs(theta1, theta2, isTIR, signX, thetaC, showReflection){
+        // 입사각 θ1 (위쪽)
+        if (signX > 0){
+          arcWithLabel(R_INCIDENT, -HALF_PI - radians(theta1), -HALF_PI, COLOR_INCIDENT, 'θ₁');
+        } else {
+          arcWithLabel(R_INCIDENT, -HALF_PI, -HALF_PI + radians(theta1), COLOR_INCIDENT, 'θ₁');
+        }
+
+        // 반사각 θr (위쪽 반대편) — 토글
+        if (showReflection){
+          if (signX > 0){
+            arcWithLabel(R_REFLECT, -HALF_PI, -HALF_PI + radians(theta1), COLOR_REFLECT, 'θᵣ');
+          } else {
+            arcWithLabel(R_REFLECT, -HALF_PI - radians(theta1), -HALF_PI, COLOR_REFLECT, 'θᵣ');
+          }
+        }
+
+        // 임계각 θc (입사쪽 위에 표기)
+        if (thetaC !== null){
+          const colCrit = 'rgba(80,80,80,0.7)';
+          if (signX > 0){
+            arcWithLabel(R_CRIT, -HALF_PI - radians(thetaC), -HALF_PI, colCrit, 'θ_c', 10, 14);
+          } else {
+            arcWithLabel(R_CRIT, -HALF_PI, -HALF_PI + radians(thetaC), colCrit, 'θ_c', 10, 14);
+          }
+        }
+
+        // 굴절각 θ2 (아래쪽)
+        if (!isTIR && theta2 !== null){
+          if (signX > 0){
+            arcWithLabel(R_REFRACT, HALF_PI - radians(theta2), HALF_PI, COLOR_REFRACT, 'θ₂');
+          } else {
+            arcWithLabel(R_REFRACT, HALF_PI, HALF_PI + radians(theta2), COLOR_REFRACT, 'θ₂');
+          }
+        }
+      }
+
+      function drawRay(x,y,dir,col){
+        push(); stroke(col); strokeWeight(3.5);
+        line(x, y, x + dir.x*240, y + dir.y*240);
+        pop();
+      }
+
+      function drawDashedLine(x1,y1,x2,y2, dash=8){
+        push(); stroke(100); strokeWeight(1.6);
+        const dx = x2-x1, dy=y2-y1; const len = Math.hypot(dx,dy);
+        const ux = dx/len, uy = dy/len;
+        for(let i=0;i<len;i+=dash*2){
+          const sx = x1 + ux*i; const sy = y1 + uy*i;
+          const ex = x1 + ux*Math.min(i+dash, len);
+          const ey = y1 + uy*Math.min(i+dash, len);
+          line(sx,sy,ex,ey);
+        }
+        pop();
+      }
+
+      function hexToRGBA(hex, a){
+        const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex);
+        if(!m) return color(0,0,0,a*255);
+        const r = parseInt(m[1],16), g=parseInt(m[2],16), b=parseInt(m[3],16);
+        return color(r, g, b, a*255);
+      }
+
+      // 인터랙션
+      function mousePressed(){ if (dist(mouseX, mouseY, handle.x, handle.y) < 22) handle.dragging = true; }
+      function mouseDragged(){ if (handle.dragging){ handle.x = mouseX; handle.y = mouseY; } }
+      function mouseReleased(){ handle.dragging = false; }
+      function windowResized(){ resizeCanvas(windowWidth, windowHeight - 130); cx = width/2; cy = height/2; }
+
+      function drawLegend(){
+        const el = document.getElementById('legend');
+        const tCol = REGION_COLORS[topName];
+        const bCol = REGION_COLORS[botName];
+        el.innerHTML = `
+          <div><span class="sw" style="background:${tCol}"></span>위 매질 영역: ${topName}</div>
+          <div><span class="sw" style="background:${bCol}"></span>아래 매질 영역: ${botName}</div>
+          <hr style="border:none;border-top:1px solid #c7defd;margin:8px 0;">
+          <div><span class="sw" style="background:${COLOR_INCIDENT}"></span>입사선</div>
+          <div><span class="sw" style="background:${COLOR_REFLECT}"></span>반사선</div>
+          <div><span class="sw" style="background:${COLOR_REFRACT}"></span>굴절선</div>`;
+      }
+    </script>
+  </body>
+</html>

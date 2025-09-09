@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>이중슬릿 — 파동·확률파동·줄무늬 (p5.js)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="https://unpkg.com/p5@1.9.0/lib/p5.min.js"></script>
+<style>
+  :root{ --bg:#0b1020; --panel:#0d1530; --ink:#e8ecff; --sub:#a6b0cf; --line:#243166; --accent:#7aa2ff; --radius:16px; }
+  *{box-sizing:border-box} body{margin:0;background:#070b18;color:var(--ink);font:14px/1.55 ui-sans-serif,system-ui,"Noto Sans KR",Arial}
+  header{max-width:1200px;margin:0 auto;padding:22px 20px 8px}
+  h1{margin:0 0 6px;font-size:26px;font-weight:800}.sub{color:var(--sub);font-size:13px}
+  .wrap{display:grid;grid-template-columns:360px 1fr;gap:18px;max-width:1200px;margin:10px auto 24px;padding:0 20px 20px}
+  .card{background:linear-gradient(180deg,#0d1530 0%,#0a1126 100%);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .controls{padding:14px;position:sticky;top:12px;height:fit-content}
+  .controls h2{margin:4px 0 10px;color:#caddff;font-size:15px}
+  .row{margin:10px 0}.row label{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#cfd8ff}
+  .row output{font-variant-numeric:tabular-nums;margin-left:8px}
+  input[type="range"]{width:100%;appearance:none;height:6px;border-radius:999px;background:#1f2b55;outline:none}
+  input[type="range"]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);border:2px solid #cfe0ff;box-shadow:0 0 0 4px rgba(122,162,255,.15);cursor:pointer}
+  .toggle{display:flex;align-items:center;gap:8px;margin:6px 0 2px;color:#cfe0ff;font-size:13px}
+  .right{padding:14px}.canvasWrap{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;color:#aab6ea;font-size:12px;margin-top:10px}.legend .chip{background:#0f1733;border:1px solid #253369;padding:6px 8px;border-radius:999px}
+</style>
+</head>
+<body>
+<header>
+  <h1>이중슬릿 간섭 — 파동 · 확률파동 · 줄무늬</h1>
+  <div class="sub">파장(λ), 슬릿간격(d), 슬릿폭(a), 스크린거리(L)를 바꾸면 파동과 스크린 패턴이 함께 변합니다.</div>
+</header>
+
+<main class="wrap">
+  <!-- 좌측 컨트롤 -->
+  <section class="card controls">
+    <h2>파라미터</h2>
+    <div class="row"><label>파장 λ <output id="oLam">530 nm</output></label><input id="lambda" type="range" min="350" max="750" step="1" value="530"></div>
+    <div class="row"><label>슬릿 간격 d <output id="oD">50 μm</output></label><input id="d" type="range" min="5" max="200" step="1" value="50"></div>
+    <div class="row"><label>슬릿 폭 a <output id="oA">10 μm</output></label><input id="a" type="range" min="0" max="100" step="1" value="10"></div>
+    <div class="row"><label>스크린 거리 L <output id="oL">1.00 m</output></label><input id="L" type="range" min="0.50" max="3.00" step="0.01" value="1.00"></div>
+    <div class="row"><label>스크린 시야 높이 <output id="oH">20.0 cm</output></label><input id="H" type="range" min="2" max="20" step="0.1" value="20"></div>
+    <div class="toggle"><input id="envelope" type="checkbox" checked><label for="envelope">단일슬릿 포락선 포함</label></div>
+    <div class="toggle"><input id="approx" type="checkbox"><label for="approx">소각 근사 사용 (sinθ≈y/L)</label></div>
+  </section>
+
+  <!-- 우측: 캔버스 -->
+  <section class="card right">
+    <div class="canvasWrap"><div id="p5-holder"></div></div>
+    <div class="legend">
+      <span class="chip">λ: <span id="legLam">530 nm</span></span>
+      <span class="chip">d: <span id="legD">50 μm</span></span>
+      <span class="chip">a: <span id="legA">10 μm</span></span>
+      <span class="chip">L: <span id="legL">1.00 m</span></span>
+      <span class="chip">시야: <span id="legH">20.0 cm</span></span>
+      <span class="chip">모델: <span id="legM">정확(sinθ)</span></span>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+
+// --- 물리 파라미터(SI) ---
+const P = {
+  lambda: 530e-9,  // m
+  d: 50e-6,        // m
+  a: 10e-6,        // m
+  L: 1.00,         // m
+  viewH: 0.20,     // m (스크린에서 보일 세로 높이)
+  envelope: true,
+  approx: false
+};
+
+// 라벨 업데이트
+function fmt_m(x){
+  const a=Math.abs(x);
+  if(a>=1) return x.toFixed(2)+' m';
+  if(a>=1e-2) return (x*100).toFixed(1)+' cm';
+  if(a>=1e-3) return (x*1000).toFixed(1)+' mm';
+  if(a>=1e-6) return (x*1e6).toFixed(0)+' μm';
+  return (x*1e9).toFixed(0)+' nm';
+}
+function refreshLabels(){
+  $('#oLam').textContent=(P.lambda*1e9).toFixed(0)+' nm';
+  $('#oD').textContent=(P.d*1e6).toFixed(0)+' μm';
+  $('#oA').textContent=(P.a*1e6).toFixed(0)+' μm';
+  $('#oL').textContent=fmt_m(P.L);
+  $('#oH').textContent=(P.viewH*100).toFixed(1)+' cm';
+  $('#legLam').textContent=(P.lambda*1e9).toFixed(0)+' nm';
+  $('#legD').textContent=(P.d*1e6).toFixed(0)+' μm';
+  $('#legA').textContent=(P.a*1e6).toFixed(0)+' μm';
+  $('#legL').textContent=fmt_m(P.L);
+  $('#legH').textContent=(P.viewH*100).toFixed(1)+' cm';
+  $('#legM').textContent=P.approx?'소각 근사':'정확(sinθ)';
+}
+
+// UI 연결
+function bindUI(){
+  $('#lambda').addEventListener('input',e=>{P.lambda=Number(e.target.value)*1e-9;});
+  $('#d').addEventListener('input',e=>{P.d=Number(e.target.value)*1e-6;});
+  $('#a').addEventListener('input',e=>{P.a=Number(e.target.value)*1e-6;});
+  $('#L').addEventListener('input',e=>{P.L=Number(e.target.value);});
+  $('#H').addEventListener('input',e=>{P.viewH=Number(e.target.value)*1e-2;});
+  $('#envelope').addEventListener('change',e=>{P.envelope=e.target.checked;});
+  $('#approx').addEventListener('change',e=>{P.approx=e.target.checked;});
+}
+
+// --- 물리 ---
+function sinc(x){ const ax=Math.abs(x); if(ax<1e-6){const x2=x*x;return 1-x2/6+x2*x2/120;} return Math.sin(x)/x; }
+function sinTheta(y){ return P.approx ? (y/P.L) : (y/Math.sqrt(y*y+P.L*P.L)); }
+function intensity(y){ // 0..1
+  const st=sinTheta(y);
+  const phase=Math.PI*P.d*st/P.lambda;
+  let I=Math.cos(phase); I*=I;
+  if(P.envelope && P.a>0){ const b=Math.PI*P.a*st/P.lambda; const S=sinc(b); I*=S*S; }
+  return Math.max(0,Math.min(1,I));
+}
+
+// --- p5 스케치 ---
+let W=1100,H=420,cnv,holder,gStrip; // gStrip: 줄무늬 그리기 임시버퍼
+const layout = {
+  // 좌→우: 기하(0~0.62W), 곡선(0.62~0.78W), 줄무늬(0.78~0.94W)
+  left: 0.06, geomRight: 0.62, curveRight: 0.78, stripRight: 0.94,
+  top: 0.08, bottom: 0.92,
+  plateX: 0.34, screenX: 0.92,
+  baseSlitSpanPx: 120 // d=50 μm일 때 시각화 간격
+};
+
+// 파동 애니메이션
+let tSec=0;
+new p5(p=>{
+  p.setup=()=>{
+    holder=$('#p5-holder');
+    const rect=holder.getBoundingClientRect();
+    W=Math.max(960,Math.min(1200,Math.floor(rect.width||1100)));
+    H=420;
+    cnv=p.createCanvas(W,H); cnv.parent('p5-holder');
+    p.pixelDensity(Math.max(1,window.devicePixelRatio||1));
+    gStrip=p.createGraphics(W,H);
+    bindUI(); refreshLabels();
+  };
+  p.windowResized=()=>{
+    const rect=holder.getBoundingClientRect();
+    W=Math.max(820,Math.min(1200,Math.floor(rect.width||1100)));
+    p.resizeCanvas(W,H);
+    const g=p.createGraphics(W,H); g.image(gStrip,0,0); gStrip=g;
+  };
+  p.draw=()=>{
+    tSec+=p.deltaTime/1000;
+    refreshLabels();
+    p.background(5,8,20);
+
+    drawGeometry(p);
+    drawHuygensWaves(p,tSec);
+    drawCurveAndStrip(p); // 스크린 확률파동 + 줄무늬
+  };
+
+  function X(f){ return Math.round(f*W); }
+  function Y(f){ return Math.round(f*H); }
+  function yPixToMeters(yPix){
+    const mid=(Y(layout.top)+Y(layout.bottom))/2;
+    const t=(yPix-mid)/((Y(layout.bottom)-Y(layout.top))/2); // -1..+1
+    return t*(P.viewH/2);
+  }
+  function yMetersToPix(y){
+    const mid=(Y(layout.top)+Y(layout.bottom))/2;
+    const t=y/(P.viewH/2);
+    return Math.round(mid + t*((Y(layout.bottom)-Y(layout.top))/2));
+  }
+
+  function drawGeometry(p){
+    const top=Y(layout.top), bottom=Y(layout.bottom);
+    const plateX=X(layout.plateX), screenX=X(layout.screenX);
+
+    // 스크린
+    p.noStroke(); p.fill(10,16,35); p.rect(screenX, top, 16, bottom-top);
+    p.stroke(36,49,102); p.noFill(); p.rect(screenX, top, 16, bottom-top);
+
+    // 차광판
+    p.noStroke(); p.fill(10,16,35); p.rect(plateX-6, top, 12, bottom-top);
+    p.stroke(36,49,102); p.noFill(); p.rect(plateX-6, top, 12, bottom-top);
+
+    // === (NEW) 슬릿 간격·폭을 시각적으로 반영 ===
+    // d 시각화: 기준 d0=50 μm → baseSlitSpanPx
+    const slitSpan = layout.baseSlitSpanPx * (P.d / (50e-6));
+    // a 시각화: 기준 a0=20 μm → 기본 28px
+    const a0 = 20e-6, baseH = 28;
+    // 슬릿 높이(px)를 a에 비례시킴, 너무 얇거나 겹치지 않게 클램프
+    let slitH = Math.round(baseH * (P.a > 0 ? (P.a / a0) : 0));
+    const maxH = Math.max(6, Math.floor(0.9 * slitSpan)); // 두 슬릿이 겹치지 않도록 한도
+    slitH = Math.max(4, Math.min(140, Math.min(slitH, maxH))); // 4~140px, 그리고 위 한도 적용
+
+    const mid=(top+bottom)/2;
+    p.noStroke(); p.fill(207,225,255);
+    p.rect(plateX-6, mid - slitSpan/2 - slitH/2, 12, slitH);
+    p.rect(plateX-6, mid + slitSpan/2 - slitH/2, 12, slitH);
+
+    // 광원
+    p.noStroke(); p.fill(255,183,77); p.circle(X(layout.left)+30, mid, 18);
+    // 라벨
+    p.fill(185,198,255); p.noStroke(); p.textSize(12); p.textAlign(p.CENTER,p.BOTTOM);
+    p.text('광원', X(layout.left)+30, top-6);
+    p.text('차광판/슬릿', plateX, top-6);
+    p.text('스크린', screenX+8, top-6);
+  }
+
+  function drawHuygensWaves(p,t){
+    const top=Y(layout.top), bottom=Y(layout.bottom);
+    const plateX=X(layout.plateX);
+    const mid=(top+bottom)/2;
+    const slitSpan = layout.baseSlitSpanPx * (P.d / (50e-6));
+    const y1 = mid - slitSpan/2;
+    const y2 = mid + slitSpan/2;
+
+    // 파장→원형파 간격(시각화): 550nm 기준 16px
+    const base=16;
+    const gap = base * (P.lambda / 550e-9);
+
+    // 원형파 반지름
+    const speed=140; // px/s (시각화용)
+    const r = (t*speed) % gap + gap; // 등간격 원형파
+
+    p.noFill();
+    // 위상색 교차(붉은/청색)
+    for(const [cy,color] of [[y1,[255,90,90,180]],[y2,[90,150,255,180]]]){
+      p.stroke(...color); p.strokeWeight(1.3);
+      for(let k=0;k<10;k++){
+        const rr = r + k*gap;
+        // 슬릿 뒤쪽(오른쪽)만 보이도록 호만 그려 느낌 살리기
+        p.arc(plateX, cy, rr*2, rr*2, -0.25*Math.PI, 0.25*Math.PI);
+      }
+    }
+  }
+
+  function drawCurveAndStrip(p){
+    const top=Y(layout.top), bottom=Y(layout.bottom);
+    const curveL=Math.round(0.62*W), curveR=Math.round(0.78*W);
+    const stripL=Math.round(0.78*W)+8, stripR=Math.round(0.94*W);
+
+    // 곡선 배경
+    p.noFill(); p.stroke(36,49,102); p.rect(curveL, top, curveR-curveL, bottom-top);
+
+    // 줄무늬(그레이스케일)
+    gStrip.clear();
+    for(let yp=top; yp<=bottom; yp++){
+      const y_m = yPixToMeters(yp);
+      let I = intensity(y_m); // 0..1
+      I = Math.pow(I, 1/1.4); // 감마(보기 좋게)
+      const v = Math.round(255*I);
+      gStrip.stroke(v,v,v); gStrip.line(stripL, yp, stripR, yp);
+    }
+    p.image(gStrip,0,0);
+
+    // 확률파동 곡선
+    p.noFill(); p.stroke(90,230,170,220); p.strokeWeight(2);
+    p.beginShape();
+    for(let yp=top; yp<=bottom; yp+=1){
+      const y_m = yPixToMeters(yp);
+      const I = intensity(y_m);
+      const x = curveL + (curveR-curveL) * I;
+      p.vertex(x, yp);
+    }
+    p.endShape();
+
+    // 중심선/눈금 (Δy ≈ λL/d)
+    const dy = P.lambda*P.L/P.d;
+    const mMax = Math.floor((P.viewH/2)/dy);
+    p.stroke(122,162,255,200); p.fill(122,162,255,200); p.textAlign(p.LEFT,p.CENTER); p.textSize(11);
+    for(let m=-mMax;m<=mMax;m++){
+      const yPix = yMetersToPix(m*dy);
+      p.line(stripR+10, yPix, stripR+22, yPix);
+      if(Math.abs(m)<=3) p.text(m.toString(), stripR+26, yPix);
+    }
+    p.stroke(255,255,0,140);
+    p.line(stripR+6, (top+bottom)/2, stripR+22, (top+bottom)/2);
+  }
+});
+
+// 초기 바인딩
+bindUI(); refreshLabels();
+</script>
+</body>
+</html>
