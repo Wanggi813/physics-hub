@@ -2,24 +2,32 @@
 <html lang="ko">
   <head>
     <meta charset="utf-8" />
-    <title>굴절·전반사 시뮬레이션 - 왕왕물리시뮬레이션</title>
+    <title>굴절·전반사 </title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.2/p5.min.js"></script>
     <style>
-      body{margin:0;padding:0;background:#eef6ff;font-family:"Noto Sans KR",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#0f172a}
+      html, body { height:100%; margin:0; }
+      body{
+        background:#eef6ff;font-family:"Noto Sans KR",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#0f172a;
+        /* 모바일에서 튕김/풀다운 방지 */
+        overscroll-behavior: none;
+      }
       header{padding:14px 12px;background:#dceeff;border-bottom:1px solid #c7defd}
       header h2{margin:0 0 6px 0;font-size:22px}
       header small{display:block;margin-top:6px;font-size:14px;color:#334155}
       #footer{text-align:center;padding:12px;font-size:1.1rem;background:#dceeff;color:#333}
-      canvas{display:block}
       .legend{position:absolute;right:12px;top:78px;background:rgba(255,255,255,.9);border:1px solid #c7defd;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.5}
       .sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:8px;vertical-align:middle;border:1px solid #94a3b8}
+
+      /* ▼ 터치 드래그 시 페이지 스크롤 방지 */
+      #sketch, canvas { touch-action: none; -webkit-user-select:none; user-select:none; }
+      canvas{display:block}
     </style>
   </head>
   <body>
     <header>
       <h2>굴절·전반사 시뮬레이션</h2>
       <div id="ui"></div>
-      <small>빨간 레이저 포인터(●)를 드래그해 입사각을 조절하세요.</small>
+      <small>빨간 레이저 포인터(●)를 드래그/터치해 입사각을 조절하세요.</small>
     </header>
     <main id="sketch"></main>
     <div class="legend" id="legend"></div>
@@ -56,11 +64,18 @@
 
       // 기하
       let cx, cy;
-      let handle = { x:0, y:0, r:14, dragging:false };
+      let handle = { x:0, y:0, r:16, dragging:false };
+
+      let canvasP5;
 
       function setup(){
-        const canvas = createCanvas(windowWidth, windowHeight - 130);
-        canvas.parent('sketch');
+        canvasP5 = createCanvas(windowWidth, windowHeight - 130);
+        canvasP5.parent('sketch');
+
+        // iOS/안드용 스크롤 차단
+        canvasP5.elt.style.touchAction = 'none';
+        canvasP5.elt.addEventListener('touchmove', e => e.preventDefault(), { passive:false });
+
         cx = width/2; cy = height/2;
         handle.x = cx - 180; handle.y = cy - 180;
         buildUI();
@@ -100,7 +115,7 @@
         // 경계면
         stroke(120); strokeWeight(2.5); line(0, cy, width, cy);
 
-        // 각도 눈금자 (요청: 위쪽=R_REFLECT/2, 아래쪽=R_REFRACT/2)
+        // 각도 눈금자
         drawAngleTicks(R_REFLECT*1.5/2, R_REFRACT*1.5/2);
 
         // 법선
@@ -112,8 +127,10 @@
         text(`위 매질 n₁ = ${nTop.toFixed(3)} (${topName})`, 20, 22);
         text(`아래 매질 n₂ = ${nBottom.toFixed(3)} (${botName})`, 20, 46);
 
-        // 입사 벡터
+        // 핸들 제한(경계 위쪽만)
         handle.y = Math.min(handle.y, cy-12);
+
+        // 입사 벡터
         const v = createVector(cx - handle.x, cy - handle.y);
         if (v.mag() < 1) return;
         const vUnit = v.copy().normalize();
@@ -167,10 +184,9 @@
         push(); noStroke(); fill(hexToRGBA(colBot, 0.24)); rect(0, cy, width, height-cy); pop();
       }
 
-      // 눈금선: 위쪽/아래쪽 최대 길이를 인자로 받아 5°/10° 간격 표시
+      // 눈금선
       function drawAngleTicks(topLen, botLen){
-        // 필요하면 길이 스케일(예: 1.5배) 여기서 곱할 수 있음
-        const SCALE = 1.0; // ← 1.5로 바꾸면 전체 눈금 길이 1.5배
+        const SCALE = 1.0;
         topLen *= SCALE; botLen *= SCALE;
 
         push();
@@ -180,23 +196,19 @@
           const Lbot = bold ? botLen : botLen*0.65;
           stroke(120, bold ? 220 : 160); strokeWeight(bold ? 1.8 : 1.2);
 
-          // 각도 -> 라디안
-          const aTopR = -HALF_PI + radians(d);   // 위 오른쪽
-          const aTopL = -HALF_PI - radians(d);   // 위 왼쪽
-          const aBotR =  HALF_PI - radians(d);   // 아래 오른쪽
-          const aBotL =  HALF_PI + radians(d);   // 아래 왼쪽
+          const aTopR = -HALF_PI + radians(d);
+          const aTopL = -HALF_PI - radians(d);
+          const aBotR =  HALF_PI - radians(d);
+          const aBotL =  HALF_PI + radians(d);
 
-          // 위쪽
           line(cx, cy, cx + Ltop*Math.cos(aTopR), cy + Ltop*Math.sin(aTopR));
           line(cx, cy, cx + Ltop*Math.cos(aTopL), cy + Ltop*Math.sin(aTopL));
-          // 아래쪽
           line(cx, cy, cx + Lbot*Math.cos(aBotR), cy + Lbot*Math.sin(aBotR));
           line(cx, cy, cx + Lbot*Math.cos(aBotL), cy + Lbot*Math.sin(aBotL));
         }
         pop();
       }
 
-      // 아크 + 라벨(중심각 바깥쪽 자동 배치)
       function arcWithLabel(r, start, end, col, label, offset=14, textSizePx=18){
         push();
         noFill(); stroke(col); strokeWeight(2);
@@ -272,10 +284,34 @@
         return color(r, g, b, a*255);
       }
 
-      // 인터랙션
-      function mousePressed(){ if (dist(mouseX, mouseY, handle.x, handle.y) < 22) handle.dragging = true; }
-      function mouseDragged(){ if (handle.dragging){ handle.x = mouseX; handle.y = mouseY; } }
-      function mouseReleased(){ handle.dragging = false; }
+      // ====== 인터랙션 (마우스 + 터치 공통) ======
+      function startDrag(x,y){
+        if (dist(x, y, handle.x, handle.y) < 24) handle.dragging = true;
+      }
+      function moveDrag(x,y){
+        if (!handle.dragging) return;
+        handle.x = constrain(x, 0, width);
+        handle.y = constrain(y, 0, cy-12); // 경계 위로만
+      }
+      function endDrag(){ handle.dragging = false; }
+
+      function mousePressed(){ startDrag(mouseX, mouseY); }
+      function mouseDragged(){ moveDrag(mouseX, mouseY); }
+      function mouseReleased(){ endDrag(); }
+
+      // 터치: return false => preventDefault (스크롤 방지)
+      function touchStarted(){
+        const t = touches[0] || {x:mouseX,y:mouseY};
+        startDrag(t.x, t.y);
+        return false;
+      }
+      function touchMoved(){
+        const t = touches[0] || {x:mouseX,y:mouseY};
+        moveDrag(t.x, t.y);
+        return false;
+      }
+      function touchEnded(){ endDrag(); return false; }
+
       function windowResized(){ resizeCanvas(windowWidth, windowHeight - 130); cx = width/2; cy = height/2; }
 
       function drawLegend(){
