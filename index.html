@@ -9,53 +9,48 @@
       --bg:#0b1020; --panel:#121a33; --ink:#e9efff; --muted:#a6b3d9; --line:#243166; --accent:#7aa2ff;
       --good:#10b981; --warn:#f59e0b; --bad:#ef4444; --radius:18px; --shadow:0 10px 28px rgba(9,12,28,.28);
     }
-    body{margin:0;background:radial-gradient(1200px 800px at 10% -10%, #0e1735 0%, #0b1020 60%);color:var(--ink);
-         font:14px/1.55 ui-sans-serif,system-ui,"Pretendard","Noto Sans KR",Apple SD Gothic Neo,Arial}
+    *{box-sizing:border-box}
+    body{
+      margin:0;background:radial-gradient(1200px 800px at 10% -10%, #0e1735 0%, #0b1020 60%);
+      color:var(--ink);font:14px/1.55 ui-sans-serif,system-ui,"Pretendard","Noto Sans KR",Apple SD Gothic Neo,Arial
+    }
     .wrap{max-width:1200px;margin:0 auto;padding:22px 16px 48px}
     header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
     h1{font-size:24px;margin:0 10px 0 0;display:flex;gap:10px;align-items:center}
     .pill{display:inline-flex;gap:6px;align-items:center;background:#0d1530;border:1px solid var(--line);color:var(--muted);
           padding:10px 12px;border-radius:999px}
     .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-    input[type="search"], select{background:#0d1530;border:1px solid var(--line);color:var(--ink);padding:10px 12px;border-radius:12px}
+    input[type="search"], select{
+      background:#0d1530;border:1px solid var(--line);color:var(--ink);padding:10px 12px;border-radius:12px
+    }
     input[type="search"]{width:230px}
-    .btn{background:linear-gradient(180deg,#2f49a2,#23377a);border:1px solid #2e3f78;color:#fff;padding:10px 12px;border-radius:12px;cursor:pointer}
-    .btn.ghost{background:#0d1530;color:var(--ink);border:1px solid var(--line)}
     .grid{margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
-    .card{background:linear-gradient(180deg,rgba(18,26,51,.9),rgba(12,18,36,.9));border:1px solid rgba(66,90,150,.45);border-radius:var(--radius);
-          box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
-    .thumb{height:120px;display:flex;align-items:center;justify-content:center;background:
-           radial-gradient(900px 400px at 70% -20%, rgba(122,162,255,.35), transparent 50%),
-           linear-gradient(135deg, rgba(122,162,255,.08), rgba(0,0,0,.06));
-           border-bottom:1px solid rgba(120,150,220,.25)}
+    .card{
+      background:linear-gradient(180deg,rgba(18,26,51,.9),rgba(12,18,36,.9));
+      border:1px solid rgba(66,90,150,.45);border-radius:var(--radius);
+      box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column
+    }
+    .thumb{
+      height:120px;display:flex;align-items:center;justify-content:center;background:
+      radial-gradient(900px 400px at 70% -20%, rgba(122,162,255,.35), transparent 50%),
+      linear-gradient(135deg, rgba(122,162,255,.08), rgba(0,0,0,.06));
+      border-bottom:1px solid rgba(120,150,220,.25)
+    }
     .thumb span{font-size:44px;filter:drop-shadow(0 6px 20px rgba(0,0,0,.45))}
     .body{padding:14px 14px 12px;display:flex;flex-direction:column;gap:10px}
     .title{display:flex;justify-content:space-between;gap:8px}
     .title h3{margin:0;font-size:16px;line-height:1.35}
-    .title button{background:#0d1530;border:1px solid var(--line);border-radius:12px;padding:6px 8px;color:var(--muted);cursor:pointer}
     .desc{color:var(--muted);min-height:38px}
     .tags{display:flex;flex-wrap:wrap;gap:6px}
     .tag{font-size:12px;color:#c7d2fe;background:rgba(122,162,255,.12);border:1px solid rgba(122,162,255,.25);padding:5px 7px;border-radius:999px}
     .meta{display:flex;justify-content:space-between;color:#8aa1e0;font-size:12px}
     .actions{display:flex;gap:8px;margin-top:6px}
-    .actions a{flex:1;text-align:center;text-decoration:none;color:#fff;background:linear-gradient(180deg,#3b82f6,#2f62c7);border:1px solid #2f4fa2;padding:8px 10px;border-radius:10px}
-    .actions a.ghost{background:#0d1530;border:1px solid var(--line);color:var(--ink)}
+    .actions a{
+      flex:1;text-align:center;text-decoration:none;color:#fff;background:linear-gradient(180deg,#3b82f6,#2f62c7);
+      border:1px solid #2f4fa2;padding:8px 10px;border-radius:10px
+    }
     .empty{opacity:.7;border:1px dashed #2d3a66;border-radius:16px;padding:18px;text-align:center}
     .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(120,150,220,.35),transparent);margin:16px 0}
-    /* modal */
-    dialog{border:none;border-radius:16px;max-width:720px;width:96%;background:#0c1534;color:var(--ink);
-           border:1px solid #2b3970;box-shadow:var(--shadow)}
-    dialog::backdrop{background:rgba(2,6,23,.6)}
-    .modal h2{margin:0 0 8px}
-    .form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .form label{font-size:12px;color:#c0c8ea}
-    .form input,.form textarea,.form select{width:100%;background:#0b132b;color:var(--ink);border:1px solid #324a88;border-radius:12px;padding:10px}
-    .form textarea{grid-column:1/-1;min-height:90px}
-    .right{margin-left:auto}
-    .hidden{display:none}
-    /* light mode toggle (optional) */
-    .light{--bg:#f6f9ff; --panel:#ffffff; --ink:#0f172a; --muted:#5b657a; --line:#e6eef9; --accent:#2563eb}
-    .light body{background:linear-gradient(180deg,#f6f9ff,#ecf3ff)}
   </style>
 </head>
 <body>
@@ -82,11 +77,6 @@
           <option value="title">가나다순</option>
           <option value="category">분류순</option>
         </select>
-        <button class="btn ghost" id="toggleTheme" title="라이트/다크">🌓 테마</button>
-        <button class="btn" id="add">＋ 프로젝트 추가</button>
-        <button class="btn ghost" id="exportBtn">내보내기</button>
-        <label class="btn ghost" for="importFile" style="cursor:pointer">불러오기</label>
-        <input id="importFile" type="file" accept="application/json" class="hidden" />
       </div>
     </header>
 
@@ -95,100 +85,41 @@
     <main id="grid" class="grid" aria-live="polite"></main>
 
     <template id="card-tpl">
-      <article class="card">
+      <article class="card" tabindex="0" aria-label="프로젝트 카드">
         <div class="thumb"><span>🧪</span></div>
         <div class="body">
-          <div class="title">
-            <h3></h3>
-            <button class="pin" title="즐겨찾기">☆</button>
-          </div>
+          <div class="title"><h3></h3></div>
           <p class="desc"></p>
           <div class="tags"></div>
           <div class="meta"><span class="category"></span><span class="date"></span></div>
           <div class="actions">
             <a class="demo" target="_blank" rel="noopener">미리보기</a>
-            <a class="code ghost" target="_blank" rel="noopener">코드</a>
           </div>
         </div>
       </article>
     </template>
 
-    <dialog id="modal">
-      <div class="modal" style="padding:16px 16px 12px">
-        <h2>프로젝트 추가/수정</h2>
-        <form id="form" class="form">
-          <div>
-            <label>제목</label>
-            <input name="title" required />
-          </div>
-          <div>
-            <label>분류</label>
-            <select name="category">
-              <option>시뮬레이션</option>
-              <option>전자/반도체</option>
-              <option>광학</option>
-              <option>상대성</option>
-              <option>데이터도구</option>
-              <option>웹앱</option>
-            </select>
-          </div>
-          <div>
-            <label>업데이트</label>
-            <input name="updated" type="date" />
-          </div>
-          <div>
-            <label>이모지 썸네일(선택)</label>
-            <input name="emoji" placeholder="예: 🛠️" />
-          </div>
-          <div>
-            <label>태그(쉼표로 구분)</label>
-            <input name="tags" placeholder="p5.js, three.js" />
-          </div>
-          <div>
-            <label>미리보기 URL</label>
-            <input name="demo" placeholder="https://..." />
-          </div>
-          <div>
-            <label>코드 URL</label>
-            <input name="code" placeholder="https://..." />
-          </div>
-          <textarea name="desc" placeholder="간단한 설명"></textarea>
-          <div style="display:flex;gap:8px;justify-content:flex-end">
-            <button type="button" class="btn ghost" id="delBtn">삭제</button>
-            <button type="button" class="btn ghost" onclick="modal.close()">취소</button>
-            <button class="btn" id="saveBtn">저장</button>
-          </div>
-        </form>
-      </div>
-    </dialog>
-
     <p class="empty" id="empty" style="display:none">검색 조건에 맞는 프로젝트가 없습니다.</p>
   </div>
 
   <script>
-// 기본 테마: 라이트(밝은)로 시작
-document.documentElement.classList.add('light');
-  // ---- 데이터: 시작 시 샘플(원하는 대로 수정) ----
-  const initialProjects = [
-    {id:uid(), title:"RLC 공명", category:"전자/반도체", desc:"직렬 RLC 공명/위상·전류 변화 시각화.", tags:["회로","공명"], emoji:"🔄", updated: today(), demo:"./RLC 공명.html", code:""},
-    {id:uid(), title:"간섭무늬", category:"광학", desc:"파장·슬릿 간격 조절로 간섭 패턴 관찰.", tags:["파동","무늬"], emoji:"🎯", updated: today(), demo:"./간섭무늬.html", code:""},
-    {id:uid(), title:"광전효과", category:"전자/반도체", desc:"파장/세기에 따른 광전자 방출과 임계 주파수.", tags:["광자","금속"], emoji:"📸", updated: today(), demo:"./광전효과.html", code:""},
-    {id:uid(), title:"다이오드", category:"전자/반도체", desc:"PN 접합·공핍층·I–V 특성 직관.", tags:["PN","I–V"], emoji:"🔌", updated: today(), demo:"./다이오드.html", code:""},
-    {id:uid(), title:"도플러효과", category:"광학", desc:"이동 음원/관측자 주파수 변화와 마하 콘.", tags:["도플러","파동"], emoji:"🎵", updated: today(), demo:"./도플러효과.html", code:""},
-    {id:uid(), title:"러더퍼드 알파입자 산란실험", category:"시뮬레이션", desc:"금박 통과·대각 산란·반사 확률 시각화.", tags:["산란","쿨롱"], emoji:"🧪", updated: today(), demo:"./러더퍼드 알파입자 산란실험.html", code:""},
-    {id:uid(), title:"렌즈의 굴절", category:"광학", desc:"볼록/오목·실상/허상 구성과 보조선.", tags:["렌즈","상"], emoji:"🔭", updated: today(), demo:"./렌즈의 굴절.html", code:""},
-    {id:uid(), title:"발광 다이오드", category:"전자/반도체", desc:"파장별 전압·밴드갭과 발광.", tags:["LED","밴드갭"], emoji:"💡", updated: today(), demo:"./발광 다이오드.html", code:""},
-    {id:uid(), title:"상대성이론", category:"상대성", desc:"길이수축·시공간 시각화(우주선/별).", tags:["특수","일반"], emoji:"🚀", updated: today(), demo:"./상대성이론.html", code:""},
-    {id:uid(), title:"스넬의 법칙", category:"광학", desc:"굴절률 변화에 따른 입사/굴절/임계각.", tags:["n1,n2","TIR"], emoji:"📐", updated: today(), demo:"./스넬의 법칙.html", code:""},
-    {id:uid(), title:"굴절각", category:"광학", desc:"각도 보조호/표식으로 각도 관계 학습.", tags:["각도","보조선"], emoji:"🧭", updated: today(), demo:"./굴절각.html", code:""},
-    {id:uid(), title:"옴의 법칙", category:"전자/반도체", desc:"V=IR, 직렬/병렬 직관, 전류 흐름 애니메이션.", tags:["전압","전류"], emoji:"⚡", updated: today(), demo:"./옴의 법칙.html", code:""},
-    {id:uid(), title:"원자모형", category:"시뮬레이션", desc:"보어/오비탈/전자구름 개념 시각화.", tags:["원자","준위"], emoji:"🧬", updated: today(), demo:"./원자모형.html", code:""},
-    {id:uid(), title:"이중슬릿", category:"광학", desc:"확률파동·간섭무늬·파라미터 조절.", tags:["슬릿","간섭"], emoji:"〰️", updated: today(), demo:"./이중슬릿.html", code:""}
+  // ---- 하드코딩된 읽기 전용 목록 ----
+  const projects = [
+    {title:"RLC 공명", category:"전자/반도체", desc:"직렬 RLC 공명/위상·전류 변화 시각화.", tags:["회로","공명"], emoji:"🔄", updated: today(), demo:"./RLC 공명.html"},
+    {title:"간섭무늬", category:"광학", desc:"파장·슬릿 간격 조절로 간섭 패턴 관찰.", tags:["파동","무늬"], emoji:"🎯", updated: today(), demo:"./간섭무늬.html"},
+    {title:"광전효과", category:"전자/반도체", desc:"파장/세기에 따른 광전자 방출과 임계 주파수.", tags:["광자","금속"], emoji:"📸", updated: today(), demo:"./광전효과.html"},
+    {title:"다이오드", category:"전자/반도체", desc:"PN 접합·공핍층·I–V 특성 직관.", tags:["PN","I–V"], emoji:"🔌", updated: today(), demo:"./다이오드.html"},
+    {title:"도플러효과", category:"광학", desc:"이동 음원/관측자 주파수 변화와 마하 콘.", tags:["도플러","파동"], emoji:"🎵", updated: today(), demo:"./도플러효과.html"},
+    {title:"러더퍼드 알파입자 산란실험", category:"시뮬레이션", desc:"금박 통과·대각 산란·반사 확률 시각화.", tags:["산란","쿨롱"], emoji:"🧪", updated: today(), demo:"./러더퍼드 알파입자 산란실험.html"},
+    {title:"렌즈의 굴절", category:"광학", desc:"볼록/오목·실상/허상 구성과 보조선.", tags:["렌즈","상"], emoji:"🔭", updated: today(), demo:"./렌즈의 굴절.html"},
+    {title:"발광 다이오드", category:"전자/반도체", desc:"파장별 전압·밴드갭과 발광.", tags:["LED","밴드갭"], emoji:"💡", updated: today(), demo:"./발광 다이오드.html"},
+    {title:"상대성이론", category:"상대성", desc:"길이수축·시공간 시각화(우주선/별).", tags:["특수","일반"], emoji:"🚀", updated: today(), demo:"./상대성이론.html"},
+    {title:"스넬의 법칙", category:"광학", desc:"굴절률 변화에 따른 입사/굴절/임계각.", tags:["n1,n2","TIR"], emoji:"📐", updated: today(), demo:"./스넬의 법칙.html"},
+    {title:"굴절각", category:"광학", desc:"각도 보조호/표식으로 각도 관계 학습.", tags:["각도","보조선"], emoji:"🧭", updated: today(), demo:"./굴절각.html"},
+    {title:"옴의 법칙", category:"전자/반도체", desc:"V=IR, 직렬/병렬 직관, 전류 흐름 애니메이션.", tags:["전압","전류"], emoji:"⚡", updated: today(), demo:"./옴의 법칙.html"},
+    {title:"원자모형", category:"시뮬레이션", desc:"보어/오비탈/전자구름 개념 시각화.", tags:["원자","준위"], emoji:"🧬", updated: today(), demo:"./원자모형.html"},
+    {title:"이중슬릿", category:"광학", desc:"확률파동·간섭무늬·파라미터 조절.", tags:["슬릿","간섭"], emoji:"〰️", updated: today(), demo:"./이중슬릿.html"}
   ];
-
-  // ---- 상태 ----
-  let projects = load() ?? initialProjects;
-  let currentId = null;
 
   // ---- 요소 ----
   const grid = document.getElementById('grid');
@@ -197,20 +128,6 @@ document.documentElement.classList.add('light');
   const sortSel = document.getElementById('sort');
   const count = document.getElementById('count');
   const empty = document.getElementById('empty');
-  const modal = document.getElementById('modal');
-  const form = document.getElementById('form');
-  const delBtn = document.getElementById('delBtn');
-
-  // ---- 이벤트 ----
-  document.getElementById('add').onclick = () => { currentId = null; form.reset(); modal.showModal(); };
-  document.getElementById('toggleTheme').onclick = () => document.documentElement.classList.toggle('light');
-  document.getElementById('exportBtn').onclick = () => exportJSON();
-  document.getElementById('importFile').addEventListener('change', importJSON);
-  form.addEventListener('submit', e => { e.preventDefault(); saveFromForm(); });
-  delBtn.addEventListener('click', () => { if(!currentId) return modal.close(); projects = projects.filter(p=>p.id!==currentId); persist(); modal.close(); render(); });
-  q.addEventListener('input', render);
-  cat.addEventListener('change', render);
-  sortSel.addEventListener('change', render);
 
   // ---- 렌더링 ----
   function render(){
@@ -219,7 +136,7 @@ document.documentElement.classList.add('light');
 
     // 필터
     const term = q.value.trim().toLowerCase();
-    if(term){ list = list.filter(p=> (p.title+p.desc+p.category+p.tags.join(',')) .toLowerCase().includes(term)); }
+    if(term){ list = list.filter(p=> (p.title+p.desc+p.category+(p.tags||[]).join(',')).toLowerCase().includes(term)); }
     if(cat.value){ list = list.filter(p=> p.category===cat.value); }
 
     // 정렬
@@ -227,12 +144,8 @@ document.documentElement.classList.add('light');
     list.sort((a,b)=>{
       if(by==='title') return a.title.localeCompare(b.title,'ko');
       if(by==='category') return a.category.localeCompare(b.category,'ko') || a.title.localeCompare(b.title,'ko');
-      // updated
-      return (b.updated||'').localeCompare(a.updated||'');
+      return (b.updated||'').localeCompare(a.updated||''); // 최신순
     });
-
-    // 즐겨찾기 우선
-    list.sort((a,b)=> (b.pinned?1:0) - (a.pinned?1:0));
 
     count.textContent = list.length;
     empty.style.display = list.length? 'none':'block';
@@ -241,88 +154,30 @@ document.documentElement.classList.add('light');
   }
 
   function makeCard(p){
-    const $ = s => node.querySelector(s);
     const node = document.getElementById('card-tpl').content.firstElementChild.cloneNode(true);
+    const $ = s => node.querySelector(s);
     $('.thumb span').textContent = p.emoji || pickEmoji(p.category);
     $('h3').textContent = p.title;
     $('.desc').textContent = p.desc || '';
     $('.category').textContent = p.category;
     $('.date').textContent = p.updated ? `업데이트 ${p.updated}` : '';
-
     const tags = $('.tags'); tags.innerHTML='';
     (p.tags||[]).forEach(t=>{ const chip=document.createElement('span'); chip.className='tag'; chip.textContent=t; tags.append(chip); });
 
-    const demo = $('.demo'); demo.href = p.demo || '#'; demo.classList.toggle('ghost', !p.demo);
-    const code = $('.code'); code.href = p.code || '#'; code.classList.toggle('ghost', !p.code);
-
-    const pinBtn = node.querySelector('.pin');
-    pinBtn.textContent = p.pinned ? '★' : '☆';
-    pinBtn.onclick = (e)=>{ e.stopPropagation(); p.pinned = !p.pinned; persist(); render(); };
-
-    node.onclick = (e)=>{ if(e.target.tagName==='A' || e.target.classList.contains('pin')) return; openEditor(p); };
+    const demo = $('.demo'); demo.href = p.demo || '#';
     return node;
   }
 
-  // ---- 편집 ----
-  function openEditor(p){
-    currentId = p?.id ?? null;
-    form.title.value = p?.title || '';
-    form.category.value = p?.category || '시뮬레이션';
-    form.updated.value = p?.updated || today();
-    form.emoji.value = p?.emoji || '';
-    form.tags.value = (p?.tags||[]).join(', ');
-    form.demo.value = p?.demo || '';
-    form.code.value = p?.code || '';
-    form.desc.value = p?.desc || '';
-    delBtn.style.visibility = currentId ? 'visible':'hidden';
-    modal.showModal();
-  }
-
-  function saveFromForm(){
-    const data = {
-      id: currentId || uid(),
-      title: form.title.value.trim(),
-      category: form.category.value,
-      updated: form.updated.value || today(),
-      emoji: form.emoji.value.trim(),
-      tags: form.tags.value.split(',').map(s=>s.trim()).filter(Boolean),
-      demo: form.demo.value.trim(),
-      code: form.code.value.trim(),
-      desc: form.desc.value.trim(),
-      pinned: (currentId ? projects.find(p=>p.id===currentId)?.pinned : false) || false,
-    };
-    const i = projects.findIndex(p=>p.id === data.id);
-    if(i>-1) projects[i]=data; else projects.unshift(data);
-    persist(); modal.close(); render();
-  }
-
-  // ---- 저장/불러오기 ----
-  function persist(){
-    localStorage.setItem('project-hub', JSON.stringify(projects));
-  }
-  function load(){
-    try{ return JSON.parse(localStorage.getItem('project-hub')||'null'); }catch{ return null }
-  }
-  function exportJSON(){
-    const blob = new Blob([JSON.stringify(projects,null,2)], {type:'application/json'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `projects-${Date.now()}.json`; a.click();
-  }
-  function importJSON(e){
-    const file = e.target.files?.[0]; if(!file) return;
-    const reader = new FileReader(); reader.onload = () => {
-      try{ const arr = JSON.parse(reader.result);
-        if(Array.isArray(arr)){ projects = arr; persist(); render(); }
-        else alert('올바른 JSON 배열이 아닙니다.');
-      }catch(err){ alert('JSON 파싱 오류: '+err.message); }
-    }; reader.readAsText(file);
-  }
-
   // ---- 유틸 ----
-  function uid(){ return Math.random().toString(36).slice(2,10); }
   function today(){ return new Date().toISOString().slice(0,10); }
   function pickEmoji(cat){
     return ({'시뮬레이션':'🧪','전자/반도체':'🔌','광학':'🔬','상대성':'🛰️','데이터도구':'📊','웹앱':'🧩'})[cat] || '🧩';
   }
+
+  // ---- 이벤트 ----
+  q.addEventListener('input', render);
+  cat.addEventListener('change', render);
+  sortSel.addEventListener('change', render);
 
   // 초기 렌더
   render();
