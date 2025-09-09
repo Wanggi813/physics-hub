@@ -1,45 +1,52 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<title>원형파 간섭 (파원 개수 선택)</title>
-<style>
-  html, body { height:100%; margin:0; background:#0a0a0a; color:#e6e6e6; font-family:system-ui, sans-serif; }
-  .wrap {
-    width:min(92vmin, 720px);
-    aspect-ratio:1 / 1;
-    margin:3vmin auto 0.8rem;
-    background:#000;
-    border-radius:14px;
-    box-shadow:0 12px 40px rgba(0,0,0,.55);
-    overflow:hidden;
-  }
-  canvas#sim { width:100%; height:100%; display:block; cursor:grab; }
-  .panel {
-    width:min(92vmin, 720px);
-    margin:0 auto 0.6rem;
-    display:grid;
-    grid-template-columns: 120px 1fr 62px;
-    gap:8px 12px;
-    align-items:center;
-    font-size:14px;
-  }
-  .panel label { color:#bdbdbd }
-  .panel input[type="range"], .panel select { width:100% }
-  .badge {
-    width:min(92vmin, 720px);
-    margin:0 auto 0.6rem;
-    text-align:center; color:#9b9b9b; font-size:12px;
-  }
-  .brand {
-    width:min(92vmin, 720px);
-    margin:0 auto 2rem;
-    text-align:center;
-    color:#c7f36b; font-weight:700;
-    letter-spacing:.02em;
-    text-shadow:0 1px 10px rgba(199,243,107,.25);
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>원형파 간섭 (파원 개수 선택 · 터치 이동 대응)</title>
+  <style>
+    html, body { height:100%; margin:0; background:#0a0a0a; color:#e6e6e6; font-family:system-ui, sans-serif; }
+    .wrap {
+      width:min(92vmin, 720px);
+      aspect-ratio:1 / 1;
+      margin:3vmin auto 0.8rem;
+      background:#000;
+      border-radius:14px;
+      box-shadow:0 12px 40px rgba(0,0,0,.55);
+      overflow:hidden;
+    }
+    canvas#sim {
+      width:100%; height:100%; display:block;
+      cursor:grab;
+      /* 모바일에서 캔버스 위 스크롤/줌 방지 */
+      touch-action: none;
+      -webkit-user-select:none; user-select:none;
+    }
+    .panel {
+      width:min(92vmin, 720px);
+      margin:0 auto 0.6rem;
+      display:grid;
+      grid-template-columns: 120px 1fr 62px;
+      gap:8px 12px;
+      align-items:center;
+      font-size:14px;
+    }
+    .panel label { color:#bdbdbd }
+    .panel input[type="range"], .panel select { width:100% }
+    .badge {
+      width:min(92vmin, 720px);
+      margin:0 auto 0.6rem;
+      text-align:center; color:#9b9b9b; font-size:12px;
+    }
+    .brand {
+      width:min(92vmin, 720px);
+      margin:0 auto 2rem;
+      text-align:center;
+      color:#c7f36b; font-weight:700;
+      letter-spacing:.02em;
+      text-shadow:0 1px 10px rgba(199,243,107,.25);
+    }
+  </style>
 </head>
 <body>
   <div class="wrap"><canvas id="sim"></canvas></div>
@@ -65,7 +72,7 @@
     </select>
   </div>
 
-  <div class="badge">드래그: 파원 이동 • 감쇠 = <b>1/√r</b></div>
+  <div class="badge">드래그/터치: 파원 이동 • 감쇠 = <b>1/√r</b></div>
   <div class="brand">왕왕물리시뮬레이션</div>
 
 <script>
@@ -120,16 +127,20 @@
     }
   }
 
-  // 드래그
+  // 포인터(마우스/터치) 드래그
   let dragging=null, rebuildScheduled=false;
+
   function canvasToNorm(ev){
     const rect=canvas.getBoundingClientRect();
+    // pointer 이벤트: clientX/Y 공통
     return {
       x:Math.min(1,Math.max(0,(ev.clientX-rect.left)/rect.width)),
       y:Math.min(1,Math.max(0,(ev.clientY-rect.top)/rect.height))
     };
   }
-  canvas.addEventListener('mousedown',e=>{
+
+  canvas.addEventListener('pointerdown', e=>{
+    canvas.setPointerCapture?.(e.pointerId);
     canvas.style.cursor='grabbing';
     const n=canvasToNorm(e);
     let nearest=0, best=1e9;
@@ -138,18 +149,27 @@
       if(d<best){best=d; nearest=i;}
     }
     dragging=nearest;
+  }, {passive:true});
+
+  canvas.addEventListener('pointerup', e=>{
+    if(dragging!=null){
+      dragging=null;
+      canvas.releasePointerCapture?.(e.pointerId);
+      canvas.style.cursor='grab';
+      rebuildCache();
+    }
   });
-  window.addEventListener('mouseup',()=>{
-    if(dragging!=null){ dragging=null; canvas.style.cursor='grab'; rebuildCache(); }
-  });
-  window.addEventListener('mousemove',e=>{
-    if(dragging==null)return;
+
+  canvas.addEventListener('pointermove', e=>{
+    if(dragging==null) return;
+    // 모바일에서 스크롤 방지
+    e.preventDefault();
     sources[dragging]=canvasToNorm(e);
     if(!rebuildScheduled){
       rebuildScheduled=true;
       requestAnimationFrame(()=>{ rebuildCache(); rebuildScheduled=false; });
     }
-  });
+  }, {passive:false});
 
   // UI 이벤트
   $λ.addEventListener('input',e=>{lambda=+e.target.value;$λOut.textContent=lambda;});
@@ -182,9 +202,10 @@
 
     // 파원 점
     ctx.fillStyle='#fff';
+    const rDot = 3*(window.devicePixelRatio||1);
     for(let si=0;si<numSources;si++){
       ctx.beginPath();
-      ctx.arc(sources[si].x*W, sources[si].y*H, 3*(window.devicePixelRatio||1), 0, Math.PI*2);
+      ctx.arc(sources[si].x*W, sources[si].y*H, rDot, 0, Math.PI*2);
       ctx.fill();
     }
     requestAnimationFrame(render);
@@ -192,7 +213,7 @@
 
   resizeCanvasToContainer();
   requestAnimationFrame(render);
-  window.addEventListener('resize',()=>resizeCanvasToContainer());
+  window.addEventListener('resize',resizeCanvasToContainer);
 })();
 </script>
 </body>
