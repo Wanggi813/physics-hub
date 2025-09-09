@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>옴의 법칙 — 배지: R₁/R_eq/I 표시</title>
+<style>
+  html, body { height: 100%; margin: 0; background: #0b1020; }
+  #cv { display:block; width:100vw; height:100vh; }
+  .hud{
+    position: fixed; left: 16px; top: 16px; z-index: 10;
+    background: rgba(15,23,42,.82); border: 1px solid rgba(148,163,184,.35);
+    border-radius: 14px; padding: 12px 14px; color: #e8f1ff;
+    font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Pretendard, "Noto Sans KR", sans-serif;
+    backdrop-filter: blur(8px);
+  }
+  .row{ display:grid; grid-template-columns: 120px 1fr auto; gap: 10px; align-items:center; margin: 6px 0; }
+  .row label{ color:#bcd6ff; font-weight:600 }
+  .row input[type=range]{ width: 260px }
+  .val{ font-variant-numeric: tabular-nums; min-width: 84px; text-align:right; color:#9dd1ff }
+  .mini{ font-size: 14px; color:#9db3d1; margin-top:6px }
+</style>
+</head>
+<body>
+<!-- 좌상단 HUD (A, L, Ns, Np) -->
+<div class="hud">
+  <div class="row">
+    <label for="A">단면적 A (㎟)</label>
+    <input id="A" type="range" min="0.5" max="10" step="0.1" value="3.0" />
+    <div class="val"><span id="Aval">3.0</span></div>
+  </div>
+  <div class="row">
+    <label for="L">길이 L (㎝)</label>
+    <input id="L" type="range" min="1" max="20" step="0.5" value="8.0" />
+    <div class="val"><span id="Lval">8.0</span></div>
+  </div>
+  <div class="row">
+    <label for="Ns">직렬 개수 Ns</label>
+    <input id="Ns" type="range" min="1" max="5" step="1" value="1" />
+    <div class="val"><span id="Nsval">1</span></div>
+  </div>
+  <div class="row">
+    <label for="Np">병렬 개수 Np</label>
+    <input id="Np" type="range" min="1" max="5" step="1" value="1" />
+    <div class="val"><span id="Npval">1</span></div>
+  </div>
+  <div class="mini">v = v<sub>base</sub> × ( I / I<sub>0</sub> ),  V=6V,  ρ=1.1×10⁻⁶ Ω·m</div>
+</div>
+
+<canvas id="cv"></canvas>
+
+<script>
+(function(){
+  const canvas = document.getElementById('cv');
+  const ctx = canvas.getContext('2d');
+
+  // HUD refs
+  const ASlider  = document.getElementById('A');
+  const LSlider  = document.getElementById('L');
+  const NsSlider = document.getElementById('Ns');
+  const NpSlider = document.getElementById('Np');
+  const Aval  = document.getElementById('Aval');
+  const Lval  = document.getElementById('Lval');
+  const Nsval = document.getElementById('Nsval');
+  const Npval = document.getElementById('Npval');
+
+  // Colors
+  const COLOR_BG   = '#0b1020';
+  const COLOR_WIRE = '#cfe6ff';
+  const COLOR_SYM  = '#e8f1ff';
+  const COLOR_ARROW= '#22c55e';
+  const COLOR_E    = '#66ccff';
+
+  // Physics
+  const Vfixed = 6.0;      // Volt
+  const rho    = 1.1e-6;   // Ω·m
+
+  // Layout (central 1/4 window box)
+  let left, right, top_, bottom, midX, midY, W, H;
+
+  // Electron routes per branch (persist)
+  let groups = []; // [{segs:[...], len, particles:[{s}]}]
+  const TOTAL_E = 160;
+  const electronRadius = 6;
+
+  // Speed baseline
+  let I0 = 1;
+  let v_base = 120;
+
+  // I–t graph buffer
+  const CAP_T = 360;
+  const iBuf = new Float32Array(CAP_T);
+  let iIdx = 0;
+
+  let lastKey = '';
+
+  // utils
+  const norm = (v, vmin, vmax)=> (v - vmin) / (vmax - vmin);
+  function formatSI(x, unit=''){
+    const ax = Math.abs(x);
+    if(ax>=1e9)  return (x/1e9).toFixed(2)+' G'+unit;
+    if(ax>=1e6)  return (x/1e6).toFixed(2)+' M'+unit;
+    if(ax>=1e3)  return (x/1e3).toFixed(2)+' k'+unit;
+    if(ax>=1)    return x.toFixed(2)+' '+unit;
+    if(ax>=1e-3) return (x*1e3).toFixed(2)+' m'+unit;
+    if(ax>=1e-6) return (x*1e6).toFixed(2)+' µ'+unit;
+    return x.toExponential(2)+' '+unit;
+  }
+
+  // physics helpers
+  function calcR1(A_mm2, L_cm){
+    const A = A_mm2 * 1e-6; // m^2
+    const L = L_cm  * 0.01; // m
+    return rho * (L / Math.max(1e-12, A)); // Ω
+  }
+  function calcRequiv(R1, Ns, Np){
+    const Rbranch = Ns * R1;
+    return Rbranch / Math.max(1, Np);
+  }
+
+  // DPR & layout
+  function resizeCanvas(){
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const w = Math.floor(window.innerWidth);
+    const h = Math.floor(window.innerHeight);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    layout();
+    drawStatic();
+    rebuildRoutes();
+  }
+  window.addEventListener('resize', resizeCanvas, {passive:true});
+
+  function layout(){
+    W = window.innerWidth; H = window.innerHeight;
+    left = W*0.25; right = W*0.75; top_ = H*0.25; bottom = H*0.75;
+    midX = (left+right)/2; midY = (top_+bottom)/2;
+    v_base = Math.min(260, Math.max(90, Math.min(W,H)*0.22));
+  }
+
+  // primitives
+  function drawBatteryCenter(x, y){
+    ctx.save(); ctx.translate(x, y);
+    ctx.strokeStyle = COLOR_SYM; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-12, -36); ctx.lineTo(-12, 36); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo( 12, -20); ctx.lineTo( 12, 20); ctx.stroke();
+    ctx.fillStyle = '#9db3d1'; ctx.font = 'bold 22px system-ui, sans-serif';
+    ctx.fillText('+', -26, -44); ctx.fillText('−',  18, -26);
+    ctx.restore();
+  }
+  // symmetric ANSI zigzag (3 up + 3 down)
+  function drawResistorZigZagSym(x1, y, x2, Aheight){
+    const Nseg = 12, amp = Math.max(6, Aheight*0.5), pad=10;
+    const xa=x1+pad, xb=x2-pad, span=Math.max(20, xb-xa), step=span/Nseg;
+    ctx.save(); ctx.strokeStyle=COLOR_SYM; ctx.lineWidth=3; ctx.lineCap='round';
+    // leads
+    ctx.beginPath(); ctx.moveTo(x1,y); ctx.lineTo(xa,y); ctx.moveTo(xb,y); ctx.lineTo(x2,y); ctx.stroke();
+    // zigzag
+    ctx.beginPath();
+    for(let m=0;m<=Nseg;m++){
+      const x=xa+m*step; let dy=0;
+      if(m%2===1) dy=(m%4===1)?-amp:+amp;
+      if(m===0) ctx.moveTo(x,y+dy); else ctx.lineTo(x,y+dy);
+    }
+    ctx.stroke(); ctx.restore();
+  }
+  function drawNode(x,y){ ctx.fillStyle=COLOR_WIRE; ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill(); }
+  function arrow(x,y,dx,dy,L){
+    ctx.beginPath(); ctx.moveTo(x-dx*L/2, y-dy*L/2); ctx.lineTo(x+dx*L/2, y+dy*L/2); ctx.stroke();
+    const ax=x+dx*L/2, ay=y+dy*L/2;
+    ctx.beginPath();
+    if(dx>0){ctx.moveTo(ax,ay);ctx.lineTo(ax-9,ay-6);ctx.lineTo(ax-9,ay+6);}
+    else if(dx<0){ctx.moveTo(ax,ay);ctx.lineTo(ax+9,ay-6);ctx.lineTo(ax+9,ay+6);}
+    else if(dy>0){ctx.moveTo(ax,ay);ctx.lineTo(ax-6,ay-9);ctx.lineTo(ax+6,ay-9);}
+    else{ctx.moveTo(ax,ay);ctx.lineTo(ax-6,ay+9);ctx.lineTo(ax+6,ay+9);}
+    ctx.closePath(); ctx.fill();
+  }
+  function drawFrameWiresAndLoopArrows(){
+    ctx.strokeStyle=COLOR_WIRE; ctx.lineWidth=5; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(left,top_); ctx.lineTo(right,top_); ctx.lineTo(right,bottom); ctx.lineTo(left,bottom); ctx.closePath(); ctx.stroke();
+    // loop arrows
+    ctx.save(); ctx.strokeStyle=COLOR_ARROW; ctx.fillStyle=COLOR_ARROW; ctx.lineWidth=3;
+    const n=4,len=30;
+    for(let k=0;k<n;k++){const t=(k+0.5)/n; arrow(left+t*(right-left), top_, +1,0,len);}
+    for(let k=0;k<n;k++){const t=(k+0.5)/n; arrow(right, top_+t*(bottom-top_),0,+1,len);}
+    for(let k=0;k<n;k++){const t=(k+0.5)/n; arrow(right-t*(right-left), bottom, -1,0,len);}
+    for(let k=0;k<n;k++){const t=(k+0.5)/n; arrow(left, bottom-t*(bottom-top_),0,-1,len);}
+    ctx.restore();
+  }
+
+  // network geometry (top row fixed; extra rows below)
+  function computeNetworkGeometry(A_mm2, L_cm, Ns, Np){
+    const span=right-left, wMin=Math.max(80,span*0.12), wMax=Math.min(0.6*span,260), hMin=26, hMax=80;
+    const wTarget = wMin + (wMax-wMin)*norm(L_cm,+LSlider.min,+LSlider.max);
+    const Aheight = hMin + (hMax-hMin)*norm(A_mm2,+ASlider.min,+ASlider.max);
+    const busX_L=left, busX_R=right, leadOuter=40, gapBodies=24;
+    const xStart=busX_L+leadOuter, xEnd=busX_R-leadOuter, avail=xEnd-xStart;
+    const wBody=Math.max(60, Math.min(wTarget, (avail-gapBodies*(Ns-1))/Math.max(1,Ns)));
+    const rowGap = Aheight + 16;
+    const rows = [top_];
+    for(let i=1;i<Math.max(1,Np);i++) rows.push(top_ + 24 + i*rowGap);
+    const bandBot = rows[rows.length-1] + (Aheight/2) + 16;
+    return {Aheight,wBody,gapBodies,xStart,xEnd,rows,busX_L,busX_R,bandBot};
+  }
+
+  function drawTopNetwork(geom, Ns, Np){
+    const {Aheight,wBody,gapBodies,xStart,xEnd,rows,busX_L,busX_R,bandBot} = geom;
+    if(Np>1){
+      ctx.strokeStyle=COLOR_WIRE; ctx.lineWidth=5; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(busX_L,top_); ctx.lineTo(busX_L,bandBot); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(busX_R,top_); ctx.lineTo(busX_R,bandBot); ctx.stroke();
+    }
+    function seriesCenters(Ns){
+      const centers=[], totalW = Ns*wBody + (Ns-1)*gapBodies;
+      let xLeft = midX - totalW/2 + wBody/2;
+      for(let i=0;i<Ns;i++) centers.push(xLeft + i*(wBody+gapBodies));
+      return centers;
+    }
+    ctx.strokeStyle=COLOR_WIRE; ctx.lineWidth=5; ctx.lineCap='round';
+    rows.forEach(yRow=>{
+      const centers=seriesCenters(Ns);
+      if(centers.length){
+        const firstLeftEdge=centers[0]-wBody/2;
+        ctx.beginPath(); ctx.moveTo(busX_L,yRow); ctx.lineTo(firstLeftEdge,yRow); ctx.stroke();
+      }
+      for(let i=0;i<centers.length;i++){
+        const cx=centers[i], x1=cx-wBody/2, x2=cx+wBody/2;
+        drawResistorZigZagSym(x1,yRow,x2,Aheight);
+        if(i<centers.length-1){
+          const nx=centers[i+1]-wBody/2;
+          ctx.beginPath(); ctx.moveTo(x2,yRow); ctx.lineTo(nx,yRow); ctx.stroke();
+        }
+      }
+      if(centers.length){
+        const lastRightEdge=centers[centers.length-1]+wBody/2;
+        ctx.beginPath(); ctx.moveTo(lastRightEdge,yRow); ctx.lineTo(busX_R,yRow); ctx.stroke();
+      }
+    });
+    const badgeY = rows[0] - Aheight/2 - 10;
+    return { badgeX: midX, badgeY, rows, xStart, xEnd };
+  }
+
+  // branch current arrows (scaled ~1/Np)
+  function drawBranchCurrentArrows(rows, xStart, xEnd, Np){
+    if(Np<=1) return;
+    ctx.save(); ctx.strokeStyle=COLOR_ARROW; ctx.fillStyle=COLOR_ARROW; ctx.lineWidth=3;
+    const baseLen=28, len=Math.max(10, baseLen/Np), n=3;
+    rows.forEach(y=>{
+      for(let k=0;k<n;k++){
+        const t=(k+1)/(n+1), x=xStart + t*(xEnd-xStart);
+        arrow(x,y,+1,0,len);
+      }
+    });
+    ctx.restore();
+  }
+
+  // === NEW: Badge shows R values (R1, Req) and I ===
+  function drawBadgeResistance(R1, Req, Iamp, cx, cy){
+    const tR1 = `R₁≈${formatSI(R1,'Ω')}`;
+    const tReq= `R_eq≈${formatSI(Req,'Ω')}`;
+    const tI  = `I≈${formatSI(Iamp,'A')}`;
+    const parts=[tR1,tReq,tI];
+    ctx.font='bold 22px system-ui, sans-serif';
+    const padX=16, padY=10, r=14, gap='   ';
+    const text=parts.join(gap), tw=ctx.measureText(text).width, th=28;
+    const bx=cx - tw/2 - padX, by=cy - 60 - th - padY, bw=tw + padX*2, bh=th + padY*2;
+    // panel
+    ctx.save(); ctx.beginPath();
+    ctx.moveTo(bx+r,by); ctx.lineTo(bx+bw-r,by); ctx.quadraticCurveTo(bx+bw,by,bx+bw,by+r);
+    ctx.lineTo(bx+bw,by+bh-r); ctx.quadraticCurveTo(bx+bw,by+bh,bx+bw-r,by+bh);
+    ctx.lineTo(bx+r,by+bh); ctx.quadraticCurveTo(bx,by+bh,bx,by+bh-r);
+    ctx.lineTo(bx,by+r); ctx.quadraticCurveTo(bx,by,bx+r,by);
+    ctx.fillStyle='rgba(15,23,42,.92)'; ctx.fill();
+    ctx.lineWidth=1.5; ctx.strokeStyle='rgba(148,163,184,.55)'; ctx.stroke();
+    ctx.restore();
+    // labels
+    const colors=['#ffb7b7','#8ae6ff','#ffe68a']; // R1, Req, I
+    let x=bx+padX, y=by+bh/2; ctx.textBaseline='middle';
+    parts.forEach((t,i)=>{ ctx.fillStyle=colors[i%colors.length]; ctx.fillText(t,x,y); x+=ctx.measureText(t+gap).width; });
+  }
+
+  // I–t panel (unchanged)
+  function drawITGraphPanel(Iamp){
+    const pad=16, gw=Math.min(420, Math.max(300, W*0.28)), gh=180, gx=pad, gy=H-gh-pad, r=14;
+    // panel
+    ctx.save(); ctx.beginPath();
+    ctx.moveTo(gx+r,gy); ctx.lineTo(gx+gw-r,gy); ctx.quadraticCurveTo(gx+gw,gy,gx+gw,gy+r);
+    ctx.lineTo(gx+gw,gy+gh-r); ctx.quadraticCurveTo(gx+gw,gy+gh,gx+gw-r,gy+gh);
+    ctx.lineTo(gx+r,gy+gh); ctx.quadraticCurveTo(gx,gy+gh,gx,gy+gh-r);
+    ctx.lineTo(gx,gy+r); ctx.quadraticCurveTo(gx,gy,gx+r,gy);
+    ctx.fillStyle='rgba(2,6,23,0.90)'; ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle='rgba(148,163,184,0.45)'; ctx.stroke();
+    ctx.restore();
+    // clip & grid
+    ctx.save(); ctx.beginPath();
+    ctx.moveTo(gx+r,gy); ctx.lineTo(gx+gw-r,gy); ctx.quadraticCurveTo(gx+gw,gy,gx+gw,gy+r);
+    ctx.lineTo(gx+gw,gy+gh-r); ctx.quadraticCurveTo(gx+gw,gy+gh,gx+gw-r,gy+gh);
+    ctx.lineTo(gx+r,gy+gh); ctx.quadraticCurveTo(gx,gy+gh,gx,gy+gh-r);
+    ctx.lineTo(gx,gy+r); ctx.quadraticCurveTo(gx,gy,gx+r,gy); ctx.clip();
+    ctx.strokeStyle='rgba(148,163,184,0.25)'; ctx.lineWidth=1;
+    for(let x=gx+40;x<gx+gw;x+=40){ ctx.beginPath(); ctx.moveTo(x,gy); ctx.lineTo(x,gy+gh); ctx.stroke(); }
+    for(let y=gy+30;y<gy+gh;y+=30){ ctx.beginPath(); ctx.moveTo(gx,y); ctx.lineTo(gx+gw,y); ctx.stroke(); }
+    ctx.restore();
+    ctx.fillStyle='#cfe6ff'; ctx.font='bold 16px system-ui, sans-serif'; ctx.fillText('I–t (전류–시간)', gx+12, gy+22);
+    // autoscale
+    let maxAbs=0; for(let k=0;k<CAP_T;k++){ const a=Math.abs(iBuf[k]); if(a>maxAbs) maxAbs=a; }
+    maxAbs=Math.max(maxAbs, Math.abs(Iamp), 1e-9); const ymax=maxAbs;
+    const plotL=12, plotR=14, plotT=30, plotB=12, px0=gx+plotL, py0=gy+plotT, pw=gw-(plotL+plotR), ph=gh-(plotT+plotB), mid=py0+ph/2;
+    ctx.strokeStyle='rgba(226,232,240,0.6)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(px0,mid); ctx.lineTo(px0+pw,mid); ctx.stroke();
+    ctx.strokeStyle='#7bd4ff'; ctx.lineWidth=2; ctx.beginPath();
+    for(let i=0;i<CAP_T;i++){
+      const j=(iIdx+i)%CAP_T, v=iBuf[j], x=px0 + i*(pw/(CAP_T-1)), y=mid - (v/(ymax+1e-12))*(ph*0.48);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    ctx.fillStyle='#9dd1ff'; ctx.font='12px system-ui, sans-serif';
+    ctx.fillText(`+${formatSI(ymax,'A')}`, px0+6, py0+12);
+    ctx.fillText(`0`, px0+6, mid-6);
+    ctx.fillText(`-${formatSI(ymax,'A')}`, px0+6, py0+ph-6);
+  }
+
+  // electron routes (per branch)
+  function buildElectronRoutes(rows, xStart, xEnd, Np){
+    groups=[]; const nb=Math.max(1,Np);
+    const base=Math.floor(TOTAL_E/nb); let rem=TOTAL_E - base*nb;
+    for(let bi=0; bi<nb; bi++){
+      const y=rows[bi] ?? top_; const segs=[];
+      function pushSeg(x1,y1,x2,y2){ const dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy); if(len<=0) return; segs.push({x1,y1,x2,y2,len,dirX:dx/len,dirY:dy/len}); }
+      // CCW loop with this branch
+      pushSeg(left, top_, left, bottom);
+      pushSeg(left, bottom, right, bottom);
+      pushSeg(right, bottom, right, top_);
+      pushSeg(right, top_, right, y);
+      pushSeg(xEnd, y, xStart, y);
+      pushSeg(left, y, left, top_);
+      const total=segs.reduce((a,s)=>a+s.len,0);
+      const nP = base + (rem>0?(rem--,1):0);
+      const particles=[]; for(let i=0;i<nP;i++) particles.push({s:(i/nP)*total});
+      groups.push({segs, len:total, particles});
+    }
+  }
+  function posOnRoute(g,s){ let acc=0; for(const seg of g.segs){ if(s<=acc+seg.len){ const t=(s-acc)/seg.len; return {x:seg.x1+seg.dirX*seg.len*t, y:seg.y1+seg.dirY*seg.len*t}; } acc+=seg.len; } const last=g.segs[g.segs.length-1]; return {x:last.x2,y:last.y2}; }
+  function advanceAndDrawElectrons(ds){
+    ctx.fillStyle=COLOR_E;
+    for(const g of groups){
+      for(const p of g.particles){
+        p.s += ds; while(p.s>=g.len) p.s -= g.len;
+        const {x,y}=posOnRoute(g,p.s);
+        ctx.beginPath(); ctx.arc(x,y,electronRadius,0,Math.PI*2); ctx.fill();
+      }
+    }
+  }
+
+  // static draw
+  function drawStatic(){
+    ctx.clearRect(0,0,W,H); ctx.fillStyle=COLOR_BG; ctx.fillRect(0,0,W,H);
+    drawFrameWiresAndLoopArrows(); drawBatteryCenter(midX, bottom);
+    ctx.fillStyle=COLOR_WIRE;
+    [[left,top_],[right,top_],[right,bottom],[left,bottom]].forEach(([x,y])=>{ ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill(); });
+  }
+
+  // anim
+  let tPrev=performance.now()/1000;
+  function updateBaseline(){
+    const A_mm2=+ASlider.value, L_cm=+LSlider.value, Ns=+NsSlider.value, Np=+NpSlider.value;
+    const R1=calcR1(A_mm2,L_cm), Req=calcRequiv(R1,Ns,Np); I0 = Vfixed/Req; if(!isFinite(I0)||I0<=0) I0=1;
+  }
+  function rebuildRoutes(){
+    const A_mm2=+ASlider.value, L_cm=+LSlider.value, Ns=+NsSlider.value, Np=+NpSlider.value;
+    const geom=computeNetworkGeometry(A_mm2,L_cm,Ns,Np);
+    buildElectronRoutes(geom.rows, geom.xStart, geom.xEnd, Np);
+    lastKey = JSON.stringify({A:A_mm2,L:L_cm,Ns,Np,W,H});
+  }
+
+  function frame(){
+    const tNow=performance.now()/1000, dt=Math.min(0.05,tNow-tPrev); tPrev=tNow;
+    drawStatic();
+
+    const A_mm2=+ASlider.value, L_cm=+LSlider.value, Ns=+NsSlider.value, Np=+NpSlider.value;
+    const geom=computeNetworkGeometry(A_mm2,L_cm,Ns,Np);
+    const { badgeX, badgeY, rows, xStart, xEnd } = drawTopNetwork(geom, Ns, Np);
+
+    const R1=calcR1(A_mm2,L_cm), Req=calcRequiv(R1,Ns,Np), Iamp=Vfixed/Req;
+
+    drawBranchCurrentArrows(rows, xStart, xEnd, Np);
+    // NEW: Resistance badge
+    drawBadgeResistance(R1, Req, Iamp, badgeX, badgeY);
+
+    // graph buffer
+    iBuf[iIdx]=Iamp; iIdx=(iIdx+1)%CAP_T;
+
+    // electrons
+    const v = v_base * Math.max(0.05, Iamp / I0);
+    const key = JSON.stringify({A:A_mm2,L:L_cm,Ns,Np,W,H});
+    if(key !== lastKey){ buildElectronRoutes(rows, xStart, xEnd, Np); lastKey=key; }
+    advanceAndDrawElectrons(v*dt);
+
+    drawITGraphPanel(Iamp);
+    requestAnimationFrame(frame);
+  }
+
+  // events
+  function onSlider(){
+    Aval.textContent=(+ASlider.value).toFixed(1);
+    Lval.textContent=(+LSlider.value).toFixed(1);
+    Nsval.textContent=(+NsSlider.value).toFixed(0);
+    Npval.textContent=(+NpSlider.value).toFixed(0);
+    rebuildRoutes(); updateBaseline();
+  }
+  [ASlider,LSlider,NsSlider,NpSlider].forEach(el=>el.addEventListener('input', onSlider));
+
+  // init
+  onSlider(); resizeCanvas(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

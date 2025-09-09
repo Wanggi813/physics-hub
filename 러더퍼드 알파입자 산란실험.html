@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>러더퍼드 실험 시뮬레이션</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      background-color: #f0f8ff;
+    }
+    #info {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 320px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <h3>러더퍼드 실험</h3>
+    <ul>
+      <li>① 대부분은 그냥 통과 ☑️</li>
+      <li>② 일부는 튕겨나감 ❗</li>
+      <li>③ 소수는 반사됨 ❗❗❗</li>
+    </ul>
+    <p>※ 알파 입자들이 금 원자핵을 어떻게 통과/반사하는지 확인해보세요!</p>
+  </div>
+
+  <script>
+    let particles = [];
+    let nuclei = [];
+
+    function setup() {
+      createCanvas(windowWidth, windowHeight);
+
+      // 원자핵 4개를 화면 안에 균일하게 배치 (너무 벌어지지 않도록 조정)
+      let count = 4;
+      let spacingY = height / 4; // 고정된 화면 내 간격 유지
+      let centerX = width / 2;
+      let offsetExtra = 80;
+      for (let i = 0; i < count; i++) {
+        let offsetX = (i % 2 === 0) ? -offsetExtra : offsetExtra;
+        let y = spacingY * (i + 0.6); // 1~4까지 균일 분포
+        let x = centerX + offsetX;
+        nuclei.push(createVector(x, y));
+      }
+    }
+
+    function draw() {
+      background('#f0f8ff');
+
+      // 핵 그리기
+      noStroke();
+      fill(255, 100, 100);
+      for (let n of nuclei) {
+        ellipse(n.x, n.y, 15, 15);
+      }
+
+      // 입자 추가
+      if (frameCount % 5 === 0) {
+        let y = random(height);
+        particles.push({
+          pos: createVector(0, y),
+          vel: createVector(4, 0),
+          path: []
+        });
+      }
+
+      // 입자 움직이기
+      for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+
+        // 여러 핵에 대한 반발력 적용
+        for (let n of nuclei) {
+          let d = dist(p.pos.x, p.pos.y, n.x, n.y);
+
+          // 반발 반경: 80
+          if (d < 100) {
+            let force = p5.Vector.sub(p.pos, n);
+            force.setMag(100 / (d * d));
+            p.vel.add(force);
+          }
+        }
+
+        p.pos.add(p.vel);
+        p.path.push(p.pos.copy());
+
+        // 입자 크기 키우기
+        fill(0);
+        noStroke();
+        ellipse(p.pos.x, p.pos.y, 4, 4);
+
+        // 경로 그리기
+        noFill();
+        stroke(0, 100);
+        beginShape();
+        for (let v of p.path) {
+          vertex(v.x, v.y);
+        }
+        endShape();
+
+        // 화면 벗어나면 제거
+        if (p.pos.x > width || p.pos.y > height || p.pos.y < 0) {
+          particles.splice(i, 1);
+        }
+      }
+    }
+
+    function windowResized() {
+      resizeCanvas(windowWidth, windowHeight);
+      nuclei = [];
+      setup();
+    }
+  </script>
+</body>
+</html>

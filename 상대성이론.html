@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>특수상대성 — 길이수축/상대속도/불꽃</title>
+<style>
+  html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:system-ui,Segoe UI,Arial,Helvetica,sans-serif}
+  #scene{position:fixed;inset:0}
+  .ui{position:fixed;top:16px;left:16px;z-index:10;color:#e6ecff;display:flex;flex-direction:column;gap:10px}
+  .panel{background:rgba(8,12,28,.8);border:1px solid #1f2e52;border-radius:14px;padding:10px 12px;min-width:340px;backdrop-filter:blur(8px)}
+  .row{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center}
+  .label{font-size:12px;color:#9fb0d1}.value{font-family:ui-monospace,Menlo,Consolas,monospace}
+  input[type=range]{width:100%}.btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .btn{background:#0f1c3b;border:1px solid #223a6b;color:#e6ecff;border-radius:10px;padding:6px 10px;font-size:12px;cursor:pointer}
+  .btn:hover{background:#13224a}
+  .chipbar{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .chip{font:12px ui-monospace,Menlo,Consolas,monospace;background:#0c1636;border:1px solid #223565;color:#dce7ff;padding:5px 8px;border-radius:10px}
+  .rocket{position:fixed;left:40px;top:50%;transform:translateY(-50%);width:180px;z-index:5;pointer-events:none;filter:drop-shadow(0 8px 16px rgba(255,120,60,.25))}
+</style>
+</head>
+<body>
+  <div id="scene"></div>
+
+  <!-- 관찰자 우주선(고정 실루엣) -->
+  <svg class="rocket" viewBox="0 0 320 200" aria-hidden="true">
+    <defs>
+      <linearGradient id="flame" x1="0" x2="1"><stop offset="0" stop-color="#fff59d"/><stop offset="0.45" stop-color="#ffb74d"/><stop offset="1" stop-color="#ff5252"/></linearGradient>
+      <radialGradient id="glass" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#cfe9ff"/><stop offset="1" stop-color="#5aa0ff"/></radialGradient>
+      <linearGradient id="hull" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef2f9"/><stop offset="1" stop-color="#d6dce8"/></linearGradient>
+    </defs>
+    <g transform="translate(0,6)">
+      <path d="M16 100 L72 78 L72 122 Z" fill="url(#flame)" opacity="0.95">
+        <animate attributeName="d" dur="0.5s" repeatCount="indefinite"
+          values="M16 100 L72 78 L72 122 Z; M10 100 L72 64 L72 136 Z; M16 100 L72 78 L72 122 Z"/>
+      </path>
+    </g>
+    <g transform="translate(40,12)">
+      <path d="M50,50 Q180,20 270,80 Q290,100 270,120 Q180,180 50,150 Q30,140 30,100 Q30,60 50,50 Z" fill="url(#hull)" stroke="#cfd6e6" stroke-width="4"/>
+      <path d="M70,80 Q90,100 70,120 Q60,110 60,90 Z" fill="#d8dfea" stroke="#cfd6e6" stroke-width="3"/>
+      <path d="M210,80 Q230,100 210,120 Q200,110 200,90 Z" fill="#d8dfea" stroke="#cfd6e6" stroke-width="3"/>
+      <circle cx="160" cy="100" r="24" fill="url(#glass)" stroke="#1c3d7a" stroke-width="6"/>
+      <circle cx="168" cy="92" r="9" fill="#eaf6ff" opacity="0.9"/>
+    </g>
+  </svg>
+
+  <!-- UI -->
+  <div class="ui">
+    <div class="panel">
+      <div class="row"><div class="label">오브젝트</div>
+        <select id="objType"><option value="moon" selected>보름달</option><option value="ship">우주선</option></select>
+      </div>
+
+      <div class="row"><div class="label">관측자 속도 v₁</div><div class="value" id="valV1">0.00</div></div>
+      <input id="speedObs" type="range" min="0" max="0.99" step="0.01" value="0.00"/>
+      <div class="btns">
+        <button class="btn" data-b1="0">0</button><button class="btn" data-b1="0.3">0.3c</button>
+        <button class="btn" data-b1="0.6">0.6c</button><button class="btn" data-b1="0.9">0.9c</button><button class="btn" data-b1="0.99">0.99c</button>
+      </div>
+
+      <div class="row"><div class="label">상대 오브젝트 속도 v₂ (−c~+c)</div><div class="value" id="valV2">0.00</div></div>
+      <input id="speedObj" type="range" min="-0.99" max="0.99" step="0.01" value="0.00"/>
+
+      <div class="chipbar">
+        <div class="chip">v_rel = <span id="valVrel">-</span></div>
+        <div class="chip">γ_rel = <span id="valGamma">-</span></div>
+        <div class="chip">L/L₀ = <span id="valRatio">-</span></div>
+        <div class="chip">수축축: x,z</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script>
+  (function(){
+    const elScene=document.getElementById('scene');
+    const renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setPixelRatio(Math.min(2,devicePixelRatio)); renderer.setSize(innerWidth,innerHeight); elScene.appendChild(renderer.domElement);
+    const scene=new THREE.Scene();
+    const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.1,4000); camera.position.set(0,0,520);
+
+    const $=s=>document.querySelector(s);
+    const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+    const gammaOf=v=>1/Math.sqrt(1-Math.min(v*v,0.999999));
+    const OBS_W_PX=180, OBSPECT=200/320;
+
+    const worldUnitsPerPixel=()=> (Math.tan((camera.fov*Math.PI/180)/2)*camera.position.z*2)/innerHeight;
+    // 우주선 텍스처 폭은 320px 기준
+    const SHIP_TEX_W_PX = 320;
+    // 좌/우 꼬리쪽 투명여백(px) — 필요시 미세조정(+/- 2~4px)
+    const TAIL_INSET_LEFT_PX  = 10; // 오른쪽을 보는 상태에서 '꼬리=왼쪽' 쪽 여백
+    const TAIL_INSET_RIGHT_PX = 50; // 오른쪽을 보는 상태에서 '코=오른쪽', '꼬리=오른쪽' 쪽 여백
+const REAL_LEN_MOON = 1737_000; // km → m 단위 = 1,737,000 m
+const REAL_LEN_SHIP = 100;      // 100 m
+    
+const TAIL_SNUG_PX = 4;         // 살짝 겹치게(밀착감) 하기 위한 추가 보정
+
+    // 별 + 꼬리
+    const N=900, spreadX=2200, spreadY=1200, spreadZ=2500;
+    const starPos=new Float32Array(N*3); for(let i=0;i<N;i++){ starPos[3*i]=(Math.random()*2-1)*spreadX; starPos[3*i+1]=(Math.random()*2-1)*spreadY; starPos[3*i+2]=-(Math.random())*spreadZ; }
+    const starGeo=new THREE.BufferGeometry(); starGeo.setAttribute('position',new THREE.BufferAttribute(starPos,3));
+    const stars=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xffffff,size:1.8,depthWrite:false})); scene.add(stars);
+    const tailGeo=new THREE.BufferGeometry(); tailGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(N*6),3));
+    const starTails=new THREE.LineSegments(tailGeo,new THREE.LineBasicMaterial({color:0x88ccff,transparent:true,opacity:0.55})); scene.add(starTails);
+
+    // 이동/수축 그룹
+    const objGroup=new THREE.Group(); scene.add(objGroup);
+
+    // 달
+    const R=130, moonGeo=new THREE.SphereGeometry(R,96,96), moonCv=document.createElement('canvas'); moonCv.width=moonCv.height=1024;
+    (function(ctx){ ctx.fillStyle='#d8dde6'; ctx.fillRect(0,0,1024,1024); for(let i=0;i<500;i++){ const x=Math.random()*1024,y=Math.random()*1024,r=Math.random()*18+4; const g=ctx.createRadialGradient(x,y,1,x,y,r); g.addColorStop(0,'#c7ceda'); g.addColorStop(1,'#9aa3b3'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); }})(moonCv.getContext('2d'));
+    const moonTex=new THREE.CanvasTexture(moonCv); moonTex.colorSpace=THREE.SRGBColorSpace; moonTex.repeat.x=-1; moonTex.offset.x=1;
+    const moonMesh=new THREE.Mesh(moonGeo,new THREE.MeshBasicMaterial({map:moonTex,side:THREE.DoubleSide}));
+
+    // 상대 우주선(관찰자와 동일 실루엣 크기)
+    function shipTexture(h="#9ca3af",w="#6b7280",c1="#4a78a8",c2="#1d3557"){
+      const W=320,H=200,cv=document.createElement('canvas'); cv.width=W; cv.height=H; const c=cv.getContext('2d');
+      c.fillStyle=h; c.strokeStyle="#4b5563"; c.lineWidth=4;
+      c.beginPath(); c.moveTo(50,50); c.quadraticCurveTo(180,20,270,80); c.quadraticCurveTo(290,100,270,120); c.quadraticCurveTo(180,180,50,150); c.quadraticCurveTo(30,140,30,100); c.quadraticCurveTo(30,60,50,50); c.closePath(); c.fill(); c.stroke();
+      c.fillStyle=w; c.strokeStyle="#4b5563"; c.lineWidth=3;
+      c.beginPath(); c.moveTo(70,80); c.quadraticCurveTo(90,100,70,120); c.quadraticCurveTo(60,110,60,90); c.closePath(); c.fill(); c.stroke();
+      c.beginPath(); c.moveTo(210,80); c.quadraticCurveTo(230,100,210,120); c.quadraticCurveTo(200,110,200,90); c.closePath(); c.fill(); c.stroke();
+      const g=c.createRadialGradient(160,100,10,160,100,24); g.addColorStop(0,c1); g.addColorStop(1,c2);
+      c.fillStyle=g; c.strokeStyle='#1e3a5f'; c.lineWidth=6; c.beginPath(); c.arc(160,100,24,0,Math.PI*2); c.fill(); c.stroke();
+      const tex=new THREE.CanvasTexture(cv); tex.colorSpace=THREE.SRGBColorSpace; return tex;
+    }
+    const shipMat=new THREE.MeshBasicMaterial({map:shipTexture(),transparent:true,side:THREE.DoubleSide,depthWrite:false});
+    let shipMesh=new THREE.Mesh(new THREE.PlaneGeometry(1,1),shipMat);
+    function fitShipToObserver(){ const s=worldUnitsPerPixel(), w=OBS_W_PX*s, h=(OBS_W_PX*OBSPECT)*s; shipMesh.geometry.dispose(); shipMesh.geometry=new THREE.PlaneGeometry(w,h); }
+    fitShipToObserver();
+
+    // 불꽃 스프라이트
+    function flameTex(){ const w=128,h=64,cv=document.createElement('canvas'); cv.width=w; cv.height=h; const x=cv.getContext('2d'); const g=x.createLinearGradient(0,0,w,0); g.addColorStop(0,"rgba(255,245,157,.95)"); g.addColorStop(.4,"rgba(255,183,77,.85)"); g.addColorStop(1,"rgba(255,82,82,0)"); x.fillStyle=g; x.beginPath();
+  x.moveTo(w, h/2);   // 오른쪽 가운데 (뾰족)
+  x.lineTo(0, 0);     // 왼쪽 위 (밑동)
+  x.lineTo(0, h);     // 왼쪽 아래 (밑동)
+  x.closePath();
+  x.fill();
+ const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; t.minFilter=t.magFilter=THREE.LinearFilter; return t; }
+    const flame=new THREE.Sprite(new THREE.SpriteMaterial({map:flameTex(),transparent:true,blending:THREE.AdditiveBlending,opacity:.85,depthWrite:false})); flame.visible=false; scene.add(flame);
+
+    // 길이 바 + 라벨
+    const barGroup=new THREE.Group(); scene.add(barGroup);
+    const bar=(color,op,h)=>new THREE.Mesh(new THREE.PlaneGeometry(1,h),new THREE.MeshBasicMaterial({color,transparent:true,opacity:op,depthWrite:false}));
+    const barMax=bar(0x6aa2ff,.35,6), barCur=bar(0x23f0b6,.85,4); barCur.position.y=-.5; barGroup.add(barMax,barCur);
+    const makeLabel=text=>{const size=42,pad=8,cv=document.createElement('canvas'),ctx=cv.getContext('2d'); ctx.font=`${size}px ui-monospace,Menlo,Consolas,monospace`; const w=Math.ceil(ctx.measureText(text).width)+pad*2,h=size+pad*2; cv.width=w; cv.height=h; ctx.font=`${size}px ui-monospace,Menlo,Consolas,monospace`; ctx.shadowColor='rgba(0,0,0,.7)'; ctx.shadowBlur=8; ctx.fillStyle='#eaf2ff'; ctx.textBaseline='top'; ctx.fillText(text,pad,pad); const tex=new THREE.CanvasTexture(cv); tex.colorSpace=THREE.SRGBColorSpace; const spr=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false})); spr.scale.set(w*.5,h*.5,1); spr.renderOrder=6; return spr;};
+    const setLabel=(spr,text)=>{const size=42,pad=8,cv=document.createElement('canvas'),ctx=cv.getContext('2d'); ctx.font=`${size}px ui-monospace,Menlo,Consolas,monospace`; const w=Math.ceil(ctx.measureText(text).width)+pad*2,h=size+pad*2; cv.width=w; cv.height=h; ctx.font=`${size}px ui-monospace,Menlo,Consolas,monospace`; ctx.shadowColor='rgba(0,0,0,.7)'; ctx.shadowBlur=8; ctx.fillStyle='#eaf2ff'; ctx.textBaseline='top'; ctx.fillText(text,pad,pad); const tex=new THREE.CanvasTexture(cv); spr.material.map=tex; spr.material.needsUpdate=true; spr.scale.set(w*.5,h*.5,1);};
+    const labelMax=makeLabel('L₀'), labelCur=makeLabel('L'); barGroup.add(labelMax,labelCur);
+
+    // v_rel HUD(우주선 아래)
+    const vHud=makeLabel('v_rel = 0.000 c'); scene.add(vHud); function updateVHud(){ const y=objGroup.position.y - baseH()/2 - 26; vHud.position.set(objGroup.position.x,y,objGroup.position.z+1.2); vHud.visible=(sel.value==='ship'); }
+
+    // UI
+    const sel=$('#objType'), sObs=$('#speedObs'), sObj=$('#speedObj');
+    const tV1=$('#valV1'), tV2=$('#valV2'), tVrel=$('#valVrel'), tG=$('#valGamma'), tR=$('#valRatio');
+    document.querySelectorAll('.btn[data-b1]').forEach(b=>b.addEventListener('click',()=>{sObs.value=b.dataset.b1;updateAll();}));
+
+    let v1=parseFloat(sObs.value), v2=parseFloat(sObj.value), vRel=0, Lratio=1;
+    const baseLenX=()=> sel.value==='moon' ? 2*R : shipMesh.geometry.parameters.width;
+    const baseH   =()=> sel.value==='moon' ? 2*R : shipMesh.geometry.parameters.height;
+
+    function applySelection(){
+      const moon=sel.value==='moon';
+      if(moon){ sObj.value="0.00"; sObj.disabled=true; if(!moonMesh.parent) objGroup.add(moonMesh); if(shipMesh.parent) objGroup.remove(shipMesh); moonMesh.visible=true; flame.visible=false; vHud.visible=false; }
+      else{ sObj.disabled=false; if(moonMesh.parent) objGroup.remove(moonMesh); if(!shipMesh.parent) objGroup.add(shipMesh); shipMesh.visible=true; vHud.visible=true; }
+    }
+
+    function recalc(){
+      v1=parseFloat(sObs.value);
+      v2=(sel.value==='moon')?0:parseFloat(sObj.value);
+      vRel=clamp((v2-v1)/(1-v2*v1),-0.999999,0.999999);
+      const gamma=gammaOf(vRel); Lratio=1/gamma;
+      tV1.textContent=v1.toFixed(2); tV2.textContent=v2.toFixed(2); tVrel.textContent=vRel.toFixed(3); tG.textContent=gamma.toFixed(3); tR.textContent=Lratio.toFixed(3);
+      setLabel(vHud,`v_rel = ${vRel.toFixed(3)} c`);
+    }
+
+    function applyTransform(){ objGroup.scale.set(Lratio,1,Lratio); }
+
+function updateBars(){
+  // 화면에 그릴 바(bar)는 기존처럼 "화면 픽셀 기반 길이" 사용
+  const L0_screen = baseLenX();
+  const L_screen  = L0_screen * Lratio;
+
+  barMax.scale.set(L0_screen,1,1);
+  barCur.scale.set(L_screen,1,1);
+
+  const y = objGroup.position.y + baseH()/2 + 24;
+  barGroup.position.set(objGroup.position.x,y,objGroup.position.z+1);
+
+  barMax.position.set(0,6,0);
+  barCur.position.set(0,0,0);
+
+  // 실제 길이 값 (라벨에만 사용)
+  const REAL_LEN_MOON = 1737_000; // 1737 km → 1,737,000 m
+  const REAL_LEN_SHIP = 100;      // 100 m
+
+  const realL0 = (sel.value==='moon') ? REAL_LEN_MOON : REAL_LEN_SHIP;
+  const realL  = realL0 * Lratio;
+
+  setLabel(labelMax, `L₀ = ${realL0.toLocaleString()} m`);
+  labelMax.position.set(0,18,0);
+
+  setLabel(labelCur, `L = ${realL.toFixed(1)} m`);
+  labelCur.position.set(0,-14,0);
+}
+    // 방향은 v2, 이동/수축은 v_rel
+function updateShipAndFlame(){
+  if (sel.value !== 'ship' || !shipMesh.visible) { flame.visible = false; return; }
+
+  // 방향은 v2만 보고 결정
+  const movingLeft  = v2 <  0.0005;  // 왼쪽 향함(코가 왼쪽)
+  const movingRight = v2 > -0.0005;  // 오른쪽 향함(코가 오른쪽)
+
+  // 텍스처 좌우 뒤집기 (원본은 오른쪽을 바라봄)
+  if (movingLeft) { shipMat.map.repeat.x = -1; shipMat.map.offset.x = 1; }
+  else            { shipMat.map.repeat.x =  1; shipMat.map.offset.x = 0; }
+  shipMat.needsUpdate = true;
+
+  // 수축 반영 크기
+  const w = shipMesh.geometry.parameters.width * Lratio;
+  const h = shipMesh.geometry.parameters.height;
+
+  // 불꽃 표시: v2(자체 속도)가 있어야
+  flame.visible = Math.abs(v2) > 0.005;
+  if (!flame.visible) return;
+
+// 불꽃 길이/높이
+  const baseLen = 0.22 * w;
+  const speed   = Math.abs(v2);
+  const pulse   = 1 + 0.18 * Math.sin(performance.now()*0.015);
+  const len     = baseLen * (0.3 + 0.9*speed) * pulse;
+  flame.scale.set(len, h*0.45, 1);
+
+ // 텍스처 여백(픽셀)을 월드단위로 환산
+  const insetL = (TAIL_INSET_LEFT_PX  - TAIL_SNUG_PX)  / SHIP_TEX_W_PX * w; // 왼쪽 가장자리→선체까지
+  const insetR = (TAIL_INSET_RIGHT_PX - TAIL_SNUG_PX) / SHIP_TEX_W_PX * w; // 오른쪽 가장자리→선체까지
+
+  // ⬇️ 핵심: "두꺼운 쪽(밑동)이 선체에 붙도록" pivot(center)와 회전 각도를 상황에 맞춰 설정
+  // 우리의 텍스처는 기본(회전=0)일 때 '왼쪽이 밑동(두껍고), 오른쪽이 뾰족'
+  if (movingLeft) {
+    flame.center.set(0, 0.5);
+    flame.material.rotation = 0;
+    const tailX = objGroup.position.x + (w/2) - insetR;
+    flame.position.set(tailX, objGroup.position.y, objGroup.position.z + 0.02);
+  }else{
+    // 배가 오른쪽을 보므로 꼬리는 좌측에 있음 → 불꽃은 '왼쪽으로' 뾰족(회전=π)
+    // 회전 후 밑동은 '오른쪽 가장자리'가 되므로 pivot을 오른쪽에 둠
+   flame.center.set(1, 0.5);       // 오른쪽(밑동)이 position
+    flame.material.rotation = Math.PI; // 왼쪽으로 뾰족
+    const tailX = objGroup.position.x - (w/2) + insetL;
+    flame.position.set(tailX, objGroup.position.y, objGroup.position.z + 0.02);
+  }
+  flame.material.needsUpdate = true;
+}
+
+    function updateAll(){ applySelection(); if(sel.value==='ship') fitShipToObserver(); recalc(); applyTransform(); updateBars(); updateShipAndFlame(); updateVHud(); }
+    sObs.addEventListener('input',updateAll); sObj.addEventListener('input',updateAll); sel.addEventListener('change',updateAll); updateAll();
+
+    addEventListener('resize',()=>{ renderer.setSize(innerWidth,innerHeight); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); fitShipToObserver(); updateBars(); updateVHud(); });
+
+    // 루프
+    let last=performance.now();
+    function tick(now){
+      const dt=Math.min(.05,(now-last)/1000); last=now;
+      const vRelX=-vRel;
+      objGroup.position.x -= vRelX * 180 * dt; // 상대속도로 화면 이동
+
+      const halfW=Math.tan((camera.fov*Math.PI/180)/2)*camera.position.z*camera.aspect, rx=baseLenX()/2*Lratio, m=40;
+      if(objGroup.position.x < -halfW-rx-m) objGroup.position.x= halfW+rx+m;
+      else if(objGroup.position.x> halfW+rx+m) objGroup.position.x=-halfW-rx-m;
+
+      updateBars(); updateShipAndFlame(); updateVHud();
+
+      const pos=stars.geometry.attributes.position.array, tail=starTails.geometry.attributes.position.array, vx=v1*400*dt, tailL=v1*110;
+      for(let i=0;i<N;i++){ const ix=3*i,jx=6*i; pos[ix]-=vx; if(pos[ix]<-spreadX) pos[ix]=spreadX; tail[jx]=pos[ix]; tail[jx+1]=pos[ix+1]; tail[jx+2]=pos[ix+2]; tail[jx+3]=pos[ix]+tailL; tail[jx+4]=pos[ix+1]; tail[jx+5]=pos[ix+2]; }
+      stars.geometry.attributes.position.needsUpdate=true; starTails.geometry.attributes.position.needsUpdate=true;
+
+      renderer.render(scene,camera); requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    objGroup.position.set(300,-20,0);
+  })();
+  </script>
+</body>
+</html>
