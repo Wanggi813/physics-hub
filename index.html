@@ -8,34 +8,24 @@
     :root{
       --bg:#0b1020; --panel:#121a33; --ink:#e9efff; --muted:#a6b3d9; --line:#243166; --accent:#7aa2ff;
       --good:#10b981; --warn:#f59e0b; --bad:#ef4444; --radius:18px; --shadow:0 10px 28px rgba(9,12,28,.28);
+      /* widget colors */
+      --ph-card:#0d1530; --ph-border:#2a3a72; --ph-accent:#4da3ff; --ph-green:#6be675;
     }
     *{box-sizing:border-box}
-    body{
-      margin:0;background:radial-gradient(1200px 800px at 10% -10%, #0e1735 0%, #0b1020 60%);
-      color:var(--ink);font:14px/1.55 ui-sans-serif,system-ui,"Pretendard","Noto Sans KR",Apple SD Gothic Neo,Arial
-    }
-    .wrap{max-width:1200px;margin:0 auto;padding:22px 16px 48px}
-    header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+    body{ margin:0; background:radial-gradient(1200px 800px at 10% -10%, #0e1735 0%, #0b1020 60%);
+      color:var(--ink); font:14px/1.55 ui-sans-serif,system-ui,"Pretendard","Noto Sans KR",Apple SD Gothic Neo,Arial }
+    .wrap{max-width:1200px;margin:0 auto;padding:22px 16px 48px;position:relative}
+    header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;position:relative;z-index:2}
     h1{font-size:24px;margin:0 10px 0 0;display:flex;gap:10px;align-items:center}
-    .pill{display:inline-flex;gap:6px;align-items:center;background:#0d1530;border:1px solid var(--line);color:var(--muted);
-          padding:10px 12px;border-radius:999px}
+    .pill{display:inline-flex;gap:6px;align-items:center;background:#0d1530;border:1px solid var(--line);color:var(--muted);padding:10px 12px;border-radius:999px}
     .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-    input[type="search"], select{
-      background:#0d1530;border:1px solid var(--line);color:var(--ink);padding:10px 12px;border-radius:12px
-    }
+    input[type="search"], select{ background:#0d1530;border:1px solid var(--line);color:var(--ink);padding:10px 12px;border-radius:12px }
     input[type="search"]{width:230px}
     .grid{margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
-    .card{
-      background:linear-gradient(180deg,rgba(18,26,51,.9),rgba(12,18,36,.9));
-      border:1px solid rgba(66,90,150,.45);border-radius:var(--radius);
-      box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column
-    }
-    .thumb{
-      height:120px;display:flex;align-items:center;justify-content:center;background:
-      radial-gradient(900px 400px at 70% -20%, rgba(122,162,255,.35), transparent 50%),
-      linear-gradient(135deg, rgba(122,162,255,.08), rgba(0,0,0,.06));
-      border-bottom:1px solid rgba(120,150,220,.25)
-    }
+    .card{ background:linear-gradient(180deg,rgba(18,26,51,.9),rgba(12,18,36,.9)); border:1px solid rgba(66,90,150,.45); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column }
+    .thumb{ height:120px; display:flex; align-items:center; justify-content:center; background:
+      radial-gradient(900px 400px at 70% -20%, rgba(122,162,255,.35), transparent 50%), linear-gradient(135deg, rgba(122,162,255,.08), rgba(0,0,0,.06));
+      border-bottom:1px solid rgba(120,150,220,.25) }
     .thumb span{font-size:44px;filter:drop-shadow(0 6px 20px rgba(0,0,0,.45))}
     .body{padding:14px 14px 12px;display:flex;flex-direction:column;gap:10px}
     .title{display:flex;justify-content:space-between;gap:8px}
@@ -45,12 +35,27 @@
     .tag{font-size:12px;color:#c7d2fe;background:rgba(122,162,255,.12);border:1px solid rgba(122,162,255,.25);padding:5px 7px;border-radius:999px}
     .meta{display:flex;justify-content:space-between;color:#8aa1e0;font-size:12px}
     .actions{display:flex;gap:8px;margin-top:6px}
-    .actions a{
-      flex:1;text-align:center;text-decoration:none;color:#fff;background:linear-gradient(180deg,#3b82f6,#2f62c7);
-      border:1px solid #2f4fa2;padding:8px 10px;border-radius:10px
-    }
+    .actions a{ flex:1; text-align:center; text-decoration:none; color:#fff; background:linear-gradient(180deg,#3b82f6,#2f62c7); border:1px solid #2f4fa2; padding:8px 10px; border-radius:10px }
     .empty{opacity:.7;border:1px dashed #2d3a66;border-radius:16px;padding:18px;text-align:center}
     .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(120,150,220,.35),transparent);margin:16px 0}
+
+    /* (1) 오늘의 물리 사실 */
+    .ph-card{position:relative;z-index:2;max-width:1200px;margin:16px auto;border-radius:16px; border:1px solid var(--ph-border);
+      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.00)); box-shadow:var(--shadow)}
+    .ph-inner{display:flex;gap:16px;align-items:center;padding:14px 14px}
+    .ph-badge{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;background:#0f1a3d;border:1px solid var(--ph-border)}
+    .ph-title{margin:0 0 2px;font-size:15px;color:#cfe0ff}
+    .ph-fact{font-size:clamp(14px,2.2vw,18px);line-height:1.55}
+    .ph-actions{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+    .ph-btn{appearance:none;border:1px solid var(--ph-border);background:#0e141f;color:var(--ink);padding:8px 12px;border-radius:10px;font-weight:600;cursor:pointer}
+    .ph-btn.primary{border-color:rgba(77,163,255,.5);box-shadow:inset 0 0 0 1px rgba(77,163,255,.25)}
+
+    /* (4) 인터랙티브 중력 배경 */
+    .ph-canvas-wrap{position:relative;margin:18px 0 10px;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+    .ph-canvas-wrap canvas{display:block;width:100%;height:42vh;min-height:320px;max-height:640px}
+    .ph-controls{position:absolute;left:12px;bottom:12px;display:flex;gap:8px;flex-wrap:wrap;background:rgba(9,13,18,.6);border:1px solid var(--line);padding:10px;border-radius:12px;backdrop-filter:blur(6px) saturate(1.2)}
+    .ph-slider{display:flex;align-items:center;gap:8px}
+    .ph-slider input[type="range"]{width:160px}
   </style>
 </head>
 <body>
@@ -82,6 +87,37 @@
 
     <div class="divider"></div>
 
+    <!-- (1) 오늘의 물리 사실 위젯 -->
+    <section class="ph-card" id="fun-fact" aria-live="polite">
+      <div class="ph-inner">
+        <span class="ph-badge">📎</span>
+        <div style="flex:1 1 auto">
+          <h2 class="ph-title">오늘의 물리 사실</h2>
+          <div class="ph-fact" id="fact-text">로딩 중…</div>
+        </div>
+        <div class="ph-actions">
+          <button class="ph-btn primary" id="next-fact">다른 사실</button>
+          <button class="ph-btn" id="copy-fact" title="클립보드로 복사">복사</button>
+          <button class="ph-btn" id="share-fact" title="공유">공유</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- (4) 인터랙티브 중력 배경: 누르고 있는 동안만 끌림 -->
+    <section class="ph-canvas-wrap" aria-label="인터랙티브 중력 배경">
+      <canvas id="gravity-bg"></canvas>
+      <div class="ph-controls">
+        <button class="ph-btn" id="toggle-run">⏸︎ 일시정지</button>
+        <button class="ph-btn" id="toggle-trail">트레일: 켜짐</button>
+        <button class="ph-btn" id="reset">리셋</button>
+        <div class="ph-slider">
+          <label for="particle-count">파티클</label>
+          <input type="range" id="particle-count" min="50" max="800" step="10" value="260" />
+          <span id="particle-label">260</span>
+        </div>
+      </div>
+    </section>
+
     <main id="grid" class="grid" aria-live="polite"></main>
 
     <template id="card-tpl">
@@ -103,7 +139,9 @@
   </div>
 
   <script>
-  // ---- 하드코딩된 읽기 전용 목록 ----
+  // ===============
+  // 프로젝트 카드
+  // ===============
   const projects = [
     {title:"RLC 공명", category:"전자/반도체", desc:"직렬 RLC 공명/위상·전류 변화 시각화.", tags:["회로","공명"], emoji:"🔄", updated: today(), demo:"./RLC 공명.html"},
     {title:"간섭무늬", category:"광학", desc:"파장·슬릿 간격 조절로 간섭 패턴 관찰.", tags:["파동","무늬"], emoji:"🎯", updated: today(), demo:"./간섭무늬.html"},
@@ -121,7 +159,6 @@
     {title:"이중슬릿", category:"광학", desc:"확률파동·간섭무늬·파라미터 조절.", tags:["슬릿","간섭"], emoji:"〰️", updated: today(), demo:"./이중슬릿.html"}
   ];
 
-  // ---- 요소 ----
   const grid = document.getElementById('grid');
   const q = document.getElementById('q');
   const cat = document.getElementById('cat');
@@ -129,27 +166,20 @@
   const count = document.getElementById('count');
   const empty = document.getElementById('empty');
 
-  // ---- 렌더링 ----
   function render(){
     grid.innerHTML = '';
     let list = [...projects];
-
-    // 필터
     const term = q.value.trim().toLowerCase();
     if(term){ list = list.filter(p=> (p.title+p.desc+p.category+(p.tags||[]).join(',')).toLowerCase().includes(term)); }
     if(cat.value){ list = list.filter(p=> p.category===cat.value); }
-
-    // 정렬
     const by = sortSel.value;
     list.sort((a,b)=>{
       if(by==='title') return a.title.localeCompare(b.title,'ko');
       if(by==='category') return a.category.localeCompare(b.category,'ko') || a.title.localeCompare(b.title,'ko');
-      return (b.updated||'').localeCompare(a.updated||''); // 최신순
+      return (b.updated||'').localeCompare(a.updated||'');
     });
-
     count.textContent = list.length;
     empty.style.display = list.length? 'none':'block';
-
     for(const p of list){ grid.append(makeCard(p)); }
   }
 
@@ -163,24 +193,104 @@
     $('.date').textContent = p.updated ? `업데이트 ${p.updated}` : '';
     const tags = $('.tags'); tags.innerHTML='';
     (p.tags||[]).forEach(t=>{ const chip=document.createElement('span'); chip.className='tag'; chip.textContent=t; tags.append(chip); });
-
     const demo = $('.demo'); demo.href = p.demo || '#';
     return node;
   }
 
-  // ---- 유틸 ----
   function today(){ return new Date().toISOString().slice(0,10); }
-  function pickEmoji(cat){
-    return ({'시뮬레이션':'🧪','전자/반도체':'🔌','광학':'🔬','상대성':'🛰️','데이터도구':'📊','웹앱':'🧩'})[cat] || '🧩';
-  }
+  function pickEmoji(cat){ return ({'시뮬레이션':'🧪','전자/반도체':'🔌','광학':'🔬','상대성':'🛰️','데이터도구':'📊','웹앱':'🧩'})[cat] || '🧩'; }
 
-  // ---- 이벤트 ----
   q.addEventListener('input', render);
   cat.addEventListener('change', render);
   sortSel.addEventListener('change', render);
-
-  // 초기 렌더
   render();
+
+  // ==========================
+  // (1) 오늘의 물리 사실 위젯
+  // ==========================
+  (function(){
+    const FACTS = [
+      "태양빛이 태양에서 지구까지 도달하는 데 약 8분 20초가 걸립니다(≈ 499초).",
+      "상온에서 소리는 공기 중 약 343 m/s로 이동하지만, 강철에서는 그보다 10배 이상 빠릅니다.",
+      "진공에서는 깃털과 쇳덩이도 같은 가속도로 떨어집니다. (갈릴레이의 관성 법칙)",
+      "빛의 속도는 약 299,792,458 m/s이며, 진공에서 이보다 더 빠르게 이동할 수 없습니다.",
+      "전자는 파동성과 입자성을 동시에 지니며, 이중 슬릿 실험이 이를 잘 보여줍니다.",
+      "1eV(전자볼트)는 약 1.602×10⁻¹⁹ J의 에너지입니다.",
+      "지구의 중력 가속도 g는 위도·고도에 따라 약간 달라지며, 해수면에서는 대략 9.81 m/s²입니다.",
+      "초전도체는 임계온도 이하에서 전기저항이 0이 됩니다.",
+      "적외선은 가시광보다 파장이 길고, 자외선은 가시광보다 파장이 짧습니다.",
+      "상대론에 따르면 운동하는 시계는 정지한 시계보다 느리게 갑니다(시간 지연).",
+    ];
+    const factEl = document.getElementById('fact-text');
+    const nextBtn = document.getElementById('next-fact');
+    const copyBtn = document.getElementById('copy-fact');
+    const shareBtn = document.getElementById('share-fact');
+    let lastIndex = -1;
+    function pickFact(){ let i=Math.floor(Math.random()*FACTS.length); if(i===lastIndex) i=(i+1)%FACTS.length; lastIndex=i; return FACTS[i]; }
+    function renderFact(t){ factEl.textContent = t; }
+    function newFact(){ renderFact(pickFact()); }
+    nextBtn.addEventListener('click', newFact);
+    copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(factEl.textContent.trim()); copyBtn.textContent='복사됨!'; setTimeout(()=>copyBtn.textContent='복사',900);}catch(e){ alert('복사 실패: '+e.message); } });
+    shareBtn.addEventListener('click', async ()=>{ const text=factEl.textContent.trim(); if(navigator.share){ try{ await navigator.share({title:'오늘의 물리 사실', text}); }catch{} } else { alert('공유가 지원되지 않는 브라우저입니다.\n대신 복사 버튼을 사용하세요.'); } });
+    newFact();
+  })();
+
+  // =====================================================
+  // (4) 인터랙티브 중력 배경 — 누르고 있는 동안만 끌림
+  // =====================================================
+  (function(){
+    const canvas = document.getElementById('gravity-bg');
+    const ctx = canvas.getContext('2d');
+    const dpr = Math.min(window.devicePixelRatio||1, 2);
+    let W=0, H=0;
+    function resize(){ const r=canvas.getBoundingClientRect(); W=r.width|0; H=r.height|0; canvas.width=(W*dpr)|0; canvas.height=(H*dpr)|0; ctx.setTransform(dpr,0,0,dpr,0,0);} new ResizeObserver(resize).observe(canvas);
+
+    const MAX_POINTS=1; // 눌렀을 때만 1개 활성
+    let points=[];     // 활성 질량 포인트 배열
+    let cursorPoint=null; // 포인터가 만드는 가상 질량
+
+    let PARTICLE_COUNT=260; const particles=[];
+    function resetParticles(){ particles.length=0; for(let i=0;i<PARTICLE_COUNT;i++){ particles.push({ x:Math.random()*W, y:Math.random()*H, vx:(Math.random()-.5)*.5, vy:(Math.random()-.5)*.5, m:1+Math.random()*1 }); } }
+
+    const runBtn=document.getElementById('toggle-run');
+    const trailBtn=document.getElementById('toggle-trail');
+    const resetBtn=document.getElementById('reset');
+    const slider=document.getElementById('particle-count');
+    const label=document.getElementById('particle-label');
+    let running=true, trails=true, pointerActive=false;
+
+    runBtn.addEventListener('click',()=>{ running=!running; runBtn.textContent= running? '⏸︎ 일시정지':'▶ 재생'; });
+    trailBtn.addEventListener('click',()=>{ trails=!trails; trailBtn.textContent='트레일: '+(trails?'켜짐':'꺼짐'); });
+    resetBtn.addEventListener('click',()=>{ points=[]; cursorPoint=null; resetParticles(); });
+    slider.addEventListener('input',()=>{ PARTICLE_COUNT=+slider.value; label.textContent=PARTICLE_COUNT; resetParticles(); });
+
+    function posFromEvent(ev){ const r=canvas.getBoundingClientRect(); const x=(ev.touches? ev.touches[0].clientX:ev.clientX)-r.left; const y=(ev.touches? ev.touches[0].clientY:ev.clientY)-r.top; return {x,y}; }
+    function startAttractor(x,y){ pointerActive=true; cursorPoint={x,y,m:240}; points=[cursorPoint]; }
+    function moveAttractor(x,y){ if(pointerActive && cursorPoint){ cursorPoint.x=x; cursorPoint.y=y; } }
+    function endAttractor(){ pointerActive=false; cursorPoint=null; points=[]; }
+
+    // Pointer (마우스/펜)
+    canvas.addEventListener('pointerdown', e=>{ const p=posFromEvent(e); startAttractor(p.x,p.y); }, {passive:true});
+    canvas.addEventListener('pointermove', e=>{ if(pointerActive){ const p=posFromEvent(e); moveAttractor(p.x,p.y);} }, {passive:true});
+    canvas.addEventListener('pointerup',   ()=> endAttractor(), {passive:true});
+    canvas.addEventListener('pointercancel',()=> endAttractor(), {passive:true});
+    canvas.addEventListener('mouseleave', ()=> endAttractor());
+
+    // Touch (iOS Safari 호환)
+    canvas.addEventListener('touchstart', e=>{ const p=posFromEvent(e); startAttractor(p.x,p.y); }, {passive:true});
+    canvas.addEventListener('touchmove',  e=>{ if(pointerActive){ const p=posFromEvent(e); moveAttractor(p.x,p.y);} }, {passive:true});
+    canvas.addEventListener('touchend',   ()=> endAttractor(), {passive:true});
+    canvas.addEventListener('touchcancel',()=> endAttractor(), {passive:true});
+
+    const G=120, FRICTION=0.995, MAX_SPEED=3.6;
+    function step(dt){ for(const a of particles){ let ax=0, ay=0; for(const p of points){ let dx=p.x-a.x, dy=p.y-a.y; let r2=dx*dx+dy*dy; r2=Math.max(36, Math.min(r2, 50000)); const invr=1/Math.sqrt(r2); const force=(G*p.m*a.m)/r2; ax+=force*dx*invr*0.0015; ay+=force*dy*invr*0.0015; } a.vx=(a.vx+ax*dt)*FRICTION; a.vy=(a.vy+ay*dt)*FRICTION; const sp=Math.hypot(a.vx,a.vy); if(sp>MAX_SPEED){ a.vx*=MAX_SPEED/sp; a.vy*=MAX_SPEED/sp; } a.x+=a.vx*dt*60/1000*16; a.y+=a.vy*dt*60/1000*16; if(a.x<0){a.x=0;a.vx*=-.8} if(a.x>W){a.x=W;a.vx*=-.8} if(a.y<0){a.y=0;a.vy*=-.8} if(a.y>H){a.y=H;a.vy*=-.8} } }
+    function draw(){ if(!trails){ ctx.clearRect(0,0,W,H);} else { ctx.fillStyle='rgba(11,16,32,0.12)'; ctx.fillRect(0,0,W,H);} for(const p of points){ const grd=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,28); grd.addColorStop(0,'rgba(107,230,117,0.9)'); grd.addColorStop(1,'rgba(107,230,117,0)'); ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(p.x,p.y,28,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='rgba(107,230,117,0.35)'; ctx.lineWidth=1; ctx.stroke(); } ctx.beginPath(); for(const a of particles){ ctx.moveTo(a.x+1.5,a.y); ctx.arc(a.x,a.y,1.5,0,Math.PI*2); } ctx.fillStyle='rgba(200,220,240,0.9)'; ctx.fill(); }
+
+    let last=performance.now();
+    function loop(now){ const dt=Math.min(32, now-last); last=now; if(running){ step(dt); draw(); } requestAnimationFrame(loop); }
+
+    resize(); resetParticles(); requestAnimationFrame(loop);
+  })();
   </script>
 </body>
 </html>
