@@ -39,7 +39,7 @@
     .empty{opacity:.7;border:1px dashed #2d3a66;border-radius:16px;padding:18px;text-align:center}
     .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(120,150,220,.35),transparent);margin:16px 0}
 
-    /* (1) 오늘의 물리 사실 */
+    /* (1) 오늘의 물리 */
     .ph-card{position:relative;z-index:2;max-width:1200px;margin:16px auto;border-radius:16px; border:1px solid var(--ph-border);
       background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.00)); box-shadow:var(--shadow)}
     .ph-inner{display:flex;gap:16px;align-items:center;padding:14px 14px}
@@ -87,12 +87,12 @@
 
     <div class="divider"></div>
 
-    <!-- (1) 오늘의 물리 사실 위젯 -->
+    <!-- (1) 오늘의 물리 위젯 -->
     <section class="ph-card" id="fun-fact" aria-live="polite">
       <div class="ph-inner">
         <span class="ph-badge">📎</span>
         <div style="flex:1 1 auto">
-          <h2 class="ph-title">오늘의 물리 사실</h2>
+          <h2 class="ph-title">오늘의 물리</h2>
           <div class="ph-fact" id="fact-text">로딩 중…</div>
         </div>
         <div class="ph-actions">
@@ -126,6 +126,7 @@
         <div class="body">
           <div class="title"><h3></h3></div>
           <p class="desc"></p>
+          <div class="curriculum"></div>
           <div class="tags"></div>
           <div class="meta"><span class="category"></span><span class="date"></span></div>
           <div class="actions">
@@ -143,20 +144,20 @@
   // 프로젝트 카드
   // ===============
   const projects = [
-    {title:"RLC 공명", category:"전자/반도체", desc:"직렬 RLC 공명/위상·전류 변화 시각화.", tags:["회로","공명"], emoji:"🔄", updated: today(), demo:"./RLC 공명.html"},
-    {title:"간섭무늬", category:"광학", desc:"파장·슬릿 간격 조절로 간섭 패턴 관찰.", tags:["파동","무늬"], emoji:"🎯", updated: today(), demo:"./간섭무늬.html"},
-    {title:"광전효과", category:"전자/반도체", desc:"파장/세기에 따른 광전자 방출과 임계 주파수.", tags:["광자","금속"], emoji:"📸", updated: today(), demo:"./광전효과.html"},
-    {title:"다이오드", category:"전자/반도체", desc:"PN 접합·공핍층·I–V 특성 직관.", tags:["PN","I–V"], emoji:"🔌", updated: today(), demo:"./다이오드.html"},
-    {title:"도플러효과", category:"광학", desc:"이동 음원/관측자 주파수 변화와 마하 콘.", tags:["도플러","파동"], emoji:"🎵", updated: today(), demo:"./도플러효과.html"},
-    {title:"러더퍼드 알파입자 산란실험", category:"시뮬레이션", desc:"금박 통과·대각 산란·반사 확률 시각화.", tags:["산란","쿨롱"], emoji:"🧪", updated: today(), demo:"./러더퍼드 알파입자 산란실험.html"},
-    {title:"렌즈의 굴절", category:"광학", desc:"볼록/오목·실상/허상 구성과 보조선.", tags:["렌즈","상"], emoji:"🔭", updated: today(), demo:"./렌즈의 굴절.html"},
-    {title:"발광 다이오드", category:"전자/반도체", desc:"파장별 전압·밴드갭과 발광.", tags:["LED","밴드갭"], emoji:"💡", updated: today(), demo:"./발광 다이오드.html"},
-    {title:"상대성이론", category:"상대성", desc:"길이수축·시공간 시각화(우주선/별).", tags:["특수","일반"], emoji:"🚀", updated: today(), demo:"./상대성이론.html"},
-    {title:"스넬의 법칙", category:"광학", desc:"굴절률 변화에 따른 입사/굴절/임계각.", tags:["n1,n2","TIR"], emoji:"📐", updated: today(), demo:"./스넬의 법칙.html"},
-    {title:"열역학", category:"열", desc:"등압, 등적, 등온, 단열과정을 확인.", tags:["열기관","열과정"], emoji:"🐦‍🔥", updated: today(), demo:"./열역학.html"},
-    {title:"옴의 법칙", category:"전자/반도체", desc:"V=IR, 직렬/병렬 직관, 전류 흐름 애니메이션.", tags:["전압","전류"], emoji:"⚡", updated: today(), demo:"./옴의 법칙.html"},
-    {title:"원자모형", category:"시뮬레이션", desc:"보어/오비탈/전자구름 개념 시각화.", tags:["원자","준위"], emoji:"🧬", updated: today(), demo:"./원자모형.html"},
-    {title:"이중슬릿", category:"광학", desc:"확률파동·간섭무늬·파라미터 조절.", tags:["슬릿","간섭"], emoji:"〰️", updated: today(), demo:"./이중슬릿.html"}
+    {title:"RLC 공명", category:"전자/반도체", desc:"직렬 RLC 공명/위상·전류 변화 시각화.", tags:["회로","공명"], emoji:"🔄", updated: today(), demo:"./RLC 공명.html", curriculumId: "[12전자01-06]"},
+    {title:"간섭무늬", category:"광학", desc:"파장·슬릿 간격 조절로 간섭 패턴 관찰.", tags:["파동","무늬"], emoji:"🎯", updated: today(), demo:"./간섭무늬.html", curriculumId: "[12물리03-01]"},
+    {title:"광전효과", category:"전자/반도체", desc:"파장/세기에 따른 광전자 방출과 임계 주파수.", tags:["광자","금속"], emoji:"📸", updated: today(), demo:"./광전효과.html", curriculumId: "[12전자02-04]"},
+    {title:"다이오드", category:"전자/반도체", desc:"PN 접합·공핍층·I–V 특성 직관.", tags:["PN","I–V"], emoji:"🔌", updated: today(), demo:"./다이오드.html", curriculumId: "[12물리03-05]"},
+    {title:"도플러효과", category:"광학", desc:"이동 음원/관측자 주파수 변화와 마하 콘.", tags:["도플러","파동"], emoji:"🎵", updated: today(), demo:"./도플러효과.html", curriculumId: "[12역학03-03]"},
+    {title:"러더퍼드 알파입자 산란실험", category:"시뮬레이션", desc:"금박 통과·대각 산란·반사 확률 시각화.", tags:["산란","쿨롱"], emoji:"🧪", updated: today(), demo:"./러더퍼드 알파입자 산란실험.html", curriculumId: "[12전자01-06]"},
+    {title:"렌즈의 굴절", category:"광학", desc:"볼록/오목·실상/허상 구성과 보조선.", tags:["렌즈","상"], emoji:"🔭", updated: today(), demo:"./렌즈의 굴절.html", curriculumId: "[12물리03-02]"},
+    {title:"발광 다이오드", category:"전자/반도체", desc:"파장별 전압·밴드갭과 발광.", tags:["LED","밴드갭"], emoji:"💡", updated: today(), demo:"./발광 다이오드.html", curriculumId: "[12전자02-04]"},
+    {title:"상대성이론", category:"상대성", desc:"길이수축·시공간 시각화(우주선/별).", tags:["특수","일반"], emoji:"🚀", updated: today(), demo:"./상대성이론.html", curriculumId: "[12물리03-06]"},
+    {title:"스넬의 법칙", category:"광학", desc:"굴절률 변화에 따른 입사/굴절/임계각.", tags:["n1,n2","TIR"], emoji:"📐", updated: today(), demo:"./스넬의 법칙.html", curriculumId: "[12물리03-02]"},
+    {title:"열역학", category:"열", desc:"등압, 등적, 등온, 단열과정을 확인.", tags:["열기관","열과정"], emoji:"🐦‍🔥", updated: today(), demo:"./열역학.html", curriculumId: "[12물리01-06], [12역학02-02]"},
+    {title:"옴의 법칙", category:"전자/반도체", desc:"V=IR, 직렬/병렬 직관, 전류 흐름 애니메이션.", tags:["전압","전류"], emoji:"⚡", updated: today(), demo:"./옴의 법칙.html", curriculumId: "[12물리02-02]"},
+    {title:"원자모형", category:"시뮬레이션", desc:"보어/오비탈/전자구름 개념 시각화.", tags:["원자","준위"], emoji:"🧬", updated: today(), demo:"./원자모형.html", curriculumId: "[12전자03-04]"},
+    {title:"이중슬릿", category:"광학", desc:"확률파동·간섭무늬·파라미터 조절.", tags:["슬릿","간섭"], emoji:"〰️", updated: today(), demo:"./이중슬릿.html", curriculumId: "[12전자03-01]"},
   ];
 
   const grid = document.getElementById('grid');
@@ -191,6 +192,7 @@
     $('.desc').textContent = p.desc || '';
     $('.category').textContent = p.category;
     $('.date').textContent = p.updated ? `업데이트 ${p.updated}` : '';
+$('.curriculum').textContent = p.curriculumId ? `교육과정: ${p.curriculumId}` : '';
     const tags = $('.tags'); tags.innerHTML='';
     (p.tags||[]).forEach(t=>{ const chip=document.createElement('span'); chip.className='tag'; chip.textContent=t; tags.append(chip); });
     const demo = $('.demo'); demo.href = p.demo || '#';
@@ -206,7 +208,7 @@
   render();
 
   // ==========================
-  // (1) 오늘의 물리 사실 위젯
+  // (1) 오늘의 물리 위젯
   // ==========================
   (function(){
     const FACTS = [
@@ -259,7 +261,7 @@
     function newFact(){ renderFact(pickFact()); }
     nextBtn.addEventListener('click', newFact);
     copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(factEl.textContent.trim()); copyBtn.textContent='복사됨!'; setTimeout(()=>copyBtn.textContent='복사',900);}catch(e){ alert('복사 실패: '+e.message); } });
-    shareBtn.addEventListener('click', async ()=>{ const text=factEl.textContent.trim(); if(navigator.share){ try{ await navigator.share({title:'오늘의 물리 사실', text}); }catch{} } else { alert('공유가 지원되지 않는 브라우저입니다.\n대신 복사 버튼을 사용하세요.'); } });
+    shareBtn.addEventListener('click', async ()=>{ const text=factEl.textContent.trim(); if(navigator.share){ try{ await navigator.share({title:'오늘의 물리', text}); }catch{} } else { alert('공유가 지원되지 않는 브라우저입니다.\n대신 복사 버튼을 사용하세요.'); } });
     newFact();
   })();
 
@@ -322,4 +324,5 @@
   </script>
 </body>
 </html>
+
 
