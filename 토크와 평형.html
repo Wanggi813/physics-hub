@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>시소 평형 게임 (정확 평형 + 모바일 + 힌트감점)</title>
+<script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+<style>
+  :root{ --bg:#eef6ff; --line:#dbe8ff; --ink:#0f172a; }
+  body{
+    margin:0;
+    background: radial-gradient(1000px 600px at 15% -10%, #eef6ff, #fdfbff);
+    font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    color:var(--ink);
+    touch-action:none; /* 모바일에서 스크롤/줌 방지 */
+  }
+  .top-hud{
+    position:fixed;left:50%;top:10px;transform:translateX(-50%);
+    display:flex;gap:12px;align-items:center;
+    background:#ffffffda;border:1px solid var(--line);
+    border-radius:16px;padding:8px 12px;z-index:10;
+  }
+  .hud-item{display:flex;gap:6px;align-items:baseline}
+  .hud-label{font-size:13px;color:#475569}
+  .hud-value{font-weight:800;font-size:20px;min-width:70px;text-align:right}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:4px 10px;cursor:pointer;}
+  #hud{
+    position:fixed;left:10px;bottom:10px;background:#fffffff2;
+    border:1px solid var(--line);border-radius:10px;padding:8px;font-size:13px;z-index:10;
+  }
+  .bar{height:8px;background:#eef3ff;border-radius:999px;overflow:hidden;border:1px solid #dbe8ff}
+  .bar>span{display:block;height:100%;background:linear-gradient(90deg,#67e8f9,#60a5fa)}
+  .stars{font-size:18px;letter-spacing:2px}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:999px;font-weight:700}
+  .ok{background:#eafaf5;color:#065f46;border:1px solid #b7f0de}
+
+  /* 감점 토스트 */
+  .toast{
+    position:fixed;left:50%;top:56px;transform:translateX(-50%);
+    background:#fee2e2;border:1px solid #fecaca;color:#991b1b;
+    padding:6px 12px;border-radius:999px;font-weight:800;z-index:20;
+    opacity:0; pointer-events:none; transition:opacity .15s ease, transform .5s cubic-bezier(.2,.6,.2,1);
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px);}
+</style>
+</head>
+<body>
+
+<!-- 상단 HUD -->
+<div class="top-hud">
+  <div class="hud-item"><div class="hud-label">레벨</div><div class="hud-value" id="lvl">1</div></div>
+  <div class="hud-item"><div class="hud-label">점수</div><div class="hud-value" id="score">0</div></div>
+  <div class="hud-item"><div class="hud-label">시간</div><div class="hud-value" id="time">30.0s</div></div>
+  <button id="resetBtn" class="btn">새 게임</button>
+  <button id="hintBtn" class="btn">힌트</button>
+  <span class="badge ok" id="eqBadge" style="display:none;">정확 평형!</span>
+</div>
+
+<!-- 감점 토스트 -->
+<div id="penaltyToast" class="toast">-30점</div>
+
+<!-- 좌하단 HUD -->
+<div id="hud">
+  <div><b>목표:</b> 모든 블록을 사용해 <b>토크평형</b> 만들기 (0칸 금지)</div>
+  <div style="margin:6px 0 4px">알짜토크</div>
+  <div class="bar" style="width:200px"><span id="tauFill" style="width:0%"></span></div>
+  <div style="margin-top:4px">알짜토크 = <span id="tauVal">0</span> (정확 0만 성공)</div>
+  <div style="margin-top:4px">힌트 사용: <b><span id="hintCount">0</span>회</b> (회당 -30점)</div>
+  <div style="margin-top:4px" class="stars" id="stars"></div>
+</div>
+
+<script>
+/* ===== 상수 ===== */
+const maxAngle = Math.PI/180 * 10;
+const slotRange = 4;
+const ALLOWED_SLOTS = [-4,-3,-2,-1,1,2,3,4]; // 0 금지
+const HINT_COST = 30; // ★ 힌트 1회당 감점
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+/* 파스텔 색상 */
+const PASTELS=[['#ffe8ec','#ffb3c0'],['#fff0da','#ffd098'],['#fff6d5','#ffe082'],
+['#eef9db','#bfe69b'],['#ddfbf3','#9fe5d0'],['#e7f6ff','#a8d8ff'],
+['#ecebff','#c2c1ff'],['#f3e9ff','#d4b6ff'],['#ffe9f6','#ffc2e6']];
+const colorPair=w=>PASTELS[clamp(w-1,0,8)];
+
+/* ===== 시소 ===== */
+class Plank{
+  constructor(cx,cy,len){this.cx=cx;this.cy=cy;this.len=len;this.slotDx=this.len/(slotRange*2+2);this.angle=0;}
+  slotToLocalX(k){return k*this.slotDx;}
+  slotToScreen(k){const lx=this.slotToLocalX(k);const c=Math.cos(this.angle),s=Math.sin(this.angle);return{x:this.cx+lx*c,y:this.cy+lx*s};}
+  drawGrid(){
+    push();translate(this.cx,this.cy);rotate(this.angle);
+    noStroke();fill(0,0,0,0.08);rectMode(CENTER);rect(6,10,this.len+42,58,20);
+    drawingContext.save();
+    const rr=20,w=this.len,h=40,path=new Path2D();
+    roundedRectPath(path,-w/2,-h/2,w,h,rr);
+    drawingContext.fillStyle=gradientLR('#fff5e6','#ffe8c9',-w/2,0,w,0);
+    drawingContext.strokeStyle='#e0c9a6';drawingContext.lineWidth=2.4;
+    drawingContext.fill(path);drawingContext.stroke(path);
+    drawingContext.clip(path);drawingContext.globalAlpha=0.25;drawingContext.strokeStyle='#e6d5b6';
+    for(let i=-Math.floor(w/40);i<=Math.floor(w/40);i++){drawingContext.beginPath();drawingContext.moveTo(i*40,-20);drawingContext.lineTo(i*40,20);drawingContext.stroke();}
+    drawingContext.restore();
+    stroke('#9fb1d9');for(let k=-slotRange;k<=slotRange;k++){const x=this.slotToLocalX(k);line(x,-22,x,22);noStroke();fill(k===0?'#ef4444':'#374151');textAlign(CENTER,TOP);textSize(12);text(k,x,24);}
+    noFill();stroke('#ef4444');strokeWeight(2);line(-10,-16,10,16);line(-10,16,10,-16);
+    pop();
+  }
+}
+function roundedRectPath(path,x,y,w,h,r){
+  path.moveTo(x+r,y);path.lineTo(x+w-r,y);path.quadraticCurveTo(x+w,y,x+w,y+r);
+  path.lineTo(x+w,y+h-r);path.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  path.lineTo(x+r,y+h);path.quadraticCurveTo(x,y+h,x,y+h-r);
+  path.lineTo(x,y+r);path.quadraticCurveTo(x,y,x+r,y);path.closePath();
+}
+function gradientLR(c1,c2,x0,y0,x1,y1){const g=drawingContext.createLinearGradient(x0,y0,x0+x1,y0+y1);g.addColorStop(0,c1);g.addColorStop(1,c2);return g;}
+
+/* ===== 블록 ===== */
+class Block{
+  constructor(w){this.w=w;this.size=map(w,1,9,28,52);[this.c1,this.c2]=colorPair(w);
+    this.x=random(width*0.35,width*0.65);this.y=random(height*0.72,height*0.84);
+    this.onPlank=false;this.slot=0;this.snap=0;}
+  screenPos(){return this.onPlank?plank.slotToScreen(this.slot):{x:this.x,y:this.y};}
+  draw(){const {x,y}=this.screenPos();const s=1+0.08*Math.sin(this.snap*Math.PI),sz=this.size;push();translate(x,y);scale(s);rectMode(CENTER);
+    noStroke();fill(0,0,0,0.15);rect(4,6,sz*0.9,sz*0.9,8);
+    drawingContext.save();const g=drawingContext.createLinearGradient(-sz/2,-sz/2,sz/2,sz/2);g.addColorStop(0,this.c1);g.addColorStop(1,this.c2);
+    drawingContext.fillStyle=g;stroke('#9ca3af');strokeWeight(1.6);rect(0,0,sz,sz,10);
+    drawingContext.clip();drawingContext.globalAlpha=0.15;stroke('#ffffff');for(let i=-sz/2;i<sz/2;i+=6)line(i,-sz/2,i,sz/2);drawingContext.restore();
+    noStroke();fill(255,255,255,0.3);rect(0,-sz*0.25,sz*0.9,sz*0.15,4);
+    noStroke();fill('#0f172a');textAlign(CENTER,CENTER);textSize(14);text(`${this.w} kg`,0,1);pop();
+    if(this.snap>0)this.snap=Math.max(0,this.snap-0.06);}
+  hit(mx,my){const {x,y}=this.screenPos();return dist(mx,my,x,y)<Math.max(24,this.size*0.65);}
+}
+
+/* ===== 파티클 ===== */
+let particles=[];class Particle{constructor(x,y){this.x=x;this.y=y;const a=random(TWO_PI),sp=random(1.8,4.2);this.vx=Math.cos(a)*sp;this.vy=Math.sin(a)*sp-random(0.2,1.0);this.life=random(40,60);this.r=random(3.5,6.5);}step(){this.x+=this.vx;this.y+=this.vy;this.vy+=0.07;this.life--;}draw(){noStroke();const alpha=map(this.life,0,60,0,1);fill(`hsla(50 95% 60% / ${alpha})`);circle(this.x,this.y,this.r);fill(`hsla(48 100% 70% / ${alpha*0.35})`);circle(this.x,this.y,this.r*2.2);}}
+
+/* ===== 전역 상태 ===== */
+let plank, blocks=[], heldIdx=-1, level=1, score=0, streak=0, timeLeft=30.0, justCleared=false, numBlocks=2;
+let solutionSlots=[]; let showHint=false; let hintTimer=0; let hintCount=0;
+
+/* ===== p5 ===== */
+function setup(){
+  createCanvas(windowWidth,windowHeight).position(0,0);
+  pixelDensity(1); textFont('system-ui');
+  document.getElementById('resetBtn').onclick=()=>newGame();
+  document.getElementById('hintBtn').onclick=onHint;
+  newGame();
+}
+function windowResized(){resizeCanvas(windowWidth,windowHeight);if(plank){plank.cx=width/2;plank.cy=height*0.55;plank.len=Math.min(width*0.88,1000);plank.slotDx=plank.len/(slotRange*2+2);}}
+function newGame(){level=1;score=0;streak=0;hintCount=0;updateHintCount();setupLevel(level);}
+
+/* ===== 퍼즐 생성 ===== */
+function setupLevel(lv){
+  numBlocks=Math.min(2+Math.floor((lv-1)/2),5);
+  plank=new Plank(width/2,height*0.55,Math.min(width*0.88,1000));
+  const {weights,slots}=generateExactCase(numBlocks);
+  blocks=weights.map(w=>new Block(w));
+  solutionSlots=slots;
+  timeLeft=clamp(28-(lv-1)*2,12,28);justCleared=false;particles.length=0;
+  document.getElementById('lvl').textContent=lv;document.getElementById('eqBadge').style.display='none';document.getElementById('stars').textContent='';
+}
+function generateExactCase(n){
+  while(true){
+    const slots=shuffle([...ALLOWED_SLOTS]).slice(0,n);
+    let sum=0,weights=[];
+    for(let i=0;i<n-1;i++){const w=1+floor(random(9));weights.push(w);sum+=w*slots[i];}
+    const wN=(-sum)/slots[n-1];
+    if(Number.isInteger(wN)&&wN>=1&&wN<=9){weights.push(wN);return{weights:shuffle(weights),slots};}
+  }
+}
+
+/* ===== 힌트 처리 (감점 포함) ===== */
+function onHint(){
+  // 정답 표시
+  showHint=true; hintTimer=120; // 약 2초
+  // 감점 처리
+  hintCount++; updateHintCount();
+  const before=score;
+  score=Math.max(0, score - HINT_COST);
+  if(navigator.vibrate) navigator.vibrate(30); // 모바일 짧은 진동
+  document.getElementById('score').textContent=score;
+  flashPenalty(`-${HINT_COST}점`);
+}
+function updateHintCount(){ document.getElementById('hintCount').textContent = hintCount; }
+function flashPenalty(text){
+  const t = document.getElementById('penaltyToast');
+  t.textContent = text;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 700);
+}
+
+/* ===== 메인 루프 ===== */
+function draw(){
+  clear();background('#eef6ff');
+  const torque=computeTorque();const maxT=numBlocks*9*4;
+  plank.angle=map(torque,-maxT,maxT,-maxAngle,maxAngle);
+  plank.drawGrid();for(const b of blocks)b.draw();
+  if(showHint&&hintTimer>0){hintTimer--;drawHints();if(hintTimer<=0)showHint=false;}
+  for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.step();p.draw();if(p.life<=0)particles.splice(i,1);}
+  updateHUD(torque);
+  const used=blocks.filter(b=>b.onPlank).length,eqNow=(used===blocks.length)&&(torque===0);
+  if(!justCleared&&eqNow)levelClear();
+  if(!justCleared){timeLeft-=deltaTime/1000;if(timeLeft<=0){timeLeft=0;streak=0;setupLevel(level);}}
+}
+function computeTorque(){let s=0;for(const b of blocks){if(b.onPlank)s+=b.w*b.slot;}return s;}
+function levelClear(){justCleared=true;document.getElementById('eqBadge').style.display='inline-flex';
+  const speed=clamp(timeLeft/clamp(28-(level-1)*2,12,28),0,1);const stars=1+(speed>0.6)+(speed>0.85);
+  document.getElementById('stars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);
+  const gained=Math.round(120+120*speed+25*streak);score+=gained;streak+=1;document.getElementById('score').textContent=score;
+  for(let i=0;i<100;i++){const x=plank.cx+random(-plank.len*0.45,plank.len*0.45);particles.push(new Particle(x,plank.cy-8));}
+  setTimeout(()=>{level+=1;setupLevel(level);},900);}
+function updateHUD(torque){document.getElementById('time').textContent=`${timeLeft.toFixed(1)}s`;document.getElementById('tauVal').textContent=torque;
+  const maxT=numBlocks*9*4;const fill=clamp(map(Math.abs(torque),0,maxT,100,0),0,100);document.getElementById('tauFill').style.width=`${fill}%`;}
+function drawDock(){const w=plank?Math.min(plank.len*0.9,width*0.9):width*0.9;const x=(plank?plank.cx:width/2)-w/2;const y=(plank?plank.cy:height*0.55)+84;
+  noStroke();fill(255,255,255,0.9);rect(x,y,w,92,18);stroke('#dbe8ff');noFill();rect(x,y,w,92,18);noStroke();fill('#6b7280');textSize(13);
+  text(`모든 블록 배치 후 Σ(w·r)=0 만들기 (0칸 금지, ${numBlocks}개 블록)`,x+12,y+26);}
+function drawHints(){for(let k of solutionSlots){const p=plank.slotToScreen(k);noFill();stroke('#facc15');strokeWeight(3);circle(p.x,p.y,36);}}
+
+/* ===== 입력: PC/모바일 공통 ===== */
+function handlePress(mx,my){for(let i=blocks.length-1;i>=0;i--){if(blocks[i].hit(mx,my)){heldIdx=i;break;}}}
+function handleDrag(mx,my){if(heldIdx<0)return;const b=blocks[heldIdx];b.onPlank=false;b.x=mx;b.y=my;}
+function handleRelease(mx,my){if(heldIdx<0)return;const b=blocks[heldIdx];heldIdx=-1;let bestK=null,bestD=1e9;for(const k of ALLOWED_SLOTS){const p=plank.slotToScreen(k);const d=dist(mx,my,p.x,p.y);if(d<bestD){bestD=d;bestK=k;}}if(bestD<46){b.onPlank=true;b.slot=bestK;b.snap=1;}else{b.onPlank=false;}}
+/* 마우스 */
+function mousePressed(){handlePress(mouseX,mouseY);}function mouseDragged(){handleDrag(mouseX,mouseY);}function mouseReleased(){handleRelease(mouseX,mouseY);}
+/* 터치 */
+function touchStarted(){const t=touches[0];if(t)handlePress(t.x,t.y);return false;}
+function touchMoved(){const t=touches[0];if(t)handleDrag(t.x,t.y);return false;}
+function touchEnded(){const t=touches[0]||{x:mouseX,y:mouseY};handleRelease(t.x,t.y);return false;}
+</script>
+</body>
+</html>
