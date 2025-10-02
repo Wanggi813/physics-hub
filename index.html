@@ -8,13 +8,25 @@
     :root{
       --bg:#0b1020; --panel:#121a33; --ink:#e9efff; --muted:#a6b3d9; --line:#243166; --accent:#7aa2ff;
       --good:#10b981; --warn:#f59e0b; --bad:#ef4444; --radius:18px; --shadow:0 10px 28px rgba(9,12,28,.28);
-      /* widget colors */
       --ph-card:#0d1530; --ph-border:#2a3a72; --ph-accent:#4da3ff; --ph-green:#6be675;
     }
     *{box-sizing:border-box}
-    body{ margin:0; background:radial-gradient(1200px 800px at 10% -10%, #0e1735 0%, #0b1020 60%);
-    url('./우주배경.jpg') center / cover no-repeat fixed;       
-      color:var(--ink); font:14px/1.55 ui-sans-serif,system-ui,"Pretendard","Noto Sans KR",Apple SD Gothic Neo,Arial }
+    html,body{height:100%}
+    body{
+      margin:0;
+      color:var(--ink);
+      font:14px/1.55 ui-sans-serif,system-ui,"Pretendard","Noto Sans KR","Apple SD Gothic Neo",Arial;
+      /* 레이어: 1) 그라디언트(위) 2) 배경이미지(아래) */
+      background:
+        radial-gradient(1200px 800px at 10% -10%, #0e1735 0%, #0b1020 60%),
+        url("./우주배경.jpg") center / cover no-repeat;
+      min-height:100dvh; /* 모바일에서도 화면 가득 */
+    }
+    /* 데스크톱(정교한 포인터)에서만 이미지 레이어를 fixed */
+    @media (hover:hover) and (pointer:fine){
+      body{ background-attachment: scroll, fixed; }
+    }
+
     .wrap{max-width:1200px;margin:0 auto;padding:22px 16px 48px;position:relative}
     header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;position:relative;z-index:2}
     h1{font-size:24px;margin:0 10px 0 0;display:flex;gap:10px;align-items:center}
@@ -40,10 +52,9 @@
     .empty{opacity:.7;border:1px dashed #2d3a66;border-radius:16px;padding:18px;text-align:center}
     .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(120,150,220,.35),transparent);margin:16px 0}
 
-    /* (1) 오늘의 물리 */
     .ph-card{position:relative;z-index:2;max-width:1200px;margin:16px auto;border-radius:16px; border:1px solid var(--ph-border);
-      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.00)); box-shadow:var(--shadow)}
-    .ph-inner{display:flex;gap:16px;align-items:center;padding:14px 14px}
+      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0)); box-shadow:var(--shadow)}
+    .ph-inner{display:flex;gap:16px;align-items:center;padding:14px}
     .ph-badge{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;background:#0f1a3d;border:1px solid var(--ph-border)}
     .ph-title{margin:0 0 2px;font-size:15px;color:#cfe0ff}
     .ph-fact{font-size:clamp(14px,2.2vw,18px);line-height:1.55}
@@ -51,13 +62,11 @@
     .ph-btn{appearance:none;border:1px solid var(--ph-border);background:#0e141f;color:var(--ink);padding:8px 12px;border-radius:10px;font-weight:600;cursor:pointer}
     .ph-btn.primary{border-color:rgba(77,163,255,.5);box-shadow:inset 0 0 0 1px rgba(77,163,255,.25)}
 
-    /* (4) 인터랙티브 중력 배경 */
     .ph-canvas-wrap{position:relative;margin:18px 0 10px;border:1px solid var(--line);border-radius:16px;overflow:hidden}
     .ph-canvas-wrap canvas{display:block;width:100%;height:42vh;min-height:320px;max-height:640px}
     .ph-controls{position:absolute;left:12px;bottom:12px;display:flex;gap:8px;flex-wrap:wrap;background:rgba(9,13,18,.6);border:1px solid var(--line);padding:10px;border-radius:12px;backdrop-filter:blur(6px) saturate(1.2)}
     .ph-slider{display:flex;align-items:center;gap:8px}
     .ph-slider input[type="range"]{width:160px}
-    /* 날짜 표시 제거용 (혹시 남아도 숨김) */
     .date{display:none}
   </style>
 </head>
@@ -79,7 +88,6 @@
           <option>상대성</option>
           <option>데이터도구</option>
           <option>웹앱</option>
-          <!-- 추가된 분류 -->
           <option>열</option>
           <option>역학</option>
         </select>
@@ -93,7 +101,6 @@
 
     <div class="divider"></div>
 
-    <!-- (1) 오늘의 물리 위젯 -->
     <section class="ph-card" id="fun-fact" aria-live="polite">
       <div class="ph-inner">
         <span class="ph-badge">📎</span>
@@ -109,7 +116,6 @@
       </div>
     </section>
 
-    <!-- (4) 인터랙티브 중력 배경: 누르고 있는 동안만 끌림 -->
     <section class="ph-canvas-wrap" aria-label="인터랙티브 중력 배경">
       <canvas id="gravity-bg"></canvas>
       <div class="ph-controls">
@@ -146,26 +152,24 @@
   </div>
 
   <script>
-  // ===============
-  // 프로젝트 카드
-  // ===============
+  // 프로젝트 카드 렌더링
   const projects = [
-    {title:"토크와 평형", category:"역학", desc:"물체를 이용해 토크평형 만들기", tags:["토크","평형"], emoji:"🧗‍♀️", demo:"./토크와 평형.html", curriculumId: "[12물리01-01]"},
-    {title:"RLC 공명", category:"전자/반도체", desc:"직렬 RLC 공명/위상·전류 변화 시각화.", tags:["회로","공명"], emoji:"🔄", demo:"./RLC 공명.html", curriculumId: "[12전자01-06]"},
-    {title:"간섭무늬", category:"광학", desc:"파장·슬릿 간격 조절로 간섭 패턴 관찰.", tags:["파동","무늬"], emoji:"🎯", demo:"./간섭무늬.html", curriculumId: "[12물리03-01]"},
-    {title:"광전효과", category:"전자/반도체", desc:"파장/세기에 따른 광전자 방출과 임계 주파수.", tags:["광자","금속"], emoji:"📸", demo:"./광전효과.html", curriculumId: "[12전자02-04]"},
-    {title:"다이오드", category:"전자/반도체", desc:"PN 접합·공핍층·I–V 특성 직관.", tags:["PN","I–V"], emoji:"🔌", demo:"./다이오드.html", curriculumId: "[12물리03-05]"},
-    {title:"도플러효과", category:"광학", desc:"이동 음원/관측자 주파수 변화와 마하 콘.", tags:["도플러","파동"], emoji:"🎵", demo:"./도플러효과.html", curriculumId: "[12역학03-03]"},
-    {title:"러더퍼드 알파입자 산란실험", category:"시뮬레이션", desc:"금박 통과·대각 산란·반사 확률 시각화.", tags:["산란","쿨롱"], emoji:"🧪", demo:"./러더퍼드 알파입자 산란실험.html", curriculumId: "[12전자01-06]"},
-    {title:"렌즈의 굴절", category:"광학", desc:"볼록/오목·실상/허상 구성과 보조선.", tags:["렌즈","상"], emoji:"🔭", demo:"./렌즈의 굴절.html", curriculumId: "[12물리03-02]"},
-    {title:"발광 다이오드", category:"전자/반도체", desc:"파장별 전압·밴드갭과 발광.", tags:["LED","밴드갭"], emoji:"💡", demo:"./발광 다이오드.html", curriculumId: "[12전자02-04]"},
-    {title:"상대성이론", category:"상대성", desc:"길이수축·시공간 시각화(우주선/별).", tags:["특수","일반"], emoji:"🚀", demo:"./상대성이론.html", curriculumId: "[12물리03-06]"},
-    {title:"스넬의 법칙", category:"광학", desc:"굴절률 변화에 따른 입사/굴절/임계각.", tags:["n1,n2","TIR"], emoji:"📐", demo:"./스넬의 법칙.html", curriculumId: "[12물리03-02]"},
-    {title:"포물선 운동", category:"역학", desc:"대포를 쏴서 과녁을 맞추자.", tags:["포물선운동","게임"], emoji:"🌈", demo:"./포물선 운동.html", curriculumId: "[12역학01-02]"},
-    {title:"열역학", category:"열", desc:"등압, 등적, 등온, 단열과정을 확인.", tags:["열기관","열과정"], emoji:"🐦‍🔥", demo:"./열역학.html", curriculumId: "[12물리01-06], [12역학02-02]"},
-    {title:"옴의 법칙", category:"전자/반도체", desc:"V=IR, 직렬/병렬 직관, 전류 흐름 애니메이션.", tags:["전압","전류"], emoji:"⚡", demo:"./옴의 법칙.html", curriculumId: "[12물리02-02]"},
-    {title:"원자모형", category:"시뮬레이션", desc:"보어/오비탈/전자구름 개념 시각화.", tags:["원자","준위"], emoji:"🧬", demo:"./원자모형.html", curriculumId: "[12전자03-04]"},
-    {title:"이중슬릿", category:"광학", desc:"확률파동·간섭무늬·파라미터 조절.", tags:["슬릿","간섭"], emoji:"〰️", demo:"./이중슬릿.html", curriculumId: "[12전자03-01]"},
+    {title:"토크와 평형", category:"역학", desc:"물체를 이용해 토크평형 만들기", tags:["토크","평형"], emoji:"🧗‍♀️", demo:"./토크와 평형.html", curriculumId:"[12물리01-01]"},
+    {title:"RLC 공명", category:"전자/반도체", desc:"직렬 RLC 공명/위상·전류 변화 시각화.", tags:["회로","공명"], emoji:"🔄", demo:"./RLC 공명.html", curriculumId:"[12전자01-06]"},
+    {title:"간섭무늬", category:"광학", desc:"파장·슬릿 간격 조절로 간섭 패턴 관찰.", tags:["파동","무늬"], emoji:"🎯", demo:"./간섭무늬.html", curriculumId:"[12물리03-01]"},
+    {title:"광전효과", category:"전자/반도체", desc:"파장/세기에 따른 광전자 방출과 임계 주파수.", tags:["광자","금속"], emoji:"📸", demo:"./광전효과.html", curriculumId:"[12전자02-04]"},
+    {title:"다이오드", category:"전자/반도체", desc:"PN 접합·공핍층·I–V 특성 직관.", tags:["PN","I–V"], emoji:"🔌", demo:"./다이오드.html", curriculumId:"[12물리03-05]"},
+    {title:"도플러효과", category:"광학", desc:"이동 음원/관측자 주파수 변화와 마하 콘.", tags:["도플러","파동"], emoji:"🎵", demo:"./도플러효과.html", curriculumId:"[12역학03-03]"},
+    {title:"러더퍼드 알파입자 산란실험", category:"시뮬레이션", desc:"금박 통과·대각 산란·반사 확률 시각화.", tags:["산란","쿨롱"], emoji:"🧪", demo:"./러더퍼드 알파입자 산란실험.html", curriculumId:"[12전자01-06]"},
+    {title:"렌즈의 굴절", category:"광학", desc:"볼록/오목·실상/허상 구성과 보조선.", tags:["렌즈","상"], emoji:"🔭", demo:"./렌즈의 굴절.html", curriculumId:"[12물리03-02]"},
+    {title:"발광 다이오드", category:"전자/반도체", desc:"파장별 전압·밴드갭과 발광.", tags:["LED","밴드갭"], emoji:"💡", demo:"./발광 다이오드.html", curriculumId:"[12전자02-04]"},
+    {title:"상대성이론", category:"상대성", desc:"길이수축·시공간 시각화(우주선/별).", tags:["특수","일반"], emoji:"🚀", demo:"./상대성이론.html", curriculumId:"[12물리03-06]"},
+    {title:"스넬의 법칙", category:"광학", desc:"굴절률 변화에 따른 입사/굴절/임계각.", tags:["n1,n2","TIR"], emoji:"📐", demo:"./스넬의 법칙.html", curriculumId:"[12물리03-02]"},
+    {title:"포물선 운동", category:"역학", desc:"대포를 쏴서 과녁을 맞추자.", tags:["포물선운동","게임"], emoji:"🌈", demo:"./포물선 운동.html", curriculumId:"[12역학01-02]"},
+    {title:"열역학", category:"열", desc:"등압, 등적, 등온, 단열과정을 확인.", tags:["열기관","열과정"], emoji:"🐦‍🔥", demo:"./열역학.html", curriculumId:"[12물리01-06], [12역학02-02]"},
+    {title:"옴의 법칙", category:"전자/반도체", desc:"V=IR, 직렬/병렬 직관, 전류 흐름 애니메이션.", tags:["전압","전류"], emoji:"⚡", demo:"./옴의 법칙.html", curriculumId:"[12물리02-02]"},
+    {title:"원자모형", category:"시뮬레이션", desc:"보어/오비탈/전자구름 개념 시각화.", tags:["원자","준위"], emoji:"🧬", demo:"./원자모형.html", curriculumId:"[12전자03-04]"},
+    {title:"이중슬릿", category:"광학", desc:"확률파동·간섭무늬·파라미터 조절.", tags:["슬릿","간섭"], emoji:"〰️", demo:"./이중슬릿.html", curriculumId:"[12전자03-01]"},
   ];
 
   const grid = document.getElementById('grid');
@@ -175,24 +179,6 @@
   const count = document.getElementById('count');
   const empty = document.getElementById('empty');
 
-  function render(){
-    grid.innerHTML = '';
-    let list = [...projects];
-    const term = q.value.trim().toLowerCase();
-    if(term){ list = list.filter(p=> (p.title+p.desc+p.category+(p.tags||[]).join(',')).toLowerCase().includes(term)); }
-    if(cat.value){ list = list.filter(p=> p.category===cat.value); }
-    const by = sortSel.value;
-    list.sort((a,b)=>{
-      if(by==='title') return a.title.localeCompare(b.title,'ko');
-      if(by==='category') return a.category.localeCompare(b.category,'ko') || a.title.localeCompare(b.title,'ko');
-      // updated 날짜는 사용하지 않지만 옵션 호환을 위해 남김(둘 다 없으면 변화 없음)
-      return (b.updated||'').localeCompare(a.updated||'');
-    });
-    count.textContent = list.length;
-    empty.style.display = list.length? 'none':'block';
-    for(const p of list){ grid.append(makeCard(p)); }
-  }
-
   function makeCard(p){
     const node = document.getElementById('card-tpl').content.firstElementChild.cloneNode(true);
     const $ = s => node.querySelector(s);
@@ -200,26 +186,41 @@
     $('h3').textContent = p.title;
     $('.desc').textContent = p.desc || '';
     $('.category').textContent = p.category;
-    // 날짜 전면 비표시
     $('.date').textContent = '';
-    $('.curriculum').textContent = p.curriculumId ? `교육과정: ${p.curriculumId}` : '';
-    const tags = $('.tags'); tags.innerHTML='';
-    (p.tags||[]).forEach(t=>{ const chip=document.createElement('span'); chip.className='tag'; chip.textContent=t; tags.append(chip); });
-    const demo = $('.demo'); demo.href = p.demo || '#';
+    node.querySelector('.curriculum').textContent = p.curriculumId ? `교육과정: ${p.curriculumId}` : '';
+    const tags = node.querySelector('.tags'); tags.innerHTML='';
+    (p.tags||[]).forEach(t=>{
+      const chip=document.createElement('span');
+      chip.className='tag';
+      chip.textContent=t;
+      tags.append(chip);
+    });
+    node.querySelector('.demo').href = p.demo || '#';
     return node;
   }
 
   function pickEmoji(cat){
     return ({
-      '시뮬레이션':'🧪',
-      '전자/반도체':'🔌',
-      '광학':'🔬',
-      '상대성':'🛰️',
-      '데이터도구':'📊',
-      '웹앱':'🧩',
-      '열':'🌡️',     // 추가
-      '역학':'⚙️'     // 추가
+      '시뮬레이션':'🧪','전자/반도체':'🔌','광학':'🔬','상대성':'🛰️',
+      '데이터도구':'📊','웹앱':'🧩','열':'🌡️','역학':'⚙️'
     })[cat] || '🧩';
+  }
+
+  function render(){
+    grid.innerHTML = '';
+    let list = [...projects];
+    const term = q.value.trim().toLowerCase();
+    if(term){ list = list.filter(p => (p.title+p.desc+p.category+(p.tags||[]).join(',')).toLowerCase().includes(term)); }
+    if(cat.value){ list = list.filter(p => p.category===cat.value); }
+    const by = sortSel.value;
+    list.sort((a,b)=>{
+      if(by==='title') return a.title.localeCompare(b.title,'ko');
+      if(by==='category') return a.category.localeCompare(b.category,'ko') || a.title.localeCompare(b.title,'ko');
+      return (b.updated||'').localeCompare(a.updated||'');
+    });
+    count.textContent = list.length;
+    empty.style.display = list.length ? 'none' : 'block';
+    for(const p of list){ grid.append(makeCard(p)); }
   }
 
   q.addEventListener('input', render);
@@ -227,12 +228,9 @@
   sortSel.addEventListener('change', render);
   render();
 
-  // ==========================
-  // (1) 오늘의 물리 위젯
-  // ==========================
+  // 오늘의 물리
   (function(){
-    const FACTS = [
-      "태양빛이 태양에서 지구까지 도달하는 데 약 8분 20초가 걸립니다(≈ 499초).",
+    const FACTS=[      "태양빛이 태양에서 지구까지 도달하는 데 약 8분 20초가 걸립니다(≈ 499초).",
       "상온에서 소리는 공기 중 약 343 m/s로 이동하지만, 강철에서는 그보다 10배 이상 빠릅니다.",
       "진공에서는 깃털과 쇳덩이도 같은 가속도로 떨어집니다. (갈릴레이의 관성 법칙)",
       "빛의 속도는 약 299,792,458 m/s이며, 진공에서 이보다 더 빠르게 이동할 수 없습니다.",
@@ -268,38 +266,51 @@
       "지진파는 지구 내부에서 굴절·반사되어, 실제로 지구 내부의 구조를 알아내는 ‘CT 촬영기’ 같은 역할을 합니다.",
       "전자레인지에 금속 숟가락을 넣으면 불꽃이 튀는 건, 날카로운 끝에서 전하가 집중되어 방전이 일어나기 때문입니다.",
       "별빛은 수천 년, 수백만 년을 날아와 지금 우리 눈에 들어옵니다. 우리가 보는 건 ‘별의 현재’가 아니라 과거 모습입니다.",
-      "밤하늘 은하수가 희미한 구름처럼 보이는 건, 사실 수천억 개의 별빛이 한데 모여 보이는 것입니다.",
-    ];
-    const factEl = document.getElementById('fact-text');
-    const nextBtn = document.getElementById('next-fact');
-    const copyBtn = document.getElementById('copy-fact');
-    const shareBtn = document.getElementById('share-fact');
-    let lastIndex = -1;
-    function pickFact(){ let i=Math.floor(Math.random()*FACTS.length); if(i===lastIndex) i=(i+1)%FACTS.length; lastIndex=i; return FACTS[i]; }
-    function renderFact(t){ factEl.textContent = t; }
-    function newFact(){ renderFact(pickFact()); }
-    nextBtn.addEventListener('click', newFact);
-    copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(factEl.textContent.trim()); copyBtn.textContent='복사됨!'; setTimeout(()=>copyBtn.textContent='복사',900);}catch(e){ alert('복사 실패: '+e.message); } });
-    shareBtn.addEventListener('click', async ()=>{ const text=factEl.textContent.trim(); if(navigator.share){ try{ await navigator.share({title:'오늘의 물리', text}); }catch{} } else { alert('공유가 지원되지 않는 브라우저입니다.\n대신 복사 버튼을 사용하세요.'); } });
-    newFact();
+      "밤하늘 은하수가 희미한 구름처럼 보이는 건, 사실 수천억 개의 별빛이 한데 모여 보이는 것입니다."
+                ];
+    const factEl=document.getElementById('fact-text');
+    const nextBtn=document.getElementById('next-fact');
+    const copyBtn=document.getElementById('copy-fact');
+    const shareBtn=document.getElementById('share-fact');
+    let lastIndex=-1;
+    function pick(){ let i=Math.floor(Math.random()*FACTS.length); if(i===lastIndex) i=(i+1)%FACTS.length; lastIndex=i; return FACTS[i]; }
+    function set(t){ factEl.textContent=t; }
+    function next(){ set(pick()); }
+    nextBtn.addEventListener('click', next);
+    copyBtn.addEventListener('click', async ()=>{
+      try{ await navigator.clipboard.writeText(factEl.textContent.trim()); copyBtn.textContent='복사됨!'; setTimeout(()=>copyBtn.textContent='복사',900);}catch(e){ alert('복사 실패: '+e.message); }
+    });
+    shareBtn.addEventListener('click', async ()=>{
+      const text=factEl.textContent.trim();
+      if(navigator.share){ try{ await navigator.share({title:'오늘의 물리', text}); }catch{} }
+      else{ alert('공유가 지원되지 않는 브라우저입니다.\n대신 복사 버튼을 사용하세요.'); }
+    });
+    next();
   })();
 
-  // =====================================================
-  // (4) 인터랙티브 중력 배경 — 누르고 있는 동안만 끌림
-  // =====================================================
+  // 인터랙티브 중력 배경 (누르고 있는 동안만 끌림)
   (function(){
-    const canvas = document.getElementById('gravity-bg');
-    const ctx = canvas.getContext('2d');
-    const dpr = Math.min(window.devicePixelRatio||1, 2);
-    let W=0, H=0;
-    function resize(){ const r=canvas.getBoundingClientRect(); W=r.width|0; H=r.height|0; canvas.width=(W*dpr)|0; canvas.height=(H*dpr)|0; ctx.setTransform(dpr,0,0,dpr,0,0);} new ResizeObserver(resize).observe(canvas);
+    const canvas=document.getElementById('gravity-bg');
+    const ctx=canvas.getContext('2d');
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    let W=0,H=0;
 
-    const MAX_POINTS=1; // 눌렀을 때만 1개 활성
-    let points=[];     // 활성 질량 포인트 배열
-    let cursorPoint=null; // 포인터가 만드는 가상 질량
+    function resize(){
+      const r=canvas.getBoundingClientRect();
+      W=r.width|0; H=r.height|0;
+      canvas.width=(W*dpr)|0; canvas.height=(H*dpr)|0;
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+    new ResizeObserver(resize).observe(canvas);
 
-    let PARTICLE_COUNT=260; const particles=[];
-    function resetParticles(){ particles.length=0; for(let i=0;i<PARTICLE_COUNT;i++){ particles.push({ x:Math.random()*W, y:Math.random()*H, vx:(Math.random()-.5)*.5, vy:(Math.random()-.5)*.5, m:1+Math.random()*1 }); } }
+    let PARTICLE_COUNT=260;
+    const particles=[];
+    function resetParticles(){
+      particles.length=0;
+      for(let i=0;i<PARTICLE_COUNT;i++){
+        particles.push({ x:Math.random()*W, y:Math.random()*H, vx:(Math.random()-.5)*.5, vy:(Math.random()-.5)*.5, m:1+Math.random()*1 });
+      }
+    }
 
     const runBtn=document.getElementById('toggle-run');
     const trailBtn=document.getElementById('toggle-trail');
@@ -310,26 +321,32 @@
 
     runBtn.addEventListener('click',()=>{ running=!running; runBtn.textContent= running? '⏸︎ 일시정지':'▶ 재생'; });
     trailBtn.addEventListener('click',()=>{ trails=!trails; trailBtn.textContent='트레일: '+(trails?'켜짐':'꺼짐'); });
-    resetBtn.addEventListener('click',()=>{ points=[]; cursorPoint=null; resetParticles(); });
+    resetBtn.addEventListener('click',()=>{ points.length=0; cursorPoint=null; resetParticles(); });
     slider.addEventListener('input',()=>{ PARTICLE_COUNT=+slider.value; label.textContent=PARTICLE_COUNT; resetParticles(); });
 
-    function posFromEvent(ev){ const r=canvas.getBoundingClientRect(); const x=(ev.touches? ev.touches[0].clientX:ev.clientX)-r.left; const y=(ev.touches? ev.touches[0].clientY:ev.clientY)-r.top; return {x,y}; }
-    function startAttractor(x,y){ pointerActive=true; cursorPoint={x,y,m:240}; points=[cursorPoint]; }
-    function moveAttractor(x,y){ if(pointerActive && cursorPoint){ cursorPoint.x=x; cursorPoint.y=y; } }
-    function endAttractor(){ pointerActive=false; cursorPoint=null; points=[]; }
+    function pos(ev){
+      const r=canvas.getBoundingClientRect();
+      const x=(ev.touches? ev.touches[0].clientX:ev.clientX)-r.left;
+      const y=(ev.touches? ev.touches[0].clientY:ev.clientY)-r.top;
+      return {x,y};
+    }
 
-    // Pointer (마우스/펜)
-    canvas.addEventListener('pointerdown', e=>{ const p=posFromEvent(e); startAttractor(p.x,p.y); }, {passive:true});
-    canvas.addEventListener('pointermove', e=>{ if(pointerActive){ const p=posFromEvent(e); moveAttractor(p.x,p.y);} }, {passive:true});
-    canvas.addEventListener('pointerup',   ()=> endAttractor(), {passive:true});
-    canvas.addEventListener('pointercancel',()=> endAttractor(), {passive:true});
-    canvas.addEventListener('mouseleave', ()=> endAttractor());
+    const points=[];
+    let cursorPoint=null;
+    function start(x,y){ pointerActive=true; cursorPoint={x,y,m:240}; points[0]=cursorPoint; }
+    function move(x,y){ if(pointerActive && cursorPoint){ cursorPoint.x=x; cursorPoint.y=y; } }
+    function end(){ pointerActive=false; cursorPoint=null; points.length=0; }
 
-    // Touch (iOS Safari 호환)
-    canvas.addEventListener('touchstart', e=>{ const p=posFromEvent(e); startAttractor(p.x,p.y); }, {passive:true});
-    canvas.addEventListener('touchmove',  e=>{ if(pointerActive){ const p=posFromEvent(e); moveAttractor(p.x,p.y);} }, {passive:true});
-    canvas.addEventListener('touchend',   ()=> endAttractor(), {passive:true});
-    canvas.addEventListener('touchcancel',()=> endAttractor(), {passive:true});
+    canvas.addEventListener('pointerdown', e=>{ const p=pos(e); start(p.x,p.y); }, {passive:true});
+    canvas.addEventListener('pointermove', e=>{ if(pointerActive){ const p=pos(e); move(p.x,p.y);} }, {passive:true});
+    canvas.addEventListener('pointerup', end, {passive:true});
+    canvas.addEventListener('pointercancel', end, {passive:true});
+    canvas.addEventListener('mouseleave', end);
+
+    canvas.addEventListener('touchstart', e=>{ const p=pos(e); start(p.x,p.y); }, {passive:true});
+    canvas.addEventListener('touchmove',  e=>{ if(pointerActive){ const p=pos(e); move(p.x,p.y);} }, {passive:true});
+    canvas.addEventListener('touchend', end, {passive:true});
+    canvas.addEventListener('touchcancel', end, {passive:true});
 
     const G=120, FRICTION=0.995, MAX_SPEED=3.6;
     function step(dt){
@@ -346,15 +363,19 @@
         a.vx=(a.vx+ax*dt)*FRICTION; a.vy=(a.vy+ay*dt)*FRICTION;
         const sp=Math.hypot(a.vx,a.vy); if(sp>MAX_SPEED){ a.vx*=MAX_SPEED/sp; a.vy*=MAX_SPEED/sp; }
         a.x+=a.vx*dt*60/1000*16; a.y+=a.vy*dt*60/1000*16;
-        if(a.x<0){a.x=0;a.vx*=-.8} if(a.x>W){a.x=W;a.vx*=-.8}
-        if(a.y<0){a.y=0;a.vy*=-.8} if(a.y>H){a.y=H;a.vy*=-.8}
+        if(a.x<0){a.x=0;a.vx*=-.8}
+        if(a.x>W){a.x=W;a.vx*=-.8}
+        if(a.y<0){a.y=0;a.vy*=-.8}
+        if(a.y>H){a.y=H;a.vy*=-.8}
       }
     }
     function draw(){
-      if(!trails){ ctx.clearRect(0,0,W,H);} else { ctx.fillStyle='rgba(11,16,32,0.12)'; ctx.fillRect(0,0,W,H);}
+      if(!trails){ ctx.clearRect(0,0,W,H); }
+      else{ ctx.fillStyle='rgba(11,16,32,0.12)'; ctx.fillRect(0,0,W,H); }
       for(const p of points){
         const grd=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,28);
-        grd.addColorStop(0,'rgba(107,230,117,0.9)'); grd.addColorStop(1,'rgba(107,230,117,0)');
+        grd.addColorStop(0,'rgba(107,230,117,0.9)');
+        grd.addColorStop(1,'rgba(107,230,117,0)');
         ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(p.x,p.y,28,0,Math.PI*2); ctx.fill();
         ctx.strokeStyle='rgba(107,230,117,0.35)'; ctx.lineWidth=1; ctx.stroke();
       }
@@ -364,10 +385,15 @@
     }
 
     let last=performance.now();
-    function loop(now){ const dt=Math.min(32, now-last); last=now; if(running){ step(dt); draw(); } requestAnimationFrame(loop); }
+    function loop(now){
+      const dt=Math.min(32, now-last); last=now;
+      if(running){ step(dt); draw(); }
+      requestAnimationFrame(loop);
+    }
 
-    // 초기화
-    (function init(){ const r=canvas.getBoundingClientRect(); if(r.width===0) canvas.style.width='100%'; })();
+    (function init(){
+      if(canvas.getBoundingClientRect().width===0) canvas.style.width='100%';
+    })();
     resetParticles();
     requestAnimationFrame(loop);
     new ResizeObserver(()=>{ resetParticles(); }).observe(canvas);
@@ -375,4 +401,3 @@
   </script>
 </body>
 </html>
-
