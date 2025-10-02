@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>프로젝트 허브 — 시(물리)에이션</title>
+  <title>프로젝트 허브 — 시(물리)에이션)</title>
   <style>
     :root{
       --bg:#0b1020; --panel:#121a33; --ink:#e9efff; --muted:#a6b3d9; --line:#243166; --accent:#7aa2ff;
@@ -12,17 +12,18 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%}
+
+    /* ✅ 이미지가 보이도록 그라디언트를 ‘반투명’으로 변경 */
     body{
       margin:0;
       color:var(--ink);
       font:14px/1.55 ui-sans-serif,system-ui,"Pretendard","Noto Sans KR","Apple SD Gothic Neo",Arial;
-      /* 레이어: 1) 그라디언트(위) 2) 배경이미지(아래) */
       background:
-        radial-gradient(1200px 800px at 10% -10%, #0e1735 0%, #0b1020 60%),
+        radial-gradient(1200px 800px at 10% -10%, rgba(14,23,53,.68) 0%, rgba(11,16,32,.72) 60%),
         url("./space-bg.jpg") center / cover no-repeat;
-      min-height:100dvh; /* 모바일에서도 화면 가득 */
+      min-height:100dvh;
     }
-    /* 데스크톱(정교한 포인터)에서만 이미지 레이어를 fixed */
+    /* 데스크톱에서만 배경 이미지를 fixed (모바일 성능/호환 이슈 회피) */
     @media (hover:hover) and (pointer:fine){
       body{ background-attachment: scroll, fixed; }
     }
@@ -186,32 +187,23 @@
     $('h3').textContent = p.title;
     $('.desc').textContent = p.desc || '';
     $('.category').textContent = p.category;
-    $('.date').textContent = '';
     node.querySelector('.curriculum').textContent = p.curriculumId ? `교육과정: ${p.curriculumId}` : '';
     const tags = node.querySelector('.tags'); tags.innerHTML='';
-    (p.tags||[]).forEach(t=>{
-      const chip=document.createElement('span');
-      chip.className='tag';
-      chip.textContent=t;
-      tags.append(chip);
-    });
+    (p.tags||[]).forEach(t=>{ const chip=document.createElement('span'); chip.className='tag'; chip.textContent=t; tags.append(chip); });
     node.querySelector('.demo').href = p.demo || '#';
     return node;
   }
 
   function pickEmoji(cat){
-    return ({
-      '시뮬레이션':'🧪','전자/반도체':'🔌','광학':'🔬','상대성':'🛰️',
-      '데이터도구':'📊','웹앱':'🧩','열':'🌡️','역학':'⚙️'
-    })[cat] || '🧩';
+    return ({'시뮬레이션':'🧪','전자/반도체':'🔌','광학':'🔬','상대성':'🛰️','데이터도구':'📊','웹앱':'🧩','열':'🌡️','역학':'⚙️'})[cat] || '🧩';
   }
 
   function render(){
     grid.innerHTML = '';
     let list = [...projects];
     const term = q.value.trim().toLowerCase();
-    if(term){ list = list.filter(p => (p.title+p.desc+p.category+(p.tags||[]).join(',')).toLowerCase().includes(term)); }
-    if(cat.value){ list = list.filter(p => p.category===cat.value); }
+    if(term){ list = list.filter(p=> (p.title+p.desc+p.category+(p.tags||[]).join(',')).toLowerCase().includes(term)); }
+    if(cat.value){ list = list.filter(p=> p.category===cat.value); }
     const by = sortSel.value;
     list.sort((a,b)=>{
       if(by==='title') return a.title.localeCompare(b.title,'ko');
@@ -219,18 +211,18 @@
       return (b.updated||'').localeCompare(a.updated||'');
     });
     count.textContent = list.length;
-    empty.style.display = list.length ? 'none' : 'block';
+    empty.style.display = list.length? 'none':'block';
     for(const p of list){ grid.append(makeCard(p)); }
   }
-
   q.addEventListener('input', render);
   cat.addEventListener('change', render);
   sortSel.addEventListener('change', render);
   render();
 
-  // 오늘의 물리
+  // 오늘의 물리 (축약 버전)
   (function(){
-    const FACTS=[      "태양빛이 태양에서 지구까지 도달하는 데 약 8분 20초가 걸립니다(≈ 499초).",
+    const FACTS=[
+      "태양빛이 태양에서 지구까지 도달하는 데 약 8분 20초가 걸립니다(≈ 499초).",
       "상온에서 소리는 공기 중 약 343 m/s로 이동하지만, 강철에서는 그보다 10배 이상 빠릅니다.",
       "진공에서는 깃털과 쇳덩이도 같은 가속도로 떨어집니다. (갈릴레이의 관성 법칙)",
       "빛의 속도는 약 299,792,458 m/s이며, 진공에서 이보다 더 빠르게 이동할 수 없습니다.",
@@ -266,42 +258,33 @@
       "지진파는 지구 내부에서 굴절·반사되어, 실제로 지구 내부의 구조를 알아내는 ‘CT 촬영기’ 같은 역할을 합니다.",
       "전자레인지에 금속 숟가락을 넣으면 불꽃이 튀는 건, 날카로운 끝에서 전하가 집중되어 방전이 일어나기 때문입니다.",
       "별빛은 수천 년, 수백만 년을 날아와 지금 우리 눈에 들어옵니다. 우리가 보는 건 ‘별의 현재’가 아니라 과거 모습입니다.",
-      "밤하늘 은하수가 희미한 구름처럼 보이는 건, 사실 수천억 개의 별빛이 한데 모여 보이는 것입니다."
-                ];
+      "밤하늘 은하수가 희미한 구름처럼 보이는 건, 사실 수천억 개의 별빛이 한데 모여 보이는 것입니다.",
+    ];
     const factEl=document.getElementById('fact-text');
     const nextBtn=document.getElementById('next-fact');
     const copyBtn=document.getElementById('copy-fact');
     const shareBtn=document.getElementById('share-fact');
-    let lastIndex=-1;
-    function pick(){ let i=Math.floor(Math.random()*FACTS.length); if(i===lastIndex) i=(i+1)%FACTS.length; lastIndex=i; return FACTS[i]; }
-    function set(t){ factEl.textContent=t; }
-    function next(){ set(pick()); }
+    let last=-1;
+    function pick(){ let i=Math.floor(Math.random()*FACTS.length); if(i===last) i=(i+1)%FACTS.length; last=i; return FACTS[i]; }
+    function next(){ factEl.textContent=pick(); }
     nextBtn.addEventListener('click', next);
-    copyBtn.addEventListener('click', async ()=>{
-      try{ await navigator.clipboard.writeText(factEl.textContent.trim()); copyBtn.textContent='복사됨!'; setTimeout(()=>copyBtn.textContent='복사',900);}catch(e){ alert('복사 실패: '+e.message); }
-    });
-    shareBtn.addEventListener('click', async ()=>{
-      const text=factEl.textContent.trim();
-      if(navigator.share){ try{ await navigator.share({title:'오늘의 물리', text}); }catch{} }
-      else{ alert('공유가 지원되지 않는 브라우저입니다.\n대신 복사 버튼을 사용하세요.'); }
-    });
+    copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(factEl.textContent.trim()); copyBtn.textContent='복사됨!'; setTimeout(()=>copyBtn.textContent='복사',900);}catch(e){ alert('복사 실패: '+e.message); } });
+    shareBtn.addEventListener('click', async ()=>{ const text=factEl.textContent.trim(); if(navigator.share){ try{ await navigator.share({title:'오늘의 물리', text}); }catch{} } else { alert('공유 미지원 — 복사 사용'); } });
     next();
   })();
 
-  // 인터랙티브 중력 배경 (누르고 있는 동안만 끌림)
+  // 인터랙티브 중력 배경(누르고 있는 동안만 끌림)
   (function(){
     const canvas=document.getElementById('gravity-bg');
     const ctx=canvas.getContext('2d');
     const dpr=Math.min(window.devicePixelRatio||1,2);
     let W=0,H=0;
-
-    function resize(){
+    new ResizeObserver(()=>{
       const r=canvas.getBoundingClientRect();
       W=r.width|0; H=r.height|0;
       canvas.width=(W*dpr)|0; canvas.height=(H*dpr)|0;
       ctx.setTransform(dpr,0,0,dpr,0,0);
-    }
-    new ResizeObserver(resize).observe(canvas);
+    }).observe(canvas);
 
     let PARTICLE_COUNT=260;
     const particles=[];
@@ -363,19 +346,15 @@
         a.vx=(a.vx+ax*dt)*FRICTION; a.vy=(a.vy+ay*dt)*FRICTION;
         const sp=Math.hypot(a.vx,a.vy); if(sp>MAX_SPEED){ a.vx*=MAX_SPEED/sp; a.vy*=MAX_SPEED/sp; }
         a.x+=a.vx*dt*60/1000*16; a.y+=a.vy*dt*60/1000*16;
-        if(a.x<0){a.x=0;a.vx*=-.8}
-        if(a.x>W){a.x=W;a.vx*=-.8}
-        if(a.y<0){a.y=0;a.vy*=-.8}
-        if(a.y>H){a.y=H;a.vy*=-.8}
+        if(a.x<0){a.x=0;a.vx*=-.8} if(a.x>W){a.x=W;a.vx*=-.8}
+        if(a.y<0){a.y=0;a.vy*=-.8} if(a.y>H){a.y=H;a.vy*=-.8}
       }
     }
     function draw(){
-      if(!trails){ ctx.clearRect(0,0,W,H); }
-      else{ ctx.fillStyle='rgba(11,16,32,0.12)'; ctx.fillRect(0,0,W,H); }
+      if(!trails){ ctx.clearRect(0,0,W,H);} else { ctx.fillStyle='rgba(11,16,32,0.12)'; ctx.fillRect(0,0,W,H); }
       for(const p of points){
         const grd=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,28);
-        grd.addColorStop(0,'rgba(107,230,117,0.9)');
-        grd.addColorStop(1,'rgba(107,230,117,0)');
+        grd.addColorStop(0,'rgba(107,230,117,0.9)'); grd.addColorStop(1,'rgba(107,230,117,0)');
         ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(p.x,p.y,28,0,Math.PI*2); ctx.fill();
         ctx.strokeStyle='rgba(107,230,117,0.35)'; ctx.lineWidth=1; ctx.stroke();
       }
@@ -385,15 +364,8 @@
     }
 
     let last=performance.now();
-    function loop(now){
-      const dt=Math.min(32, now-last); last=now;
-      if(running){ step(dt); draw(); }
-      requestAnimationFrame(loop);
-    }
-
-    (function init(){
-      if(canvas.getBoundingClientRect().width===0) canvas.style.width='100%';
-    })();
+    function loop(now){ const dt=Math.min(32, now-last); last=now; if(running){ step(dt); draw(); } requestAnimationFrame(loop); }
+    if(canvas.getBoundingClientRect().width===0) canvas.style.width='100%';
     resetParticles();
     requestAnimationFrame(loop);
     new ResizeObserver(()=>{ resetParticles(); }).observe(canvas);
@@ -401,4 +373,3 @@
   </script>
 </body>
 </html>
-
