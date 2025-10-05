@@ -203,27 +203,26 @@ const fmt = n => Number.isFinite(n) ? n.toFixed(2) : '0.00';
 
 /* =============== 미션 배치 (초기화 때만) =============== */
 function placeTargetBySpecialAngle(){
-  const v = Number(speedSl.value);
-  const maxX = Wx*0.92, minX = Wx*0.25;
+  // 1) 특수각을 무작위로 선택
+  missionAngle = SPECIAL_ANGLES[Math.floor(Math.random()*SPECIAL_ANGLES.length)];
 
-  const candidates = SPECIAL_ANGLES.map(ang=>{
-    const R = (v*v*Math.sin(2*ang*Math.PI/180))/g;
-    return {ang, x:cannon.x + R};
-  }).filter(c => c.x >= minX && c.x <= maxX);
+  // 2) 속력도 넓은 범위에서 무작위 (슬라이더 min/max를 그대로 사용)
+  const vMin = Number(speedSl.min || 1);
+  const vMax = Number(speedSl.max || 100);
+  const v = Math.round(vMin + Math.random()*(vMax - vMin));
+  speedSl.value = v;
+  speedVal.textContent = String(v);
 
-  let pick;
-  if(candidates.length){
-    pick = candidates.sort((a,b)=> Math.abs(a.x - Wx*0.6) - Math.abs(b.x - Wx*0.6))[0];
-  }else{
-    pick = SPECIAL_ANGLES.map(ang=>{
-      const R = (v*v*Math.sin(2*ang*Math.PI/180))/g;
-      return {ang, x: clamp(cannon.x+R, minX, maxX)};
-    }).sort((a,b)=> Math.abs(a.x - Wx*0.6) - Math.abs(b.x - Wx*0.6))[0];
-  }
-  missionAngle = pick.ang;
-  target.x = pick.x; target.y = 4;
+  // 3) 이 속력과 각도로 사거리 계산 → 과녁 배치
+  const R = (v*v*Math.sin(2*missionAngle*Math.PI/180))/g;
+  const maxX = Wx * 0.92, minX = Wx * 0.25;
+  target.x = clamp(cannon.x + R, minX, maxX);
+  target.y = 4;
+
+  // 4) 미션 안내
   missionEl.innerHTML = `🎯 특수각 도전: <b>${missionAngle}°</b> (과녁은 초기화 시점 속력 기준) · 포신을 <b>드래그</b>해 각도 조절`;
 }
+
 
 /* =============== 해석/실측 결과 =============== */
 function theoryValues(v, th){
