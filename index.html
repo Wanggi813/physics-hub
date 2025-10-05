@@ -18,16 +18,15 @@
       color:var(--ink);
       font:14px/1.55 ui-sans-serif,system-ui,"Pretendard","Noto Sans KR","Apple SD Gothic Neo",Arial;
 
-      /* 두 레이어 모두 고정(fixed) + 이미지 전체 보이도록 contain */
+      /* 두 레이어 모두 고정(fixed) */
       background-image:
         radial-gradient(1200px 800px at 10% -10%, rgba(14,23,53,0.62) 0%, rgba(11,16,32,0.74) 60%),
-        url("./space-bg.jpg");
+        url("./space-bg.jpg?v=1");
       background-position: center center, center center;
       background-size: cover;
       background-repeat: no-repeat, no-repeat;
       background-attachment: fixed, fixed;
 
-      /* 이미지 비어 보이는 가장자리 색( contain 사용 시 ) */
       background-color: #0b1020;
       min-height:100dvh;
     }
@@ -41,10 +40,28 @@
     input[type="search"]{width:230px}
     .grid{margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
     .card{ background:linear-gradient(180deg,rgba(18,26,51,.9),rgba(12,18,36,.9)); border:1px solid rgba(66,90,150,.45); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column }
-    .thumb{ height:120px; display:flex; align-items:center; justify-content:center; background:
-      radial-gradient(900px 400px at 70% -20%, rgba(122,162,255,.35), transparent 50%), linear-gradient(135deg, rgba(122,162,255,.08), rgba(0,0,0,.06));
-      border-bottom:1px solid rgba(120,150,220,.25) }
+
+    /* 썸네일: 풀블리드 이미지 + 그라디언트 톤 맞춤 */
+    .thumb{
+      position:relative; overflow:hidden; height:120px;
+      display:flex; align-items:center; justify-content:center;
+      background:
+        radial-gradient(900px 400px at 70% -20%, rgba(122,162,255,.35), transparent 50%),
+        linear-gradient(135deg, rgba(122,162,255,.08), rgba(0,0,0,.06));
+      border-bottom:1px solid rgba(120,150,220,.25);
+    }
+    .thumb img.thumb-img{
+      width:100%; height:100%;
+      object-fit:cover; display:block;
+    }
+    /* 이미지 위에 은은한 오버레이(톤 통일). 필요 없으면 주석 처리 */
+    .thumb::after{
+      content:""; position:absolute; inset:0;
+      background:linear-gradient(180deg, rgba(0,0,0,.04), rgba(0,0,0,.10));
+      pointer-events:none;
+    }
     .thumb span{font-size:44px;filter:drop-shadow(0 6px 20px rgba(0,0,0,.45))}
+
     .body{padding:14px 14px 12px;display:flex;flex-direction:column;gap:10px}
     .title{display:flex;justify-content:space-between;gap:8px}
     .title h3{margin:0;font-size:16px;line-height:1.35}
@@ -159,22 +176,22 @@
   <script>
   // ===== 프로젝트 카드 렌더링 =====
   const projects = [
-    {title:"토크와 평형", category:"역학", desc:"물체를 이용해 토크평형 만들기", tags:["토크","평형"], emoji:"🧗‍♀️", demo:"./토크와 평형.html", curriculumId:"[12물리01-01]"},
-    {title:"RLC 공명", category:"전자/반도체", desc:"직렬 RLC 공명/위상·전류 변화 시각화.", tags:["회로","공명"], emoji:"🔄", demo:"./RLC 공명.html", curriculumId:"[12전자01-06]"},
-    {title:"간섭무늬", category:"광학", desc:"파장·슬릿 간격 조절로 간섭 패턴 관찰.", tags:["파동","무늬"], emoji:"🎯", demo:"./간섭무늬.html", curriculumId:"[12물리03-01]"},
-    {title:"광전효과", category:"전자/반도체", desc:"파장/세기에 따른 광전자 방출과 임계 주파수.", tags:["광자","금속"], emoji:"📸", demo:"./광전효과.html", curriculumId:"[12전자02-04]"},
-    {title:"다이오드", category:"전자/반도체", desc:"PN 접합·공핍층·I–V 특성 직관.", tags:["PN","I–V"], emoji:"🔌", demo:"./다이오드.html", curriculumId:"[12물리03-05]"},
-    {title:"도플러효과", category:"광학", desc:"이동 음원/관측자 주파수 변화와 마하 콘.", tags:["도플러","파동"], emoji:"🎵", demo:"./도플러효과.html", curriculumId:"[12역학03-03]"},
-    {title:"러더퍼드 알파입자 산란실험", category:"시뮬레이션", desc:"금박 통과·대각 산란·반사 확률 시각화.", tags:["산란","쿨롱"], emoji:"🧪", demo:"./러더퍼드 알파입자 산란실험.html", curriculumId:"[12전자01-06]"},
-    {title:"렌즈의 굴절", category:"광학", desc:"볼록/오목·실상/허상 구성과 보조선.", tags:["렌즈","상"], emoji:"🔭", demo:"./렌즈의 굴절.html", curriculumId:"[12물리03-02]"},
-    {title:"발광 다이오드", category:"전자/반도체", desc:"파장별 전압·밴드갭과 발광.", tags:["LED","밴드갭"], emoji:"💡", demo:"./발광 다이오드.html", curriculumId:"[12전자02-04]"},
-    {title:"상대성이론", category:"상대성", desc:"길이수축·시공간 시각화(우주선/별).", tags:["특수","일반"], emoji:"🚀", demo:"./상대성이론.html", curriculumId:"[12물리03-06]"},
-    {title:"스넬의 법칙", category:"광학", desc:"굴절률 변화에 따른 입사/굴절/임계각.", tags:["n1,n2","TIR"], emoji:"📐", demo:"./스넬의 법칙.html", curriculumId:"[12물리03-02]"},
-    {title:"포물선 운동", category:"역학", desc:"대포를 쏴서 과녁을 맞추자.", tags:["포물선운동","게임"], emoji:"🌈", demo:"./포물선 운동.html", curriculumId:"[12역학01-02]"},
-    {title:"열역학", category:"열", desc:"등압, 등적, 등온, 단열과정을 확인.", tags:["열기관","열과정"], emoji:"🐦‍🔥", demo:"./열역학.html", curriculumId:"[12물리01-06], [12역학02-02]"},
-    {title:"옴의 법칙", category:"전자/반도체", desc:"V=IR, 직렬/병렬 직관, 전류 흐름 애니메이션.", tags:["전압","전류"], emoji:"⚡", demo:"./옴의 법칙.html", curriculumId:"[12물리02-02]"},
-    {title:"원자모형", category:"시뮬레이션", desc:"보어/오비탈/전자구름 개념 시각화.", tags:["원자","준위"], emoji:"🧬", demo:"./원자모형.html", curriculumId:"[12전자03-04]"},
-    {title:"이중슬릿", category:"광학", desc:"확률파동·간섭무늬·파라미터 조절.", tags:["슬릿","간섭"], emoji:"〰️", demo:"./이중슬릿.html", curriculumId:"[12전자03-01]"},
+    {title:"토크와 평형", category:"역학", desc:"물체를 이용해 토크평형 만들기", tags:["토크","평형"], emoji:"🧗‍♀️", demo:"./토크와 평형.html", curriculumId:"[12물리01-01]", thumb:"./thumb_nail/토크와_평형.png"},
+    {title:"RLC 공명", category:"전자/반도체", desc:"직렬 RLC 공명/위상·전류 변화 시각화.", tags:["회로","공명"], emoji:"🔄", demo:"./RLC 공명.html", curriculumId:"[12전자01-06]", thumb:"./thumb_nail/RLC회로.png"},
+    {title:"간섭무늬", category:"광학", desc:"파장·슬릿 간격 조절로 간섭 패턴 관찰.", tags:["파동","무늬"], emoji:"🎯", demo:"./간섭무늬.html", curriculumId:"[12물리03-01]", thumb:"./thumb_nail/간섭무늬.png"},
+    {title:"광전효과", category:"전자/반도체", desc:"파장/세기에 따른 광전자 방출과 임계 주파수.", tags:["광자","금속"], emoji:"📸", demo:"./광전효과.html", curriculumId:"[12전자02-04]", thumb:"./thumb_nail/광전효과.png"},
+    {title:"다이오드", category:"전자/반도체", desc:"PN 접합·공핍층·I–V 특성 직관.", tags:["PN","I–V"], emoji:"🔌", demo:"./다이오드.html", curriculumId:"[12물리03-05]", thumb:"./thumb_nail/다이오드.png"},
+    {title:"도플러효과", category:"광학", desc:"이동 음원/관측자 주파수 변화와 마하 콘.", tags:["도플러","파동"], emoji:"🎵", demo:"./도플러효과.html", curriculumId:"[12역학03-03]", thumb:"./thumb_nail/도플러효과.png"},
+    {title:"러더퍼드 알파입자 산란실험", category:"시뮬레이션", desc:"금박 통과·대각 산란·반사 확률 시각화.", tags:["산란","쿨롱"], emoji:"🧪", demo:"./러더퍼드 알파입자 산란실험.html", curriculumId:"[12전자01-06]", thumb:"./thumb_nail/러더퍼드_산란실험.png"},
+    {title:"렌즈의 굴절", category:"광학", desc:"볼록/오목·실상/허상 구성과 보조선.", tags:["렌즈","상"], emoji:"🔭", demo:"./렌즈의 굴절.html", curriculumId:"[12물리03-02]", thumb:"./thumb_nail/렌즈의_법칙.png"},
+    {title:"발광 다이오드", category:"전자/반도체", desc:"파장별 전압·밴드갭과 발광.", tags:["LED","밴드갭"], emoji:"💡", demo:"./발광 다이오드.html", curriculumId:"[12전자02-04]", thumb:"./thumb_nail/발광_다이오드.png"},
+    {title:"상대성이론", category:"상대성", desc:"길이수축·시공간 시각화(우주선/별).", tags:["특수","일반"], emoji:"🚀", demo:"./상대성이론.html", curriculumId:"[12물리03-06]", thumb:"./thumb_nail/상대성이론.png"},
+    {title:"스넬의 법칙", category:"광학", desc:"굴절률 변화에 따른 입사/굴절/임계각.", tags:["n1,n2","TIR"], emoji:"📐", demo:"./스넬의 법칙.html", curriculumId:"[12물리03-02]", thumb:"./thumb_nail/스넬의_법칙.png"},
+    {title:"포물선 운동", category:"역학", desc:"대포를 쏴서 과녁을 맞추자.", tags:["포물선운동","게임"], emoji:"🌈", demo:"./포물선 운동.html", curriculumId:"[12역학01-02]", thumb:"./thumb_nail/포물선_운동.png"},
+    {title:"열역학", category:"열", desc:"등압, 등적, 등온, 단열과정을 확인.", tags:["열기관","열과정"], emoji:"🐦‍🔥", demo:"./열역학.html", curriculumId:"[12물리01-06], [12역학02-02]", thumb:"./thumb_nail/열역학.png"},
+    {title:"옴의 법칙", category:"전자/반도체", desc:"V=IR, 직렬/병렬 직관, 전류 흐름 애니메이션.", tags:["전압","전류"], emoji:"⚡", demo:"./옴의 법칙.html", curriculumId:"[12물리02-02]", thumb:"./thumb_nail/옴의_법칙.png"},
+    {title:"원자모형", category:"시뮬레이션", desc:"보어/오비탈/전자구름 개념 시각화.", tags:["원자","준위"], emoji:"🧬", demo:"./원자모형.html", curriculumId:"[12전자03-04]", thumb:"./thumb_nail/원자모형.png"},
+    {title:"이중슬릿", category:"광학", desc:"확률파동·간섭무늬·파라미터 조절.", tags:["슬릿","간섭"], emoji:"〰️", demo:"./이중슬릿.html", curriculumId:"[12전자03-01]", thumb:"./thumb_nail/이중슬릿.png"},
   ];
 
   const grid = document.getElementById('grid');
@@ -187,13 +204,32 @@
   function makeCard(p){
     const node = document.getElementById('card-tpl').content.firstElementChild.cloneNode(true);
     const $ = s => node.querySelector(s);
-    $('.thumb span').textContent = p.emoji || pickEmoji(p.category);
+
+    // 썸네일: 이미지가 있으면 <img>, 없으면 이모지
+    const thumb = node.querySelector('.thumb');
+    thumb.innerHTML = '';
+    if (p.thumb) {
+      const img = document.createElement('img');
+      img.src = p.thumb;
+      img.alt = p.title;
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.className = 'thumb-img';
+      thumb.appendChild(img);
+    } else {
+      const span = document.createElement('span');
+      span.textContent = p.emoji || pickEmoji(p.category);
+      thumb.appendChild(span);
+    }
+
     $('h3').textContent = p.title;
     $('.desc').textContent = p.desc || '';
     $('.category').textContent = p.category;
     node.querySelector('.curriculum').textContent = p.curriculumId ? `교육과정: ${p.curriculumId}` : '';
     const tags = node.querySelector('.tags'); tags.innerHTML='';
-    (p.tags||[]).forEach(t=>{ const chip=document.createElement('span'); chip.className='tag'; chip.textContent=t; tags.append(chip); });
+    (p.tags||[]).forEach(t=>{
+      const chip=document.createElement('span'); chip.className='tag'; chip.textContent=t; tags.append(chip);
+    });
     node.querySelector('.demo').href = p.demo || '#';
     return node;
   }
@@ -226,7 +262,7 @@
   // ===== 오늘의 물리 (축약) =====
   (function(){
     const FACTS=[
-          "태양빛이 태양에서 지구까지 도달하는 데 약 8분 20초가 걸립니다(≈ 499초).",
+      "태양빛이 태양에서 지구까지 도달하는 데 약 8분 20초가 걸립니다(≈ 499초).",
       "상온에서 소리는 공기 중 약 343 m/s로 이동하지만, 강철에서는 그보다 10배 이상 빠릅니다.",
       "진공에서는 깃털과 쇳덩이도 같은 가속도로 떨어집니다. (갈릴레이의 관성 법칙)",
       "빛의 속도는 약 299,792,458 m/s이며, 진공에서 이보다 더 빠르게 이동할 수 없습니다.",
@@ -377,5 +413,3 @@
   </script>
 </body>
 </html>
-
-
