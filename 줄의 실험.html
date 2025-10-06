@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>줄의 실험 시뮬레이션 — 계산 로직 수정판</title>
+  <style>
+    :root{
+      --bg:#f0f4f8; --card:#fff; --accent:#007bff; --muted:#6c757d; --rope:#6d6d6d;
+    }
+    *{box-sizing:border-box}
+    body{font-family:Inter, 'Segoe UI', Tahoma, Arial; margin:0; min-height:100vh; background:var(--bg); color:#222; display:flex; align-items:center; justify-content:center; padding:24px}
+    .container{width:100%; max-width:1200px; display:grid; grid-template-columns: 1fr 380px; gap:28px; background:var(--card); padding:24px; border-radius:14px; box-shadow:0 10px 30px rgba(9,30,66,0.08)}
+
+    /* Simulation area */
+    .sim-area{position:relative; border-radius:10px; background:linear-gradient(180deg,#e9eef6 0%, #f7fafc 100%); min-height:680px; overflow:hidden; padding:20px}
+    .status{position:absolute; left:50%; transform:translateX(-50%); top:10px; background:rgba(255,255,255,0.9); padding:6px 12px; border-radius:12px; font-weight:700; color:var(--accent); box-shadow:0 4px 12px rgba(11,20,40,0.06); z-index:20}
+
+    /* pulleys, weights */
+    .pulley{width:42px; height:42px; border-radius:50%; background:linear-gradient(180deg,#bdbdbd,#8f8f8f); border:3px solid #555; position:absolute; top:52px; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 -6px 10px rgba(0,0,0,0.12)}
+    .pulley::after{content:''; width:22px; height:22px; border-radius:50%; background:#777; box-shadow:inset 0 2px 4px rgba(0,0,0,0.2)}
+    .pulley.left{left:80px}
+    .pulley.right{right:80px}
+
+    .weight{width:72px; height:84px; border-radius:8px; background:linear-gradient(180deg,#6a6a6a,#3f3f3f); color:#fff; position:absolute; top:110px; display:flex; flex-direction:column; justify-content:center; align-items:center; font-weight:700; z-index:12; box-shadow:0 8px 18px rgba(0,0,0,0.18)}
+    .weight .kg{font-size:18px}
+    .weight.left{left:60px}
+    .weight.right{right:60px}
+
+    /* rope as svg path */
+    svg.rope-svg{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:6}
+    svg.rope-svg path{stroke:var(--rope); stroke-width:5; fill:none; stroke-linecap:round}
+
+    /* calorimeter */
+    .calorimeter{position:absolute; left:50%; transform:translateX(-50%); bottom:18px; width:260px; height:300px; background:#f8f9fa; border-radius:12px; border:6px solid #8a9198; display:flex; align-items:flex-end; justify-content:center; overflow:hidden; z-index:14}
+    .calorimeter .lid{position:absolute; top:0; width:100%; height:22px; background:#d3d3d3; border-bottom:3px solid #868e96}
+    .water{position:absolute; bottom:0; width:100%; height:64%; background:linear-gradient(180deg,#63a4ff,#8abfff); transition:height 400ms linear; z-index:2}
+    .water::before{content:''; position:absolute; left:-50%; top:-8px; width:200%; height:40px; background:radial-gradient(circle at 10% 20%, rgba(255,255,255,0.18) 0, rgba(255,255,255,0) 20%), radial-gradient(circle at 80% 40%, rgba(255,255,255,0.08) 0, rgba(255,255,255,0) 25%); transform:translateY(0); animation:wave 1.2s linear infinite}
+    @keyframes wave{ from{transform:translateX(0)} to{transform:translateX(50%)} }
+
+    .paddle-shaft{position:absolute; left:50%; transform:translateX(-50%); top:22px; width:12px; height:245px; background:#bfbfbf; z-index:16}
+    .paddle-wheel{position:absolute; left:50%; transform:translateX(-50%); bottom:52px; width:110px; height:110px; z-index:18}
+    .paddle-blades{width:100%; height:100%; position:relative; transform-origin:center center}
+    .paddle-wheel.spinning .paddle-blades{animation:spin 0.15s linear infinite}
+    @keyframes spin{from{transform:rotate(0)} to{transform:rotate(360deg)}}
+    .paddle-blade{position:absolute; left:50%; top:10px; width:18px; height:80px; background:#495057; border-radius:6px; transform-origin:center}
+    .paddle-blade:nth-child(1){transform:translateX(-50%) rotate(0deg)}
+    .paddle-blade:nth-child(2){transform:translateX(-50%) rotate(90deg)}
+    .paddle-blade:nth-child(3){transform:translateX(-50%) rotate(180deg)}
+    .paddle-blade:nth-child(4){transform:translateX(-50%) rotate(270deg)}
+
+    /* thermometer */
+    .thermo{position:absolute; right:22px; bottom:86px; width:28px; height:220px; background:#fff; border-radius:10px; border:2px solid #343a4b; display:flex; align-items:flex-end; padding:4px; z-index:22}
+    .mercury{width:100%; height:20%; background:#e5383b; border-radius:8px 8px 0 0; transition:height 300ms linear}
+
+    /* controls */
+    .controls{padding:6px 8px}
+    h2{margin:0 0 14px 0; color:var(--accent)}
+    .group{background:#f8f9fa; padding:12px; border-radius:10px; border:1px solid #e6e9ee; margin-bottom:12px}
+    .grid{display:grid; gap:10px}
+    .row{display:flex; gap:10px; align-items:center}
+    label{font-weight:700; color:#495057}
+    .value{font-family:'Courier New', monospace; color:var(--accent); font-weight:700}
+    input[type=range]{width:100%}
+    button{background:var(--accent); color:#fff; padding:12px 16px; border-radius:10px; border:none; font-weight:700; cursor:pointer}
+    button.secondary{background:#6c757d}
+    button:disabled{opacity:0.5; cursor:not-allowed}
+
+    /* results */
+    .results{display:grid; gap:8px; margin-top:6px}
+    .result-item{display:flex; justify-content:space-between; padding:8px; border-radius:8px; background:#fff; border:1px solid #e6e9ee}
+
+    /* small screen */
+    @media(max-width:980px){ .container{grid-template-columns:1fr; padding:16px} .thermo{display:none} }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="sim-area" id="sim-area">
+      <div class="status" id="status">실험 준비 완료</div>
+
+      <svg class="rope-svg" id="ropeSvg" viewBox="0 0 800 700" preserveAspectRatio="none">
+        <path id="rope-left" d=""></path>
+        <path id="rope-right" d=""></path>
+      </svg>
+
+      <div class="pulley left" id="pulleyLeft"></div>
+      <div class="pulley right" id="pulleyRight"></div>
+
+      <div class="weight left" id="weightLeft"><div class="kg" id="leftKg">10.0</div><div style="font-size:12px">kg</div></div>
+      <div class="weight right" id="weightRight"><div class="kg" id="rightKg">10.0</div><div style="font-size:12px">kg</div></div>
+
+      <div class="calorimeter" id="calorimeter">
+        <div class="lid"></div>
+        <div class="water" id="water"></div>
+        <div class="paddle-shaft"></div>
+        <div class="paddle-wheel" id="paddleWheel">
+          <div class="paddle-blades">
+            <div class="paddle-blade"></div>
+            <div class="paddle-blade"></div>
+            <div class="paddle-blade"></div>
+            <div class="paddle-blade"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="thermo" id="thermo"><div class="mercury" id="mercury"></div></div>
+
+    </div>
+
+    <div class="controls">
+      <h2>줄(Joule)의 실험 — 최종판</h2>
+
+      <div class="group">
+        <div class="grid">
+          <div>
+            <label>추 1개 질량 <span class="value" id="dispMass">10.0 kg</span></label>
+            <input type="range" id="mass" min="1" max="20" step="0.1" value="10">
+          </div>
+          <div>
+            <label>낙하 높이 (m) <span class="value" id="dispHeight">5.0 m</span></label>
+            <input type="range" id="height" min="0.5" max="10" step="0.1" value="5">
+          </div>
+          <div>
+            <label>물의 양 (L) <span class="value" id="dispWater">2.0 L</span></label>
+            <input type="range" id="waterVol" min="0.5" max="5" step="0.1" value="2">
+          </div>
+          <div>
+            <label>낙하 반복 횟수 <span class="value" id="dispDrops">20</span></label>
+            <input type="range" id="drops" min="1" max="200" step="1" value="20">
+          </div>
+        </div>
+      </div>
+
+      <div class="group results">
+        <div class="result-item"><div>초기 온도</div><div class="value" id="rInit">20.000 °C</div></div>
+        <div class="result-item"><div>최종 온도</div><div class="value" id="rFinal">---</div></div>
+        <div class="result-item"><div>온도 변화 ΔT</div><div class="value" id="rDelta">---</div></div>
+        <div class="result-item"><div>총 역학적 일 W</div><div class="value" id="rWork">---</div></div>
+        <div class="result-item"><div>발생 열량 Q</div><div class="value" id="rHeat">---</div></div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:10px">
+        <button id="startBtn">실험 시작</button>
+        <button id="resetBtn" class="secondary" disabled>초기화</button>
+        <button id="downloadBtn" class="secondary">HTML 다운로드</button>
+      </div>
+      
+      <div style="font-size:12px; color:var(--muted); margin-top:10px">개선: JS 애니메이션, 부드러운 easing, 곡선 로프, 물결 애니메이션, 합성 오디오 효과, 계산 로직 수정 포함</div>
+    </div>
+  </div>
+
+  <script>
+    // ------------------ 상수 및 DOM ------------------
+    const g = 9.8;
+    const JOULE_PER_CAL = 4.186; // 열의 일당량 (J/cal)
+    const SPECIFIC_HEAT_WATER_CAL = 1; // 물의 비열 (cal/g·°C)
+    const INITIAL_TEMP = 20.0;
+
+    const simArea = document.getElementById('sim-area');
+    const pulleyLeft = document.getElementById('pulleyLeft');
+    const pulleyRight = document.getElementById('pulleyRight');
+    const weightLeft = document.getElementById('weightLeft');
+    const weightRight = document.getElementById('weightRight');
+    const leftKg = document.getElementById('leftKg');
+    const rightKg = document.getElementById('rightKg');
+    const ropeLeft = document.getElementById('rope-left');
+    const ropeRight = document.getElementById('rope-right');
+    const paddleWheel = document.getElementById('paddleWheel');
+    const mercury = document.getElementById('mercury');
+    const water = document.getElementById('water');
+    const status = document.getElementById('status');
+
+    // controls
+    const massInput = document.getElementById('mass');
+    const heightInput = document.getElementById('height');
+    const waterInput = document.getElementById('waterVol');
+    const dropsInput = document.getElementById('drops');
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    // displays
+    const dispMass = document.getElementById('dispMass');
+    const dispHeight = document.getElementById('dispHeight');
+    const dispWater = document.getElementById('dispWater');
+    const dispDrops = document.getElementById('dispDrops');
+
+    const rInit = document.getElementById('rInit');
+    const rFinal = document.getElementById('rFinal');
+    const rDelta = document.getElementById('rDelta');
+    const rWork = document.getElementById('rWork');
+    const rHeat = document.getElementById('rHeat');
+
+    // state
+    let isRunning = false;
+
+    // initialize UI
+    function setDisplayValues(){
+      dispMass.textContent = parseFloat(massInput.value).toFixed(1) + ' kg';
+      dispHeight.textContent = parseFloat(heightInput.value).toFixed(1) + ' m';
+      dispWater.textContent = parseFloat(waterInput.value).toFixed(1) + ' L';
+      dispDrops.textContent = dropsInput.value;
+      leftKg.textContent = parseFloat(massInput.value).toFixed(1);
+      rightKg.textContent = parseFloat(massInput.value).toFixed(1);
+      const waterVol = parseFloat(waterInput.value);
+      const h = 15 + (waterVol / 5) * 65;
+      water.style.height = h + '%';
+    }
+
+    massInput.addEventListener('input', setDisplayValues);
+    heightInput.addEventListener('input', setDisplayValues);
+    waterInput.addEventListener('input', setDisplayValues);
+    dropsInput.addEventListener('input', setDisplayValues);
+
+    function getPositions(){
+      const simRect = simArea.getBoundingClientRect();
+      const pulleyLRect = pulleyLeft.getBoundingClientRect();
+      const pulleyRRect = pulleyRight.getBoundingClientRect();
+      const wlRect = weightLeft.getBoundingClientRect();
+      const wrRect = weightRight.getBoundingClientRect();
+      const toSvgX = x => (x - simRect.left) / simRect.width * 800;
+      const toSvgY = y => (y - simRect.top) / simRect.height * 700;
+      return {
+        pulleyLX: toSvgX(pulleyLRect.left + pulleyLRect.width/2),
+        pulleyLY: toSvgY(pulleyLRect.top + pulleyLRect.height/2),
+        pulleyRX: toSvgX(pulleyRRect.left + pulleyRRect.width/2),
+        pulleyRY: toSvgY(pulleyRRect.top + pulleyRRect.height/2),
+        weightLX: toSvgX(wlRect.left + wlRect.width/2),
+        weightLY: toSvgY(wlRect.top + wlRect.height/2),
+        weightRX: toSvgX(wrRect.left + wrRect.width/2),
+        weightRY: toSvgY(wrRect.top + wrRect.height/2)
+      };
+    }
+
+    function updateRopes(){
+      const p = getPositions();
+      const leftPath = `M ${p.weightLX} ${p.weightLY} Q ${p.weightLX} ${p.pulleyLY - 50} ${p.pulleyLX} ${p.pulleyLY}`;
+      const rightPath = `M ${p.weightRX} ${p.weightRY} Q ${p.weightRX} ${p.pulleyRY - 50} ${p.pulleyRX} ${p.pulleyRY}`;
+      ropeLeft.setAttribute('d', leftPath);
+      ropeRight.setAttribute('d', rightPath);
+    }
+
+    function easeInOutQuad(t){ return t<0.5 ? 2*t*t : -1+(4-2*t)*t; }
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playDropSound(){
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'sawtooth'; o.frequency.value = 220; g.gain.value = 0.0001;
+      o.connect(g); g.connect(audioCtx.destination); o.start();
+      g.gain.exponentialRampToValueAtTime(0.12, audioCtx.currentTime + 0.02);
+      o.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.25);
+      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
+      setTimeout(()=>{ o.stop(); }, 500);
+    }
+    function startPaddleTone(){
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = 400; g.gain.value = 0.0001;
+      o.connect(g); g.connect(audioCtx.destination); o.start();
+      g.gain.exponentialRampToValueAtTime(0.02, audioCtx.currentTime + 0.05);
+      return {osc:o, gain:g};
+    }
+
+    async function runExperiment(){
+      if(isRunning) return; isRunning=true;
+      if(audioCtx.state === 'suspended') await audioCtx.resume();
+
+      startBtn.disabled=true; resetBtn.disabled=true; massInput.disabled=true; heightInput.disabled=true; waterInput.disabled=true; dropsInput.disabled=true;
+      status.textContent = '실험 진행 중...'; status.style.color = '#e44d26';
+
+      const MASS = parseFloat(massInput.value);
+      const HEIGHT = parseFloat(heightInput.value);
+      const WATER_L = parseFloat(waterInput.value);
+      const WATER_G = WATER_L * 1000; // 물의 질량을 그램(g)으로 변환
+      const DROPS = parseInt(dropsInput.value,10);
+
+      // --- 🔬 계산 로직 수정 ---
+      // 1. 총 역학적 일(J) 계산
+      const totalWork = 2 * MASS * g * HEIGHT * DROPS;
+      
+      // 2. 일을 열량(cal)으로 변환 (열의 일당량 적용)
+      const totalHeatCal = totalWork / JOULE_PER_CAL;
+
+      // 3. 열량(cal) 기준으로 온도 변화 계산 (Q = mcΔT -> ΔT = Q / mc)
+      const deltaT = totalHeatCal / (WATER_G * SPECIFIC_HEAT_WATER_CAL);
+      const finalTemp = INITIAL_TEMP + deltaT;
+      // --- 수정 끝 ---
+      
+      const startTop = weightLeft.offsetTop;
+      const endTop = startTop + Math.min(520, HEIGHT*80);
+      const duration = Math.min(4000, 400 + DROPS * 40);
+
+      const paddleTone = startPaddleTone();
+      paddleWheel.classList.add('spinning');
+      playDropSound();
+
+      const t0 = performance.now();
+      function step(t){
+        const elapsed = t - t0; const p = Math.min(1, elapsed/duration); const e = easeInOutQuad(p);
+        const newTop = startTop + (endTop - startTop) * e;
+        weightLeft.style.top = newTop + 'px';
+        weightRight.style.top = newTop + 'px';
+
+        updateRopes();
+
+        const mercuryPct = Math.min(100, 20 + e * Math.min(80, (finalTemp-INITIAL_TEMP)/2*80));
+        mercury.style.height = mercuryPct + '%';
+        water.style.height = (15 + (WATER_L/5)*65 + e*2) + '%';
+
+        if(p < 1) requestAnimationFrame(step);
+        else {
+          paddleWheel.classList.remove('spinning');
+          paddleTone.gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
+          paddleTone.osc.stop(audioCtx.currentTime + 0.25);
+          
+          rInit.textContent = INITIAL_TEMP.toFixed(3) + ' °C';
+          rFinal.textContent = finalTemp.toFixed(3) + ' °C';
+          rDelta.textContent = deltaT.toFixed(3) + ' °C';
+          rWork.textContent = totalWork.toFixed(0) + ' J';
+          rHeat.textContent = totalHeatCal.toFixed(0) + ' cal'; // 발생 열량을 칼로리로 표시
+
+          status.textContent = '실험 완료!'; status.style.color = '#28a745';
+          startBtn.textContent = '실험 완료';
+          resetBtn.disabled = false;
+          isRunning=false;
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    function resetAll(){
+      if(isRunning) return;
+      startBtn.disabled=false; massInput.disabled=false; heightInput.disabled=false; waterInput.disabled=false; dropsInput.disabled=false;
+      resetBtn.disabled=true; startBtn.textContent='실험 시작'; status.textContent='실험 준비 완료'; status.style.color='#007bff';
+      weightLeft.style.top = '110px'; weightRight.style.top = '110px';
+      mercury.style.height = '20%'; setDisplayValues();
+      rFinal.textContent = '---'; rDelta.textContent = '---'; rWork.textContent = '---'; rHeat.textContent = '---';
+      updateRopes();
+    }
+
+    downloadBtn.addEventListener('click', ()=>{
+      const html = '<!doctype html>\n' + document.documentElement.outerHTML;
+      const blob = new Blob([html], {type:'text/html'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'joule_simulation_final.html'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+
+    startBtn.addEventListener('click', runExperiment);
+    resetBtn.addEventListener('click', resetAll);
+
+    window.addEventListener('load', ()=>{ setDisplayValues(); updateRopes(); resetAll(); });
+    window.addEventListener('resize', updateRopes);
+  </script>
+</body>
+</html>
