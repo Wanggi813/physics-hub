@@ -24,11 +24,13 @@
     .ok{color:#16a34a}
     .err{position:fixed;right:12px;top:12px;background:#fee2e2;color:#991b1b;padding:10px 12px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:20}
 
-    /* 전류 그래프 패널 */
     .graphbox{position:fixed; right:14px; top:14px; width:320px; background:rgba(15,23,42,.78); border:1px solid rgba(148,163,184,.25); border-radius:14px; padding:10px; z-index:11}
     .graphbox canvas{display:block; width:100%; height:140px}
     .graphbox .title{font-size:12px;color:var(--muted);text-align:right;margin-top:6px}
   </style>
+
+  <!-- 로컬 three.js (전역 THREE) -->
+  <script src="./libs/three.min.js"></script>
 </head>
 <body>
   <header>
@@ -67,313 +69,411 @@
     <div class="title">i(t) · 전류 (A)</div>
   </div>
 
-  <footer class="small">© 2025 · 교육용 시각화 · 더 많은 자료: <a href="https://gptonline.ai/ko/" target="_blank" style="color:var(--primary)">GPT온라인</a></footer>
+  <footer class="small">© 2025 · 교육용 시각화 · 더 많은 자료: </footer>
 
   <script>
-    function showErr(msg){ document.body.insertAdjacentHTML('beforeend', '<div class="err">'+msg+'</div>'); }
+  (function(){
+    const elScene = document.getElementById('scene');
+    const LSlider = document.getElementById('L');
+    const CSlider = document.getElementById('C');
+    const FSlider = document.getElementById('f');
+    const LockChk = document.getElementById('lock');
+    const VisSlider = document.getElementById('vis');
+    const Lval = document.getElementById('Lval');
+    const Cval = document.getElementById('Cval');
+    const Fval = document.getElementById('fval');
+    const F0val = document.getElementById('f0');
+    const Qval = document.getElementById('Q');
+    const BWval = document.getElementById('BW');
+    const Ratio = document.getElementById('ratio');
+    const ResetCamBtn = document.getElementById('resetCam');
+    const ResTag = document.getElementById('resTag');
+    const VisVal = document.getElementById('visVal');
 
-    (async function(){
-      const urls = [
-        'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',
-        'https://unpkg.com/three@0.160.0/build/three.module.js',
-        'https://esm.sh/three@0.160.0'
-      ];
-      let THREE = null;
-      for(const u of urls){
-        try{ THREE = await import(u); break; }catch(e){ console.warn('import 실패:', u, e); }
+    // === Graph ===
+    const gCanvas = document.getElementById('graph');
+    const g = gCanvas.getContext('2d');
+    const G_W = gCanvas.width, G_H = gCanvas.height;
+    const G_CAP = 360; const gBuf = new Float32Array(G_CAP); let gIdx=0; let yMaxEMA = 1.0;
+
+    function drawGraph(yAmp){
+      g.clearRect(0,0,G_W,G_H);
+      g.fillStyle = 'rgba(2,6,23,0.75)'; g.fillRect(0,0,G_W,G_H);
+      g.strokeStyle = 'rgba(148,163,184,0.25)'; g.lineWidth=1; g.beginPath();
+      for(let x=0;x<=G_W;x+=40){ g.moveTo(x,0); g.lineTo(x,G_H); }
+      for(let y=0;y<=G_H;y+=28){ g.moveTo(0,y); g.lineTo(G_W,y); }
+      g.stroke();
+      const y0 = Math.round(G_H/2); g.strokeStyle='rgba(226,232,240,0.5)'; g.beginPath(); g.moveTo(0,y0); g.lineTo(G_W,y0); g.stroke();
+      g.strokeStyle = 'rgba(102,204,255,1)'; g.lineWidth=2; g.beginPath();
+      for(let i=0;i<G_CAP;i++){
+        const idx = (gIdx + i) % G_CAP;
+        const v = gBuf[idx];
+        const x = i*(G_W/(G_CAP-1));
+        const y = y0 - (v / (yAmp+1e-6)) * (G_H*0.42);
+        if(i===0) g.moveTo(x,y); else g.lineTo(x,y);
       }
-      if(!THREE){ showErr('three.module.js 로딩 실패 (네트워크 차단?)'); return; }
+      g.stroke();
+      g.fillStyle='rgba(226,232,240,0.8)'; g.font='11px system-ui,-apple-system,Segoe UI,Roboto,Pretendard,sans-serif';
+      g.fillText('±' + yAmp.toFixed(2) + ' A', 6, 12);
+    }
 
-      class SimpleOrbit{
-        constructor(camera, dom, target=new THREE.Vector3(0,0,0)){
-          this.camera=camera; this.dom=dom; this.target=target;
-          this.sph=new THREE.Spherical(12, Math.PI/3, -Math.PI/6);
-          const off=camera.position.clone().sub(target); this.sph.setFromVector3(off);
-          this.minPhi=0.01; this.maxPhi=Math.PI-0.01; this.minR=3; this.maxR=60;
-          this.drag=false; this.lastX=0; this.lastY=0; this.rotSpeed=0.006; this.zoomSpeed=1.1;
-          dom.addEventListener('mousedown',e=>{ this.drag=true; this.lastX=e.clientX; this.lastY=e.clientY; });
-          window.addEventListener('mouseup',()=>{ this.drag=false; });
-          window.addEventListener('mousemove',e=>{ if(!this.drag) return; const dx=e.clientX-this.lastX; const dy=e.clientY-this.lastY; this.sph.theta -= dx*this.rotSpeed; this.sph.phi = Math.min(this.maxPhi, Math.max(this.minPhi, this.sph.phi + dy*this.rotSpeed)); this.lastX=e.clientX; this.lastY=e.clientY; this.update(); });
-          dom.addEventListener('wheel',e=>{ e.preventDefault(); const s=Math.pow(this.zoomSpeed, e.deltaY>0?1:-1); this.sph.radius = Math.min(this.maxR, Math.max(this.minR, this.sph.radius*s)); this.update(); }, {passive:false});
+    // --- SimpleOrbit (OrbitControls 대체) ---
+    class SimpleOrbit{
+      constructor(camera, dom, target=new THREE.Vector3(0,0,0)){
+        this.camera=camera; this.dom=dom; this.target=target;
+        this.sph=new THREE.Spherical(12, Math.PI/3, -Math.PI/6);
+        const off=camera.position.clone().sub(target); this.sph.setFromVector3(off);
+        this.minPhi=0.01; this.maxPhi=Math.PI-0.01; this.minR=3; this.maxR=60;
+        this.drag=false; this.lastX=0; this.lastY=0; this.rotSpeed=0.006; this.zoomSpeed=1.1;
+        dom.addEventListener('mousedown',e=>{ this.drag=true; this.lastX=e.clientX; this.lastY=e.clientY; });
+        window.addEventListener('mouseup',()=>{ this.drag=false; });
+        window.addEventListener('mousemove',e=>{
+          if(!this.drag) return;
+          const dx=e.clientX-this.lastX, dy=e.clientY-this.lastY;
+          this.sph.theta -= dx*this.rotSpeed;
+          this.sph.phi = Math.min(this.maxPhi, Math.max(this.minPhi, this.sph.phi + dy*this.rotSpeed));
+          this.lastX=e.clientX; this.lastY=e.clientY;
           this.update();
-        }
-        update(){ const p=new THREE.Vector3().setFromSpherical(this.sph).add(this.target); this.camera.position.copy(p); this.camera.lookAt(this.target); }
-        setTarget(v){ this.target.copy(v); this.update(); }
+        });
+        dom.addEventListener('wheel',e=>{
+          e.preventDefault();
+          const s=Math.pow(this.zoomSpeed, e.deltaY>0?1:-1);
+          this.sph.radius = Math.min(this.maxR, Math.max(this.minR, this.sph.radius*s));
+          this.update();
+        }, {passive:false});
+        this.update();
+      }
+      update(){ const p=new THREE.Vector3().setFromSpherical(this.sph).add(this.target); this.camera.position.copy(p); this.camera.lookAt(this.target); }
+      setTarget(v){ this.target.copy(v); this.update(); }
+    }
+
+    // === Renderer / Scene / Camera ===
+    const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x07111f, 1);
+
+    // three r152+ vs 구버전 호환
+    if ('outputColorSpace' in renderer) {
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+    } else if ('outputEncoding' in renderer) {
+      renderer.outputEncoding = THREE.sRGBEncoding;
+    }
+    if ('ACESFilmicToneMapping' in THREE) renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+
+    elScene.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(10, 9, 15); camera.lookAt(0,0,0);
+    const orbit = new SimpleOrbit(camera, renderer.domElement);
+    document.getElementById('resetCam').onclick = ()=>{
+      camera.position.set(10,9,15); orbit.sph.setFromVector3(camera.position.clone()); orbit.update();
+    };
+
+    // === Lights ===
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    scene.add(new THREE.HemisphereLight(0xbfd4ff, 0x080820, 1.2));
+    const d = new THREE.DirectionalLight(0xffffff, 1.3); d.position.set(5,8,7); scene.add(d);
+
+    // === Materials ===
+    const silverMat = new THREE.MeshStandardMaterial({ color: 0xd9d9d9, metalness: 0.6, roughness: 0.35, emissive: 0x000000, emissiveIntensity: 0.0 });
+    const wireMat = silverMat.clone();
+    const resistorMat = silverMat.clone();
+    const coilMat = silverMat.clone();
+    const capacitorMat = silverMat.clone();
+
+    // === Helpers ===
+    const sideInner = 8, zWire = 0.0;
+    function cylinderBetween(a,b,r=0.08,mat=wireMat){
+      const dir = new THREE.Vector3().subVectors(b,a); const len = dir.length();
+      const geom = new THREE.CylinderGeometry(r, r, len, 24, 1, true);
+      const mesh = new THREE.Mesh(geom, mat);
+      const mid = new THREE.Vector3().addVectors(a,b).multiplyScalar(0.5);
+      mesh.position.copy(mid);
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+      return mesh;
+    }
+    function updateCylinderBetween(mesh, a, b, r=0.08){
+      const dir = new THREE.Vector3().subVectors(b,a); const len = dir.length();
+      mesh.geometry.dispose();
+      mesh.geometry = new THREE.CylinderGeometry(r, r, len, 24, 1, true);
+      const mid = new THREE.Vector3().addVectors(a,b).multiplyScalar(0.5);
+      mesh.position.copy(mid);
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+    }
+    function boxAt(c, size, mat){ const g = new THREE.BoxGeometry(...size); const m = new THREE.Mesh(g, mat); m.position.copy(c); return m; }
+
+    const gModel = new THREE.Group(); scene.add(gModel);
+    const P = {
+      TL: new THREE.Vector3(-sideInner/2, sideInner/2, zWire),
+      TR: new THREE.Vector3( sideInner/2, sideInner/2, zWire),
+      BR: new THREE.Vector3( sideInner/2,-sideInner/2, zWire),
+      BL: new THREE.Vector3(-sideInner/2,-sideInner/2, zWire),
+    };
+    const gapFrac = 0.30;
+    function splitEdge(a,b){
+      const v = new THREE.Vector3().subVectors(b,a);
+      const c1 = a.clone().addScaledVector(v, 0.5 - gapFrac/2);
+      const c2 = a.clone().addScaledVector(v, 0.5 + gapFrac/2);
+      return {a,c1,c2,b};
+    }
+    const ETop = splitEdge(P.TL, P.TR);
+    const ERight = splitEdge(P.TR, P.BR);
+    const EBottom = splitEdge(P.BL, P.BR);
+    const ELeft = splitEdge(P.TL, P.BL);
+
+    // Wires
+    gModel.add(cylinderBetween(ETop.a, ETop.c1)); gModel.add(cylinderBetween(ETop.c2, ETop.b));
+    gModel.add(cylinderBetween(ERight.a, ERight.c1)); gModel.add(cylinderBetween(ERight.c2, ERight.b));
+    gModel.add(cylinderBetween(EBottom.a, EBottom.c1)); gModel.add(cylinderBetween(EBottom.c2, EBottom.b));
+    gModel.add(cylinderBetween(ELeft.a, ELeft.c1)); gModel.add(cylinderBetween(ELeft.c2, ELeft.b));
+
+    // === Components ===
+    // AC source (top)
+    const acCenter = new THREE.Vector3(0, sideInner/2, zWire);
+    const acLen = 2.0;
+    const acBody = new THREE.Mesh(new THREE.CylinderGeometry(0.65,0.65,0.18,48), silverMat);
+    acBody.position.copy(acCenter); acBody.rotation.x = Math.PI/2; gModel.add(acBody);
+    // sine groove (inlay)
+    const sinePts=[]; for(let i=0;i<=80;i++){ const t=i/80; const x=(t-0.5)*0.9; const y=Math.sin(t*Math.PI*2)*0.25; sinePts.push(new THREE.Vector3(x, y, 0)); }
+    const sinePath = new THREE.CatmullRomCurve3(sinePts);
+    const grooveGeo = new THREE.TubeGeometry(sinePath, 160, 0.02, 12, false);
+    const grooveMat = new THREE.MeshStandardMaterial({ color: 0x8d98a3, metalness: 0.3, roughness: 0.7 });
+    const groove = new THREE.Mesh(grooveGeo, grooveMat);
+    groove.position.copy(acCenter);
+    groove.rotation.x = Math.PI/2;
+    groove.position.z += 0.09 - 0.005;
+    gModel.add(groove);
+    const acPortL = acCenter.clone().add(new THREE.Vector3(-acLen/2, 0, 0));
+    const acPortR = acCenter.clone().add(new THREE.Vector3( acLen/2, 0, 0));
+    const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,0.5,24), silverMat); postL.position.copy(acPortL); postL.rotation.z=Math.PI/2; gModel.add(postL);
+    const postR = new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,0.5,24), silverMat); postR.position.copy(acPortR); postR.rotation.z=Math.PI/2; gModel.add(postR);
+    gModel.add(cylinderBetween(ETop.c1, acPortL)); gModel.add(cylinderBetween(acPortR, ETop.c2));
+
+    // Capacitor (right)
+    const capCenter = new THREE.Vector3(sideInner/2, 0, zWire);
+    const capW0 = 1.0, capT = 0.12, capD0 = 1.0;
+    const capPlateTop = boxAt(capCenter.clone(), [capW0, capT, capD0], capacitorMat);
+    const capPlateBot = boxAt(capCenter.clone(), [capW0, capT, capD0], capacitorMat);
+    gModel.add(capPlateTop, capPlateBot);
+    let capConnTop = cylinderBetween(ERight.c1, capPlateTop.position, 0.08);
+    let capConnBot = cylinderBetween(capPlateBot.position, ERight.c2, 0.08);
+    gModel.add(capConnTop, capConnBot);
+
+    // Inductor (bottom)
+    const coilCenter = new THREE.Vector3(0, -sideInner/2, zWire);
+    let coilRadius0 = 0.35, coilLen0 = 2.2, turns = 4, wireRadius = 0.08;
+    let coilRadius = coilRadius0, coilLen = coilLen0;
+    function makeCoilGeometry(){
+      const pts = []; const NPTS = 400;
+      for(let i=0;i<=NPTS;i++){
+        const t=i/NPTS;
+        const x=(t-0.5)*coilLen;
+        const ang=t*turns*Math.PI*2;
+        const y=Math.cos(ang)*coilRadius;
+        const z=Math.sin(ang)*coilRadius;
+        pts.push(new THREE.Vector3(x, y, z));
+      }
+      const path = new THREE.CatmullRomCurve3(pts);
+      return new THREE.TubeGeometry(path, 400, wireRadius, 24, false);
+    }
+    const coilMesh = new THREE.Mesh(makeCoilGeometry(), coilMat); coilMesh.position.copy(coilCenter); gModel.add(coilMesh);
+    let coilPortL = coilCenter.clone().add(new THREE.Vector3(-coilLen/2, 0, 0));
+    let coilPortR = coilCenter.clone().add(new THREE.Vector3( coilLen/2, 0, 0));
+    let coilConnL = cylinderBetween(EBottom.c1, coilPortL, 0.08);
+    let coilConnR = cylinderBetween(coilPortR, EBottom.c2, 0.08);
+    gModel.add(coilConnL, coilConnR);
+
+    // B-field arrows + halos
+    const gB = new THREE.Group(); scene.add(gB);
+    const N_B = 12; const arrows = [];
+    for(let i=0;i<N_B;i++){
+      const tx = (i/(N_B-1) - 0.5) * 0.9;
+      const yOff = (Math.random()-0.5) * coilRadius * 0.5;
+      const zOff = (Math.random()-0.5) * coilRadius * 0.5;
+      const pos = new THREE.Vector3(coilCenter.x + tx*coilLen, coilCenter.y + yOff, coilCenter.z + zOff);
+      const len = 0.6; const dir = new THREE.Vector3(1,0,0);
+      const arr = new THREE.ArrowHelper(dir, pos, len, 0x66ffcc, 0.20, 0.10); arr.userData={tx,yOff,zOff};
+      gB.add(arr); arrows.push(arr);
+    }
+    const halos = []; const haloScale = [1.2, 1.5, 1.85];
+    for(const s of haloScale){
+      const hGeo = new THREE.TorusGeometry(coilRadius*s, 0.05, 16, 64);
+      const hMat = new THREE.MeshBasicMaterial({ color:0x66ccff, transparent:true, opacity:0.0, depthWrite:false, blending: THREE.AdditiveBlending });
+      const tor = new THREE.Mesh(hGeo, hMat); tor.position.copy(coilCenter); tor.rotation.y = Math.PI/2; gB.add(tor); halos.push(tor);
+    }
+
+    function updateCoilGeom(){
+      const LmH = parseFloat(LSlider.value); // 1~200 mH
+      const Lnorm = THREE.MathUtils.clamp(LmH/50, 0.2, 5.0);
+      // 직관: r ∝ √L, l ∝ L^{-0.25}
+      coilRadius = coilRadius0 * Math.sqrt(Lnorm);
+      coilLen    = coilLen0    / Math.pow(Lnorm, 0.25);
+      coilMesh.geometry.dispose(); coilMesh.geometry = makeCoilGeometry();
+      coilPortL = coilCenter.clone().add(new THREE.Vector3(-coilLen/2, 0, 0));
+      coilPortR = coilCenter.clone().add(new THREE.Vector3( coilLen/2, 0, 0));
+      updateCylinderBetween(coilConnL, EBottom.c1, coilPortL, 0.08);
+      updateCylinderBetween(coilConnR, coilPortR, EBottom.c2, 0.08);
+      for(const arr of arrows){ const {tx,yOff,zOff} = arr.userData; arr.position.set(coilCenter.x + tx*coilLen, coilCenter.y + yOff, coilCenter.z + zOff); }
+      for(let i=0;i<halos.length;i++){
+        const r = coilRadius*haloScale[i];
+        const h=halos[i];
+        h.geometry.dispose(); h.geometry = new THREE.TorusGeometry(r, 0.05, 16, 64);
+        h.position.copy(coilCenter); h.rotation.y = Math.PI/2;
+      }
+    }
+    updateCoilGeom();
+
+    // Resistor (left)
+    {
+      const resCenter = new THREE.Vector3(-sideInner/2, 0, zWire + 0.03);
+      const resLen = 2.2; const resRad = 0.32;
+      const resBody = new THREE.Mesh(new THREE.CylinderGeometry(resRad, resRad, resLen, 32), resistorMat);
+      resBody.position.copy(resCenter);
+      const capGeo = new THREE.CylinderGeometry(resRad*0.85, resRad*0.85, 0.18, 32);
+      const resCapTop = new THREE.Mesh(capGeo, resistorMat); resCapTop.position.copy(resCenter).y += resLen/2;
+      const resCapBot = new THREE.Mesh(capGeo, resistorMat); resCapBot.position.copy(resCenter).y -= resLen/2;
+      gModel.add(resBody, resCapTop, resCapBot);
+      const resPortTop = resCenter.clone().add(new THREE.Vector3(0,  resLen/2 + 0.15, 0));
+      const resPortBot = resCenter.clone().add(new THREE.Vector3(0, -resLen/2 - 0.15, 0));
+      gModel.add(cylinderBetween(ELeft.c1, resPortTop, 0.08));
+      gModel.add(cylinderBetween(resPortBot, ELeft.c2, 0.08));
+    }
+
+    // Capacitor electron clouds
+    const CAP_MAX = 160; const capDotGeo = new THREE.SphereGeometry(0.04, 10, 10);
+    const capDotsTop = new THREE.InstancedMesh(capDotGeo, new THREE.MeshStandardMaterial({ color:0x00b4ff, emissive:0x33ccff, emissiveIntensity:0.85, metalness:0.0, roughness:0.6 }), CAP_MAX);
+    const capDotsBot = new THREE.InstancedMesh(capDotGeo, new THREE.MeshStandardMaterial({ color:0x00b4ff, emissive:0x33ccff, emissiveIntensity:0.85, metalness:0.0, roughness:0.6 }), CAP_MAX);
+    capDotsTop.instanceMatrix.setUsage(THREE.DynamicDrawUsage); capDotsBot.instanceMatrix.setUsage(THREE.DynamicDrawUsage); gModel.add(capDotsTop, capDotsBot);
+    const plateCloudTop = Array.from({length:CAP_MAX}, ()=> new THREE.Vector3((Math.random()-0.5)*1.0, (Math.random()-0.5)*0.2 + 0.12, (Math.random()-0.5)*0.9));
+    const plateCloudBot = Array.from({length:CAP_MAX}, ()=> new THREE.Vector3((Math.random()-0.5)*1.0, (Math.random()-0.5)*0.2 - 0.12, (Math.random()-0.5)*0.9));
+
+    // ---------- Circuit model ----------
+    const R = 50; const VAMP = 5;
+    function params(){
+      const L = parseFloat(LSlider.value)/1000;
+      const C = parseFloat(CSlider.value)/1e6;
+      let f0 = 1/(2*Math.PI*Math.sqrt(L*C)); if(!isFinite(f0)) f0 = 1;
+      let f = parseFloat(FSlider.value);
+      if(LockChk.checked){ f=f0; FSlider.disabled=true; } else { FSlider.disabled=false; }
+      const w=2*Math.PI*f, XL=w*L, XC=1/(w*C);
+      const Zmag=Math.sqrt(R*R + (XL-XC)**2);
+      const Iamp=VAMP/Zmag;
+      const thetaZ=Math.atan2((XL-XC),R);
+      const phiI=-thetaZ;
+      const Q=Math.sqrt(L/C)/R;
+      const BW=f0/Q;
+      return {L,C,f,f0,w,XL,XC,Zmag,Iamp,phiI,Q,BW};
+    }
+    function updateFSliderRange(){
+      const {f0}=params();
+      const min=Math.max(1, Math.floor(f0*0.2));
+      const max=Math.max(min+5, Math.ceil(f0*5));
+      FSlider.min=String(min); FSlider.max=String(max);
+      const cur=parseFloat(FSlider.value);
+      if(cur<min || cur>max){ FSlider.value=String(Math.min(Math.max(cur,min),max)); }
+    }
+    LSlider.addEventListener('input', updateFSliderRange);
+    CSlider.addEventListener('input', updateFSliderRange);
+    LockChk.addEventListener('change', updateFSliderRange);
+    updateFSliderRange();
+
+    // ---------- Animation ----------
+    let tPrev = performance.now()/1000; let qVis = 0; // 축전기 전하 EMA
+    function animate(){
+      const tNow = performance.now()/1000; const dt = Math.min(0.05, tNow - tPrev); tPrev = tNow;
+      const Pp = params();
+      const vis = parseFloat(VisSlider.value); VisVal.textContent = vis.toFixed(2)+'×';
+      Lval.textContent = (+LSlider.value).toFixed(0); Cval.textContent = (+CSlider.value).toFixed(1); Fval.textContent = Pp.f.toFixed(1); F0val.textContent = Pp.f0.toFixed(1);
+      Qval.textContent = isFinite(Pp.Q)? Pp.Q.toFixed(2): '—'; BWval.textContent = (isFinite(Pp.BW) && Pp.BW>0)? Pp.BW.toFixed(1): '—'; Ratio.textContent = (Pp.f/Pp.f0).toFixed(3);
+
+      const nearRes = Math.abs(Pp.f - Pp.f0)/Pp.f0 < 0.03; ResTag.style.opacity = nearRes ? '1' : '0.25'; ResTag.style.borderColor = nearRes ? 'rgba(34,197,94,.8)' : 'rgba(148,163,184,.35)';
+
+      const tVis = tNow * vis;
+      const iInst = Pp.Iamp * Math.sin(Pp.w*tVis + Pp.phiI);
+      const di_dt = Pp.Iamp * Pp.w * Math.cos(Pp.w*tVis + Pp.phiI);
+      const vR = iInst * R;
+      const vL = Pp.Iamp * Pp.XL * Math.sin(Pp.w*tVis + Pp.phiI + Math.PI/2);
+      const vC = Pp.Iamp * Pp.XC * Math.sin(Pp.w*tVis + Pp.phiI - Math.PI/2);
+      const qC = Pp.C * vC;
+
+      // glow
+      const glowWire = THREE.MathUtils.clamp(Math.abs(iInst)*2.2, 0.0, 1.8);
+      const glowR = THREE.MathUtils.clamp(Math.abs(vR)*0.12, 0.0, 2.0);
+      const glowL = THREE.MathUtils.clamp(Math.abs(vL)*0.05, 0.0, 2.2);
+      const glowC = THREE.MathUtils.clamp(Math.abs(vC)*0.05, 0.0, 2.2);
+      wireMat.emissiveIntensity = glowWire; resistorMat.emissiveIntensity = glowR; coilMat.emissiveIntensity = glowL; capacitorMat.emissiveIntensity = glowC; silverMat.emissiveIntensity = 0.15 + 0.1*glowWire;
+
+      // Capacitor geometry vs C
+      const Cuf = parseFloat(CSlider.value);
+      const Cnorm = Math.max(0.001, Cuf/10);
+      const sA = THREE.MathUtils.clamp(Math.sqrt(Cnorm), 0.6, 2.0);
+      const gap = THREE.MathUtils.clamp(0.8 / Math.sqrt(Cnorm), 0.25, 1.3);
+      capPlateTop.scale.set(sA, 1, sA); capPlateBot.scale.set(sA, 1, sA);
+      capPlateTop.position.set(capCenter.x, capCenter.y + gap/2, capCenter.z);
+      capPlateBot.position.set(capCenter.x, capCenter.y - gap/2, capCenter.z);
+      updateCylinderBetween(capConnTop, ERight.c1, capPlateTop.position, 0.08);
+      updateCylinderBetween(capConnBot, capPlateBot.position, ERight.c2, 0.08);
+
+      // Capacitor clouds (위상 반대)
+      const alpha = 0.12; qVis += (qC - qVis) * alpha; const kCap = 1e6 * 1.6;
+      const baseN = Math.floor(CAP_MAX * 0.35);
+      const delta = Math.min(CAP_MAX - baseN, Math.floor(Math.abs(qVis) * kCap));
+      const topN = THREE.MathUtils.clamp(baseN + (qVis>0 ? delta : -delta), 0, CAP_MAX);
+      const botN = THREE.MathUtils.clamp(baseN + (qVis<0 ? delta : -delta), 0, CAP_MAX);
+      const dummy2 = new THREE.Object3D();
+      for(let i=0;i<CAP_MAX;i++){
+        if(i<topN){ const off = plateCloudTop[i]; dummy2.position.set(capCenter.x + off.x*sA, capCenter.y + gap/2 + off.y, capCenter.z + off.z*sA); }
+        else { dummy2.position.set(999,999,999); }
+        dummy2.updateMatrix(); capDotsTop.setMatrixAt(i, dummy2.matrix);
+      }
+      capDotsTop.instanceMatrix.needsUpdate = true;
+      for(let i=0;i<CAP_MAX;i++){
+        if(i<botN){ const off = plateCloudBot[i]; dummy2.position.set(capCenter.x + off.x*sA, capCenter.y - gap/2 + off.y, capCenter.z + off.z*sA); }
+        else { dummy2.position.set(999,999,999); }
+        dummy2.updateMatrix(); capDotsBot.setMatrixAt(i, dummy2.matrix);
+      }
+      capDotsBot.instanceMatrix.needsUpdate = true;
+
+      // B-field
+      const signI = (iInst >= 0) ? 1 : -1; const baseLen = 0.5, kLen = 1.4;
+      for(const arr of arrows){
+        arr.setDirection(new THREE.Vector3(signI,0,0));
+        const Lnow = baseLen + kLen * Math.abs(iInst);
+        arr.setLength(Lnow, 0.25*Lnow, 0.12*Lnow);
+      }
+      const diNorm = THREE.MathUtils.clamp(Math.abs(di_dt) / (Math.abs(Pp.Iamp*Pp.w) + 1e-9), 0, 1);
+      const sHalo = 1 + 0.25 * diNorm * (di_dt>=0 ? 1 : -1);
+      for(const h of halos){
+        h.scale.set(sHalo, sHalo, sHalo);
+        h.material.opacity = 0.12 + 0.55 * diNorm;
+        h.material.color.setHex(di_dt>=0 ? 0x66ccff : 0xff6688);
       }
 
-      // DOM refs
-      const elScene = document.getElementById('scene');
-      const LSlider = document.getElementById('L');
-      const CSlider = document.getElementById('C');
-      const FSlider = document.getElementById('f');
-      const LockChk = document.getElementById('lock');
-      const VisSlider = document.getElementById('vis');
-      const Lval = document.getElementById('Lval');
-      const Cval = document.getElementById('Cval');
-      const Fval = document.getElementById('fval');
-      const F0val = document.getElementById('f0');
-      const Qval = document.getElementById('Q');
-      const BWval = document.getElementById('BW');
-      const Ratio = document.getElementById('ratio');
-      const ResetCamBtn = document.getElementById('resetCam');
-      const ResTag = document.getElementById('resTag');
-      const VisVal = document.getElementById('visVal');
+      // Graph buffer
+      gBuf[gIdx] = iInst; gIdx = (gIdx + 1) % G_CAP;
+      yMaxEMA += ((Math.max(0.5, Pp.Iamp*1.2)) - yMaxEMA) * 0.05;
+      drawGraph(yMaxEMA);
 
-      // Graph refs
-      const gCanvas = document.getElementById('graph');
-      const g = gCanvas.getContext('2d');
-      const G_W = gCanvas.width, G_H = gCanvas.height;
-      const G_CAP = 360; const gBuf = new Float32Array(G_CAP); let gIdx=0; let yMaxEMA = 1.0;
-
-      // Renderer/Scene/Camera
-      const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:false });
-      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setClearColor(0x07111f, 1);
-      renderer.outputColorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.15;
-      elScene.appendChild(renderer.domElement);
-
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
-      camera.position.set(10, 9, 15); camera.lookAt(0,0,0);
-      const orbit = new SimpleOrbit(camera, renderer.domElement);
-      ResetCamBtn.onclick = ()=>{ camera.position.set(10,9,15); orbit.sph.setFromVector3(camera.position.clone()); orbit.update(); };
-
-      // Lights
-      scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-      scene.add(new THREE.HemisphereLight(0xbfd4ff, 0x080820, 1.2));
-      const d = new THREE.DirectionalLight(0xffffff, 1.3); d.position.set(5,8,7); scene.add(d);
-
-      // Materials
-      const silverMat = new THREE.MeshStandardMaterial({ color: 0xd9d9d9, metalness: 0.6, roughness: 0.35, emissive: 0x000000, emissiveIntensity: 0.0 });
-      const wireMat = silverMat.clone();
-      const resistorMat = silverMat.clone();
-      const coilMat = silverMat.clone();
-      const capacitorMat = silverMat.clone();
-      
-      // Layout helpers
-      const sideInner = 8, sideOuter = sideInner + 2.0, zWire = 0.0;
-      function cylinderBetween(a,b,r=0.08,mat=wireMat){ const dir = new THREE.Vector3().subVectors(b,a); const len = dir.length(); const geom = new THREE.CylinderGeometry(r, r, len, 24, 1, true); const mesh = new THREE.Mesh(geom, mat); const mid = new THREE.Vector3().addVectors(a,b).multiplyScalar(0.5); mesh.position.copy(mid); mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize()); return mesh; }
-      function updateCylinderBetween(mesh, a, b, r=0.08){ const dir = new THREE.Vector3().subVectors(b,a); const len = dir.length(); mesh.geometry.dispose(); mesh.geometry = new THREE.CylinderGeometry(r, r, len, 24, 1, true); const mid = new THREE.Vector3().addVectors(a,b).multiplyScalar(0.5); mesh.position.copy(mid); mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize()); }
-      function boxAt(c, size, mat){ const g = new THREE.BoxGeometry(...size); const m = new THREE.Mesh(g, mat); m.position.copy(c); return m; }
-
-      const gModel = new THREE.Group(); scene.add(gModel);
-      const P = { TL: new THREE.Vector3(-sideInner/2, sideInner/2, zWire), TR: new THREE.Vector3(sideInner/2, sideInner/2, zWire), BR: new THREE.Vector3(sideInner/2, -sideInner/2, zWire), BL: new THREE.Vector3(-sideInner/2, -sideInner/2, zWire) };
-      const gapFrac = 0.30; function splitEdge(a,b){ const v = new THREE.Vector3().subVectors(b,a); const c1 = a.clone().addScaledVector(v, 0.5 - gapFrac/2); const c2 = a.clone().addScaledVector(v, 0.5 + gapFrac/2); return {a,c1,c2,b}; }
-
-      const ETop = splitEdge(P.TL, P.TR);
-      const ERight = splitEdge(P.TR, P.BR);
-      const EBottom = splitEdge(P.BL, P.BR);
-      const ELeft = splitEdge(P.TL, P.BL);
-
-      // Edges
-      gModel.add(cylinderBetween(ETop.a, ETop.c1)); gModel.add(cylinderBetween(ETop.c2, ETop.b));
-      gModel.add(cylinderBetween(ERight.a, ERight.c1)); gModel.add(cylinderBetween(ERight.c2, ERight.b));
-      gModel.add(cylinderBetween(EBottom.a, EBottom.c1)); gModel.add(cylinderBetween(EBottom.c2, EBottom.b));
-      gModel.add(cylinderBetween(ELeft.a, ELeft.c1)); gModel.add(cylinderBetween(ELeft.c2, ELeft.b));
-
-      // === Components ===
-      // AC source (top): 디스크 + 음각풍 사인파 인레이 (가짜 음각)
-      const acCenter = new THREE.Vector3(0, sideInner/2, zWire);
-      const acLen = 2.0;
-      const acBody = new THREE.Mesh(new THREE.CylinderGeometry(0.65,0.65,0.18,48), silverMat); acBody.position.copy(acCenter); acBody.rotation.x = Math.PI/2; gModel.add(acBody);
-      // 사인 경로(디스크 면 위, 수평 방향) — TubeGeometry로 얇게 만들어 인레이처럼 보이게
-      const sinePts=[]; for(let i=0;i<=80;i++){ const t=i/80; const x=(t-0.5)*0.9; const y=Math.sin(t*Math.PI*2)*0.25; sinePts.push(new THREE.Vector3(x, y, 0)); }
-      const sinePath = new THREE.CatmullRomCurve3(sinePts);
-      const grooveGeo = new THREE.TubeGeometry(sinePath, 160, 0.02, 12, false);
-      const grooveMat = new THREE.MeshStandardMaterial({ color: 0x8d98a3, metalness: 0.3, roughness: 0.7 });
-      const groove = new THREE.Mesh(grooveGeo, grooveMat);
-      groove.position.copy(acCenter);
-      groove.rotation.x = Math.PI/2; // 디스크 면과 동일한 방향
-      groove.position.z += 0.09 - 0.005; // 앞면 가까이에 살짝
-      gModel.add(groove);
-      // 양단 단자 포스트 + 커넥터
-      const acPortL = acCenter.clone().add(new THREE.Vector3(-acLen/2, 0, 0));
-      const acPortR = acCenter.clone().add(new THREE.Vector3( acLen/2, 0, 0));
-      const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,0.5,24), silverMat); postL.position.copy(acPortL); postL.rotation.z=Math.PI/2; gModel.add(postL);
-      const postR = new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,0.5,24), silverMat); postR.position.copy(acPortR); postR.rotation.z=Math.PI/2; gModel.add(postR);
-      gModel.add(cylinderBetween(ETop.c1, acPortL)); gModel.add(cylinderBetween(acPortR, ETop.c2));
-
-      // Capacitor (right) — plate normal ±Y, dynamic with C
-      const capCenter = new THREE.Vector3(sideInner/2, 0, zWire);
-      const capW0 = 1.0, capT = 0.12, capD0 = 1.0, capGap0 = 0.8;
-      const capPlateTop = boxAt(capCenter.clone(), [capW0, capT, capD0], capacitorMat);
-      const capPlateBot = boxAt(capCenter.clone(), [capW0, capT, capD0], capacitorMat);
-      gModel.add(capPlateTop, capPlateBot);
-      let capConnTop = cylinderBetween(ERight.c1, capPlateTop.position, 0.08);
-      let capConnBot = cylinderBetween(capPlateBot.position, ERight.c2, 0.08);
-      gModel.add(capConnTop, capConnBot);
-
-      // Inductor (bottom) — L 값에 따라 동적 형상 변경
-      const coilCenter = new THREE.Vector3(0, -sideInner/2, zWire);
-      let coilRadius0 = 0.35, coilLen0 = 2.2, turns = 4, wireRadius = 0.08;
-      let coilRadius = coilRadius0, coilLen = coilLen0;
-      function makeCoilGeometry(){ const pts = []; const NPTS = 400; for(let i=0;i<=NPTS;i++){ const t=i/NPTS; const x=(t-0.5)*coilLen; const ang=t*turns*Math.PI*2; const y=Math.cos(ang)*coilRadius; const z=Math.sin(ang)*coilRadius; pts.push(new THREE.Vector3(x, y, z)); } const path = new THREE.CatmullRomCurve3(pts); return new THREE.TubeGeometry(path, 400, wireRadius, 24, false); }
-      const coilMesh = new THREE.Mesh(makeCoilGeometry(), coilMat); coilMesh.position.copy(coilCenter); gModel.add(coilMesh);
-      let coilPortL = coilCenter.clone().add(new THREE.Vector3(-coilLen/2, 0, 0));
-      let coilPortR = coilCenter.clone().add(new THREE.Vector3( coilLen/2, 0, 0));
-      let coilConnL = cylinderBetween(EBottom.c1, coilPortL, 0.08);
-      let coilConnR = cylinderBetween(coilPortR, EBottom.c2, 0.08);
-      gModel.add(coilConnL, coilConnR);
-
-      // ==== B-field visualization (inside solenoid + flux halos) ====
-      const gB = new THREE.Group(); scene.add(gB);
-      const N_B = 12; const arrows = [];
-      for(let i=0;i<N_B;i++){
-        const tx = (i/(N_B-1) - 0.5) * 0.9; // -0.45..+0.45
-        const yOff = (Math.random()-0.5) * coilRadius * 0.5;
-        const zOff = (Math.random()-0.5) * coilRadius * 0.5;
-        const pos = new THREE.Vector3(coilCenter.x + tx*coilLen, coilCenter.y + yOff, coilCenter.z + zOff);
-        const len = 0.6; const dir = new THREE.Vector3(1,0,0);
-        const arr = new THREE.ArrowHelper(dir, pos, len, 0x66ffcc, 0.20, 0.10); arr.userData={tx,yOff,zOff};
-        gB.add(arr); arrows.push(arr);
-      }
-      const halos = []; const haloScale = [1.2, 1.5, 1.85];
-      for(const s of haloScale){ const hGeo = new THREE.TorusGeometry(coilRadius*s, 0.05, 16, 64); const hMat = new THREE.MeshBasicMaterial({ color:0x66ccff, transparent:true, opacity:0.0, depthWrite:false, blending: THREE.AdditiveBlending }); const tor = new THREE.Mesh(hGeo, hMat); tor.position.copy(coilCenter); tor.rotation.y = Math.PI/2; gB.add(tor); halos.push(tor); }
-
-      function updateCoilGeom(){
-        const LmH = parseFloat(LSlider.value); // 1~200 mH
-        const Lnorm = THREE.MathUtils.clamp(LmH/50, 0.2, 5.0); // 50 mH 기준
-        // 직관 반영: r ∝ √L, l ∝ L^{-0.25}
-        coilRadius = coilRadius0 * Math.sqrt(Lnorm);
-        coilLen    = coilLen0    / Math.pow(Lnorm, 0.25);
-        coilMesh.geometry.dispose(); coilMesh.geometry = makeCoilGeometry();
-        coilPortL = coilCenter.clone().add(new THREE.Vector3(-coilLen/2, 0, 0));
-        coilPortR = coilCenter.clone().add(new THREE.Vector3( coilLen/2, 0, 0));
-        updateCylinderBetween(coilConnL, EBottom.c1, coilPortL, 0.08);
-        updateCylinderBetween(coilConnR, coilPortR, EBottom.c2, 0.08);
-        for(const arr of arrows){ const {tx,yOff,zOff} = arr.userData; arr.position.set(coilCenter.x + tx*coilLen, coilCenter.y + yOff, coilCenter.z + zOff); }
-        for(let i=0;i<halos.length;i++){ const r = coilRadius*haloScale[i]; const h=halos[i]; h.geometry.dispose(); h.geometry = new THREE.TorusGeometry(r, 0.05, 16, 64); h.position.copy(coilCenter); h.rotation.y = Math.PI/2; }
-      }
-      updateCoilGeom();
-
-      // Resistor (left) — rebuilt (가독성↑: 살짝 앞으로 띄움 + 사이즈 상향)
-      {
-        const resCenter = new THREE.Vector3(-sideInner/2, 0, zWire + 0.03); // Z로 살짝 앞으로
-        const resLen = 2.2;   // 기존 1.8 → 2.2
-        const resRad = 0.32;  // 기존 0.28 → 0.32 (은색 유지)
-
-        // 본체
-        const resBody = new THREE.Mesh(
-          new THREE.CylinderGeometry(resRad, resRad, resLen, 32),
-          resistorMat
-        );
-        resBody.position.copy(resCenter);
-
-        // 엔드캡
-        const capGeo = new THREE.CylinderGeometry(resRad*0.85, resRad*0.85, 0.18, 32);
-        const resCapTop = new THREE.Mesh(capGeo, resistorMat);
-        resCapTop.position.copy(resCenter).y += resLen/2;
-        const resCapBot = new THREE.Mesh(capGeo, resistorMat);
-        resCapBot.position.copy(resCenter).y -= resLen/2;
-        gModel.add(resBody, resCapTop, resCapBot);
-
-        // 리드/커넥터 (좌측 변과 자연스럽게 이어지도록)
-        const resPortTop = resCenter.clone().add(new THREE.Vector3(0,  resLen/2 + 0.15, 0));
-        const resPortBot = resCenter.clone().add(new THREE.Vector3(0, -resLen/2 - 0.15, 0));
-        gModel.add(cylinderBetween(ELeft.c1, resPortTop, 0.08));
-        gModel.add(cylinderBetween(resPortBot, ELeft.c2, 0.08));
-      }
-
-      // Capacitor electron clouds (Top/Bottom along Y)
-      const CAP_MAX = 160; const capDotGeo = new THREE.SphereGeometry(0.04, 10, 10);
-      const capDotsTop = new THREE.InstancedMesh(capDotGeo, new THREE.MeshStandardMaterial({ color:0x00b4ff, emissive:0x33ccff, emissiveIntensity:0.85, metalness:0.0, roughness:0.6 }), CAP_MAX);
-      const capDotsBot = new THREE.InstancedMesh(capDotGeo, new THREE.MeshStandardMaterial({ color:0x00b4ff, emissive:0x33ccff, emissiveIntensity:0.85, metalness:0.0, roughness:0.6 }), CAP_MAX);
-      capDotsTop.instanceMatrix.setUsage(THREE.DynamicDrawUsage); capDotsBot.instanceMatrix.setUsage(THREE.DynamicDrawUsage); gModel.add(capDotsTop, capDotsBot);
-      const plateCloudTop = Array.from({length:CAP_MAX}, ()=> new THREE.Vector3((Math.random()-0.5)*1.0, (Math.random()-0.5)*0.2 + 0.12, (Math.random()-0.5)*0.9));
-      const plateCloudBot = Array.from({length:CAP_MAX}, ()=> new THREE.Vector3((Math.random()-0.5)*1.0, (Math.random()-0.5)*0.2 - 0.12, (Math.random()-0.5)*0.9));
-
-      // ---------- Physics model ----------
-      const R = 50; const VAMP = 5;
-      function params(){ const L = parseFloat(LSlider.value)/1000; const C = parseFloat(CSlider.value)/1e6; let f0 = 1/(2*Math.PI*Math.sqrt(L*C)); if(!isFinite(f0)) f0 = 1; let f = parseFloat(FSlider.value); if(LockChk.checked){ f=f0; FSlider.disabled=true; } else { FSlider.disabled=false; } const w=2*Math.PI*f, XL=w*L, XC=1/(w*C); const Zmag=Math.sqrt(R*R + (XL-XC)**2); const Iamp=VAMP/Zmag; const thetaZ=Math.atan2((XL-XC),R); const phiI=-thetaZ; const Q=Math.sqrt(L/C)/R; const BW=f0/Q; return {L,C,f,f0,w,XL,XC,Zmag,Iamp,phiI,Q,BW}; }
-      function updateFSliderRange(){ const {f0}=params(); const min=Math.max(1, Math.floor(f0*0.2)); const max=Math.max(min+5, Math.ceil(f0*5)); FSlider.min=String(min); FSlider.max=String(max); if(parseFloat(FSlider.value)<min || parseFloat(FSlider.value)>max){ FSlider.value=String(Math.min(Math.max(parseFloat(FSlider.value),min),max)); } }
-      LSlider.addEventListener('input', updateFSliderRange); CSlider.addEventListener('input', updateFSliderRange); LockChk.addEventListener('change', updateFSliderRange); updateFSliderRange();
-
-      // ---------- Graph helpers ----------
-      function drawGraph(yAmp){
-        // BG
-        g.clearRect(0,0,G_W,G_H);
-        g.fillStyle = 'rgba(2,6,23,0.75)'; g.fillRect(0,0,G_W,G_H);
-        // grid
-        g.strokeStyle = 'rgba(148,163,184,0.25)'; g.lineWidth=1; g.beginPath();
-        for(let x=0;x<=G_W;x+=40){ g.moveTo(x,0); g.lineTo(x,G_H); }
-        for(let y=0;y<=G_H;y+=28){ g.moveTo(0,y); g.lineTo(G_W,y); }
-        g.stroke();
-        // zero axis
-        const y0 = Math.round(G_H/2); g.strokeStyle='rgba(226,232,240,0.5)'; g.beginPath(); g.moveTo(0,y0); g.lineTo(G_W,y0); g.stroke();
-        // trace
-        g.strokeStyle = 'rgba(102,204,255,1)'; g.lineWidth=2; g.beginPath();
-        for(let i=0;i<G_CAP;i++){
-          const idx = (gIdx + i) % G_CAP;
-          const v = gBuf[idx];
-          const x = i*(G_W/(G_CAP-1));
-          const y = y0 - (v / (yAmp+1e-6)) * (G_H*0.42);
-          if(i===0) g.moveTo(x,y); else g.lineTo(x,y);
-        }
-        g.stroke();
-        // labels
-        g.fillStyle='rgba(226,232,240,0.8)'; g.font='11px system-ui, -apple-system, Segoe UI, Roboto, Pretendard, sans-serif';
-        g.fillText('±' + yAmp.toFixed(2) + ' A', 6, 12);
-      }
-
-      // ---------- Animation ----------
-      let tPrev = performance.now()/1000; let qVis = 0; // 축전기 전하 EMA
-      function animate(){
-        const tNow = performance.now()/1000; const dt = Math.min(0.05, tNow - tPrev); tPrev = tNow;
-        const Pp = params();
-        const vis = parseFloat(VisSlider.value); VisVal.textContent = vis.toFixed(2)+'×';
-        Lval.textContent = (+LSlider.value).toFixed(0); Cval.textContent = (+CSlider.value).toFixed(1); Fval.textContent = Pp.f.toFixed(1); F0val.textContent = Pp.f0.toFixed(1);
-        Qval.textContent = isFinite(Pp.Q)? Pp.Q.toFixed(2): '—'; BWval.textContent = (isFinite(Pp.BW) && Pp.BW>0)? Pp.BW.toFixed(1): '—'; Ratio.textContent = (Pp.f/Pp.f0).toFixed(3);
-
-        const nearRes = Math.abs(Pp.f - Pp.f0)/Pp.f0 < 0.03; ResTag.style.opacity = nearRes ? '1' : '0.25'; ResTag.style.borderColor = nearRes ? 'rgba(34,197,94,.8)' : 'rgba(148,163,184,.35)';
-
-        const tVis = tNow * vis; // 시각화용 느린 시간
-        const iInst = Pp.Iamp * Math.sin(Pp.w*tVis + Pp.phiI);
-        const di_dt = Pp.Iamp * Pp.w * Math.cos(Pp.w*tVis + Pp.phiI);
-        const vR = iInst * R; const vL = Pp.Iamp * Pp.XL * Math.sin(Pp.w*tVis + Pp.phiI + Math.PI/2); const vC = Pp.Iamp * Pp.XC * Math.sin(Pp.w*tVis + Pp.phiI - Math.PI/2); const qC = Pp.C * vC;
-
-        // Glow dynamics
-        const glowWire = THREE.MathUtils.clamp(Math.abs(iInst)*2.2, 0.0, 1.8); const glowR = THREE.MathUtils.clamp(Math.abs(vR)*0.12, 0.0, 2.0); const glowL = THREE.MathUtils.clamp(Math.abs(vL)*0.05, 0.0, 2.2); const glowC = THREE.MathUtils.clamp(Math.abs(vC)*0.05, 0.0, 2.2);
-        wireMat.emissiveIntensity = glowWire; resistorMat.emissiveIntensity = glowR; coilMat.emissiveIntensity = glowL; capacitorMat.emissiveIntensity = glowC; silverMat.emissiveIntensity = 0.15 + 0.1*glowWire;
-
-        // --- Capacitor geometry vs C (A↑ or d↓로 C↑ 느낌)
-        const Cuf = parseFloat(CSlider.value); const Cnorm = Math.max(0.001, Cuf/10); const sA = THREE.MathUtils.clamp(Math.sqrt(Cnorm), 0.6, 2.0); const gap = THREE.MathUtils.clamp(0.8 / Math.sqrt(Cnorm), 0.25, 1.3);
-        capPlateTop.scale.set(sA, 1, sA); capPlateBot.scale.set(sA, 1, sA);
-        capPlateTop.position.set(capCenter.x, capCenter.y + gap/2, capCenter.z); capPlateBot.position.set(capCenter.x, capCenter.y - gap/2, capCenter.z);
-        updateCylinderBetween(capConnTop, ERight.c1, capPlateTop.position, 0.08);
-        updateCylinderBetween(capConnBot, capPlateBot.position, ERight.c2, 0.08);
-
-        
-        // --- Capacitor clouds: 양판 반대 위상 (기본 밀도 + 델타)
-        const alpha = 0.12; qVis += (qC - qVis) * alpha; const kCap = 1e6 * 1.6; const baseN = Math.floor(CAP_MAX * 0.35); const delta = Math.min(CAP_MAX - baseN, Math.floor(Math.abs(qVis) * kCap)); const topN = THREE.MathUtils.clamp(baseN + (qVis>0 ? delta : -delta), 0, CAP_MAX); const botN = THREE.MathUtils.clamp(baseN + (qVis<0 ? delta : -delta), 0, CAP_MAX); const dummy2 = new THREE.Object3D();
-        for(let i=0;i<CAP_MAX;i++){ if(i<topN){ const off = plateCloudTop[i]; dummy2.position.set(capCenter.x + off.x*sA, capCenter.y + gap/2 + off.y, capCenter.z + off.z*sA); } else { dummy2.position.set(999,999,999); } dummy2.updateMatrix(); capDotsTop.setMatrixAt(i, dummy2.matrix); }
-        capDotsTop.instanceMatrix.needsUpdate = true;
-        for(let i=0;i<CAP_MAX;i++){ if(i<botN){ const off = plateCloudBot[i]; dummy2.position.set(capCenter.x + off.x*sA, capCenter.y - gap/2 + off.y, capCenter.z + off.z*sA); } else { dummy2.position.set(999,999,999); } dummy2.updateMatrix(); capDotsBot.setMatrixAt(i, dummy2.matrix); }
-        capDotsBot.instanceMatrix.needsUpdate = true;
-
-        // --- B-field update ---
-        const signI = (iInst >= 0) ? 1 : -1; const baseLen = 0.5, kLen = 1.4;
-        for(const arr of arrows){ arr.setDirection(new THREE.Vector3(signI,0,0)); const Lnow = baseLen + kLen * Math.abs(iInst); arr.setLength(Lnow, 0.25*Lnow, 0.12*Lnow); }
-        const diNorm = THREE.MathUtils.clamp(Math.abs(di_dt) / (Math.abs(Pp.Iamp*Pp.w) + 1e-9), 0, 1); const sHalo = 1 + 0.25 * diNorm * (di_dt>=0 ? 1 : -1);
-        for(const h of halos){ h.scale.set(sHalo, sHalo, sHalo); h.material.opacity = 0.12 + 0.55 * diNorm; h.material.color.setHex(di_dt>=0 ? 0x66ccff : 0xff6688); }
-
-        // --- Graph buffer & render (전류 i(t)) ---
-        gBuf[gIdx] = iInst; gIdx = (gIdx + 1) % G_CAP;
-        // y축 스케일을 Iamp에 맞게 EMA
-        yMaxEMA += ((Math.max(0.5, Pp.Iamp*1.2)) - yMaxEMA) * 0.05;
-        drawGraph(yMaxEMA);
-
-        renderer.render(scene, camera); requestAnimationFrame(animate);
-      }
+      renderer.render(scene, camera);
       requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
 
-      addEventListener('resize', ()=>{ renderer.setSize(window.innerWidth, window.innerHeight); camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); });
+    // Resize
+    window.addEventListener('resize', ()=>{
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.aspect = window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+    });
 
-      function refresh(){ updateFSliderRange(); updateCoilGeom(); }
-      LSlider.addEventListener('input', refresh); CSlider.addEventListener('input', refresh); LockChk.addEventListener('change', refresh);
-    })();
+    function refresh(){ updateFSliderRange(); updateCoilGeom(); }
+    LSlider.addEventListener('input', refresh);
+    CSlider.addEventListener('input', refresh);
+    LockChk.addEventListener('change', refresh);
+  })();
   </script>
 </body>
 </html>

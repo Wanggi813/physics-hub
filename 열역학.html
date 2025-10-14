@@ -4,13 +4,9 @@
 <meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>열기관 과정 시뮬레이터</title>
 
-<script src="https://unpkg.com/p5@1.9.0/lib/p5.min.js"></script>
-<script type="importmap">{
-  "imports":{
-    "three":"https://unpkg.com/three@0.158.0/build/three.module.js",
-    "three/addons/":"https://unpkg.com/three@0.158.0/examples/jsm/"
-  }
-}</script>
+<!-- 로컬 라이브러리 -->
+<script src="./libs/p5.min.js"></script>
+<script src="./libs/three.min.js"></script>
 
 <style>
 :root{--bg:#f4f9ff;--panel:#fff;--ink:#0f172a;--muted:#5b657a;--accent:#2563eb;--border:#e6eef9;--radius:18px;--shadow:0 10px 30px rgba(15,23,42,.08)}
@@ -19,7 +15,7 @@ header{padding:14px 18px}header h1{margin:0;font-size:20px;font-weight:700}
 #app{display:grid;grid-template-columns:minmax(420px,1.2fr) minmax(520px,1fr);gap:22px;padding:14px 18px 28px}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
 .card h2{margin:0;padding:12px 14px;font-size:16px;border-bottom:1px solid var(--border);background:#f8fbff}
-#threeWrap{position:relative;height:520px} /* HUD 오버레이를 위한 relative */
+#threeWrap{position:relative;height:520px}
 #threeContainer{width:100%;height:100%}
 .hudBox{position:absolute;left:12px;top:12px;z-index:5;padding:8px 12px;border-radius:12px;border:1px solid var(--border);
         font-weight:800;letter-spacing:.2px;box-shadow:var(--shadow);pointer-events:none;backdrop-filter:blur(2px)}
@@ -43,7 +39,6 @@ input[type=range]{width:100%}select,.pill{background:#f7fbff;border:1px solid va
     <h2>피스톤 + 기체 입자</h2>
     <div id="threeWrap">
       <div id="threeContainer"></div>
-      <!-- ★ 화면 고정 압력 HUD -->
       <div id="pressureHud" class="hudBox">P = -- kPa</div>
     </div>
     <div id="readouts">
@@ -96,10 +91,8 @@ input[type=range]{width:100%}select,.pill{background:#f7fbff;border:1px solid va
   </div>
 </div>
 
-<script type="module">
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
+<script>
+/* ===== 상수/상태 ===== */
 const R=8.314,n=0.04,Cv=1.5*R,Cp=2.5*R,gamma=5/3;
 const r=0.05,A=Math.PI*r*r,hLim={min:0.05,max:0.25},TLim={min:150,max:600};
 let state={mode:'isochoric',h:0.15,T:300,P:0,V:0,Pc:null,Tc:null,Vc:null,adi_Tc:null,adi_Pc:null,Q:0,W:0,U:n*Cv*300,U0:null,last:null,Area:A};
@@ -111,34 +104,77 @@ const hud=$('pressureHud');
 
 const V=h=>A*h, P=(T,V)=>n*R*T/V, clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 
-let scene,camera,renderer,controls,pistonMesh,rod,particles=[],lastT=state.T,gasMat;
+/* ===== Three.js ===== */
+let scene,camera,renderer,pistonMesh,rod,particles=[],lastT=state.T,gasMat;
 
-init3D(); reset('isochoric'); animate();
+/* 커스텀 카메라 컨트롤(OrbitControls 대체: 드래그 회전, 휠 줌) */
+let camTarget=new THREE.Vector3(0,0.08,0);
+let sph={r:0.62, theta:Math.atan2(0.56,0.32), phi:Math.acos(0.18/0.62)}; // 초기값 근사
+const sphLim={r:[0.28,1.6], phi:[0.05,Math.PI*0.49]};
+let isDrag=false, lastX=0, lastY=0;
+
+function applySpherical(){
+  const {r,theta,phi}=sph;
+  const sinP=Math.sin(phi), cosP=Math.cos(phi);
+  const x=r*sinP*Math.cos(theta), y=r*cosP, z=r*sinP*Math.sin(theta);
+  camera.position.set(camTarget.x+x, camTarget.y+y, camTarget.z+z);
+  camera.lookAt(camTarget);
+}
 
 function init3D(){
   const ctn=$('threeContainer'), w=ctn.clientWidth||720, h=ctn.clientHeight||520;
   scene=new THREE.Scene(); scene.background=new THREE.Color(0xf2f7ff);
-  camera=new THREE.PerspectiveCamera(35,w/h,0.01,10); camera.position.set(0.32,0.18,0.56);
+  camera=new THREE.PerspectiveCamera(35,w/h,0.01,10);
   renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setSize(w,h,false); ctn.appendChild(renderer.domElement);
-  controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.target.set(0,0.08,0); controls.update();
-  scene.add(new THREE.AmbientLight(0xffffff,.8)); const d=new THREE.DirectionalLight(0xffffff,.85); d.position.set(1,1.2,1.2); scene.add(d);
+
+  scene.add(new THREE.AmbientLight(0xffffff,.8));
+  const d=new THREE.DirectionalLight(0xffffff,.85); d.position.set(1,1.2,1.2); scene.add(d);
 
   const floor=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.35,0.01,64), new THREE.MeshStandardMaterial({color:0xe8eefc,roughness:.9,metalness:.1}));
   floor.position.y=-0.005; scene.add(floor);
+
   const wall=new THREE.Mesh(new THREE.CylinderGeometry(r,r,hLim.max+0.02,48,1,true),
     new THREE.MeshPhysicalMaterial({color:0x79b6ff,transparent:true,opacity:.1,roughness:.1,thickness:1.2,transmission:.85}));
   wall.position.y=hLim.max/2; scene.add(wall);
+
   const bottom=new THREE.Mesh(new THREE.CylinderGeometry(r,r,0.01,48), new THREE.MeshStandardMaterial({color:0xcad7fb,metalness:.4,roughness:.3}));
   bottom.position.y=0; scene.add(bottom);
 
   pistonMesh=new THREE.Mesh(new THREE.CylinderGeometry(r*1.005,r*1.005,0.01,48), new THREE.MeshStandardMaterial({color:0x93b4ff,metalness:.7,roughness:.25}));
   pistonMesh.position.y=state.h; scene.add(pistonMesh);
+
   rod=new THREE.Mesh(new THREE.CylinderGeometry(0.006,0.006,0.3,24), new THREE.MeshStandardMaterial({color:0xa1b7ff,metalness:.9,roughness:.2}));
   rod.position.set(0,state.h+0.15,0); scene.add(rod);
 
   initParticles(70);
-  window.addEventListener('resize',()=>{const w=ctn.clientWidth||720,h=ctn.clientHeight||520;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);});
+  applySpherical();
+
+  // 리사이즈
+  window.addEventListener('resize',()=>{
+    const w=ctn.clientWidth||720,h=ctn.clientHeight||520;
+    camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h,false);
+  });
+
+  // 포인터 이벤트(드래그 회전)
+  const dom=renderer.domElement;
+  dom.addEventListener('pointerdown',e=>{isDrag=true; lastX=e.clientX; lastY=e.clientY; dom.setPointerCapture(e.pointerId);});
+  dom.addEventListener('pointermove',e=>{
+    if(!isDrag) return;
+    const dx=(e.clientX-lastX), dy=(e.clientY-lastY);
+    lastX=e.clientX; lastY=e.clientY;
+    sph.theta -= dx*0.005;
+    sph.phi   -= dy*0.005;
+    sph.phi=clamp(sph.phi, sphLim.phi[0], sphLim.phi[1]);
+  });
+  dom.addEventListener('pointerup',e=>{isDrag=false; dom.releasePointerCapture(e.pointerId);});
+  // 휠 줌
+  dom.addEventListener('wheel',e=>{
+    e.preventDefault();
+    const scale=Math.exp(e.deltaY*0.001);
+    sph.r=clamp(sph.r*scale, sphLim.r[0], sphLim.r[1]);
+  }, {passive:false});
 }
+
 function initParticles(N){
   particles.length=0;
   const geom=new THREE.SphereGeometry(0.005,16,16);
@@ -158,14 +194,13 @@ function setGasColor(T){
   gasMat.color.setHSL(h,1.0,0.52); gasMat.emissive.setHSL(h,0.7,0.35);
 }
 
-/* === 화면 고정 압력 HUD === */
+/* HUD(압력) */
 function updatePressureHud(PkPa){
-  // 0kPa(파랑, h=210deg) → 300kPa(빨강, h=0deg)
   const t=Math.max(0,Math.min(1, PkPa/300));
-  const hue=210*(1-t);               // 210→0
+  const hue=210*(1-t);
   const bg=`hsl(${hue}deg 85% 55%)`;
   const border=`hsl(${hue}deg 70% 42%)`;
-  const textDark = t < 0.45;         // 낮은 압력(밝은 파랑)엔 어두운 글자, 그 외엔 흰 글자
+  const textDark = t < 0.45;
   hud.style.backgroundColor=bg;
   hud.style.borderColor=border;
   hud.style.color=textDark ? '#0f172a' : '#ffffff';
@@ -183,9 +218,12 @@ function animate(){
     if(p.position.y>y1){ p.position.y=y1; v.y=-Math.abs(v.y); }
   }
   pistonMesh.position.y=state.h; rod.position.y=state.h+0.15;
-  controls.update(); renderer.render(scene,camera);
+
+  applySpherical();
+  renderer.render(scene,camera);
 }
 
+/* ===== 상태 갱신 로직 ===== */
 function reset(mode){
   state.mode=mode; state.V=V(state.h); state.P=P(state.T,state.V);
   state.Pc=(mode==='isobaric')?state.P:null; state.Tc=(mode==='isothermal')?state.T:null; state.Vc=(mode==='isochoric')?state.V:null;
@@ -223,6 +261,7 @@ function step(changed){
   updatePressureHud(state.P/1000);
   window.pushPV && window.pushPV(state.P/1000, state.V*1000);
 }
+
 function rescaleV(Tnew){ const s=Math.sqrt(Tnew/(lastT||Tnew)); particles.forEach(p=>p.userData.v.multiplyScalar(s)); setGasColor(Tnew); lastT=Tnew; }
 function readouts(){
   Pout.textContent=(state.P/1000).toFixed(1);
@@ -233,6 +272,7 @@ function readouts(){
   DUout.textContent=(state.U-state.U0).toFixed(2);
 }
 
+/* 입력 연결 */
 piston.min=hLim.min; piston.max=hLim.max; piston.step=0.001; piston.value=state.h;
 temp.min=TLim.min; temp.max=TLim.max; temp.step=1; temp.value=state.T;
 pistonLbl.textContent=state.h.toFixed(3)+' m'; tempLbl.textContent=Math.round(state.T)+' K';
@@ -240,7 +280,7 @@ modeSel.addEventListener('change',e=>reset(e.target.value));
 piston.addEventListener('input',e=>{state.h=+e.target.value; step('h');});
 temp.addEventListener('input',e=>{state.T=+e.target.value; step('T');});
 
-/* ---- p5: PV 그래프 (P_max=300 kPa) ---- */
+/* ===== p5: PV 그래프 ===== */
 let pvSketch=p=>{
   const pad=48,P_MAX=300; let path=[];
   p.setup=()=>{ const parent=$('pvPanel'); const W=parent.clientWidth||560,H=parent.clientHeight||340;
@@ -263,7 +303,9 @@ let pvSketch=p=>{
   window.resetPV=()=>{ path.length=0; window.pushPV(state.P/1000,state.V*1000); };
 };
 new p5(pvSketch);
-step('init');
+
+/* 실행 */
+init3D(); reset('isochoric'); animate();
 </script>
 </body>
 </html>
