@@ -5,11 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>수소원자모형 양자화 시뮬레이터</title>
 
-<!-- p5.js -->
-<script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
-<!-- Three.js UMD + OrbitControls (r124 고정) -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.124.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.124.0/examples/js/controls/OrbitControls.js"></script>
+<!-- 로컬 라이브러리 -->
+<script src="./libs/p5.min.js"></script>
+<script src="./libs/three.min.js"></script>
 
 <style>
   :root{--bg:#f7fafc;--panel:#fff;--ink:#0b1020;--ink-dim:#4b5563;--accent:#2563eb;--line:#e5e7eb}
@@ -78,7 +76,7 @@
 // ===== 공통 설정 =====
 const CONFIG = {
   renderer: { pixelRatioMax: 1.25, bg: 0xffffff },
-  points:   { count: 60000, size: 0.3, opacity: 0.3, shapeBeta: 1.6 }, // 요청값
+  points:   { count: 60000, size: 0.3, opacity: 0.3, shapeBeta: 1.6 },
   iso:      { scale: 1.5, exp: 0.7, opacity: 0.9 },
   axes:     { len: 1.8, thick: 0.02, opacity: 0.8, labelScale: [0.35, 0.18] },
   colors:   { pos:[0.20,0.55,1.00], neg:[1.00,0.35,0.30] }
@@ -124,6 +122,52 @@ const CONFIG = {
 <!-- 3D: Three.js -->
 <script>
 (()=>{
+  // ===== SimpleOrbit (OrbitControls 대체) =====
+  class SimpleOrbit{
+    constructor(camera, dom, target=new THREE.Vector3(0,0,0)){
+      this.camera=camera; this.dom=dom; this.target=target;
+      this.sph = new THREE.Spherical(6.5, Math.PI/3, -Math.PI/6);
+      const off=camera.position.clone().sub(target);
+      this.sph.setFromVector3(off);
+      this.minPhi=0.05; this.maxPhi=Math.PI-0.05;
+      this.minR=2.2; this.maxR=20;
+      this.rotSpeed=0.006; this.zoomSpeed=1.1;
+      this.enableDamping=true; this.damp=0.12;
+      this._vTheta=0; this._vPhi=0; this._vR=0;
+
+      let dragging=false, lx=0, ly=0;
+      dom.addEventListener('mousedown',e=>{dragging=true; lx=e.clientX; ly=e.clientY;});
+      window.addEventListener('mouseup',()=>{dragging=false;});
+      window.addEventListener('mousemove',e=>{
+        if(!dragging) return;
+        const dx=e.clientX-lx, dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
+        this._vTheta -= dx*this.rotSpeed;
+        this._vPhi   += dy*this.rotSpeed;
+      });
+      dom.addEventListener('wheel',e=>{
+        e.preventDefault();
+        const s=(e.deltaY>0?1:-1);
+        this._vR += s*Math.log(this.zoomSpeed);
+      },{passive:false});
+      this.update(true);
+    }
+    update(immediate=false){
+      if(this.enableDamping && !immediate){
+        this.sph.theta += this._vTheta; this._vTheta *= (1-this.damp);
+        this.sph.phi   += this._vPhi;   this._vPhi   *= (1-this.damp);
+        this.sph.radius*= Math.exp(this._vR); this._vR *= (1-this.damp);
+      }else{
+        this.sph.theta += this._vTheta; this.sph.phi += this._vPhi; this.sph.radius*= Math.exp(this._vR);
+        this._vTheta=this._vPhi=this._vR=0;
+      }
+      this.sph.phi = Math.max(this.minPhi, Math.min(this.maxPhi, this.sph.phi));
+      this.sph.radius = Math.max(this.minR, Math.min(this.maxR, this.sph.radius));
+      const p=new THREE.Vector3().setFromSpherical(this.sph).add(this.target);
+      this.camera.position.copy(p);
+      this.camera.lookAt(this.target);
+    }
+  }
+
   // DOM
   const wrap=document.getElementById('three-container');
   const box=document.getElementById('three-wrap');
@@ -131,20 +175,18 @@ const CONFIG = {
   const mSel=document.getElementById('m3');
   const btn=document.getElementById('regen');
   const tgl=document.getElementById('orbitalToggle');
-  let showIso = tgl.checked;   // 등가면만 토글
+  let showIso = tgl.checked;
 
   // Scene / Camera / Renderer
   const scene=new THREE.Scene(); scene.background=new THREE.Color(CONFIG.renderer.bg);
   const cam=new THREE.PerspectiveCamera(45,1,0.1,100); cam.position.set(3.2,2.8,3.8);
   const rnd=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
-  rnd.setPixelRatio(Math.min(window.devicePixelRatio, CONFIG.renderer.pixelRatioMax));
+  rnd.setPixelRatio(Math.min(window.devicePixelRatio||1, CONFIG.renderer.pixelRatioMax));
   rnd.setSize(box.clientWidth||880, Math.max(box.clientHeight||640,560), false);
   wrap.appendChild(rnd.domElement);
   Object.assign(rnd.domElement.style,{display:'block',width:'100%',height:'100%'});
 
-  // Controls
-  const ControlsCtor=(THREE&&THREE.OrbitControls)||window.OrbitControls;
-  const ctl=new ControlsCtor(cam,rnd.domElement); ctl.enableDamping=true; ctl.target.set(0,0,0); cam.lookAt(0,0,0);
+  const ctl=new SimpleOrbit(cam,rnd.domElement,new THREE.Vector3(0,0,0));
 
   // Lights & nucleus
   scene.add(new THREE.AmbientLight(0xffffff,0.9));
@@ -228,9 +270,9 @@ const CONFIG = {
     gP.setAttribute('position',new THREE.BufferAttribute(new Float32Array(N*3),3));
     gP.setAttribute('color',new THREE.BufferAttribute(new Float32Array(N*3),3));
     mP=new THREE.PointsMaterial({
-      size: CONFIG.points.size,                  // 0.3
+      size: CONFIG.points.size,
       sizeAttenuation:true,
-      map:circTex, alphaTest:.3, transparent:true, opacity:CONFIG.points.opacity, // 0.3
+      map:circTex, alphaTest:.3, transparent:true, opacity:CONFIG.points.opacity,
       vertexColors:true, depthWrite:false
     });
     pts=new THREE.Points(gP,mP); pts.frustumCulled=false; scene.add(pts);
@@ -295,18 +337,20 @@ const CONFIG = {
     g.setIndex(I); g.computeVertexNormals();
     isoMesh=new THREE.Mesh(g,new THREE.MeshPhongMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:true,opacity}));
     scene.add(isoMesh);
-    isoMesh.visible = showIso; // 현재 토글 상태 반영
+    isoMesh.visible = showIso; // 토글 반영
   }
 
-  // 카메라 프레이밍 (가시 객체만 고려; 전자구름은 항상 가시)
+  // 카메라 프레이밍
   function frameAll(margin=1.25){
     let r1=0,r2=0;
     if(isoMesh && isoMesh.visible){ isoMesh.geometry.computeBoundingSphere(); r1=isoMesh.geometry.boundingSphere.radius; }
     if(gP){ gP.computeBoundingSphere(); r2=gP.boundingSphere.radius; }
     const r=Math.max(r1,r2,1), vF=THREE.MathUtils.degToRad(cam.fov), hF=2*Math.atan(Math.tan(vF/2)*cam.aspect);
     const d=Math.max((r*margin)/Math.tan(vF/2),(r*margin)/Math.tan(hF/2));
-    const dir=new THREE.Vector3().subVectors(cam.position,ctl.target).normalize();
-    cam.position.copy(dir.multiplyScalar(d)).add(ctl.target); cam.updateProjectionMatrix();
+    const dir=new THREE.Vector3().subVectors(cam.position,new THREE.Vector3(0,0,0)).normalize();
+    cam.position.copy(dir.multiplyScalar(d));
+    cam.lookAt(0,0,0);
+    cam.updateProjectionMatrix();
   }
 
   // UI 로직
@@ -315,9 +359,9 @@ const CONFIG = {
   function regen(){
     const l=+lSel.value, m=+mSel.value||0;
     Amax = computeAngularMax(l,m);
-    initPoints(CONFIG.points.count);      // 항상 생성
-    fillPoints(CONFIG.points.count,l,m);  // 항상 샘플링
-    buildIso(l,m);                        // 등가면 생성(표시는 토글에 따름)
+    initPoints(CONFIG.points.count);
+    fillPoints(CONFIG.points.count,l,m);
+    buildIso(l,m);
     frameAll(1.25);
   }
 
@@ -327,25 +371,33 @@ const CONFIG = {
   mSel.addEventListener('change', regen);
   btn.addEventListener('click', regen);
 
-  // 등가면 토글: 전자구름은 그대로 두고 등가면만 on/off
+  // 등가면 on/off (전자구름은 항상 표시)
   tgl.addEventListener('change', ()=>{
     showIso = tgl.checked;
     if(isoMesh){
       isoMesh.visible = showIso;
       frameAll(1.25);
     }else if(showIso){
-      // 아직 등가면이 없다면 만들어서 보여줌
       const l=+lSel.value, m=+mSel.value||0;
       buildIso(l,m);
       frameAll(1.25);
     }
   });
 
-  function onResize(){const w=box.clientWidth||880,h=Math.max(box.clientHeight||640,560); cam.aspect=w/h; cam.updateProjectionMatrix(); rnd.setSize(w,h,false); frameAll(1.25)}
+  function onResize(){
+    const w=box.clientWidth||880,h=Math.max(box.clientHeight||640,560);
+    cam.aspect=w/h; cam.updateProjectionMatrix();
+    rnd.setSize(w,h,false);
+    frameAll(1.25);
+  }
   if('ResizeObserver'in window){new ResizeObserver(onResize).observe(box)} else {addEventListener('resize',onResize)}
   onResize();
 
-  (function loop(){requestAnimationFrame(loop); ctl.update(); rnd.render(scene,cam)})();
+  (function loop(){
+    requestAnimationFrame(loop);
+    ctl.update();         // 관성/감쇠 적용
+    rnd.render(scene,cam);
+  })();
 })();
 </script>
 </body>
