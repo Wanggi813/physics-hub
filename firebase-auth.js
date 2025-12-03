@@ -283,7 +283,7 @@ onAuthStateChanged(auth, async (user) => {
 
     currentUserIdText = displayId;
 
-    if (statusEl) statusEl.innerText = "로그인 상태: " + displayId;
+    if (statusEl) statusEl.innerText = displayId;
     if (logoutBtn) logoutBtn.style.display = "inline-flex";
     if (openBtn) openBtn.textContent = "내 정보 / 점수";
 
