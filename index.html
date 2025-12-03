@@ -540,6 +540,9 @@
     const copyBtn=document.getElementById('copy-fact');
     const shareBtn=document.getElementById('share-fact');
     let last=-1;
+
+      if (!factEl || !nextBtn || !copyBtn || !shareBtn) return;
+
     function pick(){ let i=Math.floor(Math.random()*FACTS.length); if(i===last) i=(i+1)%FACTS.length; last=i; return FACTS[i]; }
     function next(){ factEl.textContent=pick(); }
     nextBtn.addEventListener('click', next);
@@ -1031,6 +1034,7 @@
   </script>
 </body>
 </html>
+
 
 
 
