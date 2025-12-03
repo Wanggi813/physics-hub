@@ -192,9 +192,18 @@ let showResults = false;
 let lastShot = { v:0, th:0 };
 let lastResult = { Hmax:0, Rmax:0, xApex:0, empirical:false }; // empirical = 저항 ON일 때 실측
 
-/* 스트릭 */
+/* 스트릭 + 점수 */
 let streak = 0;
-function updateStreakUI(){ streakBox.innerHTML = `연속 성공: <b>${streak}</b>`; }
+let currentScore = 0;
+let bestScore = 0;
+function updateStreakUI(){
+  streakBox.innerHTML = `연속 성공: <b>${streak}</b> · 최고 점수: <b>${bestScore}</b>`;
+}
+// Firebase에서 최고 점수를 불러온 경우 UI 반영용
+window.setBestScoreFromFirebase = function(score){
+  bestScore = Number(score) || 0;
+  updateStreakUI();
+};
 
 /* =============== 유틸 =============== */
 const clamp = (v,min,max)=> Math.max(min, Math.min(max, v));
@@ -355,7 +364,21 @@ function stepPhysics(){
 
     showResults = true;
     setResultBox();
-    if(hit){ streak += 1; } else { streak = 0; }
+    if (hit) {
+      // 명중할 때마다 100점씩 누적되는 현재 점수 (연속 성공 기준)
+      streak += 1;
+      currentScore = streak * 100;
+      if (currentScore > bestScore) {
+        bestScore = currentScore;
+        // Firebase에 최고 점수 저장 (로그인 되어 있고 함수가 정의된 경우)
+        if (window.saveBestScoreToFirebase) {
+          window.saveBestScoreToFirebase(bestScore);
+        }
+      }
+    } else {
+      // 실패하면 연속 성공만 0으로 초기화, 최고 점수는 유지
+      streak = 0;
+    }
     updateStreakUI();
   }
 }
@@ -626,5 +649,73 @@ speedVal.textContent = speedSl.value;
 resetAll(true);
 draw();
 </script>
+
+<!-- ===== Firebase 점수 연동 (포물선 운동) ===== -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+  // 메인 허브(index.html)와 동일한 Firebase 설정
+  const firebaseConfig = {
+    apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
+    authDomain: "simulation-67cd3.firebaseapp.com",
+    projectId: "simulation-67cd3",
+    storageBucket: "simulation-67cd3.appspot.com",
+    messagingSenderId: "615983461615",
+    appId: "1:615983461615:web:002e07bcea878eb6d5571a",
+    measurementId: "G-9RGN7LYE5W"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const SIM_ID = "포물선_운동";
+
+  let firebaseUser = null;
+
+  // 최고 점수 Firestore에 저장
+  async function saveBestScore(score) {
+    if (!firebaseUser) return;
+    try {
+      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+      await setDoc(ref, { score: Number(score) || 0 }, { merge: true });
+    } catch (err) {
+      console.error("[포물선 운동] 최고 점수 저장 오류:", err);
+    }
+  }
+
+  // 최초 접속 시 기존 최고 점수 로드
+  async function loadBestScore() {
+    if (!firebaseUser) return;
+    try {
+      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const data = snap.data();
+        const score = Number(data.score || 0) || 0;
+        // 메인 스크립트에 전달 (UI와 내부 변수 동기화)
+        if (window.setBestScoreFromFirebase) {
+          window.setBestScoreFromFirebase(score);
+        }
+      }
+    } catch (err) {
+      console.error("[포물선 운동] 최고 점수 불러오기 오류:", err);
+    }
+  }
+
+  // 전역에서 호출할 수 있도록 노출
+  window.saveBestScoreToFirebase = saveBestScore;
+
+  // 로그인 상태 변화 감지 → 해당 ID 기준 최고 점수 연동
+  onAuthStateChanged(auth, async (user) => {
+    firebaseUser = user;
+    if (user) {
+      await loadBestScore();
+    }
+  });
+</script>
+
 </body>
 </html>

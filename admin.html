@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>시(물리)에이션 관리자 페이지</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg:#020617;
+      --panel:#050b1c;
+      --ink:#e5e7eb;
+      --muted:#9ca3af;
+      --accent:#4f46e5;
+      --accent-soft:#6366f1;
+      --danger:#ef4444;
+      --ok:#22c55e;
+      --line:#1f2937;
+      --radius:14px;
+      --shadow:0 18px 40px rgba(0,0,0,.55);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font:14px/1.6 system-ui,"Pretendard","Noto Sans KR",sans-serif;
+      background:
+        radial-gradient(900px 600px at 0% 0%,rgba(79,70,229,.35),transparent 55%),
+        radial-gradient(900px 600px at 100% 100%,rgba(14,165,233,.25),transparent 55%),
+        #020617;
+      color:var(--ink);
+      padding:24px 16px 40px;
+    }
+    .wrap{
+      max-width:960px;
+      margin:0 auto;
+    }
+    h1{
+      margin:0 0 6px;
+      font-size:22px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    h1 span.logo{
+      width:28px;
+      height:28px;
+      border-radius:10px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      background:#111827;
+      border:1px solid rgba(148,163,255,.4);
+      font-size:16px;
+    }
+    .subtitle{
+      margin:0 0 20px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .card{
+      background:rgba(15,23,42,.9);
+      border-radius:var(--radius);
+      border:1px solid rgba(55,65,81,.9);
+      box-shadow:var(--shadow);
+      padding:18px 18px 16px;
+      margin-bottom:16px;
+    }
+    .card h2{
+      margin:0 0 10px;
+      font-size:16px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:11px;
+      background:rgba(79,70,229,.14);
+      border:1px solid rgba(129,140,248,.6);
+      color:#c7d2fe;
+    }
+    label{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:4px;
+    }
+    input{
+      width:100%;
+      padding:7px 9px;
+      border-radius:8px;
+      border:1px solid #374151;
+      background:#020617;
+      color:var(--ink);
+      font-size:13px;
+      margin-bottom:8px;
+    }
+    input:focus{
+      outline:none;
+      border-color:var(--accent-soft);
+      box-shadow:0 0 0 1px rgba(99,102,241,.6);
+    }
+    .row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+    .row > div{
+      flex:1 1 180px;
+    }
+    button{
+      border:none;
+      border-radius:999px;
+      padding:8px 14px;
+      font-size:13px;
+      cursor:pointer;
+      background:linear-gradient(180deg,var(--accent-soft),#312e81);
+      color:#e5e7eb;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    button.secondary{
+      background:transparent;
+      border:1px solid rgba(148,163,255,.7);
+      color:#e5e7eb;
+    }
+    button.danger{
+      background:linear-gradient(180deg,#ef4444,#b91c1c);
+      border:none;
+      color:#fee2e2;
+    }
+    button.small{
+      padding:4px 10px;
+      font-size:12px;
+    }
+    button:disabled{
+      opacity:.5;
+      cursor:default;
+    }
+    .hint{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:4px;
+    }
+    .status-line{
+      margin-top:8px;
+      font-size:12px;
+    }
+    .status-ok{color:var(--ok);}
+    .status-err{color:var(--danger);}
+    .lock-card{
+      max-width:420px;
+      margin:40px auto 0;
+      text-align:left;
+    }
+    .lock-title{
+      font-size:15px;
+      margin:0 0 4px;
+    }
+    .lock-sub{
+      margin:0 0 14px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .pill{
+      display:inline-flex;
+      padding:2px 7px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,255,.5);
+      font-size:11px;
+      color:#c7d2fe;
+      margin-left:4px;
+    }
+    .mt-8{margin-top:8px;}
+    .mt-4{margin-top:4px;}
+    .flex-between{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      align-items:center;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:12px;
+      margin-top:8px;
+    }
+    th,td{
+      padding:6px 8px;
+      border-bottom:1px solid #1f2937;
+    }
+    th{
+      text-align:left;
+      color:#9ca3af;
+      font-weight:500;
+      background:#050816;
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+    tbody tr:nth-child(even){
+      background:rgba(15,23,42,.6);
+    }
+    .tag{
+      display:inline-flex;
+      padding:2px 6px;
+      border-radius:999px;
+      border:1px solid #374151;
+      font-size:11px;
+      color:#9ca3af;
+    }
+    .small{
+      font-size:11px;
+      color:#6b7280;
+    }
+    .scroll{
+      max-height:280px;
+      overflow:auto;
+      margin-top:6px;
+      border-radius:10px;
+      border:1px solid #1f2937;
+    }
+    .csv-table-wrap{
+      max-height:260px;
+      overflow:auto;
+      border-radius:10px;
+      border:1px solid #1f2937;
+      margin-top:8px;
+    }
+    .mono{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>
+      <span class="logo">⚛️</span>
+      시(물리)에이션 관리자
+      <span class="pill">관리자 전용</span>
+    </h1>
+    <p class="subtitle">
+      Firebase Authentication / Firestore를 이용해 학생 계정을 등록·관리하는 페이지입니다.
+    </p>
+
+    <!-- 잠금 상태 카드 -->
+    <div class="card lock-card" id="lock-card">
+      <p class="lock-title">관리자 비밀번호 확인</p>
+      <p class="lock-sub">
+        선생님만 접속하는 관리자 페이지입니다. 사전에 정해 둔 관리자 비밀번호를 입력해 주세요.
+      </p>
+      <label for="admin-pass">관리자 비밀번호</label>
+      <input type="password" id="admin-pass" placeholder="예: physics-2025-!@#" />
+      <div class="flex-between mt-8">
+        <button id="btn-admin-enter">관리자 모드 입장</button>
+        <button type="button" class="secondary small" id="btn-toggle-pass">표시</button>
+      </div>
+      <p class="hint mt-4">
+        ⚠ 이 비밀번호는 단순 프론트엔드 잠금입니다. 학생에게 공유하지 말고, GitHub에 올릴 경우에는
+        나중에 환경변수/서버 등으로 숨겨주는 것이 좋습니다.
+      </p>
+      <p class="status-line" id="admin-lock-status"></p>
+    </div>
+
+    <!-- 실제 관리자 기능 영역 -->
+    <div id="admin-main" style="display:none;">
+
+      <!-- 1) 새 계정 생성 + ID 자동 생성 -->
+      <div class="card">
+        <h2>🧑‍🎓 단일 학생 계정 생성 <span class="badge">ID / 비밀번호 배포용</span></h2>
+        <p class="hint">
+          여기서 만든 계정은 <span class="tag">index.html</span>의 로그인 창에서 아이디만 입력해 사용할 수 있습니다.
+          (내부적으로 <code class="mono">아이디@myapp.local</code> 이메일 형식으로 저장됩니다.)
+        </p>
+        <div class="row mt-8">
+          <div>
+            <label for="new-id">학생 아이디</label>
+            <input type="text" id="new-id" placeholder="예: s1A_01" />
+          </div>
+          <div>
+            <label for="new-pass">비밀번호</label>
+            <input type="password" id="new-pass" placeholder="최소 6자리" />
+          </div>
+          <div>
+            <label for="new-pass2">비밀번호 확인</label>
+            <input type="password" id="new-pass2" placeholder="다시 입력" />
+          </div>
+        </div>
+
+        <!-- ID 자동 생성 설정 -->
+        <div class="row mt-4">
+          <div>
+            <label for="auto-prefix">ID 접두어 (선택)</label>
+            <input type="text" id="auto-prefix" placeholder="예: s1A_" />
+          </div>
+          <div>
+            <label for="auto-start">시작 번호</label>
+            <input type="number" id="auto-start" value="1" />
+          </div>
+          <div>
+            <label for="auto-digits">번호 자리수</label>
+            <input type="number" id="auto-digits" value="2" />
+          </div>
+        </div>
+        <div class="flex-between mt-4">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button type="button" class="secondary small" id="btn-auto-id">ID 자동 생성</button>
+            <span class="small">예: prefix = <span class="mono">s1A_</span>, 시작번호=1, 자리수=2 → <span class="mono">s1A_01</span></span>
+          </div>
+          <button id="btn-create">계정 생성</button>
+        </div>
+        <p class="status-line" id="create-status"></p>
+      </div>
+
+      <!-- 2) CSV 일괄 계정 생성 -->
+      <div class="card">
+        <h2>📥 CSV 일괄 계정 생성 <span class="badge">여러 학생 한 번에 등록</span></h2>
+        <p class="hint">
+          CSV 형식 예시:<br>
+          <span class="mono">id,password</span><br>
+          <span class="mono">s1A_01,111111</span><br>
+          <span class="mono">s1A_02,</span>  ← 비밀번호 빈칸이면 자동으로 8자리 랜덤 비밀번호가 생성됩니다.
+        </p>
+        <div class="row mt-8">
+          <div>
+            <label for="csv-file">CSV 파일 선택</label>
+            <input type="file" id="csv-file" accept=".csv,text/csv" />
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button type="button" class="secondary small" id="btn-clear-csv">목록 비우기</button>
+          </div>
+        </div>
+        <div class="csv-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:40px;">#</th>
+                <th>아이디(ID)</th>
+                <th>비밀번호</th>
+                <th style="width:120px;">상태</th>
+              </tr>
+            </thead>
+            <tbody id="csv-tbody">
+              <tr><td colspan="4" class="small">CSV 파일을 선택하면 여기에서 계정 목록을 확인할 수 있습니다.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="flex-between mt-8">
+          <button type="button" id="btn-bulk-create">계정 일괄 생성</button>
+          <p class="small" id="bulk-summary">읽어온 행: 0</p>
+        </div>
+        <p class="status-line" id="bulk-status"></p>
+      </div>
+
+      <!-- 3) 점수 / 사용자 목록 -->
+      <div class="card">
+        <h2>📊 점수 / 사용자 목록</h2>
+        <div class="flex-between">
+          <p class="hint">
+            Firestore <span class="tag">scores</span> 컬렉션 기준으로 ID·점수를 확인합니다.
+          </p>
+          <button class="secondary" id="btn-refresh">목록 새로고침</button>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:40px;">#</th>
+                <th>아이디(ID)</th>
+                <th style="width:80px;">점수</th>
+                <th style="width:140px;">UID (앞부분)</th>
+              </tr>
+            </thead>
+            <tbody id="score-tbody">
+              <tr><td colspan="4" class="small">아직 데이터를 불러오지 않았습니다. [목록 새로고침] 버튼을 눌러 주세요.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="status-line" id="list-status"></p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // ===== 1. Firebase SDK 로드 =====
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      setDoc,
+      getDoc,
+      getDocs,
+      collection,
+      query,
+      orderBy,
+      limit
+    } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+    // ===== 2. Firebase 설정 (index와 동일 프로젝트) =====
+    const firebaseConfig = {
+      apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
+      authDomain: "simulation-67cd3.firebaseapp.com",
+      projectId: "simulation-67cd3",
+      storageBucket: "simulation-67cd3.appspot.com",
+      messagingSenderId: "615983461615",
+      appId: "1:615983461615:web:002e07bcea878eb6d5571a",
+      measurementId: "G-9RGN7LYE5W"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // ===== 3. 간단 관리자 잠금 (프론트엔드 비밀번호) =====
+    // ⚠ 실제 비밀값은 나중에 꼭 바꾸세요!
+    const ADMIN_PASSWORD = "dhkdrl@960813";
+
+    const lockCard = document.getElementById("lock-card");
+    const adminMain = document.getElementById("admin-main");
+    const adminPassInput = document.getElementById("admin-pass");
+    const adminLockStatus = document.getElementById("admin-lock-status");
+    const btnAdminEnter = document.getElementById("btn-admin-enter");
+    const btnTogglePass = document.getElementById("btn-toggle-pass");
+
+    btnAdminEnter.addEventListener("click", () => {
+      const val = adminPassInput.value.trim();
+      if (!val) {
+        adminLockStatus.textContent = "비밀번호를 입력해 주세요.";
+        adminLockStatus.className = "status-line status-err";
+        return;
+      }
+      if (val === ADMIN_PASSWORD) {
+        lockCard.style.display = "none";
+        adminMain.style.display = "block";
+        adminLockStatus.textContent = "";
+      } else {
+        adminLockStatus.textContent = "비밀번호가 올바르지 않습니다.";
+        adminLockStatus.className = "status-line status-err";
+      }
+    });
+
+    btnTogglePass.addEventListener("click", () => {
+      if (adminPassInput.type === "password") {
+        adminPassInput.type = "text";
+        btnTogglePass.textContent = "숨기기";
+      } else {
+        adminPassInput.type = "password";
+        btnTogglePass.textContent = "표시";
+      }
+    });
+
+    adminPassInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") btnAdminEnter.click();
+    });
+
+    // ===== 4. 단일 계정 생성 + ID 자동 생성 =====
+    const newIdInput = document.getElementById("new-id");
+    const newPassInput = document.getElementById("new-pass");
+    const newPass2Input = document.getElementById("new-pass2");
+    const btnCreate = document.getElementById("btn-create");
+    const createStatus = document.getElementById("create-status");
+
+    const autoPrefixInput = document.getElementById("auto-prefix");
+    const autoStartInput = document.getElementById("auto-start");
+    const autoDigitsInput = document.getElementById("auto-digits");
+    const btnAutoId = document.getElementById("btn-auto-id");
+
+    let autoCounter = 0;
+
+    function padNumber(n, digits){
+      const s = String(n);
+      if (s.length >= digits) return s;
+      return "0".repeat(digits - s.length) + s;
+    }
+
+    btnAutoId.addEventListener("click", () => {
+      const prefix = autoPrefixInput.value || "";
+      let startNum = parseInt(autoStartInput.value, 10);
+      const digits = Math.max(1, parseInt(autoDigitsInput.value, 10) || 1);
+
+      if (!autoCounter) {
+        autoCounter = isNaN(startNum) ? 1 : startNum;
+      } else {
+        autoCounter++;
+      }
+
+      const id = prefix + padNumber(autoCounter, digits);
+      newIdInput.value = id;
+
+      createStatus.textContent = `자동 생성된 ID: ${id}`;
+      createStatus.className = "status-line";
+    });
+
+    btnCreate.addEventListener("click", async () => {
+      const id = newIdInput.value.trim();
+      const pw1 = newPassInput.value;
+      const pw2 = newPass2Input.value;
+
+      createStatus.textContent = "";
+      createStatus.className = "status-line";
+
+      if (!id) {
+        createStatus.textContent = "학생 아이디를 입력해 주세요.";
+        createStatus.className = "status-line status-err";
+        return;
+      }
+      if (pw1.length < 6) {
+        createStatus.textContent = "비밀번호는 최소 6자리 이상이어야 합니다.";
+        createStatus.className = "status-line status-err";
+        return;
+      }
+      if (pw1 !== pw2) {
+        createStatus.textContent = "비밀번호와 비밀번호 확인이 일치하지 않습니다.";
+        createStatus.className = "status-line status-err";
+        return;
+      }
+
+      const email = id + "@myapp.local";
+
+      btnCreate.disabled = true;
+      createStatus.textContent = "계정을 생성하는 중입니다…";
+
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, email, pw1);
+
+        await setDoc(doc(db, "users", cred.user.uid), { ID: id });
+        await setDoc(doc(db, "scores", cred.user.uid), { ID: id, score: 0 });
+
+        createStatus.textContent = `계정 생성 완료: ${id}`;
+        createStatus.className = "status-line status-ok";
+
+        // 비밀번호 필드만 초기화 (ID는 남겨두어도 됨)
+        newPassInput.value = "";
+        newPass2Input.value = "";
+
+        await signOut(auth);
+      } catch (err) {
+        console.error("계정 생성 오류:", err);
+        createStatus.textContent = "계정 생성 오류: " + err.message;
+        createStatus.className = "status-line status-err";
+      } finally {
+        btnCreate.disabled = false;
+      }
+    });
+
+    // ===== 5. CSV 일괄 계정 생성 =====
+    const csvFileInput = document.getElementById("csv-file");
+    const csvTbody = document.getElementById("csv-tbody");
+    const btnBulkCreate = document.getElementById("btn-bulk-create");
+    const btnClearCsv = document.getElementById("btn-clear-csv");
+    const bulkSummary = document.getElementById("bulk-summary");
+    const bulkStatus = document.getElementById("bulk-status");
+
+    let csvRows = []; // {id, password, statusEl}
+
+    function resetCsvTable(){
+      csvRows = [];
+      csvTbody.innerHTML = `
+        <tr><td colspan="4" class="small">CSV 파일을 선택하면 여기에서 계정 목록을 확인할 수 있습니다.</td></tr>
+      `;
+      bulkSummary.textContent = "읽어온 행: 0";
+      bulkStatus.textContent = "";
+      bulkStatus.className = "status-line";
+    }
+
+    btnClearCsv.addEventListener("click", resetCsvTable);
+
+    function parseCsv(text){
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      if (!lines.length) return [];
+
+      let startIndex = 0;
+      // 헤더가 있는지 간단히 검사
+      const first = lines[0].toLowerCase();
+      const hasHeader = first.includes("id") && (first.includes("password") || first.includes("pw"));
+      if (hasHeader) startIndex = 1;
+
+      const arr = [];
+      for (let i = startIndex; i < lines.length; i++){
+        const line = lines[i];
+        const parts = line.split(","); // 아주 단순 CSV (따옴표 처리 X)
+        const id = (parts[0] || "").trim();
+        const pw = (parts[1] || "").trim();
+        if (!id) continue;
+        arr.push({ id, password: pw });
+      }
+      return arr;
+    }
+
+    function randomPassword(len = 8){
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+      let out = "";
+      for(let i=0;i<len;i++){
+        out += chars.charAt(Math.floor(Math.random()*chars.length));
+      }
+      return out;
+    }
+
+    csvFileInput.addEventListener("change", () => {
+      const file = csvFileInput.files?.[0];
+      if (!file) {
+        resetCsvTable();
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = String(e.target.result || "");
+        const arr = parseCsv(text);
+
+        if (!arr.length) {
+          resetCsvTable();
+          bulkStatus.textContent = "CSV에서 유효한 행을 찾지 못했습니다.";
+          bulkStatus.className = "status-line status-err";
+          return;
+        }
+
+        csvRows = [];
+        csvTbody.innerHTML = "";
+
+        arr.forEach((row, idx) => {
+          const tr = document.createElement("tr");
+
+          const tdIdx = document.createElement("td");
+          tdIdx.textContent = String(idx+1);
+
+          const tdId = document.createElement("td");
+          tdId.textContent = row.id;
+
+          const tdPw = document.createElement("td");
+          const pwText = row.password || "(자동 생성)";
+          tdPw.textContent = pwText;
+
+          const tdStatus = document.createElement("td");
+          tdStatus.textContent = "대기";
+          tdStatus.className = "small";
+
+          tr.append(tdIdx, tdId, tdPw, tdStatus);
+          csvTbody.appendChild(tr);
+
+          csvRows.push({
+            id: row.id,
+            password: row.password, // 나중에 비어 있으면 랜덤 생성
+            statusEl: tdStatus
+          });
+        });
+
+        bulkSummary.textContent = `읽어온 행: ${csvRows.length}`;
+        bulkStatus.textContent = "";
+        bulkStatus.className = "status-line";
+      };
+      reader.readAsText(file, "utf-8");
+    });
+
+    btnBulkCreate.addEventListener("click", async () => {
+      if (!csvRows.length) {
+        bulkStatus.textContent = "먼저 CSV 파일을 선택해 주세요.";
+        bulkStatus.className = "status-line status-err";
+        return;
+      }
+
+      let success = 0;
+      let fail = 0;
+
+      btnBulkCreate.disabled = true;
+      bulkStatus.textContent = "계정을 순서대로 생성하는 중입니다…";
+      bulkStatus.className = "status-line";
+
+      // 하나씩 순차적으로 처리 (동시 요청 과부하 방지)
+      for (let i = 0; i < csvRows.length; i++){
+        const row = csvRows[i];
+        const id = row.id.trim();
+        let pw = row.password?.trim();
+
+        if (!id) {
+          row.statusEl.textContent = "ID 없음 (건너뜀)";
+          row.statusEl.className = "small";
+          continue;
+        }
+        if (!pw || pw.length < 6) {
+          pw = randomPassword(8);
+          row.password = pw;
+          // 화면에도 표시 업데이트
+          const pwCell = row.statusEl.previousElementSibling;
+          if (pwCell) pwCell.textContent = pw + " (자동)";
+        }
+
+        const email = id + "@myapp.local";
+        row.statusEl.textContent = "생성 중…";
+        row.statusEl.className = "small";
+
+        try {
+          const cred = await createUserWithEmailAndPassword(auth, email, pw);
+
+          await setDoc(doc(db, "users", cred.user.uid), { ID: id });
+          await setDoc(doc(db, "scores", cred.user.uid), { ID: id, score: 0 });
+
+          row.statusEl.textContent = "성공";
+          row.statusEl.className = "small";
+          row.statusEl.style.color = "#22c55e";
+          success++;
+
+          await signOut(auth); // 다음 계정 생성 전 로그아웃
+        } catch (err) {
+          console.error("CSV 계정 생성 오류:", err);
+          row.statusEl.textContent = "실패: " + (err.code || err.message);
+          row.statusEl.className = "small";
+          row.statusEl.style.color = "#ef4444";
+          fail++;
+        }
+
+        bulkSummary.textContent = `진행: ${i+1}/${csvRows.length} (성공 ${success} / 실패 ${fail})`;
+      }
+
+      bulkStatus.textContent = `일괄 생성 완료 — 성공 ${success}건, 실패 ${fail}건`;
+      bulkStatus.className = "status-line " + (fail ? "status-err" : "status-ok");
+      btnBulkCreate.disabled = false;
+    });
+
+    // ===== 6. 점수 / 사용자 목록 조회 =====
+    const btnRefresh = document.getElementById("btn-refresh");
+    const tbody = document.getElementById("score-tbody");
+    const listStatus = document.getElementById("list-status");
+
+    btnRefresh.addEventListener("click", async () => {
+      tbody.innerHTML = `
+        <tr><td colspan="4" class="small">데이터를 불러오는 중입니다…</td></tr>
+      `;
+      listStatus.textContent = "";
+      listStatus.className = "status-line";
+
+      try {
+        const q = query(
+          collection(db, "scores"),
+          orderBy("score", "desc"),
+          limit(200)
+        );
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+          tbody.innerHTML = `
+            <tr><td colspan="4" class="small">아직 등록된 점수/사용자가 없습니다.</td></tr>
+          `;
+          listStatus.textContent = "불러올 데이터가 없습니다.";
+          listStatus.className = "status-line";
+          return;
+        }
+
+        let i = 0;
+        const rows = [];
+        snap.forEach(docSnap => {
+          i++;
+          const data = docSnap.data();
+          const id = data.ID || "(ID 없음)";
+          const score = data.score ?? 0;
+          const uid = docSnap.id || "";
+          const shortUid = uid.length > 10 ? uid.slice(0, 10) + "…" : uid;
+
+          rows.push(`
+            <tr>
+              <td>${i}</td>
+              <td>${id}</td>
+              <td>${score}</td>
+              <td class="small">${shortUid}</td>
+            </tr>
+          `);
+        });
+        tbody.innerHTML = rows.join("");
+        listStatus.textContent = `총 ${i}명의 기록을 불러왔습니다.`;
+        listStatus.className = "status-line status-ok";
+      } catch (err) {
+        console.error("목록 불러오기 오류:", err);
+        tbody.innerHTML = `
+          <tr><td colspan="4" class="small">목록을 불러오지 못했습니다.</td></tr>
+        `;
+        listStatus.textContent = "목록 불러오기 오류: " + err.message;
+        listStatus.className = "status-line status-err";
+      }
+    });
+  </script>
+</body>
+</html>

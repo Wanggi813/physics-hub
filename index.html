@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>프로젝트 허브 — 시(물리)에이션</title>
   <style>
+
     :root{
       --bg:#0b1020; --panel:#121a33; --ink:#e9efff; --muted:#a6b3d9; --line:#243166; --accent:#7aa2ff;
       --good:#10b981; --warn:#f59e0b; --bad:#ef4444; --radius:18px; --shadow:0 10px 28px rgba(9,12,28,.28);
       --ph-card:#0d1530; --ph-border:#2a3a72; --ph-accent:#4da3ff; --ph-green:#6be675;
-      --bg-size: contain; /* cover | contain */
+      --bg-size: contain;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -18,7 +19,6 @@
       color:var(--ink);
       font:14px/1.55 ui-sans-serif,system-ui,"Pretendard","Noto Sans KR","Apple SD Gothic Neo",Arial;
 
-      /* 두 레이어 모두 고정(fixed) */
       background-image:
         radial-gradient(1200px 800px at 10% -10%, rgba(14,23,53,0.62) 0%, rgba(11,16,32,0.74) 60%),
         url("./space-bg.jpg?v=1");
@@ -41,7 +41,7 @@
     .grid{margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
     .card{ background:linear-gradient(180deg,rgba(18,26,51,.9),rgba(12,18,36,.9)); border:1px solid rgba(66,90,150,.45); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column }
 
-    /* 썸네일: 풀블리드 이미지 + 그라디언트 톤 맞춤 */
+    /* 썸네일 */
     .thumb{
       position:relative; overflow:hidden; height:120px;
       display:flex; align-items:center; justify-content:center;
@@ -54,7 +54,6 @@
       width:100%; height:100%;
       object-fit:cover; display:block;
     }
-    /* 이미지 위에 은은한 오버레이(톤 통일). 필요 없으면 주석 처리 */
     .thumb::after{
       content:""; position:absolute; inset:0;
       background:linear-gradient(180deg, rgba(0,0,0,.04), rgba(0,0,0,.10));
@@ -90,36 +89,253 @@
     .ph-slider{display:flex;align-items:center;gap:8px}
     .ph-slider input[type="range"]{width:160px}
     .date{display:none}
+
+    /* ===== 상단 로그인 UI ===== */
+    .top-right-wrap{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-left:auto;
+      flex-wrap:wrap;
+    }
+    .auth-bar{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:12px;
+      color:var(--muted);
+      background:rgba(13,21,48,0.9);
+      border-radius:999px;
+      border:1px solid rgba(70,90,160,0.7);
+      padding:6px 10px;
+      backdrop-filter:blur(6px);
+    }
+    .auth-bar span#status{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      flex:0 1 auto;
+    }
+    .auth-btn{
+      border:none;
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:12px;
+      cursor:pointer;
+      background:linear-gradient(180deg,#3b82f6,#2f62c7);
+      color:#fff;
+      white-space:nowrap;
+    }
+    .auth-btn.outline{
+      background:transparent;
+      border:1px solid rgba(148,163,255,0.7);
+      color:#e5e7eb;
+    }
+    .auth-btn.small{
+      padding:4px 8px;
+      font-size:11px;
+    }
+
+    .auth-panel{
+      position:absolute;
+      top:64px;
+      right:16px;
+      width:260px;
+      max-width:90vw;
+      background:#050816;
+      border-radius:16px;
+      border:1px solid rgba(75,85,185,0.8);
+      box-shadow:0 18px 40px rgba(0,0,0,0.6);
+      padding:12px 14px 14px;
+      z-index:30;
+      display:none;
+    }
+    .auth-panel.open{display:block;}
+    .auth-panel h3{
+      margin:0 0 8px;
+      font-size:13px;
+      color:#e5e7eb;
+    }
+    .auth-section{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      margin-bottom:6px;
+    }
+    .auth-section input{
+      width:100%;
+      padding:6px 8px;
+      border-radius:8px;
+      border:1px solid rgba(55,65,81,0.9);
+      background:#020617;
+      color:#e5e7eb;
+      font-size:12px;
+    }
+    .auth-section button{
+      align-self:flex-end;
+      margin-top:4px;
+      padding:6px 10px;
+      font-size:12px;
+      border-radius:999px;
+      border:none;
+      cursor:pointer;
+      background:linear-gradient(180deg,#22c55e,#15803d);
+      color:#f9fafb;
+    }
+    .auth-link{
+      border:none;
+      background:transparent;
+      color:#93c5fd;
+      font-size:11px;
+      padding:0;
+      margin-top:2px;
+      cursor:pointer;
+      text-align:right;
+    }
+    .auth-close-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-top:4px;
+      gap:8px;
+    }
+    .auth-close{
+      border:none;
+      background:transparent;
+      color:#9ca3af;
+      font-size:11px;
+      cursor:pointer;
+      padding:2px 4px;
+    }
+    .auth-score{
+      margin:4px 0 0;
+      font-size:12px;
+      color:#e5e7eb;
+    }
+    .auth-score .score-label{
+      color:#9ca3af;
+    }
+    .auth-status{
+      margin:2px 0 4px;
+      font-size:11px;
+      color:#9ca3af;
+      min-height:14px;
+    }
+    .auth-status.ok{color:#22c55e;}
+    .auth-status.err{color:#ef4444;}
+
+    /* 내 정보/점수 패널 전용 */
+    .info-id{
+      font-size:12px;
+      color:#9ca3af;
+      margin-bottom:4px;
+    }
+    .info-score-label{
+      font-size:11px;
+      color:#9ca3af;
+    }
+    .info-score-big{
+      font-size:22px;
+      font-weight:700;
+      margin-top:2px;
+      color:#f9fafb;
+    }
+
+    .footer-admin{
+      margin-top:12px;
+      text-align:right;
+      font-size:11px;
+      color:#6b7280;
+    }
+    .footer-admin a{
+      color:inherit;
+      text-decoration:none;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <h1>
-        <span style="display:inline-flex;width:28px;height:28px;border-radius:8px;align-items:center;justify-content:center;background:#16234d;border:1px solid #2d3a66">⚛️</span>
-        시(물리)에이션
-        <span class="pill" title="총 프로젝트 수"><span id="count">0</span>개</span>
-      </h1>
-      <div class="controls">
-        <input id="q" type="search" placeholder="검색: 제목·태그" />
-        <select id="cat">
-          <option value="">모든 분류</option>
-          <option>시뮬레이션</option>
-          <option>전자/반도체</option>
-          <option>광학</option>
-          <option>상대성</option>
-          <option>데이터도구</option>
-          <option>웹앱</option>
-          <option>열</option>
-          <option>역학</option>
-        </select>
-        <select id="sort">
-          <option value="updated">최신순</option>
-          <option value="title">가나다순</option>
-          <option value="category">분류순</option>
-        </select>
+  <h1>
+    <span style="display:inline-flex;width:28px;height:28px;border-radius:8px;align-items:center;justify-content:center;background:#16234d;border:1px solid #2d3a66">⚛️</span>
+    
+    <span class="logo-text">시(물리)에이션</span>
+    
+    <span class="pill" title="총 프로젝트 수"><span id="count">0</span>개</span>
+</h1>
+
+      <div class="top-right-wrap">
+        <div class="controls">
+          <input id="q" type="search" placeholder="검색: 제목·태그" />
+          <select id="cat">
+            <option value="">모든 분류</option>
+            <option>시뮬레이션</option>
+            <option>전자/반도체</option>
+            <option>광학</option>
+            <option>상대성</option>
+            <option>데이터도구</option>
+            <option>웹앱</option>
+            <option>열</option>
+            <option>역학</option>
+          </select>
+          <select id="sort">
+            <option value="updated">최신순</option>
+            <option value="title">가나다순</option>
+            <option value="category">분류순</option>
+          </select>
+        </div>
+
+        <!-- 상단 우측 로그인 바 -->
+        <div class="auth-bar" id="auth-bar">
+          <span id="status">로그인 상태: 없음</span>
+          <button class="auth-btn" id="open-auth" type="button">로그인</button>
+          <button class="auth-btn outline" type="button" onclick="location.href='./admin.html'">관리자 모드</button>
+          <button class="auth-btn outline" id="logout-btn" onclick="logout()" style="display:none;">로그아웃</button>
+        </div>
       </div>
     </header>
+
+    <!-- 로그인 / 비밀번호 / 내 정보 패널 -->
+    <div id="auth-panel" class="auth-panel" aria-hidden="true">
+      <h3>로그인 / 비밀번호</h3>
+
+      <!-- 로그인 후 표시되는 정보 섹션 -->
+      <div id="info-section" class="auth-section" style="display:none;">
+        <div class="info-id" id="info-id-label">아이디: -</div>
+        <div class="info-score-label">현재 점수</div>
+        <div class="info-score-big" id="info-score-big">0점</div>
+        <button type="button" class="auth-link" onclick="openChangeMode()">비밀번호 변경</button>
+      </div>
+
+      <!-- 로그인 섹션 -->
+      <div id="login-section" class="auth-section">
+        <input type="text" id="loginId" placeholder="아이디 (선생님이 준 ID)" />
+        <input type="password" id="loginPassword" placeholder="비밀번호" />
+        <button type="button" onclick="login()">로그인</button>
+        <button type="button" class="auth-link" onclick="openChangeMode()">비밀번호 변경</button>
+      </div>
+
+      <!-- 비밀번호 변경 섹션 (처음에는 숨김) -->
+      <div id="change-section" class="auth-section" style="display:none;">
+        <input type="text" id="changeId" placeholder="아이디 (현재 로그인한 ID)" />
+        <input type="password" id="changeCurrentPassword" placeholder="현재 비밀번호" />
+        <input type="password" id="changeNewPassword" placeholder="새 비밀번호 (6자 이상)" />
+        <div style="display:flex;gap:6px;justify-content:flex-end;">
+          <button type="button" class="auth-btn outline small" onclick="closeChangeMode()">취소</button>
+          <button type="button" onclick="changePassword()">비밀번호 변경</button>
+        </div>
+      </div>
+
+      <p class="auth-score">
+        <span class="score-label">현재 점수:</span>
+        <span id="score">0</span>
+      </p>
+      <p id="pw-status" class="auth-status"></p>
+
+      <div class="auth-close-row">
+        <button type="button" class="auth-close">닫기</button>
+      </div>
+    </div>
 
     <div class="divider"></div>
 
@@ -171,6 +387,11 @@
     </template>
 
     <p class="empty" id="empty" style="display:none">검색 조건에 맞는 프로젝트가 없습니다.</p>
+
+    <!-- 페이지 하단 관리자 링크 -->
+    <div class="footer-admin">
+      <a href="./admin.html" style="font-size:11px;opacity:0.25;">관리자</a>
+    </div>
   </div>
 
   <script>
@@ -209,7 +430,6 @@
     const node = document.getElementById('card-tpl').content.firstElementChild.cloneNode(true);
     const $ = s => node.querySelector(s);
 
-    // 썸네일: 이미지가 있으면 <img>, 없으면 이모지
     const thumb = node.querySelector('.thumb');
     thumb.innerHTML = '';
     if (p.thumb) {
@@ -231,6 +451,7 @@
     $('.category').textContent = p.category;
     node.querySelector('.curriculum').textContent = p.curriculumId ? `교육과정: ${p.curriculumId}` : '';
     const tags = node.querySelector('.tags'); tags.innerHTML='';
+
     (p.tags||[]).forEach(t=>{
       const chip=document.createElement('span'); chip.className='tag'; chip.textContent=t; tags.append(chip);
     });
@@ -263,7 +484,7 @@
   sortSel.addEventListener('change', render);
   render();
 
-  // ===== 오늘의 물리 (축약) =====
+  // ===== 오늘의 물리 =====
   (function(){
     const FACTS=[
       "태양빛이 태양에서 지구까지 도달하는 데 약 8분 20초가 걸립니다(≈ 499초).",
@@ -313,11 +534,11 @@
     function next(){ factEl.textContent=pick(); }
     nextBtn.addEventListener('click', next);
     copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(factEl.textContent.trim()); copyBtn.textContent='복사됨!'; setTimeout(()=>copyBtn.textContent='복사',900);}catch(e){ alert('복사 실패: '+e.message); } });
-    shareBtn.addEventListener('click', async ()=>{ const text=factEl.textContent.trim(); if(navigator.share){ try{ await navigator.share({title:'오늘의 물리', text}); }catch{} } else { alert('공유 미지원 — 복사 사용'); } });
+    shareBtn.addEventListener('click', async ()=>{ const text=factEl.textContent.trim(); if(navigator.share){ try{ await navigator.share({title:'오늘의 물리', text}); }catch{} } else { alert('공유 미지원 — 복사 기능을 사용해 주세요.'); } });
     next();
   })();
 
-  // ===== 인터랙티브 중력 배경 (누르고 있는 동안만 끌림) =====
+  // ===== 인터랙티브 중력 배경 =====
   (function(){
     const canvas=document.getElementById('gravity-bg');
     const ctx=canvas.getContext('2d');
@@ -414,6 +635,389 @@
     requestAnimationFrame(loop);
     new ResizeObserver(()=>{ resetParticles(); }).observe(canvas);
   })();
+
+  // ===== 로그인 패널 UI 동작 (mouseover + click) =====
+  (function(){
+    const panel = document.getElementById('auth-panel');
+    const openBtn = document.getElementById('open-auth');
+    const authBar = document.getElementById('auth-bar');
+    const closeBtn = panel.querySelector('.auth-close');
+    let hideTimer = null;
+
+    if(!panel || !openBtn) return;
+
+    function openPanel(){
+      clearTimeout(hideTimer);
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden','false');
+    }
+    function closePanel(){
+      panel.classList.remove('open');
+      panel.setAttribute('aria-hidden','true');
+    }
+    function scheduleClose(){
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(closePanel, 250);
+    }
+
+    // 클릭으로 토글 (모바일 대비)
+    openBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      if(panel.classList.contains('open')) closePanel();
+      else openPanel();
+    });
+
+    // 마우스 올리면 자동으로 열림
+    openBtn.addEventListener('mouseenter', openPanel);
+    authBar.addEventListener('mouseenter', openPanel);
+
+    // 마우스가 버튼/패널 밖으로 나가면 살짝 있다가 닫힘
+    openBtn.addEventListener('mouseleave', scheduleClose);
+    authBar.addEventListener('mouseleave', scheduleClose);
+    panel.addEventListener('mouseenter', ()=>{ clearTimeout(hideTimer); });
+    panel.addEventListener('mouseleave', scheduleClose);
+
+    closeBtn.addEventListener('click', closePanel);
+
+    // 바깥 클릭 시 닫기
+    document.addEventListener('click', (e)=>{
+      if(!panel.contains(e.target) && e.target !== openBtn){
+        closePanel();
+      }
+    });
+  })();
+  </script>
+
+  <!-- ===== Firebase 로그인 + 점수 + 비밀번호 변경 ===== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged,
+      EmailAuthProvider,
+      reauthenticateWithCredential,
+      updatePassword
+    } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      collection,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+    // Firebase 설정
+    const firebaseConfig = {
+      apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
+      authDomain: "simulation-67cd3.firebaseapp.com",
+      projectId: "simulation-67cd3",
+      storageBucket: "simulation-67cd3.appspot.com",
+      messagingSenderId: "615983461615",
+      appId: "1:615983461615:web:002e07bcea878eb6d5571a",
+      measurementId: "G-9RGN7LYE5W"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+    let currentScore = 0;
+    let currentUserIdText = ""; // Firestore에 저장된 ID (혹은 email 앞부분)
+
+    function updateInfoPanel() {
+      const infoSec   = document.getElementById("info-section");
+      const idLabel   = document.getElementById("info-id-label");
+      const scoreBig  = document.getElementById("info-score-big");
+
+      if (!infoSec) return;
+
+      if (currentUser) {
+        const idText = currentUserIdText || (currentUser.email ? currentUser.email.split("@")[0] : "");
+        if (idLabel)  idLabel.textContent  = "아이디: " + idText;
+        if (scoreBig) scoreBig.textContent = (currentScore || 0) + "점";
+      } else {
+        if (idLabel)  idLabel.textContent  = "아이디: -";
+        if (scoreBig) scoreBig.textContent = "0점";
+      }
+    }
+
+    // 로그인
+    async function login() {
+      const userId = document.getElementById("loginId").value.trim();
+      const password = document.getElementById("loginPassword").value;
+
+      if (!userId) {
+        alert("아이디를 입력해 주세요 (선생님이 준 ID).");
+        return;
+      }
+      if (!password) {
+        alert("비밀번호를 입력해 주세요.");
+        return;
+      }
+
+      const email = userId + "@myapp.local";
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        alert("로그인 성공: " + userId);
+      } catch (err) {
+        alert("로그인 오류: " + err.message);
+      }
+    }
+
+    // 로그아웃
+    async function logout() {
+      await signOut(auth);
+      alert("로그아웃 완료");
+    }
+
+    // (새) 시뮬레이션 점수 합산 불러오기
+    async function loadScore(user) {
+      const scoreEl = document.getElementById("score");
+      try {
+        // users/{uid}/simulations 하위 문서들의 score 필드 합산
+        const simsRef = collection(db, "users", user.uid, "simulations");
+        const simsSnap = await getDocs(simsRef);
+        let total = 0;
+        simsSnap.forEach((docSnap) => {
+          const data = docSnap.data();
+          const s = Number(data.score ?? 0);
+          if (!Number.isNaN(s)) total += s;
+        });
+
+        currentScore = total;
+        if (scoreEl) scoreEl.innerText = currentScore;
+
+        // 합산 결과를 기존 scores/{uid} 문서에도 저장 (관리용)
+        await saveScore(user, currentScore);
+
+        // 내 정보/점수 패널 갱신
+        updateInfoPanel();
+      } catch (err) {
+        console.error("시뮬레이션 점수 합산 오류:", err);
+
+        // 실패 시, 기존 scores/{uid} 문서 기반으로라도 표시
+        try {
+          const ref = doc(db, "scores", user.uid);
+          const snap = await getDoc(ref);
+          currentScore = snap.exists() ? (snap.data().score ?? 0) : 0;
+          if (scoreEl) scoreEl.innerText = currentScore;
+        } catch (err2) {
+          console.error("점수 불러오기(기존) 오류:", err2);
+          currentScore = 0;
+          if (scoreEl) scoreEl.innerText = "0";
+        }
+
+        updateInfoPanel();
+      }
+    }
+
+    // 점수 저장 (총점 기준)
+    async function saveScore(user, score) {
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const userId = userDoc.exists()
+          ? userDoc.data().ID
+          : user.email.split("@")[0];
+
+        const ref = doc(db, "scores", user.uid);
+        await setDoc(ref, { score: score, ID: userId }, { merge: true });
+      } catch (err) {
+        console.error("점수 저장 오류:", err);
+      }
+    }
+
+    // (더 이상 UI에서 쓰지 않지만, 필요하면 다른 곳에서 호출 가능)
+    async function addPoint() {
+      if (!currentUser) {
+        alert("로그인 후 사용하세요!");
+        return;
+      }
+      currentScore += 1;
+      const scoreEl = document.getElementById("score");
+      if (scoreEl) scoreEl.innerText = currentScore;
+      await saveScore(currentUser, currentScore);
+      updateInfoPanel();
+    }
+
+    // 비밀번호 변경 모드 열기/닫기
+    function openChangeMode() {
+      const loginSec   = document.getElementById("login-section");
+      const changeSec  = document.getElementById("change-section");
+      const infoSec    = document.getElementById("info-section");
+      const changeIdInput = document.getElementById("changeId");
+      const pwStatus   = document.getElementById("pw-status");
+
+      if (loginSec) loginSec.style.display = "none";
+      if (infoSec)  infoSec.style.display  = "none";
+      if (changeSec) changeSec.style.display = "flex";
+
+      pwStatus.textContent = "";
+      pwStatus.className = "auth-status";
+
+      // 현재 로그인한 ID를 기본값으로 넣어주기
+      if (changeIdInput && currentUserIdText) {
+        changeIdInput.value = currentUserIdText;
+      }
+    }
+
+    function closeChangeMode() {
+      const loginSec   = document.getElementById("login-section");
+      const changeSec  = document.getElementById("change-section");
+      const infoSec    = document.getElementById("info-section");
+      const pwStatus   = document.getElementById("pw-status");
+
+      if (changeSec) changeSec.style.display = "none";
+
+      // 로그인 상태라면 info-section으로, 아니면 login-section으로
+      if (currentUser && infoSec) {
+        infoSec.style.display = "flex";
+      } else if (loginSec) {
+        loginSec.style.display = "flex";
+      }
+
+      pwStatus.textContent = "";
+      pwStatus.className = "auth-status";
+    }
+
+    // 비밀번호 변경
+    async function changePassword() {
+      const statusEl = document.getElementById("pw-status");
+      const changeId = document.getElementById("changeId").value.trim();
+      const curPw = document.getElementById("changeCurrentPassword").value;
+      const newPw = document.getElementById("changeNewPassword").value;
+
+      statusEl.textContent = "";
+      statusEl.className = "auth-status";
+
+      if (!currentUser) {
+        statusEl.textContent = "먼저 로그인해야 합니다.";
+        statusEl.classList.add("err");
+        alert("로그인 후 비밀번호를 변경할 수 있습니다.");
+        return;
+      }
+      if (!changeId || !curPw || !newPw) {
+        statusEl.textContent = "아이디, 현재 비밀번호, 새 비밀번호를 모두 입력해 주세요.";
+        statusEl.classList.add("err");
+        return;
+      }
+      if (currentUserIdText && changeId !== currentUserIdText) {
+        statusEl.textContent = "입력한 아이디가 현재 로그인한 아이디와 다릅니다.";
+        statusEl.classList.add("err");
+        return;
+      }
+      if (newPw.length < 6) {
+        statusEl.textContent = "새 비밀번호는 최소 6자리 이상이어야 합니다.";
+        statusEl.classList.add("err");
+        return;
+      }
+
+      try {
+        statusEl.textContent = "비밀번호 변경 중…";
+        const cred = EmailAuthProvider.credential(currentUser.email, curPw);
+        await reauthenticateWithCredential(currentUser, cred);
+        await updatePassword(currentUser, newPw);
+
+        statusEl.textContent = "비밀번호가 성공적으로 변경되었습니다.";
+        statusEl.classList.add("ok");
+        document.getElementById("changeCurrentPassword").value = "";
+        document.getElementById("changeNewPassword").value = "";
+        alert("비밀번호가 변경되었습니다.");
+      } catch (err) {
+        console.error("비밀번호 변경 오류:", err);
+        let msg = "비밀번호 변경 중 오류가 발생했습니다.";
+        if (err.code === "auth/wrong-password") {
+          msg = "현재 비밀번호가 올바르지 않습니다.";
+        }
+        statusEl.textContent = msg;
+        statusEl.classList.add("err");
+        alert(msg);
+      }
+    }
+
+    // 로그인 상태 감지
+    onAuthStateChanged(auth, async (user) => {
+      const statusEl = document.getElementById("status");
+      const scoreEl = document.getElementById("score");
+      const logoutBtn = document.getElementById("logout-btn");
+      const openBtn = document.getElementById("open-auth");
+
+      if (user) {
+        currentUser = user;
+        let displayId = "";
+
+        try {
+          const userRef = doc(db, "users", user.uid);
+          const userDoc = await getDoc(userRef);
+
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            if (data.ID) {
+              displayId = data.ID;
+            } else {
+              const fallbackId = user.email.split("@")[0];
+              await setDoc(userRef, { ID: fallbackId }, { merge: true });
+              displayId = fallbackId;
+            }
+          } else {
+            const fallbackId = user.email.split("@")[0];
+            await setDoc(userRef, { ID: fallbackId });
+            displayId = fallbackId;
+          }
+        } catch (err) {
+          console.error("ID 불러오기 오류:", err);
+          displayId = user.email ? user.email.split("@")[0] : "(ID 불러오기 실패)";
+        }
+
+        currentUserIdText = displayId;
+
+        if (statusEl) statusEl.innerText = "로그인 상태: " + displayId;
+        if (logoutBtn) logoutBtn.style.display = "inline-flex";
+        if (openBtn) openBtn.textContent = "내 정보 / 점수";
+
+        // 섹션 전환: 정보 섹션만 보이게
+        const infoSec   = document.getElementById("info-section");
+        const loginSec  = document.getElementById("login-section");
+        const changeSec = document.getElementById("change-section");
+        if (infoSec)  infoSec.style.display  = "flex";
+        if (loginSec) loginSec.style.display = "none";
+        if (changeSec) changeSec.style.display = "none";
+
+        await loadScore(user);
+        updateInfoPanel();
+      } else {
+        currentUser = null;
+        currentUserIdText = "";
+        currentScore = 0;
+        if (statusEl) statusEl.innerText = "로그인 상태: 없음";
+        if (scoreEl) scoreEl.innerText = "0";
+        if (logoutBtn) logoutBtn.style.display = "none";
+        if (openBtn) openBtn.textContent = "로그인";
+
+        const infoSec   = document.getElementById("info-section");
+        const loginSec  = document.getElementById("login-section");
+        const changeSec = document.getElementById("change-section");
+        if (infoSec)  infoSec.style.display  = "none";
+        if (loginSec) loginSec.style.display = "flex";
+        if (changeSec) changeSec.style.display = "none";
+
+        updateInfoPanel();
+      }
+    });
+
+    // 전역 함수 등록 (onclick에서 사용)
+    window.login = login;
+    window.logout = logout;
+    window.addPoint = addPoint;
+    window.changePassword = changePassword;
+    window.openChangeMode = openChangeMode;
+    window.closeChangeMode = closeChangeMode;
   </script>
 </body>
 </html>
