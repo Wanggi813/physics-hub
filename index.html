@@ -349,20 +349,20 @@
 
     <div class="divider"></div>
 
-    <section class="ph-card" id="fun-fact" aria-live="polite">
-      <div class="ph-inner">
-        <span class="ph-badge">📎</span>
-        <div style="flex:1 1 auto">
-          <h2 class="ph-title">오늘의 물리</h2>
-          <div class="ph-fact" id="fact-text">로딩 중…</div>
-        </div>
-       <div class="today-buttons">
-       <button>다른 사실</button>
-        <button>복사</button>
-       <button>공유</button>
-       </div>
-      </div>
-    </section>
+<section class="ph-card" id="fun-fact" aria-live="polite">
+  <div class="ph-inner">
+    <span class="ph-badge">📎</span>
+    <div style="flex:1 1 auto">
+      <h2 class="ph-title">오늘의 물리</h2>
+      <div class="ph-fact" id="fact-text">로딩 중…</div>
+    </div>
+    <div class="ph-actions">
+      <button class="ph-btn primary" id="next-fact">다른 사실</button>
+      <button class="ph-btn" id="copy-fact" title="클립보드로 복사">복사</button>
+      <button class="ph-btn" id="share-fact" title="공유">공유</button>
+    </div>
+  </div>
+</section>
 
     <section class="ph-canvas-wrap" aria-label="인터랙티브 중력 배경">
       <canvas id="gravity-bg"></canvas>
@@ -1034,6 +1034,7 @@
   </script>
 </body>
 </html>
+
 
 
 
