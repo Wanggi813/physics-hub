@@ -22,15 +22,71 @@ import {
 function getRankImageFile(score) {
   const s = Number(score) || 0;
 
-  if (s < 500) return "아이언.png";
-  if (s < 1000) return "브론즈.png";
-  if (s < 2000) return "실버.png";
-  if (s < 3500) return "골드.png";
-  if (s < 5000) return "에메랄드.png";
-  if (s < 7000) return "다이아몬드.png";
-  if (s < 9000) return "마스터.png";
-  if (s < 10000) return "그랜드마스터.png";
-  return "챌린저.png";   // 8500 이상
+// 점수 → 랭크 이미지 / 영어 이름 / 색
+function getRankMeta(score) {
+  const s = Number(score) || 0;
+
+  if (s < 500) {
+    return {
+      file: "아이언.png",
+      en: "IRON",
+      color: "#8b7a6a"      // 회갈색
+    };
+  }
+  if (s < 1000) {
+    return {
+      file: "브론즈.png",
+      en: "BRONZE",
+      color: "#a45730"      // 브론즈 느낌
+    };
+  }
+  if (s < 2000) {
+    return {
+      file: "실버.png",
+      en: "SILVER",
+      color: "#c0c9d8"      // 실버 블루그레이
+    };
+  }
+  if (s < 3500) {
+    return {
+      file: "골드.png",
+      en: "GOLD",
+      color: "#d7a636"      // 금색
+    };
+  }
+  if (s < 5000) {
+    return {
+      file: "에메랄드.png",
+      en: "EMERALD",
+      color: "#1f9475"      // 에메랄드 그린
+    };
+  }
+  if (s < 7000) {
+    return {
+      file: "다이아몬드.png",
+      en: "DIAMOND",
+      color: "#4aa8ff"      // 시원한 블루
+    };
+  }
+  if (s < 9000) {
+    return {
+      file: "마스터.png",
+      en: "MASTER",
+      color: "#b35ae6"      // 보라 계열
+    };
+  }
+  if (s < 10000) {
+    return {
+      file: "그랜드마스터.png",
+      en: "GRANDMASTER",
+      color: "#e3b24a"      // 황금+주황
+    };
+  }
+  return {
+    file: "챌린저.png",
+    en: "CHALLENGER",
+    color: "#ff6347"        // 불타는 오렌지 레드
+  };
 }
 
 function applyRankImage(score) {
