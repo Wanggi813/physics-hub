@@ -50,13 +50,19 @@
 
     <!-- 로그인 / 비밀번호 / 내 정보 패널 -->
     <div id="auth-panel" class="auth-panel" aria-hidden="true">
-      <h3>로그인 / 비밀번호</h3>
+ <h3 style="display:flex; justify-content:space-between; align-items:center;">
+  로그인 / 비밀번호
+  <button type="button" class="auth-link" id="top-change-btn" onclick="openChangeMode()">비밀번호 변경</button>
+</h3>
 
       <!-- 로그인 후 표시되는 정보 섹션 -->
       <div id="info-section" class="auth-section" style="display:none;">
         <div class="info-id" id="info-id-label">아이디: -</div>
         <div class="info-score-label">현재 점수</div>
         <div class="info-score-big" id="info-score-big">0점</div>
+<div id="rank-img-wrap" style="text-align:center; margin-top:8px;">
+  <img id="rank-img" src="" style="width:80px; height:80px; object-fit:contain;">
+</div>
         <button type="button" class="auth-link" onclick="openChangeMode()">비밀번호 변경</button>
       </div>
 
@@ -79,10 +85,6 @@
         </div>
       </div>
 
-      <p class="auth-score">
-        <span class="score-label">현재 점수:</span>
-        <span id="score">0</span>
-      </p>
       <p id="pw-status" class="auth-status"></p>
 
       <div class="auth-close-row">
