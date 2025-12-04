@@ -179,7 +179,7 @@
   <section class="panel">
     <h2>오비탈 (s, p, d, f) 전자구름 + 등가면</h2>
     <div class="controls controls-3d" id="ctrl-3d">
-      <div class="group">
+      <div class="group" id="groupL">
         <label>l</label>
         <select id="l3">
           <option value="0">0 (s)</option>
@@ -188,7 +188,7 @@
           <option value="3">3 (f)</option>
         </select>
       </div>
-      <div class="group">
+      <div class="group" id="groupM">
         <label>m</label>
         <select id="m3"></select>
       </div>
@@ -307,6 +307,8 @@ const CONFIG = {
   const box=document.getElementById('three-wrap');
   const lSel=document.getElementById('l3');
   const mSel=document.getElementById('m3');
+  const groupL=document.getElementById('groupL');
+  const groupM=document.getElementById('groupM');
   const btn=document.getElementById('regen');
   const tgl=document.getElementById('orbitalToggle');
   const challengeBtn=document.getElementById('challengeBtn');
@@ -317,11 +319,28 @@ const CONFIG = {
   let gameRound=0;
   const maxRounds=10;
   let gameScore=0;
+  let bestScore=0;
   let currentCorrectL=null;
+  let currentCorrectN=null;
+  let currentCorrectM=null;
   let awaitingNext=false;
   let lastMessage="";
+  let currentOptions=[]; // 이번 라운드 선택지(4개)
 
   const lName = l => (l===0?"s":l===1?"p":l===2?"d":"f");
+  const getStageForRound = (r)=>{
+    if(r<=5) return 1;   // l만
+    if(r<=7) return 2;   // n + l
+    return 3;            // n + l + m
+  };
+  const fmtM = m => (m>0?`+${m}`:`${m}`);
+
+  function fmtCorrectLabel(stage){
+    const n=currentCorrectN, l=currentCorrectL, m=currentCorrectM;
+    if(stage===1) return `${lName(l)} 오비탈`;
+    if(stage===2) return `${n}${lName(l)} 오비탈`;
+    return `${n}${lName(l)} (m = ${fmtM(m)})`;
+  }
 
   function setFreeModeUI(){
     if(!noteEl) return;
@@ -336,44 +355,74 @@ const CONFIG = {
       setFreeModeUI();
       return;
     }
+    const stage = getStageForRound(gameRound);
+    let desc;
+    if(stage===1){
+      desc = "이 전자구름은 어떤 오비탈(l)에 해당할까요? (s, p, d, f 중에서 선택)";
+    }else if(stage===2){
+      desc = "이 전자구름은 어떤 오비탈 (주양자수 n과 l)일까요? 예: 2p, 3d 등";
+    }else{
+      desc = "이 전자구름은 어떤 오비탈 (n, l, 자화양자수 m)일까요? 예: 2p (m = +1) 등";
+    }
+
+    // 선택지 버튼 HTML 생성
+    const buttonsHTML = currentOptions.map((opt,idx)=>{
+      let label;
+      if(stage===1){
+        label = `${lName(opt.l)} 오비탈`;
+      }else if(stage===2){
+        label = `${opt.n}${lName(opt.l)} 오비탈`;
+      }else{
+        label = `${opt.n}${lName(opt.l)} (m = ${fmtM(opt.m)})`;
+      }
+      return `<button class="quiz-btn" data-idx="${idx}">${label}</button>`;
+    }).join("");
+
     noteEl.innerHTML = `
-      <div><b>오비탈 퀴즈 게임</b> — 라운드 <b>${gameRound}</b> / ${maxRounds}, 점수 <b>${gameScore}</b>점</div>
-      <div style="margin-top:4px;">이 전자구름은 어떤 오비탈일까요? (s, p, d, f 중에서 선택)</div>
+      <div><b>오비탈 퀴즈 게임</b> — 라운드 <b>${gameRound}</b> / ${maxRounds}, 점수 <b>${gameScore}</b>점, 최고점수 <b>${bestScore}</b>점</div>
+      <div style="margin-top:4px;">${desc}</div>
       <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="quiz-btn" data-l="0">s 오비탈</button>
-        <button class="quiz-btn" data-l="1">p 오비탈</button>
-        <button class="quiz-btn" data-l="2">d 오비탈</button>
-        <button class="quiz-btn" data-l="3">f 오비탈</button>
+        ${buttonsHTML}
       </div>
       <div id="gameMessage" style="margin-top:6px; font-size:12px; color:#4b5563;">${lastMessage}</div>
     `;
+
     // 버튼 이벤트 연결
     noteEl.querySelectorAll('.quiz-btn').forEach(btn=>{
       btn.addEventListener('click',()=>{
-        const guess=parseInt(btn.dataset.l,10);
-        handleGuess(guess, btn);
+        const idx=parseInt(btn.dataset.idx,10);
+        handleOptionClick(idx, btn);
       });
     });
   }
 
-  function handleGuess(guessL, btnEl){
-    if(!gameMode || currentCorrectL==null || awaitingNext) return;
-    awaitingNext=true;
-    const isCorrect = (guessL===currentCorrectL);
+  function handleOptionClick(idx, btnEl){
+    if(!gameMode || awaitingNext) return;
+    const stage = getStageForRound(gameRound);
+    const opt = currentOptions[idx];
     const msgEl = document.getElementById('gameMessage');
+
+    let isCorrect = false;
+    if(stage===1){
+      isCorrect = (opt.l === currentCorrectL);
+    }else if(stage===2){
+      isCorrect = (opt.l === currentCorrectL && opt.n === currentCorrectN);
+    }else{
+      isCorrect = (opt.l === currentCorrectL && opt.n === currentCorrectN && opt.m === currentCorrectM);
+    }
 
     if(isCorrect){
       gameScore += 50;
-      lastMessage = `정답입니다! 이 전자구름은 <b>${lName(currentCorrectL)}</b> 오비탈 계열이에요. (+50점)`;
+      if(gameScore > bestScore) bestScore = gameScore;
+      lastMessage = `정답입니다! 정답은 <b>${fmtCorrectLabel(stage)}</b> 입니다. (+50점)`;
       if(btnEl){btnEl.classList.add('correct');}
     }else{
-      lastMessage = `아쉬워요. 정답은 <b>${lName(currentCorrectL)}</b> 오비탈 계열입니다.`;
+      lastMessage = `아쉬워요. 정답은 <b>${fmtCorrectLabel(stage)}</b> 입니다.`;
       if(btnEl){btnEl.classList.add('wrong');}
     }
-
     if(msgEl) msgEl.innerHTML = lastMessage;
 
-    // 잠깐 피드백 보여주고 다음 라운드
+    awaitingNext = true;
     setTimeout(()=>{
       startNextRound();
       awaitingNext=false;
@@ -385,15 +434,17 @@ const CONFIG = {
     gameRound=0;
     gameScore=0;
     lastMessage="";
-    currentCorrectL=null;
+    currentCorrectL=currentCorrectN=currentCorrectM=null;
     awaitingNext=false;
 
-    // 등가면 숨기고, UI 잠그기
+    // 등가면 숨기고, UI 잠그고, l/m 그룹 숨기기
     showIso=false;
     tgl.checked=false;
     tgl.disabled=true;
     lSel.disabled=true;
     mSel.disabled=true;
+    if(groupL) groupL.style.display="none";
+    if(groupM) groupM.style.display="none";
     btn.disabled=true;
     challengeBtn.textContent="그만하기";
 
@@ -403,12 +454,14 @@ const CONFIG = {
   function endGame(){
     const finalScore = gameScore;
     gameMode=false;
-    currentCorrectL=null;
+    currentCorrectL=currentCorrectN=currentCorrectM=null;
     awaitingNext=false;
 
     tgl.disabled=false;
     lSel.disabled=false;
     mSel.disabled=false;
+    if(groupL) groupL.style.display="";
+    if(groupM) groupM.style.display="";
     btn.disabled=false;
     challengeBtn.textContent="도전";
 
@@ -418,9 +471,57 @@ const CONFIG = {
 
     if(noteEl){
       noteEl.innerHTML =
-        `<div><b>게임 종료!</b> 총 점수: <b>${finalScore}</b>점 / 최대 ${maxRounds*50}점</div>
+        `<div><b>게임 종료!</b> 총 점수: <b>${finalScore}</b>점, 최고점수 <b>${bestScore}</b>점 (최대 ${maxRounds*50}점)</div>
          <div style="margin-top:4px;">다시 도전하려면 상단의 <b>도전</b> 버튼을 눌러 주세요.</div>`;
     }
+  }
+
+  // 이번 라운드의 보기를 생성 (항상 4개)
+  function generateOptions(stage){
+    const opts=[];
+    const correct = { n: currentCorrectN, l: currentCorrectL, m: currentCorrectM };
+
+    // 첫 번째는 정답
+    opts.push({...correct});
+
+    const maxN = 4;
+    function randomNForL(l){
+      const minN = Math.max(1, l+1);
+      const range = Math.max(1, maxN-minN+1);
+      return minN + Math.floor(Math.random()*range);
+    }
+    function randomMForL(l){
+      const mMin = -l;
+      const mMax = l;
+      return mMin + Math.floor(Math.random()*(mMax-mMin+1));
+    }
+
+    while(opts.length < 4){
+      let cand = {};
+      if(stage===1){
+        cand.l = Math.floor(Math.random()*4);
+        cand.n = correct.n;
+        cand.m = correct.m;
+      }else if(stage===2){
+        cand.l = Math.floor(Math.random()*4);
+        cand.n = randomNForL(cand.l);
+        cand.m = correct.m;
+      }else{
+        cand.l = Math.floor(Math.random()*4);
+        cand.n = randomNForL(cand.l);
+        cand.m = randomMForL(cand.l);
+      }
+      // 중복 방지
+      if(!opts.some(o=>o.l===cand.l && o.n===cand.n && o.m===cand.m)){
+        opts.push(cand);
+      }
+    }
+    // 섞기
+    for(let i=opts.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [opts[i],opts[j]]=[opts[j],opts[i]];
+    }
+    return opts;
   }
 
   function startNextRound(){
@@ -434,21 +535,30 @@ const CONFIG = {
     }
     gameRound += 1;
 
-    // 무작위 오비탈 선택 (l=0,1,2,3)
-    const l = Math.floor(Math.random()*4);  // 0~3
+    // 무작위 오비탈 선택 (l=0,1,2,3, n은 1~4, n>=l+1, m은 -l..+l)
+    const maxN = 4;
+    const l = Math.floor(Math.random()*4);
+    const nMin = Math.max(1, l+1);
+    const nRange = Math.max(1, maxN-nMin+1);
+    const n = nMin + Math.floor(Math.random()*nRange);
+    const mMin = -l;
+    const mMax = l;
+    const m = mMin + Math.floor(Math.random()*(mMax-mMin+1 || 1)); // l=0이면 0
+
+    currentCorrectL = l;
+    currentCorrectN = n;
+    currentCorrectM = m;
+
+    // 3D 표시를 위해 l, m만 그대로 사용 (n은 현재 시각화에는 직접 반영하지 않음)
     lSel.value = String(l);
-
-    // m 목록 갱신 후 무작위 m
     populateM();
-    const lInt = parseInt(lSel.value,10);
-    const mMin = -lInt, mMax = lInt;
-    const randM = mMin + Math.floor(Math.random()*(mMax-mMin+1));
-    mSel.value = String(randM);
+    mSel.value = String(m);
 
-    currentCorrectL = lInt;
+    // 게임 중: 등가면 숨긴 상태로 전자구름만 생성
+    regen(true);
+    const stage = getStageForRound(gameRound);
+    currentOptions = generateOptions(stage);
     lastMessage = "";
-    // 등가면은 숨긴 상태로 전자구름만 생성
-    regen(true);   // gameOnly=true로 isoMesh는 만들어도 보이지 않게
     renderGameStatus();
   }
 
@@ -679,7 +789,7 @@ const CONFIG = {
     frameAll(1.25);
   }
 
-  // 이벤트 바인딩
+  // 이벤트 바인딩 초기화
   populateM();
   regen();
   setFreeModeUI();
