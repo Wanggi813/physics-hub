@@ -52,7 +52,7 @@ const rankMeta = {
   "실버.png":           { en: "SILVER",      color: "#A3B4BF" },
   "골드.png":           { en: "GOLD",        color: "#FBEBBC" },
   "에메랄드.png":       { en: "EMERALD",     color: "#7ABFB3" },
-  "다이아몬드.png":     { en: "DIAMOND",     color: "#BBE8F2" },
+  "다이아.png":     { en: "DIAMOND",     color: "#BBE8F2" },
   "마스터.png":         { en: "MASTER",      color: "#885BA6" },
   "그랜드마스터.png":   { en: "GRANDMASTER", color: "#A62626" },
   "챌린저.png":         { en: "CHALLENGER",  color: "#6CA6D9" }
@@ -405,3 +405,4 @@ window.addPoint = addPoint;
 window.changePassword = changePassword;
 window.openChangeMode = openChangeMode;
 window.closeChangeMode = closeChangeMode;
+
