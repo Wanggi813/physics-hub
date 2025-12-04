@@ -17,17 +17,7 @@ import {
   collection,
   getDocs
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
-const rankMeta = {
-  "아이언.png":          { en: "IRON",         color: "#5B4636" },
-  "브론즈.png":          { en: "BRONZE",       color: "#8A5A3A" },
-  "실버.png":            { en: "SILVER",       color: "#A8B0C0" },
-  "골드.png":            { en: "GOLD",         color: "#C89B3C" },
-  "에메랄드.png":        { en: "EMERALD",      color: "#0F6A56" },
-  "다이아몬드.png":      { en: "DIAMOND",      color: "#5DA4FF" },
-  "마스터.png":          { en: "MASTER",       color: "#4820A8" },
-  "그랜드마스터.png":    { en: "GRANDMASTER",  color: "#9E4B1A" },
-  "챌린저.png":          { en: "CHALLENGER",   color: "#F24A24" }
-};
+
 // ===== 점수에 따른 랭크 이미지 매핑 =====
 function getRankImageFile(score) {
   const s = Number(score) || 0;
