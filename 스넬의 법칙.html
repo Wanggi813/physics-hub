@@ -71,7 +71,7 @@
       .game-header{
         display:flex;
         justify-content:space-between;
-        align-items:center;
+        align-items:flex-start;
         gap:8px;
         margin-bottom:6px;
       }
@@ -83,7 +83,40 @@
       .game-round{
         font-size:12px;
         color:#475569;
+        margin-top:2px;
       }
+
+      /* ===== 최고 점수 뱃지 ===== */
+      .game-best-badge{
+        display:inline-flex;
+        align-items:center;
+        gap:4px;
+        padding:4px 10px;
+        border-radius:999px;
+        background:linear-gradient(135deg,#fff7e6,#fff);
+        box-shadow:
+          0 0 0 1px rgba(251,191,36,0.45),
+          0 0 14px rgba(251,191,36,0.75);
+        font-size:12px;
+        white-space:nowrap;
+      }
+      .best-label{
+        font-size:11px;
+        color:#6b7280;
+      }
+      .best-icon{
+        font-size:15px;
+        line-height:1;
+        text-shadow:0 0 6px rgba(251,191,36,0.9);
+      }
+      .best-value{
+        font-weight:800;
+        font-size:14px;
+        color:#f97316;
+        min-width:26px;
+        text-align:right;
+      }
+
       .game-question{
         margin:4px 0 8px;
         color:#0f172a;
@@ -153,6 +186,21 @@
         animation:score-bump .35s ease-out;
       }
 
+      @keyframes best-pulse{
+        0%{transform:scale(1); box-shadow:
+             0 0 0 1px rgba(251,191,36,0.45),
+             0 0 10px rgba(251,191,36,0.7);}
+        40%{transform:scale(1.06); box-shadow:
+             0 0 0 2px rgba(251,191,36,0.6),
+             0 0 18px rgba(251,191,36,0.9);}
+        100%{transform:scale(1); box-shadow:
+             0 0 0 1px rgba(251,191,36,0.45),
+             0 0 10px rgba(251,191,36,0.7);}
+      }
+      .game-best-badge.bump{
+        animation:best-pulse .5s ease-out;
+      }
+
       @media (max-width: 768px){
         .game-panel{
           left:10px;
@@ -187,8 +235,16 @@
     <!-- 도전 모드 패널 -->
     <div class="game-panel" id="gamePanel">
       <div class="game-header">
-        <div class="game-title">스넬의 법칙 도전 모드</div>
-        <div class="game-round" id="gp-round">라운드: 0 / 10</div>
+        <div>
+          <div class="game-title">스넬의 법칙 도전 모드</div>
+          <div class="game-round" id="gp-round">라운드: 0 / 10</div>
+        </div>
+        <!-- 눈에 띄는 최고점수 뱃지 -->
+        <div class="game-best-badge" id="gp-best">
+          <span class="best-label">최고점수</span>
+          <span class="best-icon">🏆</span>
+          <span class="best-value" id="gp-best-value">0</span>
+        </div>
       </div>
       <div class="game-question" id="gp-question">
         <b>도전 시작</b> 버튼을 누르면 임의의 매질·입사각이 제시됩니다.<br>
@@ -207,7 +263,7 @@
         <button class="game-btn game-range" id="btnRTIR">전반사</button>
       </div>
       <div class="game-footer">
-        <span class="game-score" id="gp-score">점수: 0점 / 500점 · 최고: 0점</span>
+        <span class="game-score" id="gp-score">점수: 0점 / 500점</span>
         <button class="game-btn primary" id="btnNextRound">도전 시작</button>
       </div>
       <div class="game-feedback" id="gp-feedback"></div>
@@ -249,16 +305,17 @@
       // ====== 도전 모드 상태 ======
       const TOTAL_ROUNDS = 10;
       let gameRound = 0;
-      let gameActive = false;      // 게임 진행 중 여부
-      let gameReveal = false;      // 정답 공개 여부 (굴절광/반사광 표시)
-      let gameState = 'idle';      // idle | question | feedback | finished
+      let gameActive = false;
+      let gameReveal = false;
+      let gameState = 'idle';
       let currentScore = 0;
       let bestScore = 0;
 
-      let currentQuestion = null;  // {round, stageType, nTopName, nBottomName, n1,n2,theta1,isTIR,theta2Deg,correctKey}
+      let currentQuestion = null;
 
       let gpRoundEl, gpQuestionEl, gpScoreEl, gpFeedbackEl;
       let btnNextRound, btnTirYes, btnTirNo, btnR0_30, btnR30_60, btnR60_90, btnRTIR;
+      let gpBestValueEl, gpBestBadgeEl;
 
       function setup(){
         canvasP5 = createCanvas(windowWidth, windowHeight - 130);
@@ -311,7 +368,9 @@
         btnR60_90    = document.getElementById('btnR60_90');
         btnRTIR      = document.getElementById('btnRTIR');
 
-        // 클릭 이벤트
+        gpBestValueEl = document.getElementById('gp-best-value');
+        gpBestBadgeEl = document.getElementById('gp-best');
+
         btnTirYes.addEventListener('click', ()=>handleAnswer('TIR'));
         btnTirNo.addEventListener('click',  ()=>handleAnswer('NO_TIR'));
         btnR0_30.addEventListener('click',  ()=>handleAnswer('R_0_30'));
@@ -335,14 +394,24 @@
         updateRoundUI();
         updateQuestionText();
         updateAnswerButtonsVisibility();
+        updateBestUI();
       }
 
       function updateScoreUI(){
         if (!gpScoreEl) return;
-        gpScoreEl.textContent = `점수: ${currentScore}점 / 500점 · 최고: ${bestScore}점`;
+        gpScoreEl.textContent = `점수: ${currentScore}점 / 500점`;
         gpScoreEl.classList.remove('bump');
         void gpScoreEl.offsetWidth;
         gpScoreEl.classList.add('bump');
+        updateBestUI();
+      }
+
+      function updateBestUI(){
+        if (!gpBestValueEl || !gpBestBadgeEl) return;
+        gpBestValueEl.textContent = bestScore;
+        gpBestBadgeEl.classList.remove('bump');
+        void gpBestBadgeEl.offsetWidth;
+        gpBestBadgeEl.classList.add('bump');
       }
 
       function updateRoundUI(){
@@ -385,7 +454,6 @@
         document.querySelectorAll('.game-range').forEach(btn=>{
           btn.style.display = rangeStage ? 'inline-flex' : 'none';
         });
-        // idle일 때는 둘 다 숨기지 말고 기본은 전반사 여부만 보이게
         if (!currentQuestion){
           document.querySelectorAll('.game-range').forEach(btn=>{
             btn.style.display = 'none';
@@ -424,7 +492,7 @@
         gameReveal  = false;
         gameRound   = 0;
         currentScore = 0;
-        gameState   = 'feedback'; // nextQuestion가 question으로 바꾸게
+        gameState   = 'feedback';
         gpFeedbackEl.textContent = '';
         gpFeedbackEl.className   = 'game-feedback';
         btnNextRound.textContent = '다음 라운드';
@@ -446,7 +514,6 @@
         updateRoundUI();
         btnNextRound.disabled = true;
 
-        // 문제 생성
         currentQuestion = generateQuestionForRound(gameRound);
         updateQuestionText();
         updateAnswerButtonsVisibility();
@@ -499,11 +566,9 @@
               candidateTheta = low + Math.random()*(high - low);
             } else {
               if (Math.random() < 0.5){
-                // n1 <= n2 → 어떤 각도에서도 전반사 X
                 if (n1 > n2) continue;
                 candidateTheta = 10 + Math.random()*70;
               } else {
-                // n1 > n2 이지만 임계각보다 작은 각도
                 if (n1 <= n2) continue;
                 const thetaC = degrees(Math.asin(n2 / n1));
                 const low = 10;
@@ -541,7 +606,7 @@
             const sin1 = Math.sin(radians(theta1));
             const sin2 = (n1 / n2) * sin1;
             isTIR = (n1 > n2 && sin2 > 1 - 1e-12);
-            const ok = true; // 범위 모드는 전반사도 허용(전반사 선택지 있음)
+            const ok = true;
             if (ok) break;
           }
         }
@@ -561,7 +626,6 @@
           else correctKey = 'R_60_90';
         }
 
-        // 시뮬레이션 상태를 문제에 맞게 세팅
         topName = nTopName;
         botName = nBottomName;
         if (selTop && selBottom){
@@ -784,7 +848,7 @@
           if (signX > 0){
             arcWithLabel(R_CRIT, -HALF_PI - radians(thetaC), -HALF_PI, colCrit, 'θ_c', 10, 14);
           } else {
-            arcWithLabel(R_CRIT, -HALF_PI, -HALF_PI + radians(thetaC), colCrit, 'θ_c', 10, 14);
+            arcWithLabel(R_CRIT, -HALF_PI, -HALF_PI + radians(thetaC), colCrit, 10, 14);
           }
         }
 
@@ -825,7 +889,7 @@
 
       // ===== 인터랙션 =====
       function startDrag(x,y){
-        if (gameActive && gameState === 'question') return; // 도전 중에는 드래그 잠금
+        if (gameActive && gameState === 'question') return;
         if (dist(x, y, handle.x, handle.y) < 24) handle.dragging = true;
       }
       function moveDrag(x,y){
@@ -866,9 +930,9 @@
           <div><span class="sw" style="background:${COLOR_REFRACT}"></span>굴절선</div>`;
       }
 
-      // Firebase에서 최고 점수 로드 시 호출
       window.setBestScoreFromFirebase = function(score){
         bestScore = Number(score) || 0;
+        updateBestUI();
         updateScoreUI();
       };
     </script>
