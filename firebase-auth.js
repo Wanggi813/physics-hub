@@ -18,6 +18,30 @@ import {
   getDocs
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
+// ===== 점수에 따른 랭크 이미지 매핑 =====
+function getRankImageFile(score) {
+  const s = Number(score) || 0;
+
+  if (s < 500) return "아이언.png";
+  if (s < 1000) return "브론즈.png";
+  if (s < 2000) return "실버.png";
+  if (s < 3500) return "골드.png";
+  if (s < 5000) return "에메랄드.png";
+  if (s < 7000) return "다이아몬드.png";
+  if (s < 9000) return "마스터.png";
+  if (s < 10000) return "그랜드마스터.png";
+  return "챌린저.png";   // 8500 이상
+}
+
+function applyRankImage(score) {
+  const imgEl = document.getElementById("rank-img");
+  if (!imgEl) return;   // rank-img가 없으면 그냥 패스
+
+  const fileName = getRankImageFile(score);
+  imgEl.src = `./rank/${fileName}`;
+  imgEl.alt = `랭크: ${fileName.replace(".png", "")}`;
+}
+
 // Firebase 설정
 const firebaseConfig = {
   apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
@@ -52,14 +76,21 @@ function updateInfoPanel() {
 
   if (currentUser) {
     const idText = currentUserIdText || (currentUser.email ? currentUser.email.split("@")[0] : "");
+    const scoreToShow = currentScore || 0;
+
     if (idLabel)  idLabel.textContent  = "아이디: " + idText;
-    if (scoreBig) scoreBig.textContent = (currentScore || 0) + "점";
+    if (scoreBig) scoreBig.textContent = scoreToShow + "점";
+
+    // >>> 여기서 랭크 이미지도 함께 갱신
+    applyRankImage(scoreToShow);
   } else {
     if (idLabel)  idLabel.textContent  = "아이디: -";
     if (scoreBig) scoreBig.textContent = "0점";
+
+    // 로그아웃 상태일 때는 0점 기준 랭크(브론즈 등)로 표시하거나 기본 이미지
+    applyRankImage(0);
   }
 }
-
 // 로그인
 async function login() {
   const userId = document.getElementById("loginId").value.trim();
