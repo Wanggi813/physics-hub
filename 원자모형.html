@@ -319,13 +319,18 @@ const CONFIG = {
   let gameRound=0;
   const maxRounds=10;
   let gameScore=0;
-  let bestScore=0;
+  let bestScore=0;      // 현재까지의 최고점수
   let currentCorrectL=null;
   let currentCorrectN=null;
   let currentCorrectM=null;
   let awaitingNext=false;
   let lastMessage="";
   let currentOptions=[]; // 이번 라운드 선택지(4개)
+
+  // Firebase에서 최고점 불러올 때 사용할 함수 (전역으로 노출)
+  window.setBestScoreFromFirebase = function(scoreFromDb){
+    bestScore = Number(scoreFromDb) || 0;
+  };
 
   const lName = l => (l===0?"s":l===1?"p":l===2?"d":"f");
   const getStageForRound = (r)=>{
@@ -413,7 +418,13 @@ const CONFIG = {
 
     if(isCorrect){
       gameScore += 50;
-      if(gameScore > bestScore) bestScore = gameScore;
+      if (gameScore > bestScore) {
+        bestScore = gameScore;
+        // ★ Firebase에 최고 점수 저장 (정의되어 있을 때만)
+        if (window.saveBestScoreToFirebase) {
+          window.saveBestScoreToFirebase(bestScore);
+        }
+      }
       lastMessage = `정답입니다! 정답은 <b>${fmtCorrectLabel(stage)}</b> 입니다. (+50점)`;
       if(btnEl){btnEl.classList.add('correct');}
     }else{
@@ -493,7 +504,7 @@ const CONFIG = {
     function randomMForL(l){
       const mMin = -l;
       const mMax = l;
-      return mMin + Math.floor(Math.random()*(mMax-mMin+1));
+      return mMin + Math.floor(Math.random()*(mMax-mMin+1 || 1));
     }
 
     while(opts.length < 4){
@@ -837,5 +848,72 @@ const CONFIG = {
   })();
 })();
 </script>
+
+<!-- ===== Firebase 점수 연동 (원자모형 퀴즈) ===== -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
+    authDomain: "simulation-67cd3.firebaseapp.com",
+    projectId: "simulation-67cd3",
+    storageBucket: "simulation-67cd3.appspot.com",
+    messagingSenderId: "615983461615",
+    appId: "1:615983461615:web:002e07bcea878eb6d5571a",
+    measurementId: "G-9RGN7LYE5W"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // ★ 이 시뮬레이션 id (허브 합계 계산에 쓰일 이름)
+  const SIM_ID = "원자모형_퀴즈";
+
+  let firebaseUser = null;
+
+  // Firestore에 최고 점수 저장
+  async function saveBestScore(score) {
+    if (!firebaseUser) return;
+    try {
+      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+      await setDoc(ref, { score: Number(score) || 0 }, { merge: true });
+    } catch (err) {
+      console.error("[원자모형 퀴즈] 최고 점수 저장 오류:", err);
+    }
+  }
+
+  // 기존 최고 점수 로드
+  async function loadBestScore() {
+    if (!firebaseUser) return;
+    try {
+      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const data = snap.data();
+        const score = Number(data.score || 0) || 0;
+        if (window.setBestScoreFromFirebase) {
+          window.setBestScoreFromFirebase(score);
+        }
+      }
+    } catch (err) {
+      console.error("[원자모형 퀴즈] 최고 점수 불러오기 오류:", err);
+    }
+  }
+
+  // 전역에 노출 → 게임 스크립트에서 호출
+  window.saveBestScoreToFirebase = saveBestScore;
+
+  // 로그인 상태 바뀔 때마다 해당 유저 기준 최고점 로딩
+  onAuthStateChanged(auth, async (user) => {
+    firebaseUser = user;
+    if (user) {
+      await loadBestScore();
+    }
+  });
+</script>
+
 </body>
 </html>
