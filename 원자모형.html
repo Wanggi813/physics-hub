@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>수소원자모형 양자화 시뮬레이터</title>
+<title>수소원자모형 양자화 시뮬레이터 + 오비탈 퀴즈 게임</title>
 
 <!-- 로컬 라이브러리 -->
 <script src="./libs/p5.min.js"></script>
@@ -12,29 +12,139 @@
 <style>
   :root{--bg:#f7fafc;--panel:#fff;--ink:#0b1020;--ink-dim:#4b5563;--accent:#2563eb;--line:#e5e7eb}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans KR",Apple SD Gothic Neo,sans-serif}
-  header{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;background:#fff;position:sticky;top:0;z-index:1}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans KR",Apple SD Gothic Neo,sans-serif
+  }
+  header{
+    padding:12px 16px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#fff;
+    position:sticky;
+    top:0;
+    z-index:1
+  }
   header h1{margin:0;font-size:18px}
   header .hint{font-size:12px;color:var(--ink-dim)}
-  .app{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px;min-height:calc(100vh - 60px)}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;display:grid;grid-template-rows:auto auto 1fr auto;box-shadow:0 6px 18px rgba(0,0,0,.04)}
+  .app{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    padding:12px;
+    min-height:calc(100vh - 60px)
+  }
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    display:grid;
+    grid-template-rows:auto auto 1fr auto;
+    box-shadow:0 6px 18px rgba(0,0,0,.04)
+  }
   .panel h2{font-size:16px;margin:12px}
-  .controls{display:flex;flex-wrap:wrap;gap:10px;padding:0 12px 8px}
-  .controls.controls-3d{gap:8px;padding:0 12px 6px;max-height:56px;overflow:hidden}
-  .group{display:flex;align-items:center;gap:8px;background:#f3f4f6;border:1px solid var(--line);padding:6px 10px;border-radius:10px}
-  .pill{padding:2px 8px;border:1px solid var(--line);border-radius:999px;font-size:11px;color:var(--ink-dim);background:#fff}
-  .canvas-wrap{position:relative;overflow:hidden;border-top:1px solid var(--line);border-bottom-left-radius:14px;border-bottom-right-radius:14px}
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    padding:0 12px 8px
+  }
+  .controls.controls-3d{
+    gap:8px;
+    padding:0 12px 6px;
+    max-height:64px;
+    overflow:hidden
+  }
+  .group{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:#f3f4f6;
+    border:1px solid var(--line);
+    padding:6px 10px;
+    border-radius:10px
+  }
+  .pill{
+    padding:2px 8px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    font-size:11px;
+    color:var(--ink-dim);
+    background:#fff
+  }
+  .canvas-wrap{
+    position:relative;
+    overflow:hidden;
+    border-top:1px solid var(--line);
+    border-bottom-left-radius:14px;
+    border-bottom-right-radius:14px
+  }
   #p5-wrap{min-height:720px}
   #three-wrap{min-height:640px;height:640px}
   #p5-container,#three-container{width:100%;height:100%}
-  .note{padding:10px 12px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-dim);background:#fff}
-  button.primary{cursor:pointer;background:var(--accent);color:#fff;border:none;padding:6px 10px;border-radius:8px;font-weight:700}
-  @media (max-width:1024px){.app{grid-template-columns:1fr}}
+  .note{
+    padding:10px 12px;
+    border-top:1px solid var(--line);
+    font-size:12px;
+    color:var(--ink-dim);
+    background:#fff
+  }
+  button.primary{
+    cursor:pointer;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:6px 10px;
+    border-radius:8px;
+    font-weight:700;
+    font-size:13px;
+    white-space:nowrap
+  }
+  button.primary:disabled{
+    opacity:0.4;
+    cursor:default
+  }
+
+  @media (max-width:1024px){
+    .app{grid-template-columns:1fr}
+  }
+
+  /* ===== 퀴즈 버튼 ===== */
+  .quiz-btn{
+    cursor:pointer;
+    border:1px solid var(--line);
+    background:#f9fafb;
+    border-radius:999px;
+    padding:4px 10px;
+    font-size:13px;
+    transition:background .15s ease,border-color .15s ease,transform .12s ease;
+  }
+  .quiz-btn:hover{
+    background:#eff6ff;
+    border-color:#bfdbfe;
+  }
+  .quiz-btn:active{
+    transform:scale(0.96);
+  }
+  .quiz-btn.correct{
+    background:#dcfce7;
+    border-color:#86efac;
+    color:#166534;
+  }
+  .quiz-btn.wrong{
+    background:#fee2e2;
+    border-color:#fecaca;
+    color:#991b1b;
+  }
 </style>
 </head>
 <body>
 <header>
-  <h1>수소원자모형 양자화 시뮬레이터  <span class="pill">보어의 원자이론</span></h1>
+  <h1>수소원자모형 양자화 시뮬레이터  <span class="pill">보어의 원자이론 + 오비탈 퀴즈</span></h1>
   <div class="hint">왕왕 물리시뮬레이션</div>
 </header>
 
@@ -43,32 +153,56 @@
   <section class="panel">
     <h2>궤도의 양자화 </h2>
     <div class="controls" id="ctrl-2d">
-      <div class="group"><label>주양자수 n</label>
-        <input id="nSlider" type="range" min="1" max="8" step="1" value="3"/><span id="nLabel" class="pill">n = 3</span></div>
-      <div class="group"><label>파동 진폭</label>
-        <input id="ampSlider" type="range" min="2" max="50" step="1" value="12"/><span id="ampLabel" class="pill">A = 12</span></div>
-      <div class="group"><label>애니메이션</label>
-        <select id="animMode"><option value="standing" selected>정지파</option><option value="traveling">주행파</option></select></div>
+      <div class="group">
+        <label>주양자수 n</label>
+        <input id="nSlider" type="range" min="1" max="8" step="1" value="3"/>
+        <span id="nLabel" class="pill">n = 3</span>
+      </div>
+      <div class="group">
+        <label>파동 진폭</label>
+        <input id="ampSlider" type="range" min="2" max="50" step="1" value="12"/>
+        <span id="ampLabel" class="pill">A = 12</span>
+      </div>
+      <div class="group">
+        <label>애니메이션</label>
+        <select id="animMode">
+          <option value="standing" selected>정지파</option>
+          <option value="traveling">주행파</option>
+        </select>
+      </div>
     </div>
     <div class="canvas-wrap" id="p5-wrap"><div id="p5-container"></div></div>
     <div class="note">조건: <b>2πR = n·λ</b>, <b>L = nħ</b>.</div>
   </section>
 
-  <!-- 3D: 오비탈 -->
+  <!-- 3D: 오비탈 + 퀴즈 -->
   <section class="panel">
     <h2>오비탈 (s, p, d, f) 전자구름 + 등가면</h2>
     <div class="controls controls-3d" id="ctrl-3d">
-      <div class="group"><label>l</label>
-        <select id="l3"><option value="0">0 (s)</option><option value="1" selected>1 (p)</option><option value="2">2 (d)</option><option value="3">3 (f)</option></select></div>
-      <div class="group"><label>m</label><select id="m3"></select></div>
+      <div class="group">
+        <label>l</label>
+        <select id="l3">
+          <option value="0">0 (s)</option>
+          <option value="1" selected>1 (p)</option>
+          <option value="2">2 (d)</option>
+          <option value="3">3 (f)</option>
+        </select>
+      </div>
+      <div class="group">
+        <label>m</label>
+        <select id="m3"></select>
+      </div>
       <div class="group">
         <label for="orbitalToggle">오비탈 모형(등가면)</label>
         <input id="orbitalToggle" type="checkbox" checked />
       </div>
       <button id="regen" class="primary">재생성</button>
+      <!-- ★ 퀴즈 게임 버튼 -->
+      <button id="challengeBtn" class="primary" style="background:#16a34a;">도전</button>
     </div>
     <div class="canvas-wrap" id="three-wrap"><div id="three-container"></div></div>
-    <div class="note"></div>
+    <!-- 이 note가 게임 정보/버튼/피드백 영역으로 사용됨 -->
+    <div class="note" id="gameNote"></div>
   </section>
 </main>
 
@@ -119,7 +253,7 @@ const CONFIG = {
 })();
 </script>
 
-<!-- 3D: Three.js -->
+<!-- 3D: Three.js (+ 오비탈 퀴즈 게임) -->
 <script>
 (()=>{
   // ===== SimpleOrbit (OrbitControls 대체) =====
@@ -175,10 +309,152 @@ const CONFIG = {
   const mSel=document.getElementById('m3');
   const btn=document.getElementById('regen');
   const tgl=document.getElementById('orbitalToggle');
-  let showIso = tgl.checked;
+  const challengeBtn=document.getElementById('challengeBtn');
+  const noteEl=document.getElementById('gameNote');
 
-  // Scene / Camera / Renderer
-  const scene=new THREE.Scene(); scene.background=new THREE.Color(CONFIG.renderer.bg);
+  // ===== 게임 상태 =====
+  let gameMode=false;
+  let gameRound=0;
+  const maxRounds=10;
+  let gameScore=0;
+  let currentCorrectL=null;
+  let awaitingNext=false;
+  let lastMessage="";
+
+  const lName = l => (l===0?"s":l===1?"p":l===2?"d":"f");
+
+  function setFreeModeUI(){
+    if(!noteEl) return;
+    noteEl.innerHTML =
+      `<div><b>자유 모드</b>입니다. l, m과 오비탈 모형 토글을 바꾸며 다양한 오비탈 전자구름과 등가면을 관찰해 보세요.</div>
+       <div style="margin-top:4px;color:#6b7280;">퀴즈 게임을 시작하려면 상단의 <b>도전</b> 버튼을 눌러 주세요.</div>`;
+  }
+
+  function renderGameStatus(){
+    if(!noteEl) return;
+    if(!gameMode){
+      setFreeModeUI();
+      return;
+    }
+    noteEl.innerHTML = `
+      <div><b>오비탈 퀴즈 게임</b> — 라운드 <b>${gameRound}</b> / ${maxRounds}, 점수 <b>${gameScore}</b>점</div>
+      <div style="margin-top:4px;">이 전자구름은 어떤 오비탈일까요? (s, p, d, f 중에서 선택)</div>
+      <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="quiz-btn" data-l="0">s 오비탈</button>
+        <button class="quiz-btn" data-l="1">p 오비탈</button>
+        <button class="quiz-btn" data-l="2">d 오비탈</button>
+        <button class="quiz-btn" data-l="3">f 오비탈</button>
+      </div>
+      <div id="gameMessage" style="margin-top:6px; font-size:12px; color:#4b5563;">${lastMessage}</div>
+    `;
+    // 버튼 이벤트 연결
+    noteEl.querySelectorAll('.quiz-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const guess=parseInt(btn.dataset.l,10);
+        handleGuess(guess, btn);
+      });
+    });
+  }
+
+  function handleGuess(guessL, btnEl){
+    if(!gameMode || currentCorrectL==null || awaitingNext) return;
+    awaitingNext=true;
+    const isCorrect = (guessL===currentCorrectL);
+    const msgEl = document.getElementById('gameMessage');
+
+    if(isCorrect){
+      gameScore += 50;
+      lastMessage = `정답입니다! 이 전자구름은 <b>${lName(currentCorrectL)}</b> 오비탈 계열이에요. (+50점)`;
+      if(btnEl){btnEl.classList.add('correct');}
+    }else{
+      lastMessage = `아쉬워요. 정답은 <b>${lName(currentCorrectL)}</b> 오비탈 계열입니다.`;
+      if(btnEl){btnEl.classList.add('wrong');}
+    }
+
+    if(msgEl) msgEl.innerHTML = lastMessage;
+
+    // 잠깐 피드백 보여주고 다음 라운드
+    setTimeout(()=>{
+      startNextRound();
+      awaitingNext=false;
+    }, 900);
+  }
+
+  function startGame(){
+    gameMode=true;
+    gameRound=0;
+    gameScore=0;
+    lastMessage="";
+    currentCorrectL=null;
+    awaitingNext=false;
+
+    // 등가면 숨기고, UI 잠그기
+    showIso=false;
+    tgl.checked=false;
+    tgl.disabled=true;
+    lSel.disabled=true;
+    mSel.disabled=true;
+    btn.disabled=true;
+    challengeBtn.textContent="그만하기";
+
+    startNextRound();
+  }
+
+  function endGame(){
+    const finalScore = gameScore;
+    gameMode=false;
+    currentCorrectL=null;
+    awaitingNext=false;
+
+    tgl.disabled=false;
+    lSel.disabled=false;
+    mSel.disabled=false;
+    btn.disabled=false;
+    challengeBtn.textContent="도전";
+
+    // 토글 상태에 맞게 등가면 다시 표시 가능
+    showIso = tgl.checked;
+    if(isoMesh) isoMesh.visible = showIso;
+
+    if(noteEl){
+      noteEl.innerHTML =
+        `<div><b>게임 종료!</b> 총 점수: <b>${finalScore}</b>점 / 최대 ${maxRounds*50}점</div>
+         <div style="margin-top:4px;">다시 도전하려면 상단의 <b>도전</b> 버튼을 눌러 주세요.</div>`;
+    }
+  }
+
+  function startNextRound(){
+    if(!gameMode){
+      setFreeModeUI();
+      return;
+    }
+    if(gameRound>=maxRounds){
+      endGame();
+      return;
+    }
+    gameRound += 1;
+
+    // 무작위 오비탈 선택 (l=0,1,2,3)
+    const l = Math.floor(Math.random()*4);  // 0~3
+    lSel.value = String(l);
+
+    // m 목록 갱신 후 무작위 m
+    populateM();
+    const lInt = parseInt(lSel.value,10);
+    const mMin = -lInt, mMax = lInt;
+    const randM = mMin + Math.floor(Math.random()*(mMax-mMin+1));
+    mSel.value = String(randM);
+
+    currentCorrectL = lInt;
+    lastMessage = "";
+    // 등가면은 숨긴 상태로 전자구름만 생성
+    regen(true);   // gameOnly=true로 isoMesh는 만들어도 보이지 않게
+    renderGameStatus();
+  }
+
+  // ===== Scene / Camera / Renderer =====
+  const scene=new THREE.Scene();
+  scene.background=new THREE.Color(CONFIG.renderer.bg);
   const cam=new THREE.PerspectiveCamera(45,1,0.1,100); cam.position.set(3.2,2.8,3.8);
   const rnd=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
   rnd.setPixelRatio(Math.min(window.devicePixelRatio||1, CONFIG.renderer.pixelRatioMax));
@@ -228,23 +504,45 @@ const CONFIG = {
   })();
 
   // 원형 점 텍스처
-  const circTex=(()=>{const c=document.createElement('canvas'); c.width=c.height=96;
+  const circTex=(()=>{
+    const c=document.createElement('canvas'); c.width=c.height=96;
     const g=c.getContext('2d'), r=48, gr=g.createRadialGradient(r,r,0,r,r,r);
-    gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.7,'rgba(255,255,255,1)'); gr.addColorStop(1,'rgba(255,255,255,0)');
+    gr.addColorStop(0,'rgba(255,255,255,1)');
+    gr.addColorStop(0.7,'rgba(255,255,255,1)');
+    gr.addColorStop(1,'rgba(255,255,255,0)');
     g.fillStyle=gr; g.beginPath(); g.arc(r,r,r,0,Math.PI*2); g.fill();
-    const t=new THREE.CanvasTexture(c); t.minFilter=t.magFilter=THREE.LinearFilter; return t;})();
+    const t=new THREE.CanvasTexture(c); t.minFilter=t.magFilter=THREE.LinearFilter; return t;
+  })();
 
   // 전자구름(Points) / 등가면
   let pts,gP,mP,raf=null,isoMesh, Amax=1;
+  let showIso = tgl.checked;
 
   // 수학부: 실수형 구면조화 (형상만) + 방사 엔벨롭
   const realY=(l,m,th,ph)=>{
     const s=Math.sin(th),c=Math.cos(th);
     if(l===0)return 1;
-    if(l===1){if(m===0)return c; if(m===1)return s*Math.cos(ph); if(m===-1)return s*Math.sin(ph);}
-    if(l===2){if(m===0)return 3*c*c-1; if(m===1)return s*c*Math.cos(ph); if(m===-1)return s*c*Math.sin(ph); if(m===2)return s*s*Math.cos(2*ph); if(m===-2)return s*s*Math.sin(2*ph);}
-    if(l===3){if(m===0)return 5*c*c*c-3*c; if(m===1)return s*(5*c*c-1)*Math.cos(ph); if(m===-1)return s*(5*c*c-1)*Math.sin(ph);
-             if(m===2)return s*s*c*Math.cos(2*ph); if(m===-2)return s*s*c*Math.sin(2*ph); if(m===3)return s*s*s*Math.cos(3*ph); if(m===-3)return s*s*s*Math.sin(3*ph);}
+    if(l===1){
+      if(m===0)return c;
+      if(m===1)return s*Math.cos(ph);
+      if(m===-1)return s*Math.sin(ph);
+    }
+    if(l===2){
+      if(m===0)return 3*c*c-1;
+      if(m===1)return s*c*Math.cos(ph);
+      if(m===-1)return s*c*Math.sin(ph);
+      if(m===2)return s*s*Math.cos(2*ph);
+      if(m===-2)return s*s*Math.sin(2*ph);
+    }
+    if(l===3){
+      if(m===0)return 5*c*c*c-3*c;
+      if(m===1)return s*(5*c*c-1)*Math.cos(ph);
+      if(m===-1)return s*(5*c*c-1)*Math.sin(ph);
+      if(m===2)return s*s*c*Math.cos(2*ph);
+      if(m===-2)return s*s*c*Math.sin(2*ph);
+      if(m===3)return s*s*s*Math.cos(3*ph);
+      if(m===-3)return s*s*s*Math.sin(3*ph);
+    }
     return 0;
   };
   const rEnv=(r,l)=>Math.pow(r+1e-6,2*l)*Math.exp(-2*r);
@@ -278,7 +576,7 @@ const CONFIG = {
     pts=new THREE.Points(gP,mP); pts.frustumCulled=false; scene.add(pts);
   }
 
-  // 각도 분포를 |Y|^β로 가중한 수용-거절 샘플링 (전자구름은 항상 표시)
+  // 각도 분포를 |Y|^β로 가중한 수용-거절 샘플링
   function fillPoints(N,l,m){
     const pos=gP.attributes.position.array, col=gP.attributes.color.array;
     const R=6, S=1.4/R;
@@ -292,7 +590,7 @@ const CONFIG = {
       const limit = Math.min(N, accepted + batch);
       while(accepted < limit && tried < N*100){
         tried++;
-        // 제안 분포: 구면 균일 + 지수형 반지름 (수소형 엔벨롭)
+        // 제안 분포: 구면 균일 + 지수형 반지름
         const u=Math.random()*2-1;
         const th=Math.acos(Math.max(-1,Math.min(1,u)));
         const ph=Math.random()*Math.PI*2;
@@ -330,14 +628,19 @@ const CONFIG = {
         (A>=0)? C.push(...CONFIG.colors.pos): C.push(...CONFIG.colors.neg);
       }
     }
-    for(let i=0;i<thSeg;i++) for(let j=0;j<phSeg;j++){ const a=i*row+j,b=a+1,c=(i+1)*row+j,d=c+1; I.push(a,c,b,b,c,d); }
+    for(let i=0;i<thSeg;i++)
+      for(let j=0;j<phSeg;j++){
+        const a=i*row+j,b=a+1,c=(i+1)*row+j,d=c+1;
+        I.push(a,c,b,b,c,d);
+      }
     const g=new THREE.BufferGeometry();
     g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));
     g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));
     g.setIndex(I); g.computeVertexNormals();
     isoMesh=new THREE.Mesh(g,new THREE.MeshPhongMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:true,opacity}));
     scene.add(isoMesh);
-    isoMesh.visible = showIso; // 토글 반영
+    // 게임 중에는 등가면 숨기기
+    isoMesh.visible = (!gameMode && showIso);
   }
 
   // 카메라 프레이밍
@@ -345,7 +648,8 @@ const CONFIG = {
     let r1=0,r2=0;
     if(isoMesh && isoMesh.visible){ isoMesh.geometry.computeBoundingSphere(); r1=isoMesh.geometry.boundingSphere.radius; }
     if(gP){ gP.computeBoundingSphere(); r2=gP.boundingSphere.radius; }
-    const r=Math.max(r1,r2,1), vF=THREE.MathUtils.degToRad(cam.fov), hF=2*Math.atan(Math.tan(vF/2)*cam.aspect);
+    const r=Math.max(r1,r2,1);
+    const vF=THREE.MathUtils.degToRad(cam.fov), hF=2*Math.atan(Math.tan(vF/2)*cam.aspect);
     const d=Math.max((r*margin)/Math.tan(vF/2),(r*margin)/Math.tan(hF/2));
     const dir=new THREE.Vector3().subVectors(cam.position,new THREE.Vector3(0,0,0)).normalize();
     cam.position.copy(dir.multiplyScalar(d));
@@ -354,25 +658,39 @@ const CONFIG = {
   }
 
   // UI 로직
-  function populateM(){const l=+lSel.value; mSel.innerHTML=''; for(let m=-l;m<=l;m++){const o=document.createElement('option');o.value=m;o.textContent=m;if(m===0)o.selected=true;mSel.appendChild(o)}}
+  function populateM(){
+    const l=+lSel.value;
+    mSel.innerHTML='';
+    for(let m=-l;m<=l;m++){
+      const o=document.createElement('option');
+      o.value=m; o.textContent=m;
+      if(m===0) o.selected=true;
+      mSel.appendChild(o);
+    }
+  }
 
-  function regen(){
+  function regen(gameOnly=false){
     const l=+lSel.value, m=+mSel.value||0;
     Amax = computeAngularMax(l,m);
     initPoints(CONFIG.points.count);
     fillPoints(CONFIG.points.count,l,m);
+    // 게임일 때도 isoMesh는 만들어 두되, 보이지만 않게
     buildIso(l,m);
     frameAll(1.25);
   }
 
   // 이벤트 바인딩
-  populateM(); regen();
-  lSel.addEventListener('change',()=>{populateM(); regen();});
-  mSel.addEventListener('change', regen);
-  btn.addEventListener('click', regen);
+  populateM();
+  regen();
+  setFreeModeUI();
+
+  lSel.addEventListener('change',()=>{ if(!gameMode){populateM(); regen();} });
+  mSel.addEventListener('change',()=>{ if(!gameMode) regen(); });
+  btn.addEventListener('click',()=>{ if(!gameMode) regen(); });
 
   // 등가면 on/off (전자구름은 항상 표시)
   tgl.addEventListener('change', ()=>{
+    if(gameMode) return; // 게임 중엔 무시
     showIso = tgl.checked;
     if(isoMesh){
       isoMesh.visible = showIso;
@@ -381,6 +699,15 @@ const CONFIG = {
       const l=+lSel.value, m=+mSel.value||0;
       buildIso(l,m);
       frameAll(1.25);
+    }
+  });
+
+  // 도전 버튼: 게임 시작/종료 토글
+  challengeBtn.addEventListener('click', ()=>{
+    if(!gameMode){
+      startGame();
+    }else{
+      endGame();
     }
   });
 
@@ -395,7 +722,7 @@ const CONFIG = {
 
   (function loop(){
     requestAnimationFrame(loop);
-    ctl.update();         // 관성/감쇠 적용
+    ctl.update();
     rnd.render(scene,cam);
   })();
 })();
