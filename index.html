@@ -52,28 +52,26 @@
     <div id="auth-panel" class="auth-panel" aria-hidden="true">
  <h3 style="display:flex; justify-content:space-between; align-items:center;">
   로그인 / 비밀번호
-  <button type="button" class="auth-link" id="top-change-btn" onclick="openChangeMode()">비밀번호 변경</button>
 </h3>
 
       <!-- 로그인 후 표시되는 정보 섹션 -->
-      <div id="info-section" class="auth-section" style="display:none;">
-        <div class="info-id" id="info-id-label">아이디: -</div>
-        <div class="info-score-label">현재 점수</div>
-        <div class="info-score-big" id="info-score-big">0점</div>
-<div id="rank-img-wrap" style="text-align:center; margin-top:8px;">
-  <img id="rank-img" src="" style="width:80px; height:80px; object-fit:contain;">
-<div id="rank-name" style="  text-align:center;  margin-top:6px;  font-weight:700;  font-size:18px;  letter-spacing:2px;  text-transform:uppercase;">
-</div>
-</div>
-        <button type="button" class="auth-link" onclick="openChangeMode()">비밀번호 변경</button>
-      </div>
+<div id="info-section" class="auth-section" style="display:none;">
+  <div class="info-id" id="info-id-label">아이디: -</div>
+  <div class="info-score-label">현재 점수</div>
+  <div class="info-score-big" id="info-score-big">0점</div>
 
+  <div id="rank-img-wrap" style="text-align:center; margin-top:8px;">
+    <img id="rank-img" src="" style="width:80px; height:80px; object-fit:contain;">
+    <div id="rank-name"
+         style="text-align:center;margin-top:6px;font-weight:700;font-size:18px;letter-spacing:2px;text-transform:uppercase;">
+    </div>
+  </div>
+</div>
       <!-- 로그인 섹션 -->
       <div id="login-section" class="auth-section">
         <input type="text" id="loginId" placeholder="아이디 (선생님이 준 ID)" />
         <input type="password" id="loginPassword" placeholder="비밀번호" />
         <button type="button" onclick="login()">로그인</button>
-        <button type="button" class="auth-link" onclick="openChangeMode()">비밀번호 변경</button>
       </div>
 
       <!-- 비밀번호 변경 섹션 -->
