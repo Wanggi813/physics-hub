@@ -9,33 +9,135 @@
       --bg:#f7fbff; --panel:#ffffff; --ink:#0f172a; --muted:#5b657a; --accent:#2563eb; --good:#10b981; --warn:#f59e0b; --border:#e6eef9; --radius:18px; --shadow:0 10px 30px rgba(15,23,42,.08);
     }
     *{box-sizing:border-box}
-    body{margin:0;background:radial-gradient(1200px 800px at 10% -10%, #eef6ff, #f7fbff);color:var(--ink);font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial}
+    body{
+      margin:0;
+      background:radial-gradient(1200px 800px at 10% -10%, #eef6ff, #f7fbff);
+      color:var(--ink);
+      font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial
+    }
     header{padding:20px}
     header h1{margin:0 0 6px;font-size:clamp(22px,2.6vw,30px)}
     header p{margin:4px 0 0;color:var(--muted)}
-    .wrap{display:grid;grid-template-columns:380px 1fr;gap:16px;padding:0 20px 20px}
+    .wrap{
+      display:grid;
+      grid-template-columns:380px 1fr;
+      gap:16px;
+      padding:0 20px 20px
+    }
     @media (max-width:1020px){.wrap{grid-template-columns:1fr}}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
-    .controls{padding:14px;display:grid;gap:10px}
-    .group{background:#fff;border:1px dashed var(--border);border-radius:14px;padding:12px}
+    .card{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow)
+    }
+    .controls{
+      padding:14px;
+      display:grid;
+      gap:10px
+    }
+    .viz{
+      padding:12px;
+      display:grid;
+      gap:10px;
+      align-content:start;
+    }
+    .group{
+      background:#fff;
+      border:1px dashed var(--border);
+      border-radius:14px;
+      padding:12px
+    }
     .group h3{margin:0 0 8px;font-size:15px}
-    .row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin:6px 0}
+    .row{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:10px;
+      align-items:center;
+      margin:6px 0
+    }
     .row label{color:var(--muted);font-size:13px}
     .row output{font-variant-numeric:tabular-nums;font-size:13px}
-    input[type=range]{width:100%;appearance:none;height:6px;background:#e7eef9;border-radius:999px}
-    input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.2)}
-    input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--accent)}
-    .viz{padding:12px;display:grid;gap:10px}
-    .canvasBox{background:#ffffff;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+    input[type=range]{
+      width:100%;
+      appearance:none;
+      height:6px;
+      background:#e7eef9;
+      border-radius:999px
+    }
+    input[type=range]::-webkit-slider-thumb{
+      appearance:none;
+      width:18px;height:18px;
+      border-radius:50%;
+      background:var(--accent);
+      box-shadow:0 0 0 3px rgba(37,99,235,.2)
+    }
+    input[type=range]::-moz-range-thumb{
+      width:18px;height:18px;
+      border-radius:50%;
+      background:var(--accent)
+    }
+    .canvasBox{
+      background:#ffffff;
+      border:1px solid var(--border);
+      border-radius:14px;
+      overflow:hidden
+    }
     canvas{display:block;width:100%;background:linear-gradient(180deg,#ffffff,#f8fbff)}
-    .bar{height:10px;border-radius:999px;background:#e7eef9;border:1px solid var(--border);overflow:hidden}
-    .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#60a5fa,#34d399)}
-    .chip{display:inline-block;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#fff;cursor:pointer;margin-right:6px}
+    .chip{
+      display:inline-block;
+      padding:6px 10px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:#fff;
+      cursor:pointer;
+      margin-right:6px
+    }
     .chip:hover{filter:brightness(1.02)}
-    .legend{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:12px}
+    .legend{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      color:var(--muted);
+      font-size:12px
+    }
     .dot{width:10px;height:10px;border-radius:50%}
     footer{text-align:center;color:#111827;padding:18px 12px}
-    .brand{font-weight:800;letter-spacing:.08em;border:2px solid #111827;border-radius:999px;padding:8px 14px;display:inline-block}
+    .brand{
+      font-weight:800;
+      letter-spacing:.08em;
+      border:2px solid #111827;
+      border-radius:999px;
+      padding:8px 14px;
+      display:inline-block
+    }
+    /* 시뮬레이션 카드 안에 들어가는 도전 모드 전용 스타일 */
+    #challengeGroup{
+      margin-top:4px;
+    }
+ .bestScoreBox {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.bestLabel {
+  color: #374151; /* 기존 스타일과 조화되도록 */
+}
+
+.bestIcon {
+  font-size: 18px;
+  filter: drop-shadow(0 0 4px rgba(255, 200, 0, 0.7));
+}
+
+.bestValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffb300;
+  text-shadow: 0 0 6px rgba(255, 190, 0, 0.8);
+}
   </style>
 </head>
 <body>
@@ -98,9 +200,16 @@
           λ′<sub>obs</sub> = <b><span id="lObs">—</span> m</b>
         </div>
       </div>
+    </section>
 
-      <!-- 도전 모드 -->
-      <div class="group" id="challengeGroup" style="margin-top:6px;">
+    <!-- Viz: 시뮬레이션 + 도전 모드가 한 카드 안에 -->
+    <section class="card viz">
+      <div class="canvasBox">
+        <canvas id="canvas" height="420"></canvas>
+      </div>
+
+      <!-- 시뮬레이션 카드 안에 들어가는 도전 모드 -->
+      <div class="group" id="challengeGroup">
         <h3>도전 모드</h3>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
           <button id="btnChallenge" class="chip">도플러 도전 시작</button>
@@ -109,7 +218,11 @@
         <div style="display:flex;gap:10px;font-size:13px;margin-bottom:4px;flex-wrap:wrap;">
           <div>라운드: <strong><span id="gpRound">-</span> / 10</strong></div>
           <div>점수: <strong><span id="gpScore">0</span>점</strong></div>
-          <div>최고 점수: <strong><span id="gpBest">0</span>점</strong></div>
+<div class="bestScoreBox">
+  <span class="bestLabel">최고점수</span>
+  <span class="bestIcon">🏆</span>
+  <span id="gpBest" class="bestValue">0</span>
+</div>
         </div>
 
         <!-- 1~5단계: 개념 문제 -->
@@ -131,7 +244,7 @@
             [6–10단계] 파원의 주파수 f는 고정되어 있습니다.<br>
             <strong>음원 속도 v<sub>s</sub> 슬라이더</strong>를 조절해
             <strong>목표 관측 주파수</strong>에 최대한 가깝게 맞춘 뒤,<br>
-            아래 버튼을 눌러 제출하세요. (±10 Hz 이내면 정답으로 처리)
+            아래 버튼을 눌러 제출하세요. (±0.1 Hz 이내면 정답으로 처리)
           </div>
           <div style="margin-bottom:4px;">
             목표 관측 주파수: <strong><span id="targetFreq">-</span> Hz</strong>
@@ -144,12 +257,9 @@
 
         <div id="gpMessage" style="margin-top:6px;font-size:13px;color:var(--muted);min-height:18px;"></div>
       </div>
-    </section>
 
-    <!-- Viz -->
-    <section class="card viz">
-      <div class="canvasBox"><canvas id="canvas" height="420"></canvas></div>
-      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding:0 4px 8px 4px">
+      <!-- 하단 정보 및 버튼 -->
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding:0 4px 4px 4px">
         <div style="font-size:13px;color:var(--muted)">
           관찰 주파수(정면/후방): <span id="fFront">—</span> / <span id="fBack">—</span> Hz ·
           파장: <span id="lFront">—</span> / <span id="lBack">—</span> m
@@ -202,7 +312,7 @@
       x0: 120, y0: 240, // start position
       emissions: [], // {t,x,y}
       paused: false,
-      fObs: NaN,      // 현재 관찰 주파수 (도전 모드에서 사용)
+      fObs: NaN,      // 현재 관측 주파수 (도전 모드에서 사용)
     };
 
     // 도전 모드 게임 상태
@@ -218,7 +328,7 @@
     };
 
     const SCORE_PER_CORRECT = 50;
-    const FREQ_TOL = 10; // ±10 Hz
+    const FREQ_TOL = 0.1; // ±.01 Hz
 
     function updateScoreUI(){
       gpRoundEl.textContent = game.active ? game.round : '-';
@@ -415,8 +525,6 @@
     updateScoreUI();
     setMessage('도전 모드 버튼을 눌러 문제 풀이를 시작해 보세요.', false);
 
-    function fmt(v){ return Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(1); }
-
     // quick chips
     document.querySelectorAll('.chip[data-vs]').forEach(btn=>{
       btn.addEventListener('click',()=>{ vsEl.value = btn.dataset.vs; });
@@ -445,9 +553,17 @@
     // main update
     let last=performance.now();
     function loop(now){
-      const dtRaw = (now-last)/1000; last = now; const ts = Number(tsEl.value); const dt = Math.min(0.05, dtRaw*ts);
-      const c = Number(cEl.value); const vs = Number(vsEl.value); const f = Number(fEl.value);
-      out_c.textContent = c + ' m/s'; out_vs.textContent = vs + ' m/s'; out_f.textContent = f.toFixed(1) + ' Hz'; out_speed.textContent = ts+'x';
+      const dtRaw = (now-last)/1000; last = now;
+      const ts = Number(tsEl.value);
+      const dt = Math.min(0.05, dtRaw*ts);
+      const c = Number(cEl.value);
+      const vs = Number(vsEl.value);
+      const f = Number(fEl.value);
+      out_c.textContent = c + ' m/s';
+      out_vs.textContent = vs + ' m/s';
+      out_f.textContent = f.toFixed(1) + ' Hz';
+      out_speed.textContent = ts+'x';
+
       // observed frequencies and wavelengths (source moving, observer 정지)
       const fFront = f * (c/(c - vs));
       const fBack  = f * (c/(c + vs));
@@ -455,17 +571,15 @@
       const lBack  = (c + vs)/f; // behind (팽창)
 
       // --- 관측자에서의 도플러 주파수/파장 ---
-      const ox = canvas.width - 80, oy = state.y0;
+      const ox = canvas.width - 80;
       const approaching = (vs > 0 && state.x0 < ox) || (vs < 0 && state.x0 > ox);
 
       let fObs = NaN, lObs = NaN;
       if (Math.abs(vs) < c) {
-        // 정지 관측자, 이동 음원(1D): f′ = f * v / (v − s*vs),  s=+1(접근), −1(이탈)
         const s = approaching ? +1 : -1;
         fObs = f * (c / (c - s * vs));
         lObs = c / fObs;
       }
-      // 표시에 반영
       $('fObs').textContent = isFinite(fObs) ? fObs.toFixed(2) : '—';
       $('lObs').textContent = isFinite(lObs) ? lObs.toFixed(2) : '—';
       fFrontEl.textContent = isFinite(fFront)? fFront.toFixed(2) : '—';
@@ -482,17 +596,17 @@
       if(!state.paused){
         state.t += dt;
         state.emitAcc += dt;
-        // emit a new wavefront every 1/f seconds
         const period = 1/Math.max(0.1, f);
         while(state.emitAcc >= period){
-          const te = state.t - state.emitAcc + period; // closer to exact times
-          const xe = state.x0 - vs * (state.t - te); state.emissions.push({t: te, x: xe, y: state.y0});
+          const te = state.t - state.emitAcc + period;
+          const xe = state.x0 - vs * (state.t - te);
+          state.emissions.push({t: te, x: xe, y: state.y0});
           state.emitAcc -= period;
         }
-        // move source
         state.x0 += vs * dt;
-        // wrap-around
-        const margin = 200; if(state.x0 > canvas.width + margin) state.x0 = -margin; if(state.x0 < -margin) state.x0 = canvas.width + margin;
+        const margin = 200;
+        if(state.x0 > canvas.width + margin) state.x0 = -margin;
+        if(state.x0 < -margin)               state.x0 = canvas.width + margin;
       }
 
       draw(c, vs, f, lFront, lBack);
@@ -500,29 +614,46 @@
     }
 
     function draw(c, vs, f, lFront, lBack){
-      const w = canvas.width, h = canvas.height; ctx.clearRect(0,0,w,h);
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0,0,w,h);
+
       // grid
-      ctx.strokeStyle = '#eef2ff'; ctx.lineWidth=1;
+      ctx.strokeStyle = '#eef2ff';
+      ctx.lineWidth=1;
       ctx.beginPath();
       for(let x=40;x<w;x+=40){ctx.moveTo(x,0);ctx.lineTo(x,h);}
       for(let y=40;y<h;y+=40){ctx.moveTo(0,y);ctx.lineTo(w,y);}
       ctx.stroke();
 
       // observer icon (right side)
-      const oy = state.y0; const ox = w - 80;
+      const oy = state.y0;
+      const ox = w - 80;
       ctx.fillStyle='#10b981';
       ctx.fillRect(ox-3, oy-30, 6, 30);
-      ctx.beginPath(); ctx.arc(ox, oy-36, 6, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(ox, oy-36, 6, 0, Math.PI*2);
+      ctx.fill();
 
       // wavefront circles
-      ctx.strokeStyle = '#60a5fa'; ctx.lineWidth=1.6;
-      const now = state.t; const maxAge = 6 / Math.max(0.1, f); // keep ~6 periods
+      ctx.strokeStyle = '#60a5fa';
+      ctx.lineWidth=1.6;
+      const now = state.t;
+      const maxAge = 6 / Math.max(0.1, f);
       const kept = [];
       for(const wf of state.emissions){
-        const age = now - wf.t; if(age < 0) continue; const r = c * age;
-        const px = wf.x; const py = wf.y; const R = r;
-        if(R < 2 || px + R < -50 || px - R > w+50) { if(now - wf.t < maxAge) kept.push(wf); continue; }
-        ctx.beginPath(); ctx.arc(px, py, R, 0, Math.PI*2); ctx.stroke();
+        const age = now - wf.t;
+        if(age < 0) continue;
+        const r = c * age;
+        const px = wf.x;
+        const py = wf.y;
+        const R = r;
+        if(R < 2 || px + R < -50 || px - R > w+50) {
+          if(now - wf.t < maxAge) kept.push(wf);
+          continue;
+        }
+        ctx.beginPath();
+        ctx.arc(px, py, R, 0, Math.PI*2);
+        ctx.stroke();
         if(now - wf.t < maxAge) kept.push(wf);
       }
       state.emissions = kept;
@@ -530,24 +661,30 @@
       // source (car)
       const sx = state.x0, sy = state.y0;
       ctx.fillStyle = '#ef4444';
-      // car body
       ctx.fillRect(sx-18, sy-12, 36, 16);
-      ctx.beginPath(); ctx.arc(sx-10, sy+5, 4, 0, Math.PI*2); ctx.arc(sx+10, sy+5, 4, 0, Math.PI*2); ctx.fillStyle='#111'; ctx.fill();
+      ctx.beginPath();
+      ctx.arc(sx-10, sy+5, 4, 0, Math.PI*2);
+      ctx.arc(sx+10, sy+5, 4, 0, Math.PI*2);
+      ctx.fillStyle='#111';
+      ctx.fill();
+
       // direction arrow
-      ctx.beginPath(); ctx.moveTo(sx, sy-22); ctx.lineTo(sx + Math.sign(vs)*20, sy-22); ctx.lineTo(sx + Math.sign(vs)*16, sy-26); ctx.moveTo(sx + Math.sign(vs)*20, sy-22); ctx.lineTo(sx + Math.sign(vs)*16, sy-18); ctx.strokeStyle='#94a3b8'; ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(sx, sy-22);
+      ctx.lineTo(sx + Math.sign(vs)*20, sy-22);
+      ctx.lineTo(sx + Math.sign(vs)*16, sy-26);
+      ctx.moveTo(sx + Math.sign(vs)*20, sy-22);
+      ctx.lineTo(sx + Math.sign(vs)*16, sy-18);
+      ctx.strokeStyle='#94a3b8';
+      ctx.stroke();
 
       // Mach cone (only when |vs|>c)
       if (showMach.checked && Math.abs(vs) > c) {
         const M = Math.abs(vs) / c;
-        const mu = Math.asin(1 / M);          // 마하각
+        const mu = Math.asin(1 / M);
         const ax = sx, ay = sy, len = 1200;
-
-        // 이동 방향(φ): 오른쪽=0, 왼쪽=π
         const phi = (vs >= 0) ? 0 : Math.PI;
-
-        // '뒤쪽' 기준각 = φ + π  (오른쪽 이동이면 π, 왼쪽 이동이면 0)
         const base = (phi + Math.PI) % (2 * Math.PI);
-
         const ang1 = base + mu;
         const ang2 = base - mu;
 
@@ -555,42 +692,65 @@
         ctx.setLineDash([6, 6]);
         ctx.lineWidth = 2;
 
-        ctx.beginPath(); ctx.moveTo(ax, ay);
-        ctx.lineTo(ax + len * Math.cos(ang1), ay + len * Math.sin(ang1)); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(ax + len * Math.cos(ang1), ay + len * Math.sin(ang1));
+        ctx.stroke();
 
-        ctx.beginPath(); ctx.moveTo(ax, ay);
-        ctx.lineTo(ax + len * Math.cos(ang2), ay + len * Math.sin(ang2)); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(ax + len * Math.cos(ang2), ay + len * Math.sin(ang2));
+        ctx.stroke();
 
-        ctx.setLineDash([]); 
+        ctx.setLineDash([]);
         ctx.lineWidth = 1.6;
       }
 
       // Lambda markers ahead/behind along motion direction
       if(showLambda.checked){
-        const dir = Math.sign(vs) || 1; // default right
-        const front = sx + dir*30; const back = sx - dir*30;
+        const dir = Math.sign(vs) || 1;
+        const front = sx + dir*30;
+        const back = sx - dir*30;
         // front
-        ctx.strokeStyle='#64748b'; ctx.beginPath(); ctx.moveTo(front, sy+16); ctx.lineTo(front + dir*lFront, sy+16); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(front, sy+12); ctx.lineTo(front, sy+20); ctx.moveTo(front + dir*lFront, sy+12); ctx.lineTo(front + dir*lFront, sy+20); ctx.stroke();
-        ctx.fillStyle='#64748b'; ctx.fillText('λ′(front)', front + dir*lFront/2 - 18, sy+28);
+        ctx.strokeStyle='#64748b';
+        ctx.beginPath();
+        ctx.moveTo(front, sy+16);
+        ctx.lineTo(front + dir*lFront, sy+16);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(front, sy+12);
+        ctx.lineTo(front, sy+20);
+        ctx.moveTo(front + dir*lFront, sy+12);
+        ctx.lineTo(front + dir*lFront, sy+20);
+        ctx.stroke();
+        ctx.fillStyle='#64748b';
+        ctx.fillText('λ′(front)', front + dir*lFront/2 - 18, sy+28);
         // back
-        ctx.beginPath(); ctx.moveTo(back, sy+34); ctx.lineTo(back - dir*lBack, sy+34); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(back, sy+30); ctx.lineTo(back, sy+38); ctx.moveTo(back - dir*lBack, sy+30); ctx.lineTo(back - dir*lBack, sy+38); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(back, sy+34);
+        ctx.lineTo(back - dir*lBack, sy+34);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(back, sy+30);
+        ctx.lineTo(back, sy+38);
+        ctx.moveTo(back - dir*lBack, sy+30);
+        ctx.lineTo(back - dir*lBack, sy+38);
+        ctx.stroke();
         ctx.fillText('λ′(back)', back - dir*lBack/2 - 16, sy+46);
       }
 
       // labels
-      ctx.fillStyle = '#0f172a'; ctx.fillText(`Mach = |v_s|/v = ${(Math.abs(vs)/c).toFixed(2)}`, 14, 24);
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText(`Mach = |v_s|/v = ${(Math.abs(vs)/c).toFixed(2)}`, 14, 24);
     }
 
     requestAnimationFrame(loop);
   </script>
- <script type="module">
+  <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
-    // 스넬의 법칙 시뮬레이터에 쓰던 것과 같은 Firebase 프로젝트 설정
     const firebaseConfig = {
       apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
       authDomain: "simulation-67cd3.firebaseapp.com",
@@ -605,27 +765,19 @@
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
-    // 이 파일만의 시뮬레이션 ID (컬렉션 키)
     const SIM_ID = "도플러_효과";
-
     let firebaseUser = null;
 
-    // ✅ 최고 점수 저장 (users/{uid}/simulations/도플러_효과)
     async function saveBestScore(score) {
       if (!firebaseUser) return;
       try {
         const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
-        await setDoc(
-          ref,
-          { score: Number(score) || 0 },
-          { merge: true }
-        );
+        await setDoc(ref, { score: Number(score) || 0 }, { merge: true });
       } catch (err) {
         console.error("[도플러 효과] 최고 점수 저장 오류:", err);
       }
     }
 
-    // ✅ 최고 점수 불러오기
     async function loadBestScore() {
       if (!firebaseUser) return;
       try {
@@ -634,7 +786,6 @@
         if (snap.exists()) {
           const data  = snap.data();
           const score = Number(data.score || 0) || 0;
-          // 도플러 시뮬레이터 쪽에서 정의한 훅 호출
           if (window.setBestScoreFromFirebase) {
             window.setBestScoreFromFirebase(score);
           }
@@ -644,11 +795,8 @@
       }
     }
 
-    // ✅ 도플러 JS에서 부르는 훅 구현
-    // (applyScore 안에서 window.saveBestScoreToFirebase(...) 호출하도록 이미 만들어 둔 상태)
     window.saveBestScoreToFirebase = saveBestScore;
 
-    // ✅ 로그인 상태가 바뀔 때마다 최고 점수 자동 로드
     onAuthStateChanged(auth, async (user) => {
       firebaseUser = user;
       if (user) {
