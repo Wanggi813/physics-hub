@@ -77,33 +77,83 @@
         <div class="dot" style="background:#60a5fa"></div> 파면(동심원)
         <div class="dot" style="background:#10b981"></div> 관찰자
       </div>
-<!-- Theory / Formula box -->
-<div class="group" style="background:#fdfcff;border:1px solid var(--border);border-radius:14px;padding:10px 12px;margin:6px 0 8px;">
-  <div style="font-weight:600;margin-bottom:6px">이론 · 공식</div>
-  <div class="eq">파장: <span style="white-space:nowrap">λ = v / f</span></div>
-  <div class="eq" style="margin-top:4px">
-    정지 관측자, 이동 음원(1차원): 
-    앞쪽&nbsp;f′<sub>front</sub> = <span style="white-space:nowrap">v/(v−v<sub>s</sub>)</span>·f,&nbsp; 
-    뒤쪽&nbsp;f′<sub>back</sub> = <span style="white-space:nowrap">v/(v+v<sub>s</sub>)</span>·f
-  </div>
-  <div class="eq" style="margin-top:4px;color:#5b657a">
-    일반식(관측자 속도 v<sub>o</sub> 포함): 
-    <span style="white-space:nowrap">f′ = ((v ± v<sub>o</sub>)/(v ∓ v<sub>s</sub>))·f</span>
-    <small style="color:#94a3b8"> (±는 접근/이탈 부호 규약)</small>
-  </div>
-  <div style="margin-top:6px;font-size:13px;color:#374151">
-    지금 관측자 위치에서: 
-    f′<sub>obs</sub> = <b><span id="fObs">—</span> Hz</b>, 
-    λ′<sub>obs</sub> = <b><span id="lObs">—</span> m</b>
-  </div>
-</div>
+
+      <!-- Theory / Formula box -->
+      <div class="group" style="background:#fdfcff;border:1px solid var(--border);border-radius:14px;padding:10px 12px;margin:6px 0 8px;">
+        <div style="font-weight:600;margin-bottom:6px">이론 · 공식</div>
+        <div class="eq">파장: <span style="white-space:nowrap">λ = v / f</span></div>
+        <div class="eq" style="margin-top:4px">
+          정지 관측자, 이동 음원(1차원): 
+          앞쪽&nbsp;f′<sub>front</sub> = <span style="white-space:nowrap">v/(v−v<sub>s</sub>)</span>·f,&nbsp; 
+          뒤쪽&nbsp;f′<sub>back</sub> = <span style="white-space:nowrap">v/(v+v<sub>s</sub>)</span>·f
+        </div>
+        <div class="eq" style="margin-top:4px;color:#5b657a">
+          일반식(관측자 속도 v<sub>o</sub> 포함): 
+          <span style="white-space:nowrap">f′ = ((v ± v<sub>o</sub>)/(v ∓ v<sub>s</sub>))·f</span>
+          <small style="color:#94a3b8"> (±는 접근/이탈 부호 규약)</small>
+        </div>
+        <div style="margin-top:6px;font-size:13px;color:#374151">
+          지금 관측자 위치에서: 
+          f′<sub>obs</sub> = <b><span id="fObs">—</span> Hz</b>, 
+          λ′<sub>obs</sub> = <b><span id="lObs">—</span> m</b>
+        </div>
+      </div>
+
+      <!-- 도전 모드 -->
+      <div class="group" id="challengeGroup" style="margin-top:6px;">
+        <h3>도전 모드</h3>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+          <button id="btnChallenge" class="chip">도플러 도전 시작</button>
+          <div style="font-size:12px;color:var(--muted);">총 10라운드 · 정답당 50점</div>
+        </div>
+        <div style="display:flex;gap:10px;font-size:13px;margin-bottom:4px;flex-wrap:wrap;">
+          <div>라운드: <strong><span id="gpRound">-</span> / 10</strong></div>
+          <div>점수: <strong><span id="gpScore">0</span>점</strong></div>
+          <div>최고 점수: <strong><span id="gpBest">0</span>점</strong></div>
+        </div>
+
+        <!-- 1~5단계: 개념 문제 -->
+        <div id="phase1Box" style="margin-top:4px;display:none;font-size:13px;">
+          <div style="margin-bottom:4px;">
+            [1–5단계] 주어진 음원 속도(v<sub>s</sub>)와 주파수(f)를 보고,<br>
+            관찰 주파수가 <strong>증가 / 감소 / 소닉붐</strong> 중 무엇인지 고르세요.
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+            <button class="chip" id="btnAnsUp">주파수 증가</button>
+            <button class="chip" id="btnAnsDown">주파수 감소</button>
+            <button class="chip" id="btnAnsBoom">소닉붐(마하 콘)</button>
+          </div>
+        </div>
+
+        <!-- 6~10단계: 수치 맞추기 -->
+        <div id="phase2Box" style="margin-top:4px;display:none;font-size:13px;">
+          <div style="margin-bottom:4px;">
+            [6–10단계] 파원의 주파수 f는 고정되어 있습니다.<br>
+            <strong>음원 속도 v<sub>s</sub> 슬라이더</strong>를 조절해
+            <strong>목표 관측 주파수</strong>에 최대한 가깝게 맞춘 뒤,<br>
+            아래 버튼을 눌러 제출하세요. (±10 Hz 이내면 정답으로 처리)
+          </div>
+          <div style="margin-bottom:4px;">
+            목표 관측 주파수: <strong><span id="targetFreq">-</span> Hz</strong>
+          </div>
+          <div style="margin-bottom:4px;">
+            현재 관측 주파수: <strong><span id="currentFreq">-</span> Hz</strong>
+          </div>
+          <button id="btnSubmitFreq" class="chip">이 속도로 제출</button>
+        </div>
+
+        <div id="gpMessage" style="margin-top:6px;font-size:13px;color:var(--muted);min-height:18px;"></div>
+      </div>
     </section>
 
     <!-- Viz -->
     <section class="card viz">
       <div class="canvasBox"><canvas id="canvas" height="420"></canvas></div>
       <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding:0 4px 8px 4px">
-        <div style="font-size:13px;color:var(--muted)">관찰 주파수(정면/후방): <span id="fFront">—</span> / <span id="fBack">—</span> Hz · 파장: <span id="lFront">—</span> / <span id="lBack">—</span> m</div>
+        <div style="font-size:13px;color:var(--muted)">
+          관찰 주파수(정면/후방): <span id="fFront">—</span> / <span id="fBack">—</span> Hz ·
+          파장: <span id="lFront">—</span> / <span id="lBack">—</span> m
+        </div>
         <div style="margin-left:auto;display:flex;gap:8px">
           <button id="btnReset" class="chip">초기화</button>
           <button id="btnPause" class="chip">일시정지</button>
@@ -127,17 +177,243 @@
     const btnReset=$('btnReset'), btnPause=$('btnPause');
     const showMach=$('showMach'), showLambda=$('showLambda');
 
+    // 도전 모드 요소
+    const btnChallenge = $('btnChallenge');
+    const gpRoundEl = $('gpRound');
+    const gpScoreEl = $('gpScore');
+    const gpBestEl  = $('gpBest');
+    const gpMessageEl = $('gpMessage');
+    const phase1Box = $('phase1Box');
+    const phase2Box = $('phase2Box');
+    const btnAnsUp   = $('btnAnsUp');
+    const btnAnsDown = $('btnAnsDown');
+    const btnAnsBoom = $('btnAnsBoom');
+    const targetFreqEl  = $('targetFreq');
+    const currentFreqEl = $('currentFreq');
+    const btnSubmitFreq = $('btnSubmitFreq');
+
     // world scale
     function resize(){ canvas.width = canvas.clientWidth; }
     window.addEventListener('resize', resize); resize();
 
     // simulation state
     const state = {
-      t: 0, emitAcc: 0, 
+      t: 0, emitAcc: 0,
       x0: 120, y0: 240, // start position
       emissions: [], // {t,x,y}
       paused: false,
+      fObs: NaN,      // 현재 관찰 주파수 (도전 모드에서 사용)
     };
+
+    // 도전 모드 게임 상태
+    const game = {
+      active: false,
+      round: 0,
+      totalRounds: 10,
+      score: 0,
+      bestScore: Number(localStorage.getItem('dopplerBestScore') || 0) || 0,
+      phase: 0,           // 1: 개념, 2: 수치 맞추기
+      correctKey: null,   // 'up' | 'down' | 'boom'
+      targetFreq: null,   // 목표 관측 주파수
+    };
+
+    const SCORE_PER_CORRECT = 50;
+    const FREQ_TOL = 10; // ±10 Hz
+
+    function updateScoreUI(){
+      gpRoundEl.textContent = game.active ? game.round : '-';
+      gpScoreEl.textContent = game.score;
+      gpBestEl.textContent  = game.bestScore;
+    }
+
+    function setMessage(msg, isGood){
+      gpMessageEl.textContent = msg || '';
+      gpMessageEl.style.color = isGood ? '#16a34a' : '#5b657a';
+    }
+
+    function resetSimPosition(){
+      state.t = 0;
+      state.emitAcc = 0;
+      state.emissions.length = 0;
+      state.x0 = 120;
+    }
+
+    function applyScore(isCorrect){
+      if (!isCorrect){
+        setMessage('아쉽지만 오답입니다. 다음 라운드로 넘어갑니다.', false);
+        return;
+      }
+      game.score += SCORE_PER_CORRECT;
+      setMessage(`정답입니다! +${SCORE_PER_CORRECT}점 🎉`, true);
+
+      if (game.score > game.bestScore){
+        game.bestScore = game.score;
+        localStorage.setItem('dopplerBestScore', String(game.bestScore));
+        // 인덱스에서 Firebase 연동할 때 쓸 수 있도록 열어둠
+        if (window.saveBestScoreToFirebase){
+          try { window.saveBestScoreToFirebase(game.bestScore); } catch(e){}
+        }
+      }
+      updateScoreUI();
+    }
+
+    function endGame(){
+      setMessage(`도전 종료! 최종 점수는 ${game.score}점입니다.`, true);
+      phase1Box.style.display = 'none';
+      phase2Box.style.display = 'none';
+      game.active = false;
+      game.phase = 0;
+      gpRoundEl.textContent = '-';
+      // 슬라이더 다시 풀어주기
+      fEl.disabled = false;
+      vsEl.disabled = false;
+    }
+
+    // ----- 1~5단계: 개념 문제 -----
+    function setupPhase1Round(){
+      const c = Number(cEl.value) || 340;
+      cEl.value = c;
+
+      // 주파수는 고정(2 Hz 근처로 단순하게)
+      const baseF = 2.0;
+      fEl.value = baseF;
+      out_f.textContent = baseF.toFixed(1) + ' Hz';
+
+      // 라운드별 시나리오 (마지막은 초음속)
+      const scenarios = [
+        {vs: -150},
+        {vs: -80},
+        {vs: 80},
+        {vs: 160},
+        {vs: 500},
+      ];
+      const idx = (game.round - 1) % scenarios.length;
+      const vs  = scenarios[idx].vs;
+      vsEl.value = vs;
+      out_vs.textContent = vs + ' m/s';
+
+      // 파동 초기화
+      resetSimPosition();
+
+      // 관측자 위치 기준으로 접근/이탈 판단
+      const w  = canvas.width;
+      const ox = w - 80;
+      const approaching = (vs > 0 && state.x0 < ox) || (vs < 0 && state.x0 > ox);
+
+      let key;
+      if (Math.abs(vs) > c){
+        key = 'boom';
+      } else {
+        key = approaching ? 'up' : 'down';
+      }
+      game.correctKey = key;
+
+      phase1Box.style.display = 'block';
+      phase2Box.style.display = 'none';
+      // 개념 단계에서는 vs는 고정해두는 편이 좋아서 잠시 잠금
+      vsEl.disabled = true;
+      fEl.disabled = true;
+
+      setMessage('현재 설정에서 관찰 주파수의 변화(증가/감소/소닉붐)를 골라보세요.', false);
+    }
+
+    function handlePhase1Answer(choice){
+      if (!game.active || game.phase !== 1) return;
+      const isCorrect = (choice === game.correctKey);
+      applyScore(isCorrect);
+      setTimeout(nextRound, 800);
+    }
+
+    // ----- 6~10단계: 수치 맞추기 -----
+    function setupPhase2Round(){
+      const c = Number(cEl.value) || 340;
+      cEl.value = c;
+
+      // 파원의 주파수 f 고정 (3~6 Hz 범위)
+      const baseF = 3 + Math.random() * 3;
+      fEl.value = baseF.toFixed(1);
+      out_f.textContent = baseF.toFixed(1) + ' Hz';
+
+      // 목표 관측 주파수 만들기
+      const maxVs = 0.7 * c; // 초음속 직전까지
+      let vsTarget = (Math.random() < 0.5 ? -1 : 1) * (50 + Math.random() * (maxVs - 50));
+
+      const w  = canvas.width;
+      const ox = w - 80;
+      const approaching = (vsTarget > 0 && state.x0 < ox) || (vsTarget < 0 && state.x0 > ox);
+      const s = approaching ? +1 : -1;
+      const fTarget = baseF * (c / (c - s * vsTarget));
+
+      game.targetFreq = fTarget;
+      targetFreqEl.textContent  = fTarget.toFixed(1);
+      currentFreqEl.textContent = isFinite(state.fObs) ? state.fObs.toFixed(1) : '—';
+
+      // 실제 시뮬레이션 시작 상태는 vs=0에서 출발
+      vsEl.value = 0;
+      out_vs.textContent = '0 m/s';
+      resetSimPosition();
+
+      // 수치 맞추기 단계에서는 vs는 학생이 조절할 수 있어야 하고 f는 고정
+      vsEl.disabled = false;
+      fEl.disabled = true;
+
+      phase1Box.style.display = 'none';
+      phase2Box.style.display = 'block';
+      setMessage('음원 속도 슬라이더로 관측 주파수를 목표 값에 가깝게 맞춘 뒤 "이 속도로 제출"을 눌러보세요. (±10 Hz)', false);
+    }
+
+    function handleFreqSubmit(){
+      if (!game.active || game.phase !== 2) return;
+      const fObs = state.fObs;
+      if (!isFinite(fObs)){
+        setMessage('현재 관측 주파수를 계산할 수 없습니다. (초음속 등) 속도를 조금 조정해 주세요.', false);
+        return;
+      }
+      currentFreqEl.textContent = fObs.toFixed(1);
+      const diff = Math.abs(fObs - game.targetFreq);
+      const isCorrect = diff <= FREQ_TOL;
+      applyScore(isCorrect);
+      setTimeout(nextRound, 800);
+    }
+
+    // ----- 도전 모드 컨트롤 -----
+    function startChallenge(){
+      game.active = true;
+      game.round  = 0;
+      game.score  = 0;
+      game.phase  = 0;
+      setMessage('도전 모드 시작! 1단계부터 차근차근 풀어봅시다.', false);
+      updateScoreUI();
+      nextRound();
+    }
+
+    function nextRound(){
+      if (!game.active) return;
+      if (game.round >= game.totalRounds){
+        endGame();
+        return;
+      }
+      game.round++;
+      updateScoreUI();
+
+      if (game.round <= 5){
+        game.phase = 1;
+        setupPhase1Round();
+      } else {
+        game.phase = 2;
+        setupPhase2Round();
+      }
+    }
+
+    // 외부(Firebase 모듈 등)에서 최고 점수 로드할 때 사용할 수 있도록
+    window.setBestScoreFromFirebase = function(score){
+      game.bestScore = Number(score) || 0;
+      updateScoreUI();
+    };
+
+    // 초기 UI 세팅
+    updateScoreUI();
+    setMessage('도전 모드 버튼을 눌러 문제 풀이를 시작해 보세요.', false);
 
     function fmt(v){ return Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(1); }
 
@@ -146,8 +422,25 @@
       btn.addEventListener('click',()=>{ vsEl.value = btn.dataset.vs; });
     });
 
-    btnReset.addEventListener('click',()=>{ state.t=0; state.emitAcc=0; state.emissions.length=0; state.x0=120; })
-    btnPause.addEventListener('click',()=>{ state.paused = !state.paused; btnPause.textContent = state.paused? '재생' : '일시정지'; });
+    btnReset.addEventListener('click',()=>{
+      state.t=0; state.emitAcc=0; state.emissions.length=0; state.x0=120;
+    });
+    btnPause.addEventListener('click',()=>{
+      state.paused = !state.paused; btnPause.textContent = state.paused? '재생' : '일시정지';
+    });
+
+    // 도전 모드 버튼들
+    if (btnChallenge){
+      btnChallenge.addEventListener('click', startChallenge);
+    }
+    if (btnAnsUp){
+      btnAnsUp.addEventListener('click',   ()=>handlePhase1Answer('up'));
+      btnAnsDown.addEventListener('click', ()=>handlePhase1Answer('down'));
+      btnAnsBoom.addEventListener('click', ()=>handlePhase1Answer('boom'));
+    }
+    if (btnSubmitFreq){
+      btnSubmitFreq.addEventListener('click', handleFreqSubmit);
+    }
 
     // main update
     let last=performance.now();
@@ -160,26 +453,31 @@
       const fBack  = f * (c/(c + vs));
       const lFront = (c - vs)/f; // ahead (압축)
       const lBack  = (c + vs)/f; // behind (팽창)
-// --- 관측자에서의 도플러 주파수/파장 ---
-const ox = canvas.width - 80, oy = state.y0;
 
-// 소스가 관측자 쪽으로 접근 중인지 판별
-const approaching = (vs > 0 && state.x0 < ox) || (vs < 0 && state.x0 > ox);
+      // --- 관측자에서의 도플러 주파수/파장 ---
+      const ox = canvas.width - 80, oy = state.y0;
+      const approaching = (vs > 0 && state.x0 < ox) || (vs < 0 && state.x0 > ox);
 
-let fObs = NaN, lObs = NaN;
-if (Math.abs(vs) < c) {
-  // 정지 관측자, 이동 음원(1D): f′ = f * v / (v − s*vs),  s=+1(접근), −1(이탈)
-  const s = approaching ? +1 : -1;
-  fObs = f * (c / (c - s * vs));
-  lObs = c / fObs;
-}
-// 표시에 반영
-$('fObs').textContent = isFinite(fObs) ? fObs.toFixed(2) : '—';
-$('lObs').textContent = isFinite(lObs) ? lObs.toFixed(2) : '—';
+      let fObs = NaN, lObs = NaN;
+      if (Math.abs(vs) < c) {
+        // 정지 관측자, 이동 음원(1D): f′ = f * v / (v − s*vs),  s=+1(접근), −1(이탈)
+        const s = approaching ? +1 : -1;
+        fObs = f * (c / (c - s * vs));
+        lObs = c / fObs;
+      }
+      // 표시에 반영
+      $('fObs').textContent = isFinite(fObs) ? fObs.toFixed(2) : '—';
+      $('lObs').textContent = isFinite(lObs) ? lObs.toFixed(2) : '—';
       fFrontEl.textContent = isFinite(fFront)? fFront.toFixed(2) : '—';
       fBackEl.textContent  = isFinite(fBack)?  fBack.toFixed(2)  : '—';
       lFrontEl.textContent = isFinite(lFront)? lFront.toFixed(2) : '—';
       lBackEl.textContent  = isFinite(lBack)?  lBack.toFixed(2)  : '—';
+
+      // 도전 모드용 현재 관측 주파수 저장
+      state.fObs = fObs;
+      if (currentFreqEl && game.active && game.phase === 2){
+        currentFreqEl.textContent = isFinite(fObs) ? fObs.toFixed(1) : '—';
+      }
 
       if(!state.paused){
         state.t += dt;
@@ -204,10 +502,17 @@ $('lObs').textContent = isFinite(lObs) ? lObs.toFixed(2) : '—';
     function draw(c, vs, f, lFront, lBack){
       const w = canvas.width, h = canvas.height; ctx.clearRect(0,0,w,h);
       // grid
-      ctx.strokeStyle = '#eef2ff'; ctx.lineWidth=1; ctx.beginPath(); for(let x=40;x<w;x+=40){ctx.moveTo(x,0);ctx.lineTo(x,h);} for(let y=40;y<h;y+=40){ctx.moveTo(0,y);ctx.lineTo(w,y);} ctx.stroke();
+      ctx.strokeStyle = '#eef2ff'; ctx.lineWidth=1;
+      ctx.beginPath();
+      for(let x=40;x<w;x+=40){ctx.moveTo(x,0);ctx.lineTo(x,h);}
+      for(let y=40;y<h;y+=40){ctx.moveTo(0,y);ctx.lineTo(w,y);}
+      ctx.stroke();
 
       // observer icon (right side)
-      const oy = state.y0; const ox = w - 80; ctx.fillStyle='#10b981'; ctx.fillRect(ox-3, oy-30, 6, 30); ctx.beginPath(); ctx.arc(ox, oy-36, 6, 0, Math.PI*2); ctx.fill();
+      const oy = state.y0; const ox = w - 80;
+      ctx.fillStyle='#10b981';
+      ctx.fillRect(ox-3, oy-30, 6, 30);
+      ctx.beginPath(); ctx.arc(ox, oy-36, 6, 0, Math.PI*2); ctx.fill();
 
       // wavefront circles
       ctx.strokeStyle = '#60a5fa'; ctx.lineWidth=1.6;
@@ -232,33 +537,33 @@ $('lObs').textContent = isFinite(lObs) ? lObs.toFixed(2) : '—';
       ctx.beginPath(); ctx.moveTo(sx, sy-22); ctx.lineTo(sx + Math.sign(vs)*20, sy-22); ctx.lineTo(sx + Math.sign(vs)*16, sy-26); ctx.moveTo(sx + Math.sign(vs)*20, sy-22); ctx.lineTo(sx + Math.sign(vs)*16, sy-18); ctx.strokeStyle='#94a3b8'; ctx.stroke();
 
       // Mach cone (only when |vs|>c)
-    if (showMach.checked && Math.abs(vs) > c) {
-  const M = Math.abs(vs) / c;
-  const mu = Math.asin(1 / M);          // 마하각
-  const ax = sx, ay = sy, len = 1200;
+      if (showMach.checked && Math.abs(vs) > c) {
+        const M = Math.abs(vs) / c;
+        const mu = Math.asin(1 / M);          // 마하각
+        const ax = sx, ay = sy, len = 1200;
 
-  // 이동 방향(φ): 오른쪽=0, 왼쪽=π
-  const phi = (vs >= 0) ? 0 : Math.PI;
+        // 이동 방향(φ): 오른쪽=0, 왼쪽=π
+        const phi = (vs >= 0) ? 0 : Math.PI;
 
-  // '뒤쪽' 기준각 = φ + π  (오른쪽 이동이면 π, 왼쪽 이동이면 0)
-  const base = (phi + Math.PI) % (2 * Math.PI); // vs>=0 ? Math.PI : 0 과 동일
+        // '뒤쪽' 기준각 = φ + π  (오른쪽 이동이면 π, 왼쪽 이동이면 0)
+        const base = (phi + Math.PI) % (2 * Math.PI);
 
-  const ang1 = base + mu;
-  const ang2 = base - mu;
+        const ang1 = base + mu;
+        const ang2 = base - mu;
 
-  ctx.strokeStyle = '#f59e0b';
-  ctx.setLineDash([6, 6]);
-  ctx.lineWidth = 2;
+        ctx.strokeStyle = '#f59e0b';
+        ctx.setLineDash([6, 6]);
+        ctx.lineWidth = 2;
 
-  ctx.beginPath(); ctx.moveTo(ax, ay);
-  ctx.lineTo(ax + len * Math.cos(ang1), ay + len * Math.sin(ang1)); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(ax, ay);
+        ctx.lineTo(ax + len * Math.cos(ang1), ay + len * Math.sin(ang1)); ctx.stroke();
 
-  ctx.beginPath(); ctx.moveTo(ax, ay);
-  ctx.lineTo(ax + len * Math.cos(ang2), ay + len * Math.sin(ang2)); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(ax, ay);
+        ctx.lineTo(ax + len * Math.cos(ang2), ay + len * Math.sin(ang2)); ctx.stroke();
 
-  ctx.setLineDash([]); 
-  ctx.lineWidth = 1.6;
-}
+        ctx.setLineDash([]); 
+        ctx.lineWidth = 1.6;
+      }
 
       // Lambda markers ahead/behind along motion direction
       if(showLambda.checked){
@@ -279,6 +584,77 @@ $('lObs').textContent = isFinite(lObs) ? lObs.toFixed(2) : '—';
     }
 
     requestAnimationFrame(loop);
+  </script>
+ <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+    // 스넬의 법칙 시뮬레이터에 쓰던 것과 같은 Firebase 프로젝트 설정
+    const firebaseConfig = {
+      apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
+      authDomain: "simulation-67cd3.firebaseapp.com",
+      projectId: "simulation-67cd3",
+      storageBucket: "simulation-67cd3.appspot.com",
+      messagingSenderId: "615983461615",
+      appId: "1:615983461615:web:002e07bcea878eb6d5571a",
+      measurementId: "G-9RGN7LYE5W"
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    // 이 파일만의 시뮬레이션 ID (컬렉션 키)
+    const SIM_ID = "도플러_효과";
+
+    let firebaseUser = null;
+
+    // ✅ 최고 점수 저장 (users/{uid}/simulations/도플러_효과)
+    async function saveBestScore(score) {
+      if (!firebaseUser) return;
+      try {
+        const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+        await setDoc(
+          ref,
+          { score: Number(score) || 0 },
+          { merge: true }
+        );
+      } catch (err) {
+        console.error("[도플러 효과] 최고 점수 저장 오류:", err);
+      }
+    }
+
+    // ✅ 최고 점수 불러오기
+    async function loadBestScore() {
+      if (!firebaseUser) return;
+      try {
+        const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          const data  = snap.data();
+          const score = Number(data.score || 0) || 0;
+          // 도플러 시뮬레이터 쪽에서 정의한 훅 호출
+          if (window.setBestScoreFromFirebase) {
+            window.setBestScoreFromFirebase(score);
+          }
+        }
+      } catch (err) {
+        console.error("[도플러 효과] 최고 점수 불러오기 오류:", err);
+      }
+    }
+
+    // ✅ 도플러 JS에서 부르는 훅 구현
+    // (applyScore 안에서 window.saveBestScoreToFirebase(...) 호출하도록 이미 만들어 둔 상태)
+    window.saveBestScoreToFirebase = saveBestScore;
+
+    // ✅ 로그인 상태가 바뀔 때마다 최고 점수 자동 로드
+    onAuthStateChanged(auth, async (user) => {
+      firebaseUser = user;
+      if (user) {
+        await loadBestScore();
+      }
+    });
   </script>
 </body>
 </html>
