@@ -18,25 +18,7 @@ import {
   getDocs
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
-
-function applyRankImage(score) {
-  const imgEl = document.getElementById("rank-img");
-  const nameEl = document.getElementById("rank-name");
-  if (!imgEl || !nameEl) return;
-
-  const fileName = getRankImageFile(score);
-  imgEl.src = `./rank/${fileName}`;
-
-  const meta = rankMeta[fileName];
-  if (meta) {
-    nameEl.textContent = meta.en;
-    nameEl.style.color = meta.color;
-  } else {
-    nameEl.textContent = "";
-  }
-}
-
-// Firebase 설정
+// ====================== Firebase 기본 설정 ======================
 const firebaseConfig = {
   apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
   authDomain: "simulation-67cd3.firebaseapp.com",
@@ -61,7 +43,9 @@ let currentUser = null;
 let currentScore = 0;
 let currentUserIdText = ""; // Firestore에 저장된 ID (혹은 email 앞부분)
 
-// 랭크 메타 정보 (파일명 → 영어 이름 / 색상)
+// ====================== 랭크 메타 / 이미지 / 이름 ======================
+
+// 파일명 → 영어 이름 / 대표 색상
 const rankMeta = {
   "아이언.png":         { en: "IRON",        color: "#5B4636" },
   "브론즈.png":         { en: "BRONZE",      color: "#8A5A3A" },
@@ -74,6 +58,7 @@ const rankMeta = {
   "챌린저.png":         { en: "CHALLENGER",  color: "#F24A24" }
 };
 
+// 점수 → 랭크 이미지 파일명
 function getRankImageFile(score) {
   const s = Number(score) || 0;
 
@@ -88,6 +73,7 @@ function getRankImageFile(score) {
   return "챌린저.png";
 }
 
+// 이미지와 아래 영어 이름/색상 적용
 function applyRankImage(score) {
   const imgEl  = document.getElementById("rank-img");
   const nameEl = document.getElementById("rank-name");
@@ -124,12 +110,12 @@ function updateInfoPanel() {
   } else {
     if (idLabel)  idLabel.textContent  = "아이디: -";
     if (scoreBig) scoreBig.textContent = "0점";
-
-    // 로그아웃 상태에서는 기본 랭크(0점 기준)로 표시
-    applyRankImage(0);
+    applyRankImage(0); // 로그아웃 상태에서는 기본 랭크(0점 기준)
   }
 }
-// 로그인
+
+// ====================== 로그인 / 로그아웃 ======================
+
 async function login() {
   const userId = document.getElementById("loginId").value.trim();
   const password = document.getElementById("loginPassword").value;
@@ -143,21 +129,25 @@ async function login() {
     return;
   }
 
+  // 현재 구조: 아이디 + 고정 도메인
   const email = userId + "@myapp.local";
+  console.log("[login] 시도 이메일:", email);
 
   try {
     await signInWithEmailAndPassword(auth, email, password);
     alert("로그인 성공: " + userId);
   } catch (err) {
+    console.error("[login] 실패:", err.code, err.message);
     alert("로그인 오류: " + err.message);
   }
 }
 
-// 로그아웃
 async function logout() {
   await signOut(auth);
   alert("로그아웃 완료");
 }
+
+// ====================== 점수 불러오기 / 저장 ======================
 
 // (새) 시뮬레이션 점수 합산 불러오기
 async function loadScore(user) {
@@ -180,6 +170,7 @@ async function loadScore(user) {
   } catch (err) {
     console.error("시뮬레이션 점수 합산 오류:", err);
 
+    // 합산 실패 시 예전 scores 컬렉션에서 불러오기
     try {
       const ref = doc(db, "scores", user.uid);
       const snap = await getDoc(ref);
@@ -223,7 +214,8 @@ async function addPoint() {
   updateInfoPanel();
 }
 
-// 비밀번호 변경 모드 열기/닫기
+// ====================== 비밀번호 변경 패널 ======================
+
 function openChangeMode() {
   const loginSec   = document.getElementById("login-section");
   const changeSec  = document.getElementById("change-section");
@@ -231,12 +223,14 @@ function openChangeMode() {
   const changeIdInput = document.getElementById("changeId");
   const pwStatus   = document.getElementById("pw-status");
 
-  if (loginSec) loginSec.style.display = "none";
-  if (infoSec)  infoSec.style.display  = "none";
+  if (loginSec)  loginSec.style.display  = "none";
+  if (infoSec)   infoSec.style.display   = "none";
   if (changeSec) changeSec.style.display = "flex";
 
-  pwStatus.textContent = "";
-  pwStatus.className = "auth-status";
+  if (pwStatus) {
+    pwStatus.textContent = "";
+    pwStatus.className = "auth-status";
+  }
 
   if (changeIdInput && currentUserIdText) {
     changeIdInput.value = currentUserIdText;
@@ -257,8 +251,10 @@ function closeChangeMode() {
     loginSec.style.display = "flex";
   }
 
-  pwStatus.textContent = "";
-  pwStatus.className = "auth-status";
+  if (pwStatus) {
+    pwStatus.textContent = "";
+    pwStatus.className = "auth-status";
+  }
 }
 
 // 비밀번호 변경
@@ -268,39 +264,52 @@ async function changePassword() {
   const curPw = document.getElementById("changeCurrentPassword").value;
   const newPw = document.getElementById("changeNewPassword").value;
 
-  statusEl.textContent = "";
-  statusEl.className = "auth-status";
+  if (statusEl) {
+    statusEl.textContent = "";
+    statusEl.className = "auth-status";
+  }
 
   if (!currentUser) {
-    statusEl.textContent = "먼저 로그인해야 합니다.";
-    statusEl.classList.add("err");
+    if (statusEl) {
+      statusEl.textContent = "먼저 로그인해야 합니다.";
+      statusEl.classList.add("err");
+    }
     alert("로그인 후 비밀번호를 변경할 수 있습니다.");
     return;
   }
   if (!changeId || !curPw || !newPw) {
-    statusEl.textContent = "아이디, 현재 비밀번호, 새 비밀번호를 모두 입력해 주세요.";
-    statusEl.classList.add("err");
+    if (statusEl) {
+      statusEl.textContent = "아이디, 현재 비밀번호, 새 비밀번호를 모두 입력해 주세요.";
+      statusEl.classList.add("err");
+    }
     return;
   }
   if (currentUserIdText && changeId !== currentUserIdText) {
-    statusEl.textContent = "입력한 아이디가 현재 로그인한 아이디와 다릅니다.";
-    statusEl.classList.add("err");
+    if (statusEl) {
+      statusEl.textContent = "입력한 아이디가 현재 로그인한 아이디와 다릅니다.";
+      statusEl.classList.add("err");
+    }
     return;
   }
   if (newPw.length < 6) {
-    statusEl.textContent = "새 비밀번호는 최소 6자리 이상이어야 합니다.";
-    statusEl.classList.add("err");
+    if (statusEl) {
+      statusEl.textContent = "새 비밀번호는 최소 6자리 이상이어야 합니다.";
+      statusEl.classList.add("err");
+    }
     return;
   }
 
   try {
-    statusEl.textContent = "비밀번호 변경 중…";
+    if (statusEl) statusEl.textContent = "비밀번호 변경 중…";
+
     const cred = EmailAuthProvider.credential(currentUser.email, curPw);
     await reauthenticateWithCredential(currentUser, cred);
     await updatePassword(currentUser, newPw);
 
-    statusEl.textContent = "비밀번호가 성공적으로 변경되었습니다.";
-    statusEl.classList.add("ok");
+    if (statusEl) {
+      statusEl.textContent = "비밀번호가 성공적으로 변경되었습니다.";
+      statusEl.classList.add("ok");
+    }
     document.getElementById("changeCurrentPassword").value = "";
     document.getElementById("changeNewPassword").value = "";
     alert("비밀번호가 변경되었습니다.");
@@ -310,13 +319,16 @@ async function changePassword() {
     if (err.code === "auth/wrong-password") {
       msg = "현재 비밀번호가 올바르지 않습니다.";
     }
-    statusEl.textContent = msg;
-    statusEl.classList.add("err");
+    if (statusEl) {
+      statusEl.textContent = msg;
+      statusEl.classList.add("err");
+    }
     alert(msg);
   }
 }
 
-// 로그인 상태 감지
+// ====================== 로그인 상태 감지 ======================
+
 onAuthStateChanged(auth, async (user) => {
   const statusEl = document.getElementById("status");
   const scoreEl = document.getElementById("score");
@@ -369,8 +381,9 @@ onAuthStateChanged(auth, async (user) => {
     currentUser = null;
     currentUserIdText = "";
     currentScore = 0;
+
     if (statusEl) statusEl.innerText = "로그인 상태: 없음";
-    if (scoreEl) scoreEl.innerText = "0";
+    if (scoreEl)  scoreEl.innerText  = "0";
     if (logoutBtn) logoutBtn.style.display = "none";
     if (openBtn) openBtn.textContent = "로그인";
 
@@ -385,7 +398,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// 전역 함수 등록 (onclick에서 사용)
+// ====================== 전역 함수 등록 (onclick에서 사용) ======================
 window.login = login;
 window.logout = logout;
 window.addPoint = addPoint;
