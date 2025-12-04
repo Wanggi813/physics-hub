@@ -47,15 +47,15 @@ let currentUserIdText = ""; // Firestore에 저장된 ID (혹은 email 앞부분
 
 // 파일명 → 영어 이름 / 대표 색상
 const rankMeta = {
-  "아이언.png":         { en: "IRON",        color: "#5B4636" },
-  "브론즈.png":         { en: "BRONZE",      color: "#8A5A3A" },
-  "실버.png":           { en: "SILVER",      color: "#A8B0C0" },
-  "골드.png":           { en: "GOLD",        color: "#C89B3C" },
-  "에메랄드.png":       { en: "EMERALD",     color: "#0F6A56" },
-  "다이아몬드.png":     { en: "DIAMOND",     color: "#5DA4FF" },
-  "마스터.png":         { en: "MASTER",      color: "#4820A8" },
-  "그랜드마스터.png":   { en: "GRANDMASTER", color: "#9E4B1A" },
-  "챌린저.png":         { en: "CHALLENGER",  color: "#F24A24" }
+  "아이언.png":         { en: "IRON",        color: "#594946" },
+  "브론즈.png":         { en: "BRONZE",      color: "#593C39" },
+  "실버.png":           { en: "SILVER",      color: "#A3B4BF" },
+  "골드.png":           { en: "GOLD",        color: "#FBEBBC" },
+  "에메랄드.png":       { en: "EMERALD",     color: "#7ABFB3" },
+  "다이아몬드.png":     { en: "DIAMOND",     color: "#BBE8F2" },
+  "마스터.png":         { en: "MASTER",      color: "#885BA6" },
+  "그랜드마스터.png":   { en: "GRANDMASTER", color: "#A62626" },
+  "챌린저.png":         { en: "CHALLENGER",  color: "#6CA6D9" }
 };
 
 // 점수 → 랭크 이미지 파일명
