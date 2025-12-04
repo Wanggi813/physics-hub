@@ -85,6 +85,51 @@ let currentUser = null;
 let currentScore = 0;
 let currentUserIdText = ""; // Firestore에 저장된 ID (혹은 email 앞부분)
 
+// 랭크 메타 정보 (파일명 → 영어 이름 / 색상)
+const rankMeta = {
+  "아이언.png":         { en: "IRON",        color: "#5B4636" },
+  "브론즈.png":         { en: "BRONZE",      color: "#8A5A3A" },
+  "실버.png":           { en: "SILVER",      color: "#A8B0C0" },
+  "골드.png":           { en: "GOLD",        color: "#C89B3C" },
+  "에메랄드.png":       { en: "EMERALD",     color: "#0F6A56" },
+  "다이아몬드.png":     { en: "DIAMOND",     color: "#5DA4FF" },
+  "마스터.png":         { en: "MASTER",      color: "#4820A8" },
+  "그랜드마스터.png":   { en: "GRANDMASTER", color: "#9E4B1A" },
+  "챌린저.png":         { en: "CHALLENGER",  color: "#F24A24" }
+};
+
+function getRankImageFile(score) {
+  const s = Number(score) || 0;
+
+  if (s < 500)   return "아이언.png";
+  if (s < 1000)  return "브론즈.png";
+  if (s < 2000)  return "실버.png";
+  if (s < 3500)  return "골드.png";
+  if (s < 5000)  return "에메랄드.png";
+  if (s < 7000)  return "다이아몬드.png";
+  if (s < 9000)  return "마스터.png";
+  if (s < 10000) return "그랜드마스터.png";
+  return "챌린저.png";
+}
+
+function applyRankImage(score) {
+  const imgEl  = document.getElementById("rank-img");
+  const nameEl = document.getElementById("rank-name");
+  if (!imgEl || !nameEl) return;
+
+  const fileName = getRankImageFile(score);
+  imgEl.src = `./rank/${fileName}`;
+
+  const meta = rankMeta[fileName];
+  if (meta) {
+    nameEl.textContent = meta.en;
+    nameEl.style.color = meta.color;
+  } else {
+    nameEl.textContent = "";
+  }
+}
+
+// 점수/아이디 표시 + 랭크 이미지 업데이트
 function updateInfoPanel() {
   const infoSec   = document.getElementById("info-section");
   const idLabel   = document.getElementById("info-id-label");
@@ -93,19 +138,18 @@ function updateInfoPanel() {
   if (!infoSec) return;
 
   if (currentUser) {
-    const idText = currentUserIdText || (currentUser.email ? currentUser.email.split("@")[0] : "");
+    const idText      = currentUserIdText || (currentUser.email ? currentUser.email.split("@")[0] : "");
     const scoreToShow = currentScore || 0;
 
     if (idLabel)  idLabel.textContent  = "아이디: " + idText;
     if (scoreBig) scoreBig.textContent = scoreToShow + "점";
 
-    // >>> 여기서 랭크 이미지도 함께 갱신
     applyRankImage(scoreToShow);
   } else {
     if (idLabel)  idLabel.textContent  = "아이디: -";
     if (scoreBig) scoreBig.textContent = "0점";
 
-    // 로그아웃 상태일 때는 0점 기준 랭크(브론즈 등)로 표시하거나 기본 이미지
+    // 로그아웃 상태에서는 기본 랭크(0점 기준)로 표시
     applyRankImage(0);
   }
 }
