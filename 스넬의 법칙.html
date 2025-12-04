@@ -2,35 +2,217 @@
 <html lang="ko">
   <head>
     <meta charset="utf-8" />
-    <title>굴절·전반사 </title>
-<script src="./libs/p5.min.js"></script>
+    <title>굴절·전반사 (도전 모드 포함)</title>
+    <script src="./libs/p5.min.js"></script>
     <style>
       html, body { height:100%; margin:0; }
       body{
-        background:#eef6ff;font-family:"Noto Sans KR",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#0f172a;
-        /* 모바일에서 튕김/풀다운 방지 */
+        background:#eef6ff;
+        font-family:"Noto Sans KR",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+        color:#0f172a;
         overscroll-behavior: none;
       }
-      header{padding:14px 12px;background:#dceeff;border-bottom:1px solid #c7defd}
+      header{
+        padding:14px 12px;
+        background:#dceeff;
+        border-bottom:1px solid #c7defd
+      }
       header h2{margin:0 0 6px 0;font-size:22px}
       header small{display:block;margin-top:6px;font-size:14px;color:#334155}
-      #footer{text-align:center;padding:12px;font-size:1.1rem;background:#dceeff;color:#333}
-      .legend{position:absolute;right:12px;top:78px;background:rgba(255,255,255,.9);border:1px solid #c7defd;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.5}
-      .sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:8px;vertical-align:middle;border:1px solid #94a3b8}
+      #footer{
+        text-align:center;
+        padding:12px;
+        font-size:1.1rem;
+        background:#dceeff;
+        color:#333
+      }
+      .legend{
+        position:absolute;
+        right:12px;
+        top:78px;
+        background:rgba(255,255,255,.9);
+        border:1px solid #c7defd;
+        border-radius:10px;
+        padding:10px 12px;
+        font-size:14px;
+        line-height:1.5
+      }
+      .sw{
+        display:inline-block;
+        width:12px;
+        height:12px;
+        border-radius:3px;
+        margin-right:8px;
+        vertical-align:middle;
+        border:1px solid #94a3b8
+      }
 
-      /* ▼ 터치 드래그 시 페이지 스크롤 방지 */
-      #sketch, canvas { touch-action: none; -webkit-user-select:none; user-select:none; }
+      #sketch, canvas {
+        touch-action: none;
+        -webkit-user-select:none;
+        user-select:none;
+      }
       canvas{display:block}
+
+      /* ===== 도전 모드 패널 ===== */
+      .game-panel{
+        position:absolute;
+        left:12px;
+        top:78px;
+        max-width:360px;
+        background:rgba(255,255,255,0.96);
+        border:1px solid #c7defd;
+        border-radius:12px;
+        padding:10px 12px;
+        box-shadow:0 8px 20px rgba(15,23,42,0.18);
+        font-size:13px;
+        line-height:1.4;
+      }
+      .game-header{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:8px;
+        margin-bottom:6px;
+      }
+      .game-title{
+        font-weight:700;
+        font-size:14px;
+        color:#0f172a;
+      }
+      .game-round{
+        font-size:12px;
+        color:#475569;
+      }
+      .game-question{
+        margin:4px 0 8px;
+        color:#0f172a;
+      }
+      .game-question b{color:#1d4ed8}
+      .game-answers{
+        display:flex;
+        flex-wrap:wrap;
+        gap:6px;
+        margin-bottom:6px;
+      }
+      .game-btn{
+        flex:1 1 calc(50% - 6px);
+        min-width:120px;
+        border-radius:999px;
+        border:1px solid #bfdbfe;
+        background:#e0edff;
+        padding:6px 8px;
+        font-size:12px;
+        cursor:pointer;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        gap:4px;
+      }
+      .game-btn:hover:not(:disabled){
+        background:#d0e4ff;
+      }
+      .game-btn:disabled{
+        opacity:0.45;
+        cursor:not-allowed;
+      }
+      .game-btn.primary{
+        flex:0 0 auto;
+        background:#2563eb;
+        border-color:#2563eb;
+        color:#fff;
+        font-weight:600;
+        padding:7px 12px;
+      }
+
+      .game-footer{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:8px;
+        margin-top:4px;
+      }
+      .game-score{
+        font-size:12px;
+        color:#0b1120;
+        white-space:nowrap;
+      }
+      .game-feedback{
+        margin-top:4px;
+        font-size:12px;
+      }
+      .game-feedback.ok{color:#15803d}
+      .game-feedback.bad{color:#b91c1c}
+
+      @keyframes score-bump{
+        0%{transform:scale(1);}
+        30%{transform:scale(1.08);}
+        100%{transform:scale(1);}
+      }
+      .game-score.bump{
+        animation:score-bump .35s ease-out;
+      }
+
+      @media (max-width: 768px){
+        .game-panel{
+          left:10px;
+          right:10px;
+          top:auto;
+          bottom:72px;
+          max-width:none;
+        }
+        .legend{
+          top:auto;
+          bottom:72px;
+          right:10px;
+        }
+        .game-footer{
+          flex-direction:column;
+          align-items:flex-start;
+        }
+        .game-score{white-space:normal}
+      }
     </style>
   </head>
   <body>
     <header>
       <h2>굴절·전반사 시뮬레이션</h2>
       <div id="ui"></div>
-      <small>빨간 레이저 포인터(●)를 드래그/터치해 입사각을 조절하세요.</small>
+      <small>빨간 레이저 포인터(●)를 드래그/터치해 입사각을 조절하세요. (도전 모드에서는 자동으로 고정됩니다)</small>
     </header>
+
     <main id="sketch"></main>
     <div class="legend" id="legend"></div>
+
+    <!-- 도전 모드 패널 -->
+    <div class="game-panel" id="gamePanel">
+      <div class="game-header">
+        <div class="game-title">스넬의 법칙 도전 모드</div>
+        <div class="game-round" id="gp-round">라운드: 0 / 10</div>
+      </div>
+      <div class="game-question" id="gp-question">
+        <b>도전 시작</b> 버튼을 누르면 임의의 매질·입사각이 제시됩니다.<br>
+        굴절광·반사광이 보이지 않는 상태에서 <b>전반사</b> 여부와
+        <b>굴절각의 범위</b>를 맞혀 보세요.
+      </div>
+      <div class="game-answers">
+        <!-- 1~5라운드: 전반사 여부 -->
+        <button class="game-btn game-tir" id="btnTirYes">전반사</button>
+        <button class="game-btn game-tir" id="btnTirNo">전반사 아님</button>
+
+        <!-- 6~10라운드: 굴절각 범위 -->
+        <button class="game-btn game-range" id="btnR0_30">θ₂: 0° ~ 30°</button>
+        <button class="game-btn game-range" id="btnR30_60">θ₂: 30° ~ 60°</button>
+        <button class="game-btn game-range" id="btnR60_90">θ₂: 60° ~ 90°</button>
+        <button class="game-btn game-range" id="btnRTIR">전반사</button>
+      </div>
+      <div class="game-footer">
+        <span class="game-score" id="gp-score">점수: 0점 / 500점 · 최고: 0점</span>
+        <button class="game-btn primary" id="btnNextRound">도전 시작</button>
+      </div>
+      <div class="game-feedback" id="gp-feedback"></div>
+    </div>
+
     <div id="footer">왕왕물리시뮬레이션</div>
 
     <script>
@@ -45,40 +227,51 @@
         플린트유리:'#f59e0b', 다이아몬드:'#f472b6'
       };
 
-      // 광선/호 색
       const COLOR_INCIDENT = '#ff5050';
       const COLOR_REFLECT  = '#ffaa00';
       const COLOR_REFRACT  = '#2563eb';
 
-      // 아크 반지름
       const R_INCIDENT = 100;
-      const R_REFLECT  = 120;   // 위쪽(반사)
-      const R_REFRACT  = 100;   // 아래쪽(굴절)
-      const R_CRIT     = 140;   // 임계각
+      const R_REFLECT  = 120;
+      const R_REFRACT  = 100;
+      const R_CRIT     = 140;
 
-      // 상태
       let topName = '공기';
       let botName = '크라운유리';
-      let showReflection = true;   // ★ 반사선 표시 토글
+      let showReflection = true;
       let selTop, selBottom, cbReflect;
 
-      // 기하
       let cx, cy;
       let handle = { x:0, y:0, r:16, dragging:false };
 
       let canvasP5;
 
+      // ====== 도전 모드 상태 ======
+      const TOTAL_ROUNDS = 10;
+      let gameRound = 0;
+      let gameActive = false;      // 게임 진행 중 여부
+      let gameReveal = false;      // 정답 공개 여부 (굴절광/반사광 표시)
+      let gameState = 'idle';      // idle | question | feedback | finished
+      let currentScore = 0;
+      let bestScore = 0;
+
+      let currentQuestion = null;  // {round, stageType, nTopName, nBottomName, n1,n2,theta1,isTIR,theta2Deg,correctKey}
+
+      let gpRoundEl, gpQuestionEl, gpScoreEl, gpFeedbackEl;
+      let btnNextRound, btnTirYes, btnTirNo, btnR0_30, btnR30_60, btnR60_90, btnRTIR;
+
       function setup(){
         canvasP5 = createCanvas(windowWidth, windowHeight - 130);
         canvasP5.parent('sketch');
 
-        // iOS/안드용 스크롤 차단
         canvasP5.elt.style.touchAction = 'none';
         canvasP5.elt.addEventListener('touchmove', e => e.preventDefault(), { passive:false });
 
         cx = width/2; cy = height/2;
         handle.x = cx - 180; handle.y = cy - 180;
+
         buildUI();
+        initGameUI();
         drawLegend();
       }
 
@@ -98,85 +291,436 @@
         selBottom.selected(botName);
         selBottom.changed(()=>{ botName = selBottom.value(); drawLegend(); });
 
-        // ★ 반사 토글 체크박스
         const spacer = document.createElement('span'); spacer.style.margin='0 14px'; uiDiv.appendChild(spacer);
         cbReflect = createCheckbox('반사 표시', showReflection);
         cbReflect.parent(uiDiv);
         cbReflect.changed(()=> { showReflection = cbReflect.checked(); });
       }
 
+      // ====== 도전 모드 UI 초기화 ======
+      function initGameUI(){
+        gpRoundEl    = document.getElementById('gp-round');
+        gpQuestionEl = document.getElementById('gp-question');
+        gpScoreEl    = document.getElementById('gp-score');
+        gpFeedbackEl = document.getElementById('gp-feedback');
+        btnNextRound = document.getElementById('btnNextRound');
+        btnTirYes    = document.getElementById('btnTirYes');
+        btnTirNo     = document.getElementById('btnTirNo');
+        btnR0_30     = document.getElementById('btnR0_30');
+        btnR30_60    = document.getElementById('btnR30_60');
+        btnR60_90    = document.getElementById('btnR60_90');
+        btnRTIR      = document.getElementById('btnRTIR');
+
+        // 클릭 이벤트
+        btnTirYes.addEventListener('click', ()=>handleAnswer('TIR'));
+        btnTirNo.addEventListener('click',  ()=>handleAnswer('NO_TIR'));
+        btnR0_30.addEventListener('click',  ()=>handleAnswer('R_0_30'));
+        btnR30_60.addEventListener('click', ()=>handleAnswer('R_30_60'));
+        btnR60_90.addEventListener('click', ()=>handleAnswer('R_60_90'));
+        btnRTIR.addEventListener('click',   ()=>handleAnswer('R_TIR'));
+
+        btnNextRound.addEventListener('click', ()=>{
+          if (gameState === 'idle' || gameState === 'finished') {
+            startNewGame();
+          } else if (gameState === 'feedback') {
+            if (gameRound >= TOTAL_ROUNDS) {
+              endGame();
+            } else {
+              nextQuestion();
+            }
+          }
+        });
+
+        updateScoreUI();
+        updateRoundUI();
+        updateQuestionText();
+        updateAnswerButtonsVisibility();
+      }
+
+      function updateScoreUI(){
+        if (!gpScoreEl) return;
+        gpScoreEl.textContent = `점수: ${currentScore}점 / 500점 · 최고: ${bestScore}점`;
+        gpScoreEl.classList.remove('bump');
+        void gpScoreEl.offsetWidth;
+        gpScoreEl.classList.add('bump');
+      }
+
+      function updateRoundUI(){
+        if (!gpRoundEl) return;
+        gpRoundEl.textContent = `라운드: ${gameRound} / ${TOTAL_ROUNDS}`;
+      }
+
+      function updateQuestionText(){
+        if (!gpQuestionEl) return;
+        if (!currentQuestion){
+          gpQuestionEl.innerHTML =
+            `<b>도전 시작</b> 버튼을 누르면 임의의 매질·입사각이 제시됩니다.<br>` +
+            `1~5라운드: 전반사 여부, 6~8라운드: 굴절각 범위, 9~10라운드: 임계각 근처 굴절각 범위를 맞혀 보세요.`;
+          return;
+        }
+        const { round, stageType, nTopName, nBottomName, n1, n2, theta1 } = currentQuestion;
+        let typeLabel = '';
+        if (stageType === 'tir') typeLabel = '난이도: 하 — 전반사 여부 맞히기';
+        else if (stageType === 'range') typeLabel = '난이도: 중 — 굴절각 범위 맞히기';
+        else typeLabel = '난이도: 상 — 임계각 근처 굴절각 범위 맞히기';
+
+        const msg =
+          `<b>${typeLabel}</b><br>` +
+          `라운드 ${round} / ${TOTAL_ROUNDS}<br>` +
+          `위 매질: ${nTopName} (n₁=${n1.toFixed(3)}), ` +
+          `아래 매질: ${nBottomName} (n₂=${n2.toFixed(3)})<br>` +
+          `입사각 θ₁ ≈ ${theta1.toFixed(1)}° 에서 ` +
+          (stageType === 'tir'
+            ? `<b>전반사 여부</b>를 선택하세요.`
+            : `<b>굴절각 θ₂ 의 범위</b>를 선택하세요.`);
+        gpQuestionEl.innerHTML = msg;
+      }
+
+      function updateAnswerButtonsVisibility(){
+        const tirStage   = currentQuestion && currentQuestion.stageType === 'tir';
+        const rangeStage = currentQuestion && currentQuestion.stageType !== 'tir';
+        document.querySelectorAll('.game-tir').forEach(btn=>{
+          btn.style.display = tirStage ? 'inline-flex' : 'none';
+        });
+        document.querySelectorAll('.game-range').forEach(btn=>{
+          btn.style.display = rangeStage ? 'inline-flex' : 'none';
+        });
+        // idle일 때는 둘 다 숨기지 말고 기본은 전반사 여부만 보이게
+        if (!currentQuestion){
+          document.querySelectorAll('.game-range').forEach(btn=>{
+            btn.style.display = 'none';
+          });
+          document.querySelectorAll('.game-tir').forEach(btn=>{
+            btn.style.display = 'inline-flex';
+          });
+        }
+      }
+
+      function setAnswerButtonsDisabled(disabled){
+        [btnTirYes, btnTirNo, btnR0_30, btnR30_60, btnR60_90, btnRTIR].forEach(btn=>{
+          if (btn) btn.disabled = disabled;
+        });
+      }
+
+      function setMaterialSelectorsEnabled(enabled){
+        if (selTop && selTop.elt)    selTop.elt.disabled = !enabled;
+        if (selBottom && selBottom.elt) selBottom.elt.disabled = !enabled;
+        if (cbReflect && cbReflect.elt) cbReflect.elt.disabled = !enabled;
+      }
+
+      function randomChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+      function setHandleForAngle(thetaDeg, sideSign){
+        const t = radians(thetaDeg);
+        const r = 220;
+        const vx = sideSign * Math.sin(t);
+        const vy = Math.cos(t);
+        handle.x = cx - r * vx;
+        handle.y = cy - r * vy;
+      }
+
+      function startNewGame(){
+        gameActive  = true;
+        gameReveal  = false;
+        gameRound   = 0;
+        currentScore = 0;
+        gameState   = 'feedback'; // nextQuestion가 question으로 바꾸게
+        gpFeedbackEl.textContent = '';
+        gpFeedbackEl.className   = 'game-feedback';
+        btnNextRound.textContent = '다음 라운드';
+        updateScoreUI();
+        updateRoundUI();
+        nextQuestion();
+      }
+
+      function nextQuestion(){
+        gameRound++;
+        if (gameRound > TOTAL_ROUNDS){
+          endGame();
+          return;
+        }
+        gameState  = 'question';
+        gameReveal = false;
+        gpFeedbackEl.textContent = '';
+        gpFeedbackEl.className   = 'game-feedback';
+        updateRoundUI();
+        btnNextRound.disabled = true;
+
+        // 문제 생성
+        currentQuestion = generateQuestionForRound(gameRound);
+        updateQuestionText();
+        updateAnswerButtonsVisibility();
+        setAnswerButtonsDisabled(false);
+        setMaterialSelectorsEnabled(false);
+      }
+
+      function endGame(){
+        gameState  = 'finished';
+        gameActive = false;
+        gameReveal = true;
+        setMaterialSelectorsEnabled(true);
+        setAnswerButtonsDisabled(true);
+        btnNextRound.disabled  = false;
+        btnNextRound.textContent = '다시 도전';
+        if (gpFeedbackEl){
+          gpFeedbackEl.className = 'game-feedback ok';
+          gpFeedbackEl.textContent =
+            `도전 종료! 총 점수는 ${currentScore}점 / 500점입니다. ` +
+            `다시 도전해서 최고 점수를 갱신해 보세요.`;
+        }
+        currentQuestion = null;
+        updateQuestionText();
+      }
+
+      function generateQuestionForRound(round){
+        const names = Object.keys(MATERIALS);
+        let stageType;
+        if (round <= 5) stageType = 'tir';
+        else if (round <= 8) stageType = 'range';
+        else stageType = 'rangeHard';
+
+        let nTopName, nBottomName, n1, n2, theta1, isTIR, theta2Deg = null, correctKey;
+
+        if (stageType === 'tir'){
+          const wantTIR = Math.random() < 0.5;
+          while (true){
+            nTopName    = randomChoice(names);
+            nBottomName = randomChoice(names);
+            if (nTopName === nBottomName) continue;
+            n1 = MATERIALS[nTopName];
+            n2 = MATERIALS[nBottomName];
+
+            let candidateTheta;
+            if (wantTIR){
+              if (n1 <= n2) continue;
+              const thetaC = degrees(Math.asin(n2 / n1));
+              const low = Math.min(thetaC + 5, 80);
+              const high = 88;
+              candidateTheta = low + Math.random()*(high - low);
+            } else {
+              if (Math.random() < 0.5){
+                // n1 <= n2 → 어떤 각도에서도 전반사 X
+                if (n1 > n2) continue;
+                candidateTheta = 10 + Math.random()*70;
+              } else {
+                // n1 > n2 이지만 임계각보다 작은 각도
+                if (n1 <= n2) continue;
+                const thetaC = degrees(Math.asin(n2 / n1));
+                const low = 10;
+                const high = Math.max(thetaC - 5, 20);
+                candidateTheta = low + Math.random()*(high - low);
+              }
+            }
+            theta1 = candidateTheta;
+            const sin1 = Math.sin(radians(theta1));
+            const sin2 = (n1 / n2) * sin1;
+            isTIR = (n1 > n2 && sin2 > 1 - 1e-12);
+            if (wantTIR && isTIR) break;
+            if (!wantTIR && !isTIR) break;
+          }
+        } else {
+          while (true){
+            nTopName    = randomChoice(names);
+            nBottomName = randomChoice(names);
+            if (nTopName === nBottomName) continue;
+            n1 = MATERIALS[nTopName];
+            n2 = MATERIALS[nBottomName];
+
+            let tMin = 10, tMax = 80;
+            if (stageType === 'rangeHard'){
+              if (n1 > n2){
+                const thetaC = degrees(Math.asin(Math.min(1, n2 / n1)));
+                tMin = Math.max(5, thetaC - 8);
+                tMax = Math.min(88, thetaC + 8);
+              } else {
+                tMin = 50;
+                tMax = 85;
+              }
+            }
+            theta1 = tMin + Math.random()*(tMax - tMin);
+            const sin1 = Math.sin(radians(theta1));
+            const sin2 = (n1 / n2) * sin1;
+            isTIR = (n1 > n2 && sin2 > 1 - 1e-12);
+            const ok = true; // 범위 모드는 전반사도 허용(전반사 선택지 있음)
+            if (ok) break;
+          }
+        }
+
+        if (!isTIR){
+          const sin1 = Math.sin(radians(theta1));
+          const sin2 = (n1 / n2) * sin1;
+          theta2Deg = degrees(Math.asin(constrain(sin2, -1, 1)));
+        }
+
+        if (stageType === 'tir'){
+          correctKey = isTIR ? 'TIR' : 'NO_TIR';
+        } else {
+          if (isTIR) correctKey = 'R_TIR';
+          else if (theta2Deg < 30) correctKey = 'R_0_30';
+          else if (theta2Deg < 60) correctKey = 'R_30_60';
+          else correctKey = 'R_60_90';
+        }
+
+        // 시뮬레이션 상태를 문제에 맞게 세팅
+        topName = nTopName;
+        botName = nBottomName;
+        if (selTop && selBottom){
+          selTop.selected(topName);
+          selBottom.selected(botName);
+        }
+        drawLegend();
+
+        const sideSign = Math.random() < 0.5 ? 1 : -1;
+        setHandleForAngle(theta1, sideSign);
+
+        draw();
+
+        return {
+          round,
+          stageType,
+          nTopName, nBottomName,
+          n1, n2,
+          theta1,
+          isTIR,
+          theta2Deg,
+          correctKey
+        };
+      }
+
+      function handleAnswer(selectedKey){
+        if (!gameActive) return;
+        if (gameState !== 'question') return;
+        if (!currentQuestion) return;
+
+        gameReveal = true;
+        gameState  = 'feedback';
+        setMaterialSelectorsEnabled(true);
+        setAnswerButtonsDisabled(true);
+        btnNextRound.disabled = false;
+
+        const isCorrect = (selectedKey === currentQuestion.correctKey);
+        if (isCorrect){
+          currentScore += 50;
+          if (currentScore > bestScore){
+            bestScore = currentScore;
+            if (window.saveBestScoreToFirebase){
+              window.saveBestScoreToFirebase(bestScore);
+            }
+          }
+          if (gpFeedbackEl){
+            gpFeedbackEl.className = 'game-feedback ok';
+            let extra = '';
+            if (currentQuestion.theta2Deg != null && !currentQuestion.isTIR){
+              const t2 = currentQuestion.theta2Deg.toFixed(1);
+              extra = ` (실제 θ₂ ≈ ${t2}°)`;
+            }
+            gpFeedbackEl.textContent = `정답입니다! +50점${extra}`;
+          }
+        } else {
+          if (gpFeedbackEl){
+            gpFeedbackEl.className = 'game-feedback bad';
+            let correctText = '';
+            if (currentQuestion.stageType === 'tir'){
+              correctText = currentQuestion.isTIR ? '전반사' : '전반사 아님';
+            } else {
+              const k = currentQuestion.correctKey;
+              if (k === 'R_TIR') correctText = '전반사';
+              else if (k === 'R_0_30') correctText = 'θ₂: 0°~30°';
+              else if (k === 'R_30_60') correctText = 'θ₂: 30°~60°';
+              else if (k === 'R_60_90') correctText = 'θ₂: 60°~90°';
+            }
+            let extra = '';
+            if (currentQuestion.theta2Deg != null && !currentQuestion.isTIR){
+              extra = ` (실제 θ₂ ≈ ${currentQuestion.theta2Deg.toFixed(1)}°)`;
+            }
+            gpFeedbackEl.textContent =
+              `아쉽네요, 오답입니다. 정답은 "${correctText}" 입니다.${extra}`;
+          }
+        }
+        updateScoreUI();
+        draw();
+
+        if (gameRound >= TOTAL_ROUNDS){
+          btnNextRound.textContent = '최종 결과 보기';
+        } else {
+          btnNextRound.textContent = '다음 라운드';
+        }
+      }
+
+      // ===== 기존 시뮬레이션 draw =====
       function draw(){
-        background('#eef6ff');     // 잔상 제거
-        drawRegions();             // 매질 영역색
+        background('#eef6ff');
+        drawRegions();
 
         const nTop = MATERIALS[topName];
         const nBottom = MATERIALS[botName];
 
-        // 경계면
         stroke(120); strokeWeight(2.5); line(0, cy, width, cy);
 
-        // 각도 눈금자
         drawAngleTicks(R_REFLECT*1.5/2, R_REFRACT*1.5/2);
 
-        // 법선
         drawDashedLine(cx, cy-160, cx, cy+160, 8);
         noStroke(); fill(50); textSize(18); text('법선', cx+10, cy-130);
 
-        // 라벨
         noStroke(); fill(20); textSize(20);
         text(`위 매질 n₁ = ${nTop.toFixed(3)} (${topName})`, 20, 22);
         text(`아래 매질 n₂ = ${nBottom.toFixed(3)} (${botName})`, 20, 46);
 
-        // 핸들 제한(경계 위쪽만)
         handle.y = Math.min(handle.y, cy-12);
 
-        // 입사 벡터
         const v = createVector(cx - handle.x, cy - handle.y);
         if (v.mag() < 1) return;
         const vUnit = v.copy().normalize();
-        const signX = Math.sign(vUnit.x) || 1;     // 좌/우
+        const signX = Math.sign(vUnit.x) || 1;
         const normal = createVector(0,1);
         const cos1 = constrain(vUnit.dot(normal), -1, 1);
         const theta1 = degrees(Math.acos(cos1));
         const sin1 = Math.sin(radians(theta1));
 
-        // 스넬/임계각
         const sin2 = (nTop / nBottom) * sin1;
         const isTIR = (nTop > nBottom && sin2 > 1 - 1e-12);
         const theta2 = isTIR ? null : degrees(Math.asin(constrain(sin2, -1, 1)));
         let thetaC = null;
         if (nTop > nBottom) thetaC = degrees(Math.asin(constrain(nBottom / nTop, -1, 1)));
 
-        // 광선
         stroke(COLOR_INCIDENT); strokeWeight(3.5);
         line(handle.x, handle.y, cx, cy);
         noStroke(); fill('#ff4444'); circle(handle.x, handle.y, handle.r*1.6);
 
-        if (showReflection) {
+        const effectiveShowReflection = showReflection && !(gameActive && !gameReveal);
+
+        if (effectiveShowReflection) {
           const reflectDir = createVector(vUnit.x, -vUnit.y);
           drawRay(cx, cy, reflectDir, COLOR_REFLECT);
         }
         if (!isTIR && theta2 !== null){
           const tDir = createVector(signX * Math.sin(radians(theta2)), Math.cos(radians(theta2)));
-          drawRay(cx, cy, tDir, COLOR_REFRACT);
+          const allowRefract = !(gameActive && !gameReveal);
+          if (allowRefract){
+            drawRay(cx, cy, tDir, COLOR_REFRACT);
+          }
         }
 
-        // 각도 호 + 라벨
-        drawAngleArcs(theta1, theta2, isTIR, signX, thetaC, showReflection);
+        drawAngleArcs(theta1, theta2, isTIR, signX, thetaC, effectiveShowReflection);
 
-        // 정보
         fill(20); noStroke(); textSize(20);
         text(`입사각 θ₁ = ${nf(theta1,1,1)}°`, 20, 80);
         text(`반사각 θᵣ = ${nf(theta1,1,1)}°`, 20, 105);
-        if (isTIR) text(`굴절각 θ₂ = — (전반사)`, 20, 130);
-        else text(`굴절각 θ₂ = ${nf(theta2,1,1)}°`, 20, 130);
+
+        if (gameActive && !gameReveal){
+          text(`굴절각 θ₂ = ???`, 20, 130);
+        } else {
+          if (isTIR) text(`굴절각 θ₂ = — (전반사)`, 20, 130);
+          else text(`굴절각 θ₂ = ${nf(theta2,1,1)}°`, 20, 130);
+        }
+
         if (thetaC !== null) text(`임계각 θ_c = ${nf(thetaC,1,1)}°`, 20, 155);
         else text(`임계각: 없음 (n₁ ≤ n₂)`, 20, 155);
+
         textSize(22); fill(17,94,89);
         text(`스넬의 법칙:  n₁·sinθ₁ = n₂·sinθ₂`, 20, 185);
       }
 
-      // ====== 보조 함수들 ======
       function drawRegions(){
         const colTop = REGION_COLORS[topName] || '#cbd5e1';
         const colBot = REGION_COLORS[botName] || '#cbd5e1';
@@ -184,7 +728,6 @@
         push(); noStroke(); fill(hexToRGBA(colBot, 0.24)); rect(0, cy, width, height-cy); pop();
       }
 
-      // 눈금선
       function drawAngleTicks(topLen, botLen){
         const SCALE = 1.0;
         topLen *= SCALE; botLen *= SCALE;
@@ -221,16 +764,14 @@
         pop();
       }
 
-      function drawAngleArcs(theta1, theta2, isTIR, signX, thetaC, showReflection){
-        // 입사각 θ1 (위쪽)
+      function drawAngleArcs(theta1, theta2, isTIR, signX, thetaC, effectiveShowReflection){
         if (signX > 0){
           arcWithLabel(R_INCIDENT, -HALF_PI - radians(theta1), -HALF_PI, COLOR_INCIDENT, 'θ₁');
         } else {
           arcWithLabel(R_INCIDENT, -HALF_PI, -HALF_PI + radians(theta1), COLOR_INCIDENT, 'θ₁');
         }
 
-        // 반사각 θr (위쪽 반대편) — 토글
-        if (showReflection){
+        if (effectiveShowReflection && !(gameActive && !gameReveal)){
           if (signX > 0){
             arcWithLabel(R_REFLECT, -HALF_PI, -HALF_PI + radians(theta1), COLOR_REFLECT, 'θᵣ');
           } else {
@@ -238,7 +779,6 @@
           }
         }
 
-        // 임계각 θc (입사쪽 위에 표기)
         if (thetaC !== null){
           const colCrit = 'rgba(80,80,80,0.7)';
           if (signX > 0){
@@ -248,8 +788,7 @@
           }
         }
 
-        // 굴절각 θ2 (아래쪽)
-        if (!isTIR && theta2 !== null){
+        if (!isTIR && theta2 !== null && !(gameActive && !gameReveal)){
           if (signX > 0){
             arcWithLabel(R_REFRACT, HALF_PI - radians(theta2), HALF_PI, COLOR_REFRACT, 'θ₂');
           } else {
@@ -284,14 +823,15 @@
         return color(r, g, b, a*255);
       }
 
-      // ====== 인터랙션 (마우스 + 터치 공통) ======
+      // ===== 인터랙션 =====
       function startDrag(x,y){
+        if (gameActive && gameState === 'question') return; // 도전 중에는 드래그 잠금
         if (dist(x, y, handle.x, handle.y) < 24) handle.dragging = true;
       }
       function moveDrag(x,y){
         if (!handle.dragging) return;
         handle.x = constrain(x, 0, width);
-        handle.y = constrain(y, 0, cy-12); // 경계 위로만
+        handle.y = constrain(y, 0, cy-12);
       }
       function endDrag(){ handle.dragging = false; }
 
@@ -299,7 +839,6 @@
       function mouseDragged(){ moveDrag(mouseX, mouseY); }
       function mouseReleased(){ endDrag(); }
 
-      // 터치: return false => preventDefault (스크롤 방지)
       function touchStarted(){
         const t = touches[0] || {x:mouseX,y:mouseY};
         startDrag(t.x, t.y);
@@ -326,6 +865,73 @@
           <div><span class="sw" style="background:${COLOR_REFLECT}"></span>반사선</div>
           <div><span class="sw" style="background:${COLOR_REFRACT}"></span>굴절선</div>`;
       }
+
+      // Firebase에서 최고 점수 로드 시 호출
+      window.setBestScoreFromFirebase = function(score){
+        bestScore = Number(score) || 0;
+        updateScoreUI();
+      };
+    </script>
+
+    <!-- ===== Firebase 점수 연동 (스넬의 법칙) ===== -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+      import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+      import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
+        authDomain: "simulation-67cd3.firebaseapp.com",
+        projectId: "simulation-67cd3",
+        storageBucket: "simulation-67cd3.appspot.com",
+        messagingSenderId: "615983461615",
+        appId: "1:615983461615:web:002e07bcea878eb6d5571a",
+        measurementId: "G-9RGN7LYE5W"
+      };
+
+      const app  = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db   = getFirestore(app);
+
+      const SIM_ID = "스넬의_법칙";
+
+      let firebaseUser = null;
+
+      async function saveBestScore(score) {
+        if (!firebaseUser) return;
+        try {
+          const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+          await setDoc(ref, { score: Number(score) || 0 }, { merge: true });
+        } catch (err) {
+          console.error("[스넬의 법칙] 최고 점수 저장 오류:", err);
+        }
+      }
+
+      async function loadBestScore() {
+        if (!firebaseUser) return;
+        try {
+          const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+          const snap = await getDoc(ref);
+          if (snap.exists()) {
+            const data  = snap.data();
+            const score = Number(data.score || 0) || 0;
+            if (window.setBestScoreFromFirebase) {
+              window.setBestScoreFromFirebase(score);
+            }
+          }
+        } catch (err) {
+          console.error("[스넬의 법칙] 최고 점수 불러오기 오류:", err);
+        }
+      }
+
+      window.saveBestScoreToFirebase = saveBestScore;
+
+      onAuthStateChanged(auth, async (user) => {
+        firebaseUser = user;
+        if (user) {
+          await loadBestScore();
+        }
+      });
     </script>
   </body>
 </html>
