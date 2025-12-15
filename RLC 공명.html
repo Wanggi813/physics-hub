@@ -27,6 +27,93 @@
     .graphbox{position:fixed; right:14px; top:14px; width:320px; background:rgba(15,23,42,.78); border:1px solid rgba(148,163,184,.25); border-radius:14px; padding:10px; z-index:11}
     .graphbox canvas{display:block; width:100%; height:140px}
     .graphbox .title{font-size:12px;color:var(--muted);text-align:right;margin-top:6px}
+
+    /* ===== 도전 모드 패널 ===== */
+    .game-panel{
+      position:fixed;
+      left:14px;
+      bottom:14px;
+      width:360px;
+      background:rgba(15,23,42,.78);
+      backdrop-filter: blur(8px);
+      border:1px solid rgba(148,163,184,.25);
+      border-radius:14px;
+      padding:12px;
+      z-index:12;
+      box-shadow:0 10px 28px rgba(9,12,28,.28);
+      font-size:13px;
+      line-height:1.4;
+    }
+    .game-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
+    .game-title{font-weight:800;font-size:14px}
+    .game-round{font-size:12px;color:rgba(226,232,240,.75);margin-top:2px}
+    .game-question{color:rgba(226,232,240,.92);margin:6px 0 10px}
+    .game-question b{color:#38bdf8}
+    .game-answers{display:none;gap:8px;flex-wrap:wrap;margin:6px 0 8px}
+    .game-btn{
+      flex:1 1 calc(50% - 8px);
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.35);
+      background:rgba(2,6,23,.35);
+      color:rgba(226,232,240,.95);
+      padding:7px 10px;
+      font-size:12px;
+      cursor:pointer;
+    }
+    .game-btn:hover:not(:disabled){background:rgba(2,6,23,.55)}
+    .game-btn:disabled{opacity:.45;cursor:not-allowed}
+    .game-btn.primary{
+      flex:0 0 auto;
+      background:#0ea5e9;
+      border-color:#0ea5e9;
+      color:white;
+      font-weight:700;
+      padding:8px 12px;
+    }
+    .game-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .game-score{font-variant-numeric:tabular-nums;color:rgba(226,232,240,.95)}
+    .game-sub{color:rgba(148,163,184,.92);font-size:12px}
+    .game-feedback{margin-top:8px;font-size:12px}
+    .game-feedback.ok{color:#34d399}
+    .game-feedback.bad{color:#fb7185}
+
+    /* 최고점수 뱃지 */
+    .game-best-badge{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:4px 10px;border-radius:999px;
+      background:linear-gradient(135deg, rgba(255,247,230,.95), rgba(255,255,255,.25));
+      box-shadow:0 0 0 1px rgba(251,191,36,0.35), 0 0 14px rgba(251,191,36,0.35);
+      font-size:12px;white-space:nowrap;
+    }
+    .best-label{font-size:11px;color:rgba(2,6,23,.65)}
+    .best-icon{font-size:15px;line-height:1;text-shadow:0 0 6px rgba(251,191,36,0.55)}
+    .best-value{font-weight:900;font-size:14px;color:#fb923c;min-width:26px;text-align:right}
+
+    @keyframes bump{0%{transform:scale(1)}30%{transform:scale(1.06)}100%{transform:scale(1)}}
+    .bump{animation:bump .35s ease-out}
+
+    /* 힌트 바 */
+    .hint-wrap{display:none;margin:8px 0 10px;padding:10px;border-radius:12px;border:1px solid rgba(148,163,184,.22);background:rgba(2,6,23,.28)}
+    .hint-title{font-size:12px;color:rgba(226,232,240,.85);margin-bottom:8px}
+    .hint-bar{position:relative;height:10px;border-radius:999px;background:rgba(148,163,184,.18);overflow:hidden}
+    .hint-band{position:absolute;top:0;height:100%;border-radius:999px;background:rgba(34,197,94,.35)}
+    .hint-marker{position:absolute;top:-4px;width:2px;height:18px;background:rgba(56,189,248,.95)}
+    .hint-meta{margin-top:6px;font-size:12px;color:rgba(148,163,184,.92)}
+
+    /* 목표 게이지 */
+    .goal-wrap{display:none;margin:8px 0 10px;padding:10px;border-radius:12px;border:1px solid rgba(148,163,184,.22);background:rgba(2,6,23,.28)}
+    .goal-title{font-size:12px;color:rgba(226,232,240,.85);margin-bottom:8px}
+    .goal-bar{position:relative;height:10px;border-radius:999px;background:rgba(148,163,184,.18);overflow:hidden}
+    .goal-zone{position:absolute;top:0;height:100%;border-radius:999px;background:rgba(251,191,36,.35)}
+    .goal-fill{position:absolute;top:0;left:0;height:100%;border-radius:999px;background:rgba(56,189,248,.55)}
+    .goal-meta{margin-top:6px;font-size:12px;color:rgba(148,163,184,.92)}
+
+    @media (max-width: 860px){
+      .game-panel{left:10px;right:10px;bottom:10px;width:auto}
+      .hud{width:340px}
+      .graphbox{width:300px}
+    }
+
   </style>
 
   <!-- 로컬 three.js (전역 THREE) -->
@@ -46,6 +133,10 @@
 
     <div class="row"><label for="C">C (µF)</label><span class="meter"><span id="Cval">10.0</span></span></div>
     <input id="C" type="range" min="0.1" max="100" step="0.1" value="10" />
+
+    <div class="row"><label for="R">R (Ω)</label><span class="meter"><span id="Rval">50</span></span></div>
+    <input id="R" type="range" min="5" max="200" step="1" value="50" />
+
 
     <div class="row"><label for="f">f (Hz)</label><span class="meter"><span id="fval">—</span></span></div>
     <input id="f" type="range" min="1" max="1000" step="1" value="200" />
@@ -69,6 +160,60 @@
     <div class="title">i(t) · 전류 (A)</div>
   </div>
 
+
+  <!-- ===== 도전 모드 패널 (RLC 공명) ===== -->
+  <div class="game-panel" id="gamePanel">
+    <div class="game-header">
+      <div>
+        <div class="game-title">RLC 공명 도전 모드</div>
+        <div class="game-round" id="gp-round">라운드: 0 / 10</div>
+      </div>
+      <div class="game-best-badge" id="gp-best">
+        <span class="best-label">최고점수</span>
+        <span class="best-icon">🏆</span>
+        <span class="best-value" id="gp-best-value">0</span>
+      </div>
+    </div>
+
+    <div class="game-question" id="gp-question">
+      <b>도전 시작</b>을 누르면 라운드별 조건(L, C, R)이 자동으로 설정됩니다.<br>
+      학생은 <b>슬라이더 조작만</b>으로 공명 상태를 찾아 <b>제출</b>하면 됩니다.
+    </div>
+
+    <!-- 힌트 바 (1~5라운드에서만 표시) -->
+    <div class="hint-wrap" id="gp-hint-wrap">
+      <div class="hint-title">공명 힌트(쉬움): 초록 구간 안으로 f를 맞추세요</div>
+      <div class="hint-bar">
+        <div class="hint-band" id="gp-hint-band"></div>
+        <div class="hint-marker" id="gp-hint-marker"></div>
+      </div>
+      <div class="hint-meta" id="gp-hint-meta"></div>
+    </div>
+
+    <!-- 전류 목표 게이지 (9라운드) -->
+    <div class="goal-wrap" id="gp-goal-wrap">
+      <div class="goal-title">목표 전류 진폭 맞추기 (공명 근처 유지 + 목표 구간)</div>
+      <div class="goal-bar">
+        <div class="goal-zone" id="gp-goal-zone"></div>
+        <div class="goal-fill" id="gp-goal-fill"></div>
+      </div>
+      <div class="goal-meta" id="gp-goal-meta"></div>
+    </div>
+
+    <!-- 10라운드(형태 분류) -->
+    <div class="game-answers" id="gp-answers">
+      <button class="game-btn" id="btnNarrow">날카로운 공명(고Q)</button>
+      <button class="game-btn" id="btnWide">둥근 공명(저Q)</button>
+    </div>
+
+    <div class="game-footer">
+      <span class="game-score" id="gp-score">점수: 0점 / 500점</span>
+      <span class="game-sub" id="gp-sub"></span>
+      <button class="game-btn primary" id="btnMain">도전 시작</button>
+    </div>
+    <div class="game-feedback" id="gp-feedback"></div>
+  </div>
+
   <footer class="small">© 2025 · 교육용 시각화 · 더 많은 자료: </footer>
 
   <script>
@@ -76,11 +221,13 @@
     const elScene = document.getElementById('scene');
     const LSlider = document.getElementById('L');
     const CSlider = document.getElementById('C');
+    const RSlider = document.getElementById('R');
     const FSlider = document.getElementById('f');
     const LockChk = document.getElementById('lock');
     const VisSlider = document.getElementById('vis');
     const Lval = document.getElementById('Lval');
     const Cval = document.getElementById('Cval');
+    const Rval = document.getElementById('Rval');
     const Fval = document.getElementById('fval');
     const F0val = document.getElementById('f0');
     const Qval = document.getElementById('Q');
@@ -351,8 +498,10 @@
     const plateCloudBot = Array.from({length:CAP_MAX}, ()=> new THREE.Vector3((Math.random()-0.5)*1.0, (Math.random()-0.5)*0.2 - 0.12, (Math.random()-0.5)*0.9));
 
     // ---------- Circuit model ----------
-    const R = 50; const VAMP = 5;
+    const VAMP = 5;
+    function getR(){ return Math.max(0.1, parseFloat(RSlider.value)||50); }
     function params(){
+      const R = getR();
       const L = parseFloat(LSlider.value)/1000;
       const C = parseFloat(CSlider.value)/1e6;
       let f0 = 1/(2*Math.PI*Math.sqrt(L*C)); if(!isFinite(f0)) f0 = 1;
@@ -385,16 +534,45 @@
     function animate(){
       const tNow = performance.now()/1000; const dt = Math.min(0.05, tNow - tPrev); tPrev = tNow;
       const Pp = params();
+      // --- Round 10 auto sweep (short) ---
+      if (sweeping && roundType === 'classify_q') {
+        sweepT += dt;
+        const f0 = Pp.f0;
+        const span = 0.25; // ±25%
+        const s = Math.min(1, sweepT/2.2);
+        const phase = (s*2*Math.PI);
+        const fSweep = f0 * (1 + span*Math.sin(phase));
+        const fMin = parseFloat(FSlider.min), fMax = parseFloat(FSlider.max);
+        const fClamped = Math.max(fMin, Math.min(fMax, fSweep));
+        FSlider.value = String(Math.round(fClamped));
+        if (sweepT >= 2.2) {
+          sweeping = false;
+          btnMain.disabled = true;
+          // 답 버튼 활성화
+          btnNarrow.disabled = false; btnWide.disabled = false;
+          gpFeedbackEl.className = 'game-feedback';
+          gpFeedbackEl.textContent = '이제 선택하세요: 날카로운 공명(고Q) / 둥근 공명(저Q)';
+        }
+      }
+
       const vis = parseFloat(VisSlider.value); VisVal.textContent = vis.toFixed(2)+'×';
-      Lval.textContent = (+LSlider.value).toFixed(0); Cval.textContent = (+CSlider.value).toFixed(1); Fval.textContent = Pp.f.toFixed(1); F0val.textContent = Pp.f0.toFixed(1);
+      const Rnow = getR();
+      Lval.textContent = (+LSlider.value).toFixed(0); Cval.textContent = (+CSlider.value).toFixed(1); Rval.textContent = (+Rnow).toFixed(0); Fval.textContent = Pp.f.toFixed(1); F0val.textContent = Pp.f0.toFixed(1);
       Qval.textContent = isFinite(Pp.Q)? Pp.Q.toFixed(2): '—'; BWval.textContent = (isFinite(Pp.BW) && Pp.BW>0)? Pp.BW.toFixed(1): '—'; Ratio.textContent = (Pp.f/Pp.f0).toFixed(3);
 
-      const nearRes = Math.abs(Pp.f - Pp.f0)/Pp.f0 < 0.03; ResTag.style.opacity = nearRes ? '1' : '0.25'; ResTag.style.borderColor = nearRes ? 'rgba(34,197,94,.8)' : 'rgba(148,163,184,.35)';
+      const nearRes = Math.abs(Pp.f - Pp.f0)/Pp.f0 < 0.03;
+      // (도전 9~10) 공명 힌트(불 들어오는 표시) 숨김
+      const hideResLamp = (gameState === 'question' && gameRound >= 9);
+      ResTag.style.display = hideResLamp ? 'none' : 'inline-flex';
+      if(!hideResLamp){
+        ResTag.style.opacity = nearRes ? '1' : '0.25';
+        ResTag.style.borderColor = nearRes ? 'rgba(34,197,94,.8)' : 'rgba(148,163,184,.35)';
+      }
 
       const tVis = tNow * vis;
       const iInst = Pp.Iamp * Math.sin(Pp.w*tVis + Pp.phiI);
       const di_dt = Pp.Iamp * Pp.w * Math.cos(Pp.w*tVis + Pp.phiI);
-      const vR = iInst * R;
+      const vR = iInst * Rnow;
       const vL = Pp.Iamp * Pp.XL * Math.sin(Pp.w*tVis + Pp.phiI + Math.PI/2);
       const vC = Pp.Iamp * Pp.XC * Math.sin(Pp.w*tVis + Pp.phiI - Math.PI/2);
       const qC = Pp.C * vC;
@@ -469,11 +647,485 @@
       camera.updateProjectionMatrix();
     });
 
+
+    // =============================
+    // ====== Challenge Game =======
+    // =============================
+    const TOTAL_ROUNDS = 10;
+    let gameRound = 0;
+    let gameState = 'idle'; // idle | question | feedback | finished
+    let currentScore = 0;
+    let bestScore = 0;
+
+    // round config
+    let roundType = null; // 'seek' | 'seek_mid' | 'tune_amp' | 'classify_q'
+    let tol = 0.03;
+    let moveLimit = 0;
+    let moveCount = 0;
+    let lastF = null;
+    let targetAmpMin = 0.08, targetAmpMax = 0.12; // A (for round 9)
+    let correctQIsNarrow = true;
+    let sweeping = false;
+    let sweepT = 0;
+
+    // UI
+    const gpRoundEl = document.getElementById('gp-round');
+    const gpQuestionEl = document.getElementById('gp-question');
+    const gpScoreEl = document.getElementById('gp-score');
+    const gpFeedbackEl = document.getElementById('gp-feedback');
+    const gpSubEl = document.getElementById('gp-sub');
+    const btnMain = document.getElementById('btnMain');
+    const btnNarrow = document.getElementById('btnNarrow');
+    const btnWide = document.getElementById('btnWide');
+    const gpBestValueEl = document.getElementById('gp-best-value');
+    const gpBestBadgeEl = document.getElementById('gp-best');
+
+    const hintWrap = document.getElementById('gp-hint-wrap');
+    const hintBand = document.getElementById('gp-hint-band');
+    const hintMarker = document.getElementById('gp-hint-marker');
+    const hintMeta = document.getElementById('gp-hint-meta');
+
+    const goalWrap = document.getElementById('gp-goal-wrap');
+    const goalZone = document.getElementById('gp-goal-zone');
+    const goalFill = document.getElementById('gp-goal-fill');
+    const goalMeta = document.getElementById('gp-goal-meta');
+
+    const ansWrap = document.getElementById('gp-answers');
+
+    function bump(el){
+      if(!el) return;
+      el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+    }
+
+    function setBestScoreFromFirebase(score){
+      bestScore = Number(score)||0;
+      gpBestValueEl.textContent = bestScore;
+      bump(gpBestBadgeEl);
+    }
+    window.setBestScoreFromFirebase = setBestScoreFromFirebase;
+
+    function updateScoreUI(){
+      gpScoreEl.textContent = `점수: ${currentScore}점 / 500점`;
+      bump(gpScoreEl);
+      gpBestValueEl.textContent = bestScore;
+    }
+    function updateRoundUI(){
+      gpRoundEl.textContent = `라운드: ${gameRound} / ${TOTAL_ROUNDS}`;
+    }
+
+    function setMaskedHud(masked){
+      // 숫자 힌트(공식/값) 숨김 — 학생은 조작/그래프만 보고 판단
+      const maskedText = masked ? '—' : null;
+      if(masked){
+        F0val.textContent = '—';
+        Qval.textContent = '—';
+        BWval.textContent = '—';
+        Ratio.textContent = '—';
+        ResTag.style.opacity = '0.25';
+      }
+    }
+
+    function setControlsEnabled({L=true,C=true,R=true,f=true,lock=true,vis=true}){
+      LSlider.disabled = !L;
+      CSlider.disabled = !C;
+      RSlider.disabled = !R;
+      FSlider.disabled = !f;
+      LockChk.disabled = !lock;
+      VisSlider.disabled = !vis;
+    }
+
+    function rand(min,max){ return min + Math.random()*(max-min); }
+    function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+    function randomizeCircuitForRound(type){
+      // round 타입별로 조건을 다르게 뿌려서 체감 난이도 조절
+      // L(mH) 10~180, C(uF) 0.5~80, R(ohm) 10~150
+      const LmH = Math.round(rand(12, 160));
+      const CuF = Math.round(rand(0.6, 70)*10)/10;
+      let Rv = 50;
+
+      if(type === 'seek'){ Rv = pick([30,40,50,60,80]); }
+      else if(type === 'seek_mid'){ Rv = pick([20,30,50,70,100]); }
+      else if(type === 'tune_amp'){
+        // 공명 진폭 조절이 가능하도록 R 범위를 넓게
+        Rv = pick([20,30,40,60,80,120,150]);
+      } else if(type === 'classify_q'){
+        // Q를 확실히 갈리게
+        Rv = pick([12, 18, 28, 45, 80, 120, 160]);
+      }
+
+      LSlider.value = String(LmH);
+      CSlider.value = String(CuF);
+      RSlider.value = String(Rv);
+      refresh(); // f slider range + coil update
+
+      // lock은 게임 중 사용 안 함
+      LockChk.checked = false;
+
+      // 시작 주파수는 랜덤 (f0 주변 or 좀 떨어짐)
+      const {f0} = params();
+      let fStart = f0 * (type === 'seek' ? rand(0.85, 1.15) : rand(0.65, 1.45));
+      fStart = Math.max(parseFloat(FSlider.min), Math.min(parseFloat(FSlider.max), fStart));
+      FSlider.value = String(Math.round(fStart));
+      lastF = Number(FSlider.value);
+      moveCount = 0;
+      updateHintUI();
+      updateGoalUI();
+    }
+
+    function updateHintUI(){
+      const Pp = params();
+      const f0 = Pp.f0;
+      const fMin = parseFloat(FSlider.min), fMax = parseFloat(FSlider.max);
+      const fCur = parseFloat(FSlider.value);
+      const toPct = (f)=> ((f - fMin) / (fMax - fMin)) * 100;
+
+      // marker
+      hintMarker.style.left = `${toPct(fCur)}%`;
+
+      // band = f0*(1±tol)
+      const a = Math.max(fMin, f0*(1-tol));
+      const b = Math.min(fMax, f0*(1+tol));
+      const left = toPct(a);
+      const right = toPct(b);
+      hintBand.style.left = `${left}%`;
+      hintBand.style.width = `${Math.max(0, right-left)}%`;
+
+      hintMeta.textContent =
+        (roundType === 'seek')
+          ? `현재 f 위치를 초록 구간에 맞추면 정답(제출)!`
+          : `힌트 없음: 그래프 진폭이 최대가 되는 지점을 찾아 제출하세요.`;
+    }
+
+    function updateGoalUI(){
+      const Pp = params();
+      const amp = Pp.Iamp;
+      // normalize gauge: 0~0.20 A 기준(보정)
+      const maxA = 0.20;
+      const fillPct = Math.max(0, Math.min(100, (amp/maxA)*100));
+      goalFill.style.width = `${fillPct}%`;
+
+      // target zone
+      const a = Math.max(0, Math.min(maxA, targetAmpMin));
+      const b = Math.max(0, Math.min(maxA, targetAmpMax));
+      const left = (a/maxA)*100;
+      const width = ((b-a)/maxA)*100;
+      goalZone.style.left = `${left}%`;
+      goalZone.style.width = `${Math.max(0,width)}%`;
+
+      const {f0} = Pp;
+      const ratio = (Pp.f / f0);
+      goalMeta.textContent = `현재: 전류 진폭≈${amp.toFixed(3)}A · f/f₀≈${ratio.toFixed(3)} (공명 근처 유지!)`;
+    }
+
+    function setPanelForRound(){
+      gpFeedbackEl.textContent = '';
+      gpFeedbackEl.className = 'game-feedback';
+      ansWrap.style.display = 'none';
+      hintWrap.style.display = 'none';
+      goalWrap.style.display = 'none';
+      gpSubEl.textContent = '';
+
+      // 기본(도전 모드가 아닐 때): 모든 조작 가능 + f=f0 토글 가능
+      if(gameState === 'idle' || gameState === 'finished'){
+        gpQuestionEl.innerHTML =
+          `<b>도전 모드</b>를 누르면 라운드별 조건(L, C, R)이 자동으로 설정됩니다.<br>`+
+          `도전 모드가 아닐 때는 <b>f=f₀</b>를 자유롭게 켰다/껐다 할 수 있어요.`;
+        btnMain.textContent = (gameState === 'finished') ? '다시 도전' : '도전 시작';
+        btnMain.disabled = false;
+        btnNarrow.disabled = true; btnWide.disabled = true;
+        setControlsEnabled({L:true,C:true,R:true,f:true,lock:true,vis:true});
+        setMaskedHud(false);
+        return;
+      }
+
+      const r = gameRound;
+
+      if(roundType === 'seek'){
+        hintWrap.style.display = 'block';
+        gpQuestionEl.innerHTML =
+          `<b>쉬움</b> · 공명 찾기 (1~5)<br>`+
+          `초록 구간(공명 근처) 안으로 <b>f</b>를 맞춘 뒤 <b>제출</b>하세요.`;
+        btnMain.textContent = '제출';
+        gpSubEl.textContent = '';
+        setControlsEnabled({L:false,C:false,R:false,f:true,lock:false,vis:true});
+        setMaskedHud(true);
+      } else if(roundType === 'seek_mid'){
+        // 6~8: 중간, 9~10: 어려움(조금 더 엄격한 tol)
+        const lvl = (r <= 8) ? '중간' : '어려움';
+        const rr  = (r <= 8) ? '(6~8)' : '(9~10)';
+        gpQuestionEl.innerHTML =
+          `<b>${lvl}</b> · 힌트 없이 공명 찾기 ${rr}<br>`+
+          `그래프 진폭이 가장 커지는 지점으로 <b>f</b>를 맞춘 뒤 <b>제출</b>하세요.`;
+        btnMain.textContent = '제출';
+        hintWrap.style.display = 'none';
+        gpSubEl.textContent = '';
+        setControlsEnabled({L:false,C:false,R:false,f:true,lock:false,vis:true});
+        setMaskedHud(true);
+      }
+    }
+
+    function startNewGame(){
+      gameRound = 0;
+      currentScore = 0;
+      gameState = 'question';
+      updateScoreUI();
+      nextRound();
+    }
+
+    function nextRound(){
+      gameRound++;
+      if(gameRound > TOTAL_ROUNDS){
+        endGame();
+        return;
+      }
+      updateRoundUI();
+
+      // determine type
+      if(gameRound <= 5){
+        // 쉬움: 힌트(밴드) 표시 + 제출로 판정
+        roundType = 'seek';
+        tol = 0.03;
+        moveLimit = 0;
+      } else if(gameRound <= 8){
+        // 중간: 힌트 없음 + 조작 제한(다 쓰면 제출로 판정)
+        roundType = 'seek_mid';
+        tol = 0.02;
+        moveLimit = 0;
+      } else {
+        // 어려움(9~10): 6~8과 동일한 형태(공명 찾기)지만 조금 더 엄격하게
+        roundType = 'seek_mid';
+        tol = 0.015;
+        moveLimit = 0;
+      }
+
+      gameState = 'question';
+      randomizeCircuitForRound(roundType);
+
+      // (도전 모드) 자동 스윕/분류 라운드는 사용하지 않음
+      sweeping = false;
+
+
+      setPanelForRound();
+      btnMain.disabled = false;
+    }
+
+    function endGame(){
+      gameState = 'finished';
+      setControlsEnabled({L:true,C:true,R:true,f:true,lock:true,vis:true});
+      gpFeedbackEl.className = 'game-feedback ok';
+      gpFeedbackEl.textContent = `도전 종료! 총 점수 ${currentScore}점 / 500점. 최고 점수 갱신에 도전해 보세요.`;
+      btnMain.textContent = '다시 도전';
+      btnMain.disabled = false;
+      setMaskedHud(false);
+      bump(gpBestBadgeEl);
+    }
+
+    function isNearResonance(){
+      const Pp = params();
+      const rel = Math.abs(Pp.f - Pp.f0) / Pp.f0;
+      return rel < tol;
+    }
+
+    function submitSeek(){
+      const ok = isNearResonance();
+      if(ok){
+        currentScore += 50;
+        gpFeedbackEl.className = 'game-feedback ok';
+        gpFeedbackEl.textContent = `정답! +50점 (공명 포착)`;
+      } else {
+        gpFeedbackEl.className = 'game-feedback bad';
+        gpFeedbackEl.textContent = `오답! 공명 지점이 아닙니다.`;
+      }
+
+      if(currentScore > bestScore){
+        bestScore = currentScore;
+        if(window.saveBestScoreToFirebase) window.saveBestScoreToFirebase(bestScore);
+        bump(gpBestBadgeEl);
+      }
+      updateScoreUI();
+
+      // 다음 진행
+      if(gameRound >= TOTAL_ROUNDS){
+        btnMain.textContent = '최종 결과';
+      } else {
+        btnMain.textContent = '다음 라운드';
+      }
+      gameState = 'feedback';
+      setControlsEnabled({L:false,C:false,R:false,f:false,lock:false,vis:true});
+      btnMain.disabled = false;
+      setMaskedHud(false);
+    }
+
+    function submitTuneAmp(){
+      const Pp = params();
+      const amp = Pp.Iamp;
+      const ampOk = (amp >= targetAmpMin && amp <= targetAmpMax);
+      const resOk = isNearResonance();
+      const ok = ampOk && resOk;
+
+      if(ok){
+        currentScore += 50;
+        gpFeedbackEl.className = 'game-feedback ok';
+        gpFeedbackEl.textContent = `정답! +50점 (공명 유지 + 목표 진폭 성공)`;
+      } else {
+        gpFeedbackEl.className = 'game-feedback bad';
+        gpFeedbackEl.textContent =
+          `오답! `+
+          `${resOk ? '공명은 OK' : '공명 근처가 아님'} · `+
+          `${ampOk ? '진폭은 OK' : '진폭이 목표 구간 밖'}`;
+      }
+
+      if(currentScore > bestScore){
+        bestScore = currentScore;
+        if(window.saveBestScoreToFirebase) window.saveBestScoreToFirebase(bestScore);
+        bump(gpBestBadgeEl);
+      }
+      updateScoreUI();
+
+      if(gameRound >= TOTAL_ROUNDS){
+        btnMain.textContent = '최종 결과';
+      } else {
+        btnMain.textContent = '다음 라운드';
+      }
+      gameState = 'feedback';
+      setControlsEnabled({L:false,C:false,R:false,f:false,lock:false,vis:true});
+      btnMain.disabled = false;
+      setMaskedHud(false);
+    }
+
+    function answerQ(isNarrow){
+      if(gameState !== 'question' || roundType !== 'classify_q') return;
+
+      sweeping = false;
+      const ok = (isNarrow === correctQIsNarrow);
+      if(ok){
+        currentScore += 50;
+        gpFeedbackEl.className = 'game-feedback ok';
+        gpFeedbackEl.textContent = `정답! +50점 (공명 곡선 판별 성공)`;
+      } else {
+        gpFeedbackEl.className = 'game-feedback bad';
+        gpFeedbackEl.textContent = `오답! 이번 라운드는 ${correctQIsNarrow ? '날카로운 공명(고Q)' : '둥근 공명(저Q)'} 입니다.`;
+      }
+
+      if(currentScore > bestScore){
+        bestScore = currentScore;
+        if(window.saveBestScoreToFirebase) window.saveBestScoreToFirebase(bestScore);
+        bump(gpBestBadgeEl);
+      }
+      updateScoreUI();
+
+      btnMain.textContent = (gameRound >= TOTAL_ROUNDS) ? '최종 결과' : '다음 라운드';
+      btnMain.disabled = false;
+      gameState = 'feedback';
+      setControlsEnabled({L:false,C:false,R:false,f:false,lock:false,vis:true});
+      setMaskedHud(false);
+    }
+
+    // button wiring
+    btnMain.addEventListener('click', ()=>{
+      if(gameState === 'idle' || gameState === 'finished'){
+        startNewGame();
+        return;
+      }
+      if(gameState === 'feedback'){
+        // next
+        nextRound();
+        return;
+      }
+      // question
+      if(roundType === 'seek' || roundType === 'seek_mid') submitSeek();
+      else if(roundType === 'tune_amp') submitTuneAmp();
+    });
+
+    btnNarrow.addEventListener('click', ()=>answerQ(true));
+    btnWide.addEventListener('click', ()=>answerQ(false));
+
+    // movement count (6~8)
+    FSlider.addEventListener('input', ()=>{
+      if(gameState !== 'question') return;
+      // ✅ 6~10 라운드 조작 제한 제거: f는 언제든 조절 가능, 판정은 '제출'로만 진행
+      updateHintUI();
+      if(roundType === 'tune_amp') updateGoalUI();
+    });
+
+        // keep hint/goal updated
+    [LSlider,CSlider,RSlider,FSlider].forEach(sl=>{
+      sl.addEventListener('input', ()=>{
+        if(gameState !== 'question') return;
+        if(roundType === 'seek') updateHintUI();
+        if(roundType === 'tune_amp'){ updateGoalUI(); updateHintUI(); }
+      });
+    });
+
+    // init panel
+    updateScoreUI();
+    updateRoundUI();
+    setPanelForRound();
+
     function refresh(){ updateFSliderRange(); updateCoilGeom(); }
     LSlider.addEventListener('input', refresh);
     CSlider.addEventListener('input', refresh);
     LockChk.addEventListener('change', refresh);
   })();
   </script>
+
+  <!-- ===== Firebase 최고점수 연동 (RLC 공명) ===== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
+      authDomain: "simulation-67cd3.firebaseapp.com",
+      projectId: "simulation-67cd3",
+      storageBucket: "simulation-67cd3.appspot.com",
+      messagingSenderId: "615983461615",
+      appId: "1:615983461615:web:002e07bcea878eb6d5571a",
+      measurementId: "G-9RGN7LYE5W"
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    const SIM_ID = "RLC_공명";
+
+    let firebaseUser = null;
+
+    async function saveBestScore(score){
+      if(!firebaseUser) return;
+      try{
+        const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+        await setDoc(ref, { score: Number(score)||0 }, { merge:true });
+      }catch(err){
+        console.error("[RLC 공명] 최고 점수 저장 오류:", err);
+      }
+    }
+
+    async function loadBestScore(){
+      if(!firebaseUser) return;
+      try{
+        const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+        const snap = await getDoc(ref);
+        if(snap.exists()){
+          const data = snap.data();
+          const score = Number(data.score||0)||0;
+          if(window.setBestScoreFromFirebase) window.setBestScoreFromFirebase(score);
+        }
+      }catch(err){
+        console.error("[RLC 공명] 최고 점수 불러오기 오류:", err);
+      }
+    }
+
+    window.saveBestScoreToFirebase = saveBestScore;
+
+    onAuthStateChanged(auth, async (user)=>{
+      firebaseUser = user;
+      if(user) await loadBestScore();
+    });
+  </script>
+
 </body>
 </html>
