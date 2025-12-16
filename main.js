@@ -1,5 +1,6 @@
 // ===== 프로젝트 카드 렌더링 =====
   const projects = [
+    {title:"물리 공식 맞추기", category:"게임", desc:"물리 공식을 맞추자!", tags:["물리","공식"], emoji:"❤️", demo:"./물리 공식 맞추기.html", curriculumId:"ALL", thumb:"./thumb_nail/물리 공식 맞추기.png"},
     {title:"토크와 평형", category:"역학", desc:"물체를 이용해 토크평형 만들기", tags:["토크","평형"], emoji:"🧗‍♀️", demo:"./토크와 평형.html", curriculumId:"[12물리01-01]", thumb:"./thumb_nail/토크와_평형.png"},
     {title:"힘의 합력", category:"역학", desc:"여러 힘의 합력 알아보기", tags:["힘","알짜힘"], emoji:"🧗‍♀️", demo:"./힘의 평형.html", curriculumId:"[12역학01-01]", thumb:"./thumb_nail/힘의_평형.png"},
     {title:"탈출 속도", category:"역학", desc:"행성의 탈출속도 알아보기", tags:["중력","탈출속도"], emoji:"🧗‍♀️", demo:"./탈출 속도.html", curriculumId:"[12물리03-06]", thumb:"./thumb_nail/탈출속도.png"},

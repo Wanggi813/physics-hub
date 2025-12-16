@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>물리 공식 타이핑 레인 (교실 + 콤보 + 경고 + 아이템 + Firebase)</title>
+
+<!-- ✅ p5.js 로컬 로드 -->
+<script src="./libs/p5.min.js"></script>
+
+<style>
+:root{
+  --card:#ffffff;
+  --border:#dbeafe;
+  --ink:#0f172a;
+  --muted:#475569;
+  --accent:#38bdf8;
+  --good:#22c55e;
+  --bad:#ef4444;
+  --shadow:0 10px 30px rgba(0,0,0,0.10);
+}
+html,body{
+  margin:0; height:100%;
+  font-family:system-ui,"Noto Sans KR",sans-serif;
+  color:var(--ink);
+  overflow:hidden;
+  background: radial-gradient(1200px 700px at 15% -10%, #f2fbff, #ffffff);
+}
+
+/* 패널 유리 느낌 */
+.panel{
+  position:fixed; top:16px; bottom:16px; width:300px;
+  background: rgba(255,255,255,0.88);
+  border:1px solid rgba(219,234,254,0.95);
+  border-radius:16px;
+  padding:14px;
+  box-shadow:var(--shadow);
+  overflow:auto;
+  z-index:10;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+#left{left:16px}
+#right{right:16px}
+h3{margin:6px 0 10px;font-size:15px}
+small{color:var(--muted)}
+input{
+  width:100%;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(219,234,254,0.95);
+  font-size:14px;
+  outline:none;
+}
+input:focus{border-color:rgba(56,189,248,0.75)}
+.row{display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;}
+.badge{
+  font-size:12px;
+  padding:3px 10px;
+  border-radius:999px;
+  background:rgba(56,189,248,0.10);
+  border:1px solid rgba(56,189,248,0.22);
+  color:#075985;
+}
+.badge.good{
+  background:rgba(34,197,94,0.12);
+  border-color:rgba(34,197,94,0.22);
+  color:#166534;
+}
+.badge.warn{
+  background:rgba(245,158,11,0.12);
+  border-color:rgba(245,158,11,0.22);
+  color:#92400e;
+}
+.msg{font-size:13px; color:var(--muted); min-height:18px; margin-top:8px}
+.msg.good{color:var(--good); font-weight:800}
+.msg.bad{color:var(--bad); font-weight:800}
+.answer{font-size:13px; padding:3px 0}
+.d1{ color:#0f766e }
+.d2{ color:#0369a1 }
+.d3{ color:#7c2d12 }
+
+/* 최고점수 */
+.bestWrap{
+  margin-top:12px;
+  padding-top:10px;
+  border-top:1px dashed rgba(219,234,254,0.9);
+}
+.bestLabel{font-size:13px; color:var(--muted); margin-bottom:6px}
+.bestValue{
+  color:#f59e0b;
+  text-shadow:0 0 6px rgba(245,158,11,0.7);
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-weight:900;
+  font-size:22px;
+}
+.bestValue .trophy{
+  font-size:20px;
+  filter:drop-shadow(0 0 4px rgba(250,204,21,0.9));
+}
+@keyframes bestPop {
+  0%   { transform:scale(1); }
+  30%  { transform:scale(1.25); }
+  60%  { transform:scale(0.92); }
+  100% { transform:scale(1); }
+}
+.best-bump{ animation:bestPop 0.6s ease-out; }
+
+/* 캔버스는 투명(교실 배경이 p5로 그려짐) */
+canvas{
+  position:fixed;
+  left:332px; right:332px;
+  top:16px; bottom:16px;
+  border-radius:20px;
+  background: rgba(255,255,255,0.25);
+  border:1px solid rgba(219,234,254,0.95);
+  box-shadow:0 10px 30px rgba(0,0,0,0.10);
+  z-index:5;
+}
+</style>
+</head>
+
+<body>
+  <div id="left" class="panel">
+    <h3>⌨️ 입력</h3>
+    <input id="ans" placeholder="정답 입력 후 Enter (띄어쓰기 정확히)" />
+    <div class="msg" id="msg">공식이 떨어지면, 그 공식의 이름을 입력하세요.</div>
+
+    <h3 style="margin-top:14px;">점수</h3>
+    <div class="row">
+      <div style="font-size:34px;font-weight:900;color:var(--accent)" id="score">0</div>
+      <span class="badge" id="perCorrectBadge">정답 +20</span>
+      <span class="badge" id="speedBadge">속도 1.00×</span>
+    </div>
+
+    <div class="row" style="margin-top:6px;">
+      <span class="badge good" id="comboBadge">콤보 0</span>
+    </div>
+
+    <!-- 아이템 상태 -->
+    <div class="row" style="margin-top:10px;">
+      <span class="badge" id="x2Badge" style="display:none;">점수 2배</span>
+      <span class="badge warn" id="freezeBadge" style="display:none;">시간 정지</span>
+      <span class="badge good" id="shieldBadge" style="display:none;">보호막</span>
+    </div>
+
+    <!-- 최고점수 -->
+    <div class="bestWrap">
+      <div class="bestLabel">최고점수</div>
+      <div class="bestValue" id="bestTop">
+        <span class="trophy">🏆</span>
+        <span class="best-number">0</span>
+      </div>
+      <div style="margin-top:6px;font-size:12px;color:var(--muted);line-height:1.45">
+        * 로그인되어 있으면 Firebase에서 불러오고, 갱신 시 저장합니다.
+      </div>
+    </div>
+
+    <p style="margin-top:12px; font-size:12px; line-height:1.45; color:var(--muted);">
+      • 정답 +20 (점수 2배 중에는 +40)<br>
+      • 콤보가 쌓이면 <b>추가 보너스</b>가 붙어요<br>
+      • 아이템: 점수 2배 / 시간 정지 / 보호막<br>
+      • 입력: <b>한글·숫자·공백</b>만 (띄어쓰기 정확히)
+    </p>
+  </div>
+
+  <div id="right" class="panel">
+    <h3>📘 정답 목록 <small>(띄어쓰기 그대로)</small></h3>
+    <div id="answers"></div>
+
+    <h3 style="margin-top:14px;">🎁 아이템 목록</h3>
+    <div class="answer">점수 2배</div>
+    <div class="answer">시간 정지</div>
+    <div class="answer">보호막</div>
+  </div>
+
+<script>
+/* =========================
+   데이터(공식)
+   ========================= */
+const FORMULAS = [
+  {formula:"v = v₀ + at",             answer:"속력 공식",         diff:1, unit:"운동"},
+  {formula:"x = x₀ + v₀t + ½at²",     answer:"등가속도 공식",     diff:2, unit:"운동"},
+  {formula:"F = ma",                  answer:"뉴턴 제2법칙",      diff:1, unit:"운동"},
+  {formula:"p = mv",                  answer:"운동량",           diff:1, unit:"운동"},
+  {formula:"FΔt = Δp",                answer:"충격량",           diff:2, unit:"운동"},
+  {formula:"W = Fd",                  answer:"일",               diff:1, unit:"운동"},
+  {formula:"K = ½mv²",                answer:"운동 에너지",       diff:1, unit:"운동"},
+  {formula:"U = mgh",                 answer:"중력 퍼텐셜 에너지", diff:2, unit:"운동"},
+  {formula:"E = K + U",               answer:"역학적 에너지",     diff:2, unit:"운동"},
+
+  {formula:"a = v² / r",              answer:"구심 가속도",       diff:2, unit:"원운동"},
+  {formula:"F = mv² / r",             answer:"구심력",           diff:2, unit:"원운동"},
+  {formula:"v = rω",                  answer:"선속도",           diff:2, unit:"원운동"},
+  {formula:"ω = 2π / T",              answer:"각속도",           diff:2, unit:"원운동"},
+
+  {formula:"v = fλ",                  answer:"파동 속력",        diff:1, unit:"파동"},
+  {formula:"f = 1 / T",               answer:"진동수",           diff:1, unit:"파동"},
+  {formula:"y = A sin(ωt)",           answer:"단순 조화 운동",     diff:3, unit:"파동"},
+
+  {formula:"n = c / v",               answer:"굴절률",           diff:2, unit:"광학"},
+  {formula:"n₁sinθ₁ = n₂sinθ₂",       answer:"스넬의 법칙",       diff:2, unit:"광학"},
+  {formula:"sinθc = n₂ / n₁",         answer:"임계각",           diff:3, unit:"광학"},
+  {formula:"θi = θr",                 answer:"반사 법칙",         diff:1, unit:"광학"},
+  {formula:"d sinθ = mλ",             answer:"이중 슬릿",         diff:3, unit:"광학"},
+
+  {formula:"V = IR",                  answer:"옴의 법칙",         diff:1, unit:"전기"},
+  {formula:"P = VI",                  answer:"전력",             diff:1, unit:"전기"},
+  {formula:"Q = It",                  answer:"전하량",           diff:1, unit:"전기"},
+  {formula:"V = Q / C",               answer:"축전기 공식",      diff:2, unit:"전기"}
+];
+
+/* =========================
+   아이템
+   ========================= */
+const ITEMS = [
+  {
+    kind:"item",
+    title:"점수 2배",
+    answer:"점수 2배",
+    desc:"10초 동안 정답 점수 2배",
+    apply(){ effectX2Until = millis() + 10000; }
+  },
+  {
+    kind:"item",
+    title:"시간 정지",
+    answer:"시간 정지",
+    desc:"5초 동안 드롭 정지",
+    apply(){ freezeUntil = millis() + 5000; }
+  },
+  {
+    kind:"item",
+    title:"보호막",
+    answer:"보호막",
+    desc:"10초 동안 미스 1회 무시",
+    apply(){ shieldUntil = millis() + 10000; shieldCharges = 1; }
+  }
+];
+
+/* =========================
+   우측 정답 목록
+   ========================= */
+const answersBox = document.getElementById("answers");
+FORMULAS
+  .map(x=>({a:x.answer,d:x.diff}))
+  .sort((p,q)=>p.d-q.d || p.a.localeCompare(q.a))
+  .forEach(({a,d})=>{
+    const div=document.createElement("div");
+    div.className="answer d"+d;
+    div.textContent=a;
+    answersBox.appendChild(div);
+  });
+
+/* =========================
+   점수/최고점수/콤보
+   ========================= */
+let score=0, bestScore=0;
+let totalCorrect=0;
+
+let combo=0;              // 연속 정답
+let comboFlash=0;         // 콤보 텍스트 이펙트 타이머(프레임)
+
+const BASE_PER_CORRECT = 20;
+const MISS_PENALTY = 20;
+
+// 콤보 보너스: 3콤보부터 +2씩(최대 +20 보너스)
+function comboBonus(){
+  if(combo < 3) return 0;
+  return Math.min(20, 2 * (combo - 2));
+}
+
+function perCorrectNow(){
+  const base = isX2Active() ? BASE_PER_CORRECT*2 : BASE_PER_CORRECT;
+  return base + comboBonus();
+}
+
+function updateScoreUI(){
+  document.getElementById("score").textContent = score;
+  const x2Text = isX2Active() ? " (2배)" : "";
+  const bonus = comboBonus();
+  document.getElementById("perCorrectBadge").textContent =
+    `정답 +${BASE_PER_CORRECT}${x2Text}` + (bonus>0 ? ` +콤보${bonus}` : "");
+  document.getElementById("comboBadge").textContent = `콤보 ${combo}`;
+}
+
+function updateBestScoreUI(animate=false){
+  const container = document.getElementById("bestTop");
+  const numSpan = container.querySelector(".best-number");
+  numSpan.textContent = bestScore;
+  if(animate){
+    container.classList.remove("best-bump");
+    void container.offsetWidth;
+    container.classList.add("best-bump");
+  }
+}
+
+window.setBestScoreFromFirebase = function(scoreFromDb){
+  bestScore = Number(scoreFromDb) || 0;
+  updateBestScoreUI(false);
+};
+
+/* =========================
+   난이도/속도
+   ========================= */
+let drops=[];
+let lastSpawn=0;
+
+function spawnIntervalMs(){
+  return Math.max(1050, 2200 * Math.pow(0.992, totalCorrect));
+}
+function fallSpeedPxPerSec(){
+  return Math.min(110, 35 * Math.pow(1.006, totalCorrect));
+}
+function speedFactor(){
+  return fallSpeedPxPerSec()/35;
+}
+
+/* =========================
+   이펙트/아이템 상태
+   ========================= */
+let bursts=[];
+function spawnBurst(x,y,good=true){
+  const n = good ? 36 : 18;
+  for(let i=0;i<n;i++){
+    bursts.push({
+      x,y,
+      vx: random(-260,260),
+      vy: random(-320,120),
+      life: random(0.35,0.80),
+      t: 0,
+      good
+    });
+  }
+}
+
+let freezeUntil = 0;
+let effectX2Until = 0;
+let shieldUntil = 0;
+let shieldCharges = 0;
+
+function isFrozen(){ return millis() < freezeUntil; }
+function isX2Active(){ return millis() < effectX2Until; }
+function isShieldActive(){ return millis() < shieldUntil && shieldCharges > 0; }
+
+function updateEffectBadges(){
+  const x2 = document.getElementById("x2Badge");
+  const fr = document.getElementById("freezeBadge");
+  const sh = document.getElementById("shieldBadge");
+
+  x2.style.display = isX2Active() ? "inline-flex" : "none";
+  fr.style.display = isFrozen() ? "inline-flex" : "none";
+  sh.style.display = isShieldActive() ? "inline-flex" : "none";
+
+  if(isShieldActive()) sh.textContent = `보호막 (${shieldCharges})`;
+  else sh.textContent = "보호막";
+}
+
+/* =========================
+   드롭 생성
+   ========================= */
+const ITEM_CHANCE = 0.13;
+
+function spawnDrop(){
+  const isItem = Math.random() < ITEM_CHANCE;
+
+  if(isItem){
+    const it = random(ITEMS);
+    const w = 320, h = 74;
+    const x = random(w/2 + 20, width - w/2 - 20);
+    const y = -40;
+    drops.push({
+      kind:"item",
+      title: it.title,
+      answer: it.answer,
+      desc: it.desc,
+      apply: it.apply,
+      unit:"아이템",
+      diff: 0,
+      x,y,w,h,
+      v: fallSpeedPxPerSec() * random(0.85, 1.00)
+    });
+    return;
+  }
+
+  const f = random(FORMULAS);
+  const w = constrain(240 + f.formula.length*8, 260, 560);
+  const h = 74;
+  const x = random(w/2 + 20, width - w/2 - 20);
+  const y = -40;
+  drops.push({
+    kind:"formula",
+    formula:f.formula,
+    answer:f.answer,
+    unit:f.unit,
+    diff:f.diff,
+    x,y,w,h,
+    v: fallSpeedPxPerSec() * random(0.92, 1.06)
+  });
+}
+
+/* =========================
+   경고 라인 + 화면 흔들림
+   ========================= */
+let shakeT = 0;
+let shakePow = 0;
+
+function triggerShake(power=1){
+  shakeT = Math.max(shakeT, 10);
+  shakePow = Math.max(shakePow, power);
+}
+
+function dangerLevel(){
+  // 바닥 근처에 공식이 있으면 위험
+  const warnY = height - 34;
+  let max = 0;
+  for(const d of drops){
+    if(d.kind !== "formula") continue;
+    const y = d.y + d.h/2;
+    if(y > warnY){
+      const t = constrain((y - warnY)/28, 0, 1);
+      max = Math.max(max, t);
+    }
+  }
+  return max; // 0~1
+}
+
+/* =========================
+   입력/UI refs
+   ========================= */
+const inputEl = document.getElementById("ans");
+const msgEl   = document.getElementById("msg");
+
+/* =========================
+   교실 배경(이미지 없이) + 칠판 글씨
+   ========================= */
+function drawGrid(){
+  push();
+  stroke(219,234,254,80);
+  strokeWeight(1);
+  for(let x=0;x<=width;x+=56) line(x,0,x,height);
+  for(let y=0;y<=height;y+=56) line(0,y,width,y);
+  pop();
+}
+
+function drawClassroomBG(){
+  // 벽(그라데이션)
+  noStroke();
+  for(let y=0;y<height;y+=3){
+    const t = y/height;
+    fill(240 + 10*(1-t), 248 + 6*(1-t), 255, 255);
+    rect(0,y,width,3);
+  }
+
+  // 바닥(나무톤)
+  const floorH = Math.floor(height*0.18);
+  const floorY = height - floorH;
+  for(let y=floorY;y<height;y+=2){
+    const t = (y-floorY)/floorH;
+    fill(235-25*t, 222-35*t, 195-45*t, 255);
+    rect(0,y,width,2);
+  }
+  stroke(150,120,90,45);
+  for(let x=0;x<width;x+=28) line(x,floorY,x,height);
+  noStroke();
+
+  // 칠판
+  const bx = width*0.10, by = height*0.09, bw = width*0.80, bh = height*0.38;
+  fill(12, 90, 70, 255);
+  rect(bx,by,bw,bh,18);
+  stroke(255,255,255,22);
+  noFill();
+  rect(bx+6,by+6,bw-12,bh-12,14);
+  noStroke();
+
+  // 칠판 트레이
+  fill(235, 238, 245, 210);
+  rect(bx, by+bh+10, bw, 14, 10);
+
+
+  // 옅은 그리드
+  drawGrid();
+
+  // 비네팅
+  for(let i=0;i<14;i++){
+    noFill();
+    stroke(0,0,0, 10);
+    rect(i,i,width-2*i,height-2*i,20);
+  }
+  noStroke();
+
+  // ✅ 칠판에 “미션/콤보/아이템” 표시 (분필 느낌)
+  push();
+  const chalkX = bx + 26;
+  const chalkY = by + 34;
+  textAlign(LEFT, TOP);
+  textFont("system-ui");
+  noStroke();
+
+  fill(245, 250, 255, 210);
+  textSize(22);
+  text("오늘의 미션", chalkX, chalkY);
+
+  fill(245, 250, 255, 185);
+  textSize(16);
+  text("공식이 떨어지면 이름을 입력하자!", chalkX, chalkY+34);
+
+  // 콤보 강조
+  const cTxt = `콤보: ${combo}`;
+  fill(255, 255, 255, 210);
+  textSize(18);
+  text(cTxt, chalkX, chalkY+66);
+
+  // 아이템 상태 라인
+  let line2 = [];
+  if(isX2Active()) line2.push("점수 2배");
+  if(isFrozen()) line2.push("시간 정지");
+  if(isShieldActive()) line2.push(`보호막(${shieldCharges})`);
+  fill(255,255,255,180);
+  textSize(14);
+  text("아이템: " + (line2.length? line2.join(" · ") : "없음"), chalkX, chalkY+92);
+
+  pop();
+}
+
+/* =========================
+   드롭/카드 그리기
+   ========================= */
+function drawDrop(d){
+  push();
+  translate(d.x, d.y);
+
+  // shadow
+  noStroke();
+  fill(0,0,0,18);
+  rectMode(CENTER);
+  rect(4,5,d.w,d.h,16);
+
+  // card
+  stroke(219,234,254);
+  strokeWeight(1);
+  if(d.kind === "item") fill(255, 252, 235);
+  else fill(255);
+  rect(0,0,d.w,d.h,16);
+
+  // pill
+  noStroke();
+  if(d.kind === "item") fill(245,158,11,35);
+  else fill(56,189,248,35);
+  rect(-d.w/2+54,-d.h/2+14,98,22,999);
+
+  if(d.kind === "item") fill(146,64,14);
+  else fill(2,132,199);
+  textAlign(CENTER,CENTER);
+  textSize(11);
+  text(d.unit, -d.w/2+54, -d.h/2+14);
+
+  // text
+  fill(15,23,42);
+  textAlign(CENTER,CENTER);
+
+  if(d.kind === "item"){
+    textSize(20);
+    text(`🎁 ${d.title}`, 0, 4);
+    textSize(11);
+    fill(71,85,105);
+    text(d.desc, 0, 26);
+  }else{
+    textSize(d.diff===3?18:20);
+    text(d.formula, 0, 8);
+  }
+
+  pop();
+}
+
+/* =========================
+   메시지
+   ========================= */
+function setMsg(type, text){
+  msgEl.classList.remove("good","bad");
+  msgEl.classList.add(type);
+  msgEl.textContent = text;
+}
+
+/* =========================
+   p5 라이프사이클
+   ========================= */
+function setup(){
+  const c=createCanvas(window.innerWidth-664, window.innerHeight-32);
+  c.parent(document.body);
+  c.position(332,16);
+  pixelDensity(1);
+  textFont("system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, sans-serif");
+
+  inputEl.addEventListener("keydown",(e)=>{
+    if(e.key==="Enter") submit();
+  });
+
+  lastSpawn = millis();
+  updateScoreUI();
+  updateBestScoreUI(false);
+}
+
+function windowResized(){
+  resizeCanvas(window.innerWidth-664, window.innerHeight-32);
+}
+
+/* 콤보 이펙트 텍스트 */
+function drawComboOverlay(){
+  if(comboFlash <= 0) return;
+  const t = comboFlash / 18; // 1->0
+  const s = 1 + (1-t)*0.25;
+  push();
+  translate(width*0.5, height*0.12);
+  scale(s);
+  textAlign(CENTER,CENTER);
+  noStroke();
+  fill(56,189,248, 40 + 120*t);
+  textSize(54);
+  text("COMBO!", 0, 0);
+  fill(15,23,42, 70 + 160*t);
+  textSize(34);
+  text(`${combo} 콤보`, 0, 44);
+  pop();
+  comboFlash--;
+}
+
+function draw(){
+  // 위험 감지(정지 중엔 위험 연출 약화)
+  const danger = isFrozen() ? 0 : dangerLevel();
+
+  // 화면 흔들림
+  if(danger > 0.55) triggerShake(0.9 + danger);
+  let sx=0, sy=0;
+  if(shakeT > 0){
+    sx = random(-4,4) * shakePow;
+    sy = random(-3,3) * shakePow;
+    shakeT--;
+    shakePow *= 0.88;
+  }else{
+    shakePow = 0;
+  }
+
+  push();
+  translate(sx,sy);
+
+  // 교실 배경 + 칠판 미션/콤보
+  drawClassroomBG();
+
+  // 경고 라인(바닥 직전)
+  const warnY = height - 34;
+  const pulse = 0.5 + 0.5*sin(frameCount*0.22);
+  if(danger > 0){
+    stroke(239,68,68, 80 + 120*danger*pulse);
+    strokeWeight(3);
+    line(18, warnY, width-18, warnY);
+    noStroke();
+    fill(239,68,68, 18 + 40*danger);
+    rect(18, warnY-8, width-36, 16, 10);
+  }
+
+  // 스폰(정지 중엔 스폰 멈춤)
+  if(!isFrozen()){
+    if(millis()-lastSpawn >= spawnIntervalMs() && drops.length < 8){
+      spawnDrop();
+      lastSpawn = millis();
+    }
+  }
+
+  const dt = deltaTime/1000;
+  const floorY = height - 10;
+
+  // 드롭 업데이트/미스 처리
+  for(let i=drops.length-1;i>=0;i--){
+    const d = drops[i];
+    if(!isFrozen()) d.y += d.v * dt;
+
+    drawDrop(d);
+
+    if(d.y + d.h/2 >= floorY){
+      if(d.kind === "formula"){
+        if(isShieldActive()){
+          shieldCharges -= 1;
+          setMsg("good", "보호막! 미스 1회 무시");
+          spawnBurst(d.x, floorY-14, true);
+        }else{
+          // 콤보 끊기
+          combo = 0;
+          score = Math.max(0, score - MISS_PENALTY);
+          setMsg("bad", `미스! (-${MISS_PENALTY}) 정답: ${d.answer}`);
+          spawnBurst(d.x, floorY-14, false);
+        }
+        updateScoreUI();
+      }else{
+        // 아이템은 놓쳐도 패널티 없음
+        setMsg("bad", `아이템 놓침: ${d.title}`);
+        spawnBurst(d.x, floorY-14, false);
+      }
+      drops.splice(i,1);
+    }
+  }
+
+  // 파티클
+  for(let i=bursts.length-1;i>=0;i--){
+    const p = bursts[i];
+    p.t += dt;
+    p.vy += 560*dt;
+    p.x += p.vx*dt;
+    p.y += p.vy*dt;
+    if(p.t > p.life){ bursts.splice(i,1); continue; }
+    const a = 1 - p.t/p.life;
+    noStroke();
+    if(p.good) fill(34,197,94, 220*a);
+    else       fill(239,68,68, 200*a);
+    circle(p.x,p.y, 4 + 6*a);
+    fill(56,189,248, 120*a);
+    circle(p.x,p.y, 10 + 14*a);
+  }
+
+  // 콤보 오버레이
+  drawComboOverlay();
+
+  pop();
+
+  document.getElementById("speedBadge").textContent = `속도 ${speedFactor().toFixed(2)}×`;
+  updateEffectBadges();
+}
+
+/* =========================
+   제출 처리(한글+숫자+공백 허용)
+   ========================= */
+function submit(){
+  const s = inputEl.value.trim();
+
+  if(!s){ setMsg("bad","입력이 비어 있어요."); return; }
+
+  // ✅ 숫자 허용
+  if(!/^[가-힣0-9 ]+$/.test(s)){
+    setMsg("bad","한글, 숫자, 공백만 입력할 수 있어요.");
+    inputEl.value=""; return;
+  }
+
+  // 정확 일치(띄어쓰기 포함), 가장 아래부터
+  let best=-1, bestY=-1;
+  for(let i=0;i<drops.length;i++){
+    if(drops[i].answer === s && drops[i].y > bestY){
+      bestY = drops[i].y; best = i;
+    }
+  }
+
+  if(best >= 0){
+    const hit = drops[best];
+    drops.splice(best,1);
+
+    if(hit.kind === "item"){
+      hit.apply();
+      setMsg("good", `아이템 획득! ${hit.title}`);
+      spawnBurst(hit.x, hit.y, true);
+    }else{
+      // ✅ 정답: 콤보 증가 + 점수
+      combo++;
+      comboFlash = 18; // 콤보 이펙트 발동
+
+      const gain = perCorrectNow();
+      score += gain;
+      totalCorrect++;
+
+      updateScoreUI();
+      setMsg("good", `정답! (+${gain}) → ${hit.answer}`);
+      spawnBurst(hit.x, hit.y, true);
+
+      // 최고점수 갱신 + Firebase 저장
+      if(score > bestScore){
+        bestScore = score;
+        updateBestScoreUI(true);
+        if(window.saveBestScoreToFirebase) window.saveBestScoreToFirebase(bestScore);
+      }
+    }
+  }else{
+    // 오답: 콤보 깨짐(게임 맛)
+    combo = 0;
+    updateScoreUI();
+    setMsg("bad","오답! (띄어쓰기까지 정확히 입력했는지 확인)");
+    spawnBurst(width*0.5, height*0.75, false);
+    triggerShake(0.9);
+  }
+
+  inputEl.value="";
+}
+</script>
+
+<!-- ===== Firebase 최고점수 연동 ===== -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
+    authDomain: "simulation-67cd3.firebaseapp.com",
+    projectId: "simulation-67cd3",
+    storageBucket: "simulation-67cd3.appspot.com",
+    messagingSenderId: "615983461615",
+    appId: "1:615983461615:web:002e07bcea878eb6d5571a",
+    measurementId: "G-9RGN7LYE5W"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const SIM_ID = "공식_타이핑";
+  let firebaseUser = null;
+
+  async function saveBestScore(score) {
+    if (!firebaseUser) return;
+    try {
+      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+      await setDoc(ref, { score: Number(score) || 0 }, { merge: true });
+    } catch (err) {
+      console.error("[공식 타이핑] 최고 점수 저장 오류:", err);
+    }
+  }
+
+  async function loadBestScore() {
+    if (!firebaseUser) return;
+    try {
+      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const data = snap.data();
+        const score = Number(data.score || 0) || 0;
+        if (window.setBestScoreFromFirebase) window.setBestScoreFromFirebase(score);
+      }
+    } catch (err) {
+      console.error("[공식 타이핑] 최고 점수 불러오기 오류:", err);
+    }
+  }
+
+  window.saveBestScoreToFirebase = saveBestScore;
+
+  onAuthStateChanged(auth, async (user) => {
+    firebaseUser = user;
+    if (user) await loadBestScore();
+  });
+</script>
+
+</body>
+</html>
