@@ -270,8 +270,8 @@
       </div>
       <div class="row">
         <label>슬릿 폭 a (임의 단위)</label>
-        <input id="a" type="range" min="0" max="100" step="1" value="10">
-        <output id="oA">10</output>
+        <input id="a" type="range" min="0" max="10" step="0.1" value="1.0">
+        <output id="oA">1.0</output>
       </div>
     </div>
 
@@ -315,7 +315,7 @@ const $ = s => document.querySelector(s);
 const P = {
   lambdaNm: 530,  // nm 슬라이더 값 (screen gap 스케일용)
   dUnit: 50,      // 임의 단위 (슬릿 사이 거리 → 화면에서 슬릿 간격 스케일링)
-  aUnit: 10,      // 임의 단위 (슬릿 폭 스케일링)
+  aUnit: 1,      // 임의 단위 (슬릿 폭 스케일링)
   viewH: 0.20,    // 실제 m는 의미 약함, 포락선용
   envelope: true,
   approx: false,
@@ -357,7 +357,7 @@ const chMsgEl   = $('#chMessage');
 function refreshLabels(){
   oLamEl.textContent = P.lambdaNm.toFixed(0);
   oDEl.textContent   = P.dUnit.toFixed(0);
-  oAEl.textContent   = P.aUnit.toFixed(0);
+  oAEl.textContent   = P.aUnit.toFixed(1);
 }
 function setSlidersEnabled(enabled){
   lambdaEl.disabled = !enabled;
