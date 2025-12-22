@@ -53,7 +53,17 @@
         user-select:none;
       }
       canvas{display:block}
+#gamePanel{
+  z-index: 9999;                 /* 캔버스보다 무조건 위 */
+  pointer-events: auto;
+  touch-action: manipulation;   /* 탭 → 클릭 변환 */
+}
 
+#gamePanel *{
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
       /* ===== 도전 모드 패널 ===== */
  .game-panel{
   position:absolute;
@@ -390,6 +400,16 @@
             }
           }
         });
+const gamePanel = document.getElementById('gamePanel');
+[
+  'pointerdown','pointermove','pointerup',
+  'touchstart','touchmove','touchend',
+  'mousedown','mousemove','mouseup'
+].forEach(evt=>{
+  gamePanel.addEventListener(evt, (e)=>{
+    e.stopPropagation(); // 🔥 캔버스로 이벤트가 내려가는 걸 차단
+  }, { passive:false });
+});
 
         updateScoreUI();
         updateRoundUI();
