@@ -919,32 +919,45 @@ const gamePanel = document.getElementById('gamePanel');
       }
 
       // ===== 인터랙션 =====
-      function startDrag(x,y){
-        if (gameActive && gameState === 'question') return;
-        if (dist(x, y, handle.x, handle.y) < 24) handle.dragging = true;
-      }
-      function moveDrag(x,y){
-        if (!handle.dragging) return;
-        handle.x = constrain(x, 0, width);
-        handle.y = constrain(y, 0, cy-12);
-      }
-      function endDrag(){ handle.dragging = false; }
+ function isTouchOnUI(e){
+  if(!e || !e.target) return false;
+  // UI 영역들: 헤더(매질/반사 표시), 도전패널, 범례, 푸터
+  return !!(
+    e.target.closest('#gamePanel') ||
+    e.target.closest('#ui') ||
+    e.target.closest('#legend') ||
+    e.target.closest('header') ||
+    e.target.closest('#footer')
+  );
+}
 
-      function mousePressed(){ startDrag(mouseX, mouseY); }
-      function mouseDragged(){ moveDrag(mouseX, mouseY); }
-      function mouseReleased(){ endDrag(); }
+function touchStarted(e){
+  // ✅ UI 위에서 터치면: p5가 가로채지 말고 브라우저/DOM에게 맡김
+  if (isTouchOnUI(e)) return true;
 
-      function touchStarted(){
-        const t = touches[0] || {x:mouseX,y:mouseY};
-        startDrag(t.x, t.y);
-        return false;
-      }
-      function touchMoved(){
-        const t = touches[0] || {x:mouseX,y:mouseY};
-        moveDrag(t.x, t.y);
-        return false;
-      }
-      function touchEnded(){ endDrag(); return false; }
+  const t = touches[0] || {x:mouseX,y:mouseY};
+  startDrag(t.x, t.y);
+
+  // ✅ 캔버스 조작(드래그)만 기본동작 차단
+  return false;
+}
+
+function touchMoved(e){
+  // ✅ UI 위에서의 스와이프/드래그는(스크롤/셀렉트 제스처) 막지 않음
+  if (isTouchOnUI(e)) return true;
+
+  const t = touches[0] || {x:mouseX,y:mouseY};
+  moveDrag(t.x, t.y);
+
+  return false;
+}
+
+function touchEnded(e){
+  if (isTouchOnUI(e)) return true;
+
+  endDrag();
+  return false;
+}
 
       function windowResized(){ resizeCanvas(windowWidth, windowHeight - 130); cx = width/2; cy = height/2; }
 
