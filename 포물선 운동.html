@@ -163,16 +163,23 @@ window.addEventListener('orientationchange', resizeCanvas);
 /* =============== 물리 파라미터 =============== */
 const g = 9.8, m = 1.0, kBase = 0.08, dt = 1/60;
 
-/* 월드 스케일 (가시성↑) */
-let Wx = 240;
-let Wy = 120;
+/* 월드 스케일 (화면에 꽉 차게 + 대포 잘 보이게) */
+let Wx = 180;   // 🔥 줌인(기존 240 → 180)
+let Wy = 90;    // 🔥 세로도 같이 줌인
 let scale = 1;
 const marginTop = 20;
-function computeScale(){
-  scale = (canvas.width / DPR) / Wx;
-  Wy = ((canvas.height / DPR) - marginTop) / scale;
-}
 
+function computeScale(){
+  const W = canvas.width / DPR;
+  const H = canvas.height / DPR;
+
+  // 가로/세로 둘 다 "월드가 화면 안에 들어오도록" 더 작은 스케일을 사용
+  const scaleX = W / Wx;
+  const scaleY = (H - marginTop) / Wy;
+  scale = Math.min(scaleX, scaleY);
+
+  // (선택) 화면비가 극단이면 Wx/Wy를 조금 자동 보정하고 싶으면 여기서 조정 가능
+}
 /* 좌표 변환 */
 function worldToCanvas(wx, wy){
   return { x: wx*scale, y: (canvas.height/DPR) - marginTop - wy*scale };
