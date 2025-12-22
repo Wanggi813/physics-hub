@@ -271,50 +271,122 @@ const CONFIG = {
 <script>
 (()=>{
   // ===== SimpleOrbit (OrbitControls 대체) =====
-  class SimpleOrbit{
-    constructor(camera, dom, target=new THREE.Vector3(0,0,0)){
-      this.camera=camera; this.dom=dom; this.target=target;
-      this.sph = new THREE.Spherical(6.5, Math.PI/3, -Math.PI/6);
-      const off=camera.position.clone().sub(target);
-      this.sph.setFromVector3(off);
-      this.minPhi=0.05; this.maxPhi=Math.PI-0.05;
-      this.minR=2.2; this.maxR=20;
-      this.rotSpeed=0.006; this.zoomSpeed=1.1;
-      this.enableDamping=true; this.damp=0.12;
-      this._vTheta=0; this._vPhi=0; this._vR=0;
+ class SimpleOrbit{
+  constructor(camera, dom, target=new THREE.Vector3(0,0,0)){
+    this.camera=camera; this.dom=dom; this.target=target;
 
-      let dragging=false, lx=0, ly=0;
-      dom.addEventListener('mousedown',e=>{dragging=true; lx=e.clientX; ly=e.clientY;});
-      window.addEventListener('mouseup',()=>{dragging=false;});
-      window.addEventListener('mousemove',e=>{
-        if(!dragging) return;
-        const dx=e.clientX-lx, dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
+    this.sph = new THREE.Spherical(6.5, Math.PI/3, -Math.PI/6);
+    const off=camera.position.clone().sub(target);
+    this.sph.setFromVector3(off);
+
+    this.minPhi=0.05; this.maxPhi=Math.PI-0.05;
+    this.minR=2.2; this.maxR=20;
+
+    this.rotSpeed=0.006;
+    this.zoomSpeed=1.1;
+
+    this.enableDamping=true; this.damp=0.12;
+    this._vTheta=0; this._vPhi=0; this._vR=0;
+
+    // ✅ 터치/펜/마우스 통합 (Pointer Events)
+    dom.style.touchAction = "none";
+
+    const pts = new Map(); // pointerId -> {x,y}
+    let pinchStartDist = 0;
+    let pinchStartR = this.sph.radius;
+
+    const dist = (a,b)=>{
+      const dx=a.x-b.x, dy=a.y-b.y;
+      return Math.hypot(dx,dy);
+    };
+
+    dom.addEventListener('pointerdown', (e)=>{
+      dom.setPointerCapture(e.pointerId);
+      pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+
+      if(pts.size===2){
+        const [p1,p2]=[...pts.values()];
+        pinchStartDist = dist(p1,p2);
+        pinchStartR = this.sph.radius;
+      }
+    });
+
+    dom.addEventListener('pointermove', (e)=>{
+      if(!pts.has(e.pointerId)) return;
+
+      const p = pts.get(e.pointerId);
+      const nx = e.clientX, ny = e.clientY;
+      const dx = nx - p.x;
+      const dy = ny - p.y;
+
+      // 업데이트
+      p.x = nx; p.y = ny;
+      pts.set(e.pointerId, p);
+
+      if(pts.size===1){
+        // ✅ 한 손가락/마우스 드래그: 회전
         this._vTheta -= dx*this.rotSpeed;
         this._vPhi   += dy*this.rotSpeed;
-      });
-      dom.addEventListener('wheel',e=>{
-        e.preventDefault();
-        const s=(e.deltaY>0?1:-1);
-        this._vR += s*Math.log(this.zoomSpeed);
-      },{passive:false});
-      this.update(true);
-    }
-    update(immediate=false){
-      if(this.enableDamping && !immediate){
-        this.sph.theta += this._vTheta; this._vTheta *= (1-this.damp);
-        this.sph.phi   += this._vPhi;   this._vPhi   *= (1-this.damp);
-        this.sph.radius*= Math.exp(this._vR); this._vR *= (1-this.damp);
-      }else{
-        this.sph.theta += this._vTheta; this.sph.phi += this._vPhi; this.sph.radius*= Math.exp(this._vR);
-        this._vTheta=this._vPhi=this._vR=0;
+      }else if(pts.size===2){
+        // ✅ 두 손가락 핀치: 줌
+        const [p1,p2]=[...pts.values()];
+        const d = dist(p1,p2);
+        if(pinchStartDist>0){
+          const ratio = d / pinchStartDist;
+          // ratio>1 이면 벌림(줌인) → radius 감소
+          const newR = pinchStartR / Math.max(0.05, ratio);
+          // damping에 자연스럽게 섞이게 _vR로 처리
+          const safeR = Math.max(this.minR, Math.min(this.maxR, newR));
+          this._vR += Math.log(safeR / this.sph.radius);
+        }
       }
-      this.sph.phi = Math.max(this.minPhi, Math.min(this.maxPhi, this.sph.phi));
-      this.sph.radius = Math.max(this.minR, Math.min(this.maxR, this.sph.radius));
-      const p=new THREE.Vector3().setFromSpherical(this.sph).add(this.target);
-      this.camera.position.copy(p);
-      this.camera.lookAt(this.target);
-    }
+    });
+
+    const endPointer = (e)=>{
+      pts.delete(e.pointerId);
+      if(pts.size<2){
+        pinchStartDist = 0;
+      }else{
+        const [p1,p2]=[...pts.values()];
+        pinchStartDist = dist(p1,p2);
+        pinchStartR = this.sph.radius;
+      }
+    };
+
+    dom.addEventListener('pointerup', endPointer);
+    dom.addEventListener('pointercancel', endPointer);
+    dom.addEventListener('pointerleave', endPointer);
+
+    // ✅ 마우스 휠 줌(PC)
+    dom.addEventListener('wheel', e=>{
+      e.preventDefault();
+      const s=(e.deltaY>0?1:-1);
+      this._vR += s*Math.log(this.zoomSpeed);
+    }, {passive:false});
+
+    this.update(true);
   }
+
+  update(immediate=false){
+    if(this.enableDamping && !immediate){
+      this.sph.theta += this._vTheta; this._vTheta *= (1-this.damp);
+      this.sph.phi   += this._vPhi;   this._vPhi   *= (1-this.damp);
+      this.sph.radius*= Math.exp(this._vR); this._vR *= (1-this.damp);
+    }else{
+      this.sph.theta += this._vTheta;
+      this.sph.phi   += this._vPhi;
+      this.sph.radius*= Math.exp(this._vR);
+      this._vTheta=this._vPhi=this._vR=0;
+    }
+
+    this.sph.phi = Math.max(this.minPhi, Math.min(this.maxPhi, this.sph.phi));
+    this.sph.radius = Math.max(this.minR, Math.min(this.maxR, this.sph.radius));
+
+    const p=new THREE.Vector3().setFromSpherical(this.sph).add(this.target);
+    this.camera.position.copy(p);
+    this.camera.lookAt(this.target);
+  }
+}
 
   // DOM
   const wrap=document.getElementById('three-container');
@@ -596,6 +668,7 @@ const CONFIG = {
   rnd.setSize(box.clientWidth||880, Math.max(box.clientHeight||640,560), false);
   wrap.appendChild(rnd.domElement);
   Object.assign(rnd.domElement.style,{display:'block',width:'100%',height:'100%'});
+rnd.domElement.style.touchAction = "none"; // ✅ 터치 제스처를 우리가 받기
 
   const ctl=new SimpleOrbit(cam,rnd.domElement,new THREE.Vector3(0,0,0));
 
