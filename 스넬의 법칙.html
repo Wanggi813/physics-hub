@@ -74,10 +74,11 @@ canvas{
 }
       /* ===== 도전 모드 패널 ===== */
  .game-panel{
-  position:absolute;
+  position:fixed;     /* ✅ absolute → fixed 로 교체 */
   left:12px;
-  top:auto;          /* ✅ 위 고정 해제 */
-  bottom:72px;       /* ✅ 좌측 하단으로 내림 (footer 위로) */
+  top:auto;
+  bottom:72px;
+  z-index:9999;       /* ✅ 추가: 캔버스보다 무조건 위 */
   max-width:360px;
   background:rgba(255,255,255,0.96);
   border:1px solid #c7defd;
@@ -395,6 +396,7 @@ canvas{
         btnR0_30.addEventListener('click',  ()=>handleAnswer('R_0_30'));
         btnR30_60.addEventListener('click', ()=>handleAnswer('R_30_60'));
         btnR60_90.addEventListener('click', ()=>handleAnswer('R_60_90'));
+
         btnRTIR.addEventListener('click',   ()=>handleAnswer('R_TIR'));
 
         btnNextRound.addEventListener('click', ()=>{
