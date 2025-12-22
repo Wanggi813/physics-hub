@@ -47,12 +47,20 @@
         border:1px solid #94a3b8
       }
 
-      #sketch, canvas {
-        touch-action: none;
-        -webkit-user-select:none;
-        user-select:none;
-      }
-      canvas{display:block}
+canvas{
+  touch-action: none;
+  -webkit-user-select:none;
+  user-select:none;
+  display:block;
+  position:relative;
+  z-index:0;               /* ✅ 캔버스는 아래 레이어 */
+}
+
+/* #sketch에는 touch-action을 걸지 않는다 (패널 터치가 씹히는 원인 중 하나) */
+#sketch{
+  position:relative;
+  z-index:0;
+}
 #gamePanel{
   z-index: 9999;                 /* 캔버스보다 무조건 위 */
   pointer-events: auto;
