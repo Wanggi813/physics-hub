@@ -55,19 +55,20 @@
       canvas{display:block}
 
       /* ===== 도전 모드 패널 ===== */
-      .game-panel{
-        position:absolute;
-        left:12px;
-        top:78px;
-        max-width:360px;
-        background:rgba(255,255,255,0.96);
-        border:1px solid #c7defd;
-        border-radius:12px;
-        padding:10px 12px;
-        box-shadow:0 8px 20px rgba(15,23,42,0.18);
-        font-size:13px;
-        line-height:1.4;
-      }
+ .game-panel{
+  position:absolute;
+  left:12px;
+  top:auto;          /* ✅ 위 고정 해제 */
+  bottom:72px;       /* ✅ 좌측 하단으로 내림 (footer 위로) */
+  max-width:360px;
+  background:rgba(255,255,255,0.96);
+  border:1px solid #c7defd;
+  border-radius:12px;
+  padding:10px 12px;
+  box-shadow:0 8px 20px rgba(15,23,42,0.18);
+  font-size:13px;
+  line-height:1.4;
+}
       .game-header{
         display:flex;
         justify-content:space-between;
