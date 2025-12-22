@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>시소 평형 게임 (정확 평형 + 모바일 + 힌트감점)</title>
+<title>토크와 평형</title>
 <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
 <style>
   :root{ --bg:#eef6ff; --line:#dbe8ff; --ink:#0f172a; }
@@ -12,7 +12,7 @@
     background: radial-gradient(1000px 600px at 15% -10%, #eef6ff, #fdfbff);
     font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
     color:var(--ink);
-    touch-action:none;
+  touch-action: auto;
   }
   .top-hud{
     position:fixed;left:50%;top:10px;transform:translateX(-50%);
@@ -263,6 +263,15 @@ window.setBestScoreFromFirebase = function(scoreFromDb){
 
 /* ===== p5 ===== */
 function setup(){
+  const c = createCanvas(windowWidth,windowHeight).position(0,0);
+  pixelDensity(1); textFont('system-ui');
+
+  // ✅ 캔버스에서만 스크롤/확대 제스처 막기
+  c.elt.style.touchAction = "none";
+
+  document.getElementById('resetBtn').onclick=()=>newGame();
+  document.getElementById('hintBtn').onclick=onHint;
+  newGame();
   createCanvas(windowWidth,windowHeight).position(0,0);
   pixelDensity(1); textFont('system-ui');
   document.getElementById('resetBtn').onclick=()=>newGame();
@@ -450,10 +459,29 @@ function handleRelease(mx,my){
 function mousePressed(){handlePress(mouseX,mouseY);}
 function mouseDragged(){handleDrag(mouseX,mouseY);}
 function mouseReleased(){handleRelease(mouseX,mouseY);}
-/* 터치 */
-function touchStarted(){const t=touches[0];if(t)handlePress(t.x,t.y);return false;}
-function touchMoved(){const t=touches[0];if(t)handleDrag(t.x,t.y);return false;}
-function touchEnded(){const t=touches[0]||{x:mouseX,y:mouseY};handleRelease(t.x,t.y);return false;}
+/* 터치 (버튼 탭은 통과, 캔버스 터치만 조작) */
+function touchStarted(e){
+  // 버튼/패널을 눌렀으면 p5가 막지 않도록 통과
+  if (e && e.target && e.target.tagName !== 'CANVAS') return true;
+
+  const t = touches[0];
+  if(t) handlePress(t.x,t.y);
+  return false; // ✅ 캔버스에서만 스크롤 방지
+}
+function touchMoved(e){
+  if (e && e.target && e.target.tagName !== 'CANVAS') return true;
+
+  const t = touches[0];
+  if(t) handleDrag(t.x,t.y);
+  return false;
+}
+function touchEnded(e){
+  if (e && e.target && e.target.tagName !== 'CANVAS') return true;
+
+  const t = touches[0] || {x:mouseX,y:mouseY};
+  handleRelease(t.x,t.y);
+  return false;
+}
 </script>
 
 <!-- ===== Firebase 점수 연동 (토크와 평형) ===== -->
