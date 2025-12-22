@@ -2,7 +2,21 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=1200, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" id="vp" content="width=1200">
+<script>
+  const BASE = 1200; // PC 기준 폭(원하는 PC 가로폭)
+  function fit() {
+    const w = Math.min(window.innerWidth, screen.width);
+    const s = w / BASE;
+    document.getElementById('vp').setAttribute(
+      'content',
+      `width=${BASE}, initial-scale=${s}, minimum-scale=${s}, maximum-scale=${s}, user-scalable=no`
+    );
+  }
+  addEventListener('resize', fit);
+  addEventListener('orientationchange', fit);
+  fit();
+</script>
 <title>수소원자모형 양자화 시뮬레이터 + 오비탈 퀴즈 게임</title>
 
 <!-- 로컬 라이브러리 -->
