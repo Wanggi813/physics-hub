@@ -295,7 +295,9 @@ let lensRoundLocked = false;  // 한 라운드에서 중복 클릭 방지
 function setup(){
   pixelDensity(1);
   createCanvas(windowWidth, windowHeight).parent('sketch');
-  initLayout();
+  const c = document.querySelector('#sketch canvas');
+  if (c) c.style.touchAction = 'none';  
+initLayout();
 
   ui.lensType = document.getElementById('lensType');
   ui.focal    = document.getElementById('focal');
@@ -591,32 +593,68 @@ function drawHandles(){
 }
 
 /* ===== 드래그 ===== */
-function mousePressed(){
+function pointerPressed(px, py){
   // 도전 게임 중에는 드래그로 값 변경 불가
   if (lensGameOn) return;
-  if(mouseX<0 || mouseX>width || mouseY<0 || mouseY>height) return;
-  if(Math.abs(mouseX - lensX) < 10){ dragging='lens'; dragOffsetX=mouseX-lensX; return; }
-  if(dist(mouseX, mouseY, objectX, axisY) < 12){ dragging='obj-base'; dragOffsetX=mouseX-objectX; return; }
-  if(dist(mouseX, mouseY, objectX, axisY - objectH) < 12){
-    dragging='obj-tip'; dragOffsetX=mouseX-objectX; dragOffsetY=mouseY-(axisY-objectH); return;
+
+  if(px<0 || px>width || py<0 || py>height) return;
+
+  if(Math.abs(px - lensX) < 10){
+    dragging='lens'; dragOffsetX=px-lensX; return;
+  }
+  if(dist(px, py, objectX, axisY) < 12){
+    dragging='obj-base'; dragOffsetX=px-objectX; return;
+  }
+  if(dist(px, py, objectX, axisY - objectH) < 12){
+    dragging='obj-tip'; dragOffsetX=px-objectX; dragOffsetY=py-(axisY-objectH); return;
   }
 }
-function mouseDragged(){
+
+function pointerDragged(px, py){
   if(!dragging) return;
+
   if(dragging==='lens'){
-    lensX = constrain(mouseX - dragOffsetX, 40, width-40);
+    lensX = constrain(px - dragOffsetX, 40, width-40);
     if(Math.abs(lensX - objectX) < 10) lensX = (lensX > objectX) ? objectX + 10 : objectX - 10;
   }else if(dragging==='obj-base'){
-    objectX = constrain(mouseX - dragOffsetX, 20, width-20);
+    objectX = constrain(px - dragOffsetX, 20, width-20);
     if(Math.abs(lensX - objectX) < 10) objectX = (objectX < lensX) ? lensX - 10 : lensX + 10;
   }else if(dragging==='obj-tip'){
-    objectX = constrain(mouseX - dragOffsetX, 20, width-20);
+    objectX = constrain(px - dragOffsetX, 20, width-20);
     if(Math.abs(lensX - objectX) < 10) objectX = (objectX < lensX) ? lensX - 10 : lensX + 10;
-    const tipY = mouseY - dragOffsetY; const maxH = 240;
+
+    const tipY = py - dragOffsetY;
+    const maxH = 240;
     objectH = constrain(axisY - tipY, -maxH, maxH);
   }
 }
-function mouseReleased(){ dragging = null; }
+
+function pointerReleased(){
+  dragging = null;
+}
+
+/* --- 마우스 이벤트 --- */
+function mousePressed(){ pointerPressed(mouseX, mouseY); }
+function mouseDragged(){ pointerDragged(mouseX, mouseY); }
+function mouseReleased(){ pointerReleased(); }
+
+/* --- 터치 이벤트 --- */
+function touchStarted(){
+  if(touches && touches.length){
+    pointerPressed(touches[0].x, touches[0].y);
+  }
+  return false; // ✅ 페이지 스크롤 방지
+}
+function touchMoved(){
+  if(touches && touches.length){
+    pointerDragged(touches[0].x, touches[0].y);
+  }
+  return false; // ✅ 페이지 스크롤 방지
+}
+function touchEnded(){
+  pointerReleased();
+  return false;
+}
 </script>
 
 <!-- ===== 렌즈 도전 게임 로직 (점수/판정) ===== -->
