@@ -68,23 +68,18 @@
 
   @media (max-width: 820px) {
     .panel{
-    left:calc(10px + env(safe-area-inset-left));
-    right:calc(10px + env(safe-area-inset-right));
-    bottom:calc(10px + env(safe-area-inset-bottom));
-    top:auto;
-    width:auto;
-
-    /* 🔥 핵심: 패널이 화면을 너무 많이 덮지 않게 */
-    max-height: 38vh;
-    overflow:auto;
-
-    /* 보기 좋게 */
-    border-radius: 16px;
+      left:calc(10px + env(safe-area-inset-left));
+      right:calc(10px + env(safe-area-inset-right));
+      bottom:calc(10px + env(safe-area-inset-bottom));
+      top:auto; width:auto;
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+    }
+    .controls .row{grid-template-columns:110px 1fr 56px}
+    h1{font-size:16px}
+    .hint{left:calc(10px + env(safe-area-inset-left)); top:calc(10px + env(safe-area-inset-top)); font-size:12px}
+    .streak{top:calc(10px + env(safe-area-inset-top)); font-size:13px}
+    .bars{height:120px}
   }
-
-  /* 에너지 바가 큰 편이라 더 덮습니다 → 모바일에서 줄이기 */
-  .bars{ height: 90px; }
-}
 </style>
 </head>
 <body>
@@ -163,29 +158,38 @@ window.addEventListener('orientationchange', resizeCanvas);
 /* =============== 물리 파라미터 =============== */
 const g = 9.8, m = 1.0, kBase = 0.08, dt = 1/60;
 
-/* 월드 스케일 (화면에 꽉 차게 + 대포 잘 보이게) */
-let Wx = 180;   // 🔥 줌인(기존 240 → 180)
-let Wy = 90;    // 🔥 세로도 같이 줌인
+/* 월드 스케일 (가시성↑) */
+let Wx = 240;
+let Wy = 120;
 let scale = 1;
 const marginTop = 20;
+let marginBottom = 0;
 
 function computeScale(){
-  const W = canvas.width / DPR;
-  const H = canvas.height / DPR;
+ const W = canvas.clientWidth;
+  const H = canvas.clientHeight;
 
-  // 가로/세로 둘 다 "월드가 화면 안에 들어오도록" 더 작은 스케일을 사용
-  const scaleX = W / Wx;
-  const scaleY = (H - marginTop) / Wy;
-  scale = Math.min(scaleX, scaleY);
+  // ✅ 아래 패널(오른쪽 UI)이 겹치는 만큼 바닥을 올리기
+  const panel = document.querySelector('.panel');
+  if(panel){
+    const ph = panel.getBoundingClientRect().height || 0;
+    // 태블릿/모바일에서 패널이 큰 경우가 많아서 약간 여유(+14)
+    marginBottom = Math.min(H * 0.15, ph + 0);
+  } else {
+    marginBottom = 0;
+  }
 
-  // (선택) 화면비가 극단이면 Wx/Wy를 조금 자동 보정하고 싶으면 여기서 조정 가능
+  scale = W / Wx;
+  Wy = (H - marginTop - marginBottom) / scale;
 }
+
 /* 좌표 변환 */
 function worldToCanvas(wx, wy){
-  return { x: wx*scale, y: (canvas.height/DPR) - marginTop - wy*scale };
-}
-function canvasToWorld(cx, cy){
-  return { x: cx/scale, y: ((canvas.height/DPR) - marginTop - cy)/scale };
+  const H = canvas.clientHeight;
+  return { x: wx*scale, y: H - marginBottom - wy*scale };
+}function canvasToWorld(cx, cy){
+  const H = canvas.clientHeight;
+  return { x: cx/scale, y: (H - marginBottom - cy)/scale };
 }
 
 /* =============== 객체 =============== */
