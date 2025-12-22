@@ -53,21 +53,29 @@
     }
 
     /* === 간섭 도전 박스 (밝은 색) === */
-    .challenge-box{
-      position:fixed;
-      top:14px;
-      left:50%;
-      transform:translateX(-50%);
-      z-index:20;
-      background:rgba(255,255,255,0.98);
-      border:1px solid #e2e8f0;
-      border-radius:14px;
-      padding:10px 12px;
-      width:min(92vmin, 720px);
-      color:#0f172a;
-      box-shadow:0 12px 28px rgba(148,163,184,0.55);
-      font-size:13px;
-    }
+.challenge-box{
+  position:fixed;
+
+  /* 📍 위치: 왼쪽 아래 */
+  left:14px;
+  bottom:14px;
+  top:auto;
+  transform:none;
+
+  /* 📐 폭: 화면에 맞게 자동 조절 */
+  width:clamp(220px, 38vw, 420px);
+  max-width:calc(100vw - 28px);
+
+  z-index:20;
+  background:rgba(255,255,255,0.98);
+  border:1px solid #e2e8f0;
+  border-radius:14px;
+  padding:10px 12px;
+  color:#0f172a;
+  box-shadow:0 12px 28px rgba(148,163,184,0.55);
+  font-size:13px;
+  line-height:1.45;
+}
     .cb-title{
       font-size:12px;
       font-weight:800;
