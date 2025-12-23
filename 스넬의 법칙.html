@@ -930,6 +930,25 @@ const gamePanel = document.getElementById('gamePanel');
     e.target.closest('#footer')
   );
 }
+function startDrag(x, y){
+  const d = dist(x, y, handle.x, handle.y);
+  // 도전 모드에서 정답 공개 전에는 고정
+  if (gameActive && !gameReveal) return;
+
+  if (d < handle.r * 1.6){
+    handle.dragging = true;
+  }
+}
+
+function moveDrag(x, y){
+  if (!handle.dragging) return;
+  handle.x = x;
+  handle.y = y;
+}
+
+function endDrag(){
+  handle.dragging = false;
+}
 
 function touchStarted(e){
   // ✅ UI 위에서 터치면: p5가 가로채지 말고 브라우저/DOM에게 맡김
@@ -958,7 +977,22 @@ function touchEnded(e){
   endDrag();
   return false;
 }
+function mousePressed(){
+  // 캔버스 위 좌표의 실제 DOM 요소를 가져와서 UI 클릭이면 드래그 시작 안 함
+  const el = document.elementFromPoint(mouseX, mouseY);
+  if (isTouchOnUI({ target: el })) return;
 
+  startDrag(mouseX, mouseY);
+}
+
+function mouseDragged(){
+  moveDrag(mouseX, mouseY);
+  return false;
+}
+
+function mouseReleased(){
+  endDrag();
+}
       function windowResized(){ resizeCanvas(windowWidth, windowHeight - 130); cx = width/2; cy = height/2; }
 
       function drawLegend(){
