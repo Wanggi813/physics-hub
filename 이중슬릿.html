@@ -515,7 +515,7 @@ function setupRound(){
   // 파라미터: 파장이 짧고, 슬릿 간격 크고, 슬릿 폭 적당히 작게 → 무늬 많이
   const lamNm = 380 + Math.random()*80;   // 380~460
   const dUnit = 80 + Math.random()*50;    // 80~130
-  const aUnit = 5  + Math.random()*7;     // 5~12
+  const aUnit = 2  + Math.random()*5;     // 2~7
 
   P.lambdaNm = lamNm;
   P.dUnit    = dUnit;
@@ -936,3 +936,4 @@ window.setBestScoreFromFirebase = function(score){
 </script>
 </body>
 </html>
+
