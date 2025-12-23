@@ -326,32 +326,31 @@
     scene.add(objGroup);
 
     // 달
-    const R=130;
-    const moonGeo=new THREE.SphereGeometry(R,96,96);
-    const moonCv=document.createElement('canvas');
-    moonCv.width=moonCv.height=1024;
-    (function(ctx){
-      ctx.fillStyle='#d8dde6';
-      ctx.fillRect(0,0,1024,1024);
-      for(let i=0;i<500;i++){
-        const x=Math.random()*1024,y=Math.random()*1024,r=Math.random()*18+4;
-        const g=ctx.createRadialGradient(x,y,1,x,y,r);
-        g.addColorStop(0,'#c7ceda');
-        g.addColorStop(1,'#9aa3b3');
-        ctx.fillStyle=g;
-        ctx.beginPath();
-        ctx.arc(x,y,r,0,Math.PI*2);
-        ctx.fill();
-      }
-    })(moonCv.getContext('2d'));
-    const moonTex=new THREE.CanvasTexture(moonCv);
-    moonTex.colorSpace=THREE.SRGBColorSpace;
-    moonTex.repeat.x=-1;
-    moonTex.offset.x=1;
-    const moonMesh=new THREE.Mesh(
-      moonGeo,
-      new THREE.MeshBasicMaterial({map:moonTex,side:THREE.DoubleSide})
-    );
+const R = 130;
+
+const moonTex = new THREE.TextureLoader().load(
+  './달.png',
+  () => console.log('달.png 로드 성공'),
+  undefined,
+  (e) => console.error('달.png 로드 실패:', e)
+);
+moonTex.colorSpace = THREE.SRGBColorSpace;
+moonTex.minFilter = THREE.LinearFilter;
+moonTex.magFilter = THREE.LinearFilter;
+
+const moonMat = new THREE.MeshBasicMaterial({
+  map: moonTex,
+  transparent: true,
+  side: THREE.DoubleSide,   // ✅ 앞/뒤 다 보이게
+  depthWrite: false
+});
+
+const moonGeo = new THREE.PlaneGeometry(2 * R, 2 * R);
+const moonMesh = new THREE.Mesh(moonGeo, moonMat);
+
+// ✅ 별/꼬리보다 앞에 오게(가끔 묻히는 현상 방지)
+moonMesh.renderOrder = 10;
+moonMesh.position.z = 1;    // 살짝 앞으로
 
     // 상대 우주선(관찰자와 동일 실루엣 크기)
     function shipTexture(h="#9ca3af",w="#6b7280",c1="#4a78a8",c2="#1d3557"){
