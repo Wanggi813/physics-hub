@@ -68,16 +68,25 @@
             transition: transform 0.5s linear;
         }
 
-        #planet {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            background: radial-gradient(circle at 30% 30%, #6a8dcf, #3a5d9f);
-            border-radius: 50%;
-            box-shadow: inset 20px -20px 40px rgba(0,0,0,0.5), 0 0 50px rgba(74, 144, 226, 0.3);
-            z-index: 10;
-        }
+#planet{
+  width: 180px;
+  height: 180px;
+
+  background-image: url('./image/earth.png');
+  background-size: contain;      /* 사진 전체 보이게 */
+  background-repeat: no-repeat;
+  background-position: center;
+
+  border-radius: 50%;             /* 지구를 원형으로 */
+  
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+
+  /* 다른 요소에 가리지 않게 */
+  z-index: 2;
+}
 
         #rocket-container {
             position: absolute;
@@ -88,15 +97,18 @@
             z-index: 20;
         }
 
-        #rocket-body {
-            width: 100%;
-            height: 100%;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 200"><g><path fill="%23e0e0e0" d="M75,150 L50,200 L25,150 L25,50 C25,25 50,0 50,0 C50,0 75,25 75,50 Z"/><path fill="%23c0c0c0" d="M50,0 C50,0 25,25 25,50 L25,150 L50,200 L50,0 Z"/><path fill="%23b22222" d="M75,150 L50,165 L25,150 C25,140 50,125 50,125 C50,125 75,140 75,150 Z"/><path fill="%238b0000" d="M50,125 C50,125 25,140 25,150 L25,150 L50,165 L50,125 Z"/></g></svg>');
-            background-size: contain;
-            background-repeat: no-repeat;
-            position: absolute;
-            bottom: 0;
-        }
+#rocket-body{
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: block;
+  /* 상대성이론 우주선은 기본이 가로 방향이라, 탈출속도(위로 발사)에 맞게 회전 */
+  transform: rotate(-90deg) scale(2);
+  transform-origin: 50% 50%;
+  filter: drop-shadow(0 8px 16px rgba(255,120,60,0.25));
+}
         
         #flame {
             position: absolute;
@@ -159,10 +171,41 @@
     <div class="simulation-container" id="simulationBox">
         <div id="stars-bg"></div>
         <div id="planet"></div>
-        <div id="rocket-container">
-            <div id="rocket-body"></div>
-            <div id="flame"></div>
-        </div>
+<div id="rocket-container">
+  <!-- 상대성이론 우주선 모양 덧씌우기 (인라인 SVG) -->
+  <svg id="rocket-body" viewBox="0 0 320 200" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <linearGradient id="kps_flame" x1="0" x2="1">
+        <stop offset="0" stop-color="#fff59d"/>
+        <stop offset="0.45" stop-color="#ffb74d"/>
+        <stop offset="1" stop-color="#ff5252"/>
+      </linearGradient>
+      <radialGradient id="kps_glass" cx="50%" cy="50%" r="50%">
+        <stop offset="0" stop-color="#cfe9ff"/>
+        <stop offset="1" stop-color="#5aa0ff"/>
+      </radialGradient>
+      <linearGradient id="kps_hull" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#eef2f9"/>
+        <stop offset="1" stop-color="#d6dce8"/>
+      </linearGradient>
+    </defs>
+
+    <!-- (상대성이론 파일의 우주선 path를 그대로 사용) -->
+    <g transform="translate(0,6)">
+      <path d="M16 100 L72 78 L72 122 Z" fill="url(#kps_flame)" opacity="0.95"></path>
+    </g>
+
+    <g transform="translate(40,12)">
+      <path d="M50,50 Q180,20 270,80 Q290,100 270,120 Q180,180 50,150 Q30,140 30,100 Q30,60 50,50 Z"
+            fill="url(#kps_hull)" stroke="#cfd6e6" stroke-width="4"/>
+      <!-- 창문/디테일(상대성이론 SVG에 있는 것과 동일하게 더 붙여도 됨) -->
+      <circle cx="160" cy="100" r="24" fill="url(#kps_glass)" stroke="#1c3d7a" stroke-width="6"/>
+      <circle cx="168" cy="92" r="9" fill="#eaf6ff" opacity="0.9"/>
+    </g>
+  </svg>
+
+  <div id="flame"></div>
+</div>
     </div>
 
     <div class="controls">

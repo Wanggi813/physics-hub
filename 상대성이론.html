@@ -329,10 +329,10 @@
 const R = 130;
 
 const moonTex = new THREE.TextureLoader().load(
-  './달.png',
-  () => console.log('달.png 로드 성공'),
+  './image/moon.png',
+  () => console.log('moon.png 로드 성공'),
   undefined,
-  (e) => console.error('달.png 로드 실패:', e)
+  (e) => console.error('moon.png 로드 실패:', e)
 );
 moonTex.colorSpace = THREE.SRGBColorSpace;
 moonTex.minFilter = THREE.LinearFilter;
