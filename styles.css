@@ -28,7 +28,7 @@
     h1{font-size:24px;margin:0 10px 0 0;display:flex;gap:10px;align-items:center}
     /* ===== Logo (favicon reuse) ===== */
     .logo-icon{display: inline-flex;width: 28px;height: 28px;border-radius: 8px;align-items: center;justify-content: center;background: #16234d;border: 1px solid #2d3a66;margin-right: 6px;}
-    .logo-icon img{width: 18px;height: 18px;object-fit: contain;}
+    .logo-icon img{width: 36px;height: 36px;object-fit: contain;}
     .pill{display:inline-flex;gap:6px;align-items:center;background:#0d1530;border:1px solid var(--line);color:var(--muted);padding:10px 12px;border-radius:999px}
     .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
     input[type="search"], select{ background:#0d1530;border:1px solid var(--line);color:var(--ink);padding:10px 12px;border-radius:12px }
@@ -260,4 +260,5 @@
       text-decoration:none;
 
     }
+
 
