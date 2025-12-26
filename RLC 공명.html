@@ -392,6 +392,7 @@ capacitorMat.needsUpdate = true;
 
     
     // === Helpers ===
+    const texLoader = new THREE.TextureLoader();
     const sideInner = 8, zWire = 0.0;
     function cylinderBetween(a,b,r=0.08,mat=wireMat){
       const dir = new THREE.Vector3().subVectors(b,a); const len = dir.length();
@@ -443,6 +444,35 @@ capacitorMat.needsUpdate = true;
     const acLen = 2.0;
     const acBody = new THREE.Mesh(new THREE.CylinderGeometry(0.65,0.65,0.18,48), silverMat);
     acBody.position.copy(acCenter); acBody.rotation.x = Math.PI/2; gModel.add(acBody);
+
+    // --- AC face sticker (PNG를 원형 앞면에 덧씌우기) ---
+const acStickerTex = texLoader.load("./image/ac_icon.png"); // ✅ 파일명만 네 걸로 수정
+if ("colorSpace" in acStickerTex) acStickerTex.colorSpace = THREE.SRGBColorSpace;
+acStickerTex.wrapS = acStickerTex.wrapT = THREE.ClampToEdgeWrapping;
+
+const acStickerMat = new THREE.MeshStandardMaterial({
+  map: acStickerTex,
+  transparent: true,
+  alphaTest: 0.02,      // 투명 가장자리 깔끔하게
+  depthWrite: false,    // z-fighting 감소
+  metalness: 0.0,
+  roughness: 0.5
+});
+
+// 원형 스티커(디스크)
+const acStickerRadius = 0.65 * 0.92; // 원판 안쪽으로 살짝(테두리 남기기)
+const acSticker = new THREE.Mesh(
+  new THREE.CircleGeometry(acStickerRadius, 96),
+  acStickerMat
+);
+
+// AC 본체는 x축으로 누워있으니, 원형 "앞면"은 x 방향으로 약간 앞으로 이동
+acSticker.position.copy(acCenter);
+acSticker.position.x += 0.18/2 + 0.003;  // (실린더 두께/2) + 살짝 띄움
+acSticker.rotation.y = Math.PI/2;        // x축 방향을 바라보게 회전
+
+gModel.add(acSticker);
+    
     // sine groove (inlay)
     const sinePts=[]; for(let i=0;i<=80;i++){ const t=i/80; const x=(t-0.5)*0.9; const y=Math.sin(t*Math.PI*2)*0.25; sinePts.push(new THREE.Vector3(x, y, 0)); }
     const sinePath = new THREE.CatmullRomCurve3(sinePts);
