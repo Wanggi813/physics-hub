@@ -461,31 +461,41 @@ gModel.add(acLeadL, acLeadR);
 const acStickerTex = texLoader.load("./image/ac_icon.png");
 if ("colorSpace" in acStickerTex) acStickerTex.colorSpace = THREE.SRGBColorSpace;
 
-const acStickerMat = new THREE.MeshStandardMaterial({
+// ✅ 텍스처 회전은 쓰지 않는다(꼬임 방지)
+acStickerTex.center.set(0.5, 0.5);
+acStickerTex.rotation = 0;
+acStickerTex.needsUpdate = true;
+
+const acStickerMatF = new THREE.MeshStandardMaterial({
   map: acStickerTex,
   transparent: true,
   alphaTest: 0.02,
   depthWrite: false,
-  side: THREE.DoubleSide,
+  side: THREE.FrontSide,   // 앞면만
   metalness: 0.0,
   roughness: 0.7
 });
+const acStickerMatB = acStickerMatF.clone();
+acStickerMatB.side = THREE.FrontSide;     // 뒷면도 "앞면"으로 만들어 뒤집어 붙일 것
 
 const acStickerRadius = 0.65 * 0.92;
 const acStickerGeo = new THREE.CircleGeometry(acStickerRadius, 96);
 
-const eps = 0.002;
+// z-fighting 방지
+const eps = 0.006;
 
-// 앞면(+z)
-const acStickerFront = new THREE.Mesh(acStickerGeo, acStickerMat);
+// ✅ 여기 각도만 바꾸면 됨: (90도 돌려야 하면 Math.PI/2 또는 -Math.PI/2)
+const ROT_Z = Math.PI/2;   // <- 필요하면 -Math.PI/2 로 바꿔보기
+
+// 앞면(+Z)
+const acStickerFront = new THREE.Mesh(acStickerGeo, acStickerMatF);
 acStickerFront.position.set(0, 0, +0.18/2 + eps);
-acStickerFront.rotation.z = -0; // 네가 원한 회전 보정
+acStickerFront.rotation.set(0, 0, ROT_Z);
 
-// 뒷면(-z)
-const acStickerBack = new THREE.Mesh(acStickerGeo, acStickerMat);
+// 뒷면(-Z) : 뒤집어서 같은 방향으로 보이게
+const acStickerBack = new THREE.Mesh(acStickerGeo, acStickerMatB);
 acStickerBack.position.set(0, 0, -0.18/2 - eps);
-acStickerBack.rotation.y = Math.PI;      // 뒤집어서 정방향
-acStickerBack.rotation.z = -0;
+acStickerBack.rotation.set(0, Math.PI, ROT_Z);
 
 acStickerFront.renderOrder = 10;
 acStickerBack.renderOrder  = 10;
