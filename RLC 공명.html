@@ -350,7 +350,7 @@ const metalTex_res = metalTex.clone();
 metalTex_res.repeat.set(3, 1);
 
 const metalTex_cap = metalTex.clone();
-metalTex_cap.repeat.set(2, 2);
+metalTex_cap.repeat.set(1, 1);
 
 const metalTex_coil = metalTex.clone();
 metalTex_coil.repeat.set(10, 1);
@@ -364,6 +364,11 @@ metalTex_coil.anisotropy = renderer.capabilities.getMaxAnisotropy();
 resistorMat.map  = metalTex_res;
 coilMat.map      = metalTex_coil;
 capacitorMat.map = metalTex_cap;
+
+    // 텍스처 색 왜곡 방지(곱셈 제거)
+resistorMat.color.set(0xffffff);
+coilMat.color.set(0xffffff);
+capacitorMat.color.set(0xffffff);
 
 // 금속 느낌 보정(취향값)
 resistorMat.metalness  = 0.85; resistorMat.roughness  = 0.28;
