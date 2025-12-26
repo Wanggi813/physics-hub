@@ -444,6 +444,20 @@ capacitorMat.needsUpdate = true;
     const acBody = new THREE.Mesh(new THREE.CylinderGeometry(0.65,0.65,0.18,48), silverMat);
     acBody.position.copy(acCenter); acBody.rotation.x = Math.PI/2; gModel.add(acBody);
 
+    // === AC 단자(원판-도선 연결) 추가 ===
+const acRadius = 0.65;      // acBody 반지름과 동일
+const acWireR  = 0.08;      // 도선 반지름(기존과 동일)
+const acDockEps = 0.02;     // 원판 표면에서 살짝 바깥으로(겹침 방지)
+
+// 원판의 좌/우 가장자리 "접점" (월드 좌표)
+const acContactL = acCenter.clone().add(new THREE.Vector3(-(acRadius + acDockEps), 0, 0));
+const acContactR = acCenter.clone().add(new THREE.Vector3( (acRadius + acDockEps), 0, 0));
+
+// 상단 도선 끊긴 지점(ETop.c1, ETop.c2) ↔ 원판 접점 연결
+const acLeadL = cylinderBetween(ETop.c1, acContactL, acWireR, wireMat);
+const acLeadR = cylinderBetween(acContactR, ETop.c2, acWireR, wireMat);
+gModel.add(acLeadL, acLeadR);
+    
 const acStickerTex = texLoader.load("./image/ac_icon.png");
 if ("colorSpace" in acStickerTex) acStickerTex.colorSpace = THREE.SRGBColorSpace;
 
