@@ -444,43 +444,39 @@ capacitorMat.needsUpdate = true;
     const acBody = new THREE.Mesh(new THREE.CylinderGeometry(0.65,0.65,0.18,48), silverMat);
     acBody.position.copy(acCenter); acBody.rotation.x = Math.PI/2; gModel.add(acBody);
 
-    // --- AC face sticker (PNG를 원형 앞면에 덧씌우기) ---
-const acStickerTex = texLoader.load("./image/ac_icon.png", () => {
-  // 로드 완료 후 업데이트
-  acStickerTex.needsUpdate = true;
-});
+const acStickerTex = texLoader.load("./image/ac_icon.png");
 if ("colorSpace" in acStickerTex) acStickerTex.colorSpace = THREE.SRGBColorSpace;
-acStickerTex.wrapS = acStickerTex.wrapT = THREE.ClampToEdgeWrapping;
 
-// 스티커 재질: 투명 배경 + 양면 렌더
 const acStickerMat = new THREE.MeshStandardMaterial({
   map: acStickerTex,
   transparent: true,
   alphaTest: 0.02,
   depthWrite: false,
-  side: THREE.DoubleSide,     // ✅ 양면 표시(재질 자체)
+  side: THREE.DoubleSide,
   metalness: 0.0,
-  roughness: 0.6
+  roughness: 0.7
 });
 
-const acStickerRadius = 0.65 * 0.92; // 원판 안쪽으로 살짝
+const acStickerRadius = 0.65 * 0.92;
 const acStickerGeo = new THREE.CircleGeometry(acStickerRadius, 96);
 
-// ✅ 앞면 스티커
+const eps = 0.002;
+
+// 앞면(+z)
 const acStickerFront = new THREE.Mesh(acStickerGeo, acStickerMat);
-acStickerFront.position.copy(acCenter);
-acStickerFront.position.x += 0.18/2 + 0.005; // 실린더 앞쪽
-acStickerFront.rotation.y = Math.PI;       // x축 방향을 바라보게
-acStickerFront.rotation.z = -Math.PI/2;       // ✅ 90도 돌아간 것 보정(필요시 -Math.PI/2로 바꿔보기)
+acStickerFront.position.set(0, 0, +0.18/2 + eps);
+acStickerFront.rotation.z = -Math.PI/2; // 네가 원한 회전 보정
 
-// ✅ 뒷면 스티커
+// 뒷면(-z)
 const acStickerBack = new THREE.Mesh(acStickerGeo, acStickerMat);
-acStickerBack.position.copy(acCenter);
-acStickerBack.position.x -= 0.18/2 + 0.005; // 실린더 뒤쪽
-acStickerBack.rotation.y = -Math.PI;      // 반대쪽을 바라보게
-acStickerBack.rotation.z = -Math.PI/2;       // ✅ 앞면과 동일하게 보이도록
+acStickerBack.position.set(0, 0, -0.18/2 - eps);
+acStickerBack.rotation.y = Math.PI;      // 뒤집어서 정방향
+acStickerBack.rotation.z = -Math.PI/2;
 
-gModel.add(acStickerFront, acStickerBack);
+acStickerFront.renderOrder = 10;
+acStickerBack.renderOrder  = 10;
+
+acBody.add(acStickerFront, acStickerBack);
     
     // Capacitor (right)
     const capCenter = new THREE.Vector3(sideInner/2, 0, zWire);
