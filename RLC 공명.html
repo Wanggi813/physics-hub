@@ -475,7 +475,7 @@ const acStickerMat = new THREE.MeshStandardMaterial({
   polygonOffsetUnits: -2,
 });
 
-const acStickerRadius = 0.65 * 0.92;
+const acStickerRadius = 0.65 * 0.98;
 const acStickerGeo = new THREE.CircleGeometry(acStickerRadius, 96);
 const eps = 0.002;
 
@@ -488,7 +488,7 @@ acStickerFront.rotation.z = 0;                      // 필요하면 여기만 �
 const acStickerBack = new THREE.Mesh(acStickerGeo, acStickerMat);
 acStickerBack.position.set(0, -0.18/2 - eps, 0);    // -Y 캡 바깥
 acStickerBack.rotation.x = +Math.PI/2;              // -Y 방향으로
-acStickerBack.rotation.z = 0;                       // 앞면과 동일한 회전 보정값
+acStickerBack.rotation.z = Math.PI;                       // 앞면과 동일한 회전 보정값
 
 acStickerFront.renderOrder = 10;
 acStickerBack.renderOrder  = 10;
