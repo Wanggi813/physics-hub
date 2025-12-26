@@ -465,13 +465,13 @@ const eps = 0.002;
 // 앞면(+z)
 const acStickerFront = new THREE.Mesh(acStickerGeo, acStickerMat);
 acStickerFront.position.set(0, 0, +0.18/2 + eps);
-acStickerFront.rotation.z = -Math.PI/2; // 네가 원한 회전 보정
+acStickerFront.rotation.z = -0; // 네가 원한 회전 보정
 
 // 뒷면(-z)
 const acStickerBack = new THREE.Mesh(acStickerGeo, acStickerMat);
 acStickerBack.position.set(0, 0, -0.18/2 - eps);
 acStickerBack.rotation.y = Math.PI;      // 뒤집어서 정방향
-acStickerBack.rotation.z = -Math.PI/2;
+acStickerBack.rotation.z = -0;
 
 acStickerFront.renderOrder = 10;
 acStickerBack.renderOrder  = 10;
