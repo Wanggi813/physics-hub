@@ -331,6 +331,52 @@
     const coilMat = silverMat.clone();
     const capacitorMat = silverMat.clone();
 
+// === Metal texture (저항/코일/축전기판 표면 덮기) ===
+const texLoader = new THREE.TextureLoader();
+const metalTex = texLoader.load("./image/metal_tile.jpg");
+
+// 색 공간(three r152+ 대응)
+if ("colorSpace" in metalTex) metalTex.colorSpace = THREE.SRGBColorSpace;
+
+// 타일링(반복) 설정
+metalTex.wrapS = THREE.RepeatWrapping;
+metalTex.wrapT = THREE.RepeatWrapping;
+
+// 반복 횟수(부품별로 체감 맞추기)
+// - 저항(원기둥): 둘레 방향으로 적당히 반복, 길이 방향도 약간 반복
+// - 축전기 판(박스): 판 위에서 결이 보이도록 반복
+// - 코일(튜브): 길게 늘어나므로 U 방향 반복을 크게 주는 편이 자연스러움
+const metalTex_res = metalTex.clone();
+metalTex_res.repeat.set(3, 1);
+
+const metalTex_cap = metalTex.clone();
+metalTex_cap.repeat.set(2, 2);
+
+const metalTex_coil = metalTex.clone();
+metalTex_coil.repeat.set(10, 1);
+
+// 선명도(사선에서 텍스처 뭉개짐 완화)
+metalTex_res.anisotropy = renderer.capabilities.getMaxAnisotropy();
+metalTex_cap.anisotropy = renderer.capabilities.getMaxAnisotropy();
+metalTex_coil.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+// 각 재질에 적용(원하는 3개만!)
+resistorMat.map  = metalTex_res;
+coilMat.map      = metalTex_coil;
+capacitorMat.map = metalTex_cap;
+
+// 금속 느낌 보정(취향값)
+resistorMat.metalness  = 0.85; resistorMat.roughness  = 0.28;
+coilMat.metalness      = 0.90; coilMat.roughness      = 0.22;
+capacitorMat.metalness = 0.88; capacitorMat.roughness = 0.26;
+
+// 변경 반영
+resistorMat.needsUpdate = true;
+coilMat.needsUpdate = true;
+capacitorMat.needsUpdate = true;
+
+
+    
     // === Helpers ===
     const sideInner = 8, zWire = 0.0;
     function cylinderBetween(a,b,r=0.08,mat=wireMat){
