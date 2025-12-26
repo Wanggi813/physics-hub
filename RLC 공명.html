@@ -469,14 +469,14 @@ const acStickerGeo = new THREE.CircleGeometry(acStickerRadius, 96);
 // ✅ 앞면 스티커
 const acStickerFront = new THREE.Mesh(acStickerGeo, acStickerMat);
 acStickerFront.position.copy(acCenter);
-acStickerFront.position.x += 0.18/2 + 0.003; // 실린더 앞쪽
+acStickerFront.position.x += 0.18/2 + 0.005; // 실린더 앞쪽
 acStickerFront.rotation.y = Math.PI;       // x축 방향을 바라보게
 acStickerFront.rotation.z = -Math.PI/2;       // ✅ 90도 돌아간 것 보정(필요시 -Math.PI/2로 바꿔보기)
 
 // ✅ 뒷면 스티커
 const acStickerBack = new THREE.Mesh(acStickerGeo, acStickerMat);
 acStickerBack.position.copy(acCenter);
-acStickerBack.position.x -= 0.18/2 + 0.003; // 실린더 뒤쪽
+acStickerBack.position.x -= 0.18/2 + 0.005; // 실린더 뒤쪽
 acStickerBack.rotation.y = -Math.PI;      // 반대쪽을 바라보게
 acStickerBack.rotation.z = -Math.PI/2;       // ✅ 앞면과 동일하게 보이도록
 
