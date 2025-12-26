@@ -482,22 +482,6 @@ acStickerBack.rotation.z = -Math.PI/2;       // ✅ 앞면과 동일하게 보�
 
 gModel.add(acStickerFront, acStickerBack);
     
-    // sine groove (inlay)
-    const sinePts=[]; for(let i=0;i<=80;i++){ const t=i/80; const x=(t-0.5)*0.9; const y=Math.sin(t*Math.PI*2)*0.25; sinePts.push(new THREE.Vector3(x, y, 0)); }
-    const sinePath = new THREE.CatmullRomCurve3(sinePts);
-    const grooveGeo = new THREE.TubeGeometry(sinePath, 160, 0.02, 12, false);
-    const grooveMat = new THREE.MeshStandardMaterial({ color: 0x8d98a3, metalness: 0.3, roughness: 0.7 });
-    const groove = new THREE.Mesh(grooveGeo, grooveMat);
-    groove.position.copy(acCenter);
-    groove.rotation.x = Math.PI/2;
-    groove.position.z += 0.09 - 0.005;
-    gModel.add(groove);
-    const acPortL = acCenter.clone().add(new THREE.Vector3(-acLen/2, 0, 0));
-    const acPortR = acCenter.clone().add(new THREE.Vector3( acLen/2, 0, 0));
-    const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,0.5,24), silverMat); postL.position.copy(acPortL); postL.rotation.z=Math.PI/2; gModel.add(postL);
-    const postR = new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,0.5,24), silverMat); postR.position.copy(acPortR); postR.rotation.z=Math.PI/2; gModel.add(postR);
-    gModel.add(cylinderBetween(ETop.c1, acPortL)); gModel.add(cylinderBetween(acPortR, ETop.c2));
-
     // Capacitor (right)
     const capCenter = new THREE.Vector3(sideInner/2, 0, zWire);
     const capW0 = 1.0, capT = 0.12, capD0 = 1.0;
