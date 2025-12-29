@@ -15,7 +15,9 @@ import {
   getDoc,
   setDoc,
   collection,
-  getDocs
+  getDocs,
+  addDoc,           
+  serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 // ====================== Firebase 기본 설정 ======================
@@ -334,11 +336,12 @@ onAuthStateChanged(auth, async (user) => {
   const scoreEl = document.getElementById("score");
   const logoutBtn = document.getElementById("logout-btn");
   const openBtn = document.getElementById("open-auth");
+  const suggBtn = document.getElementById("btn-sugg");
 
   if (user) {
     currentUser = user;
     let displayId = "";
-
+    if (suggBtn) suggBtn.style.display = "inline-flex";
     try {
       const userRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userRef);
@@ -356,6 +359,7 @@ onAuthStateChanged(auth, async (user) => {
         const fallbackId = user.email.split("@")[0];
         await setDoc(userRef, { ID: fallbackId });
         displayId = fallbackId;
+         if (suggBtn) suggBtn.style.display = "none";
       }
     } catch (err) {
       console.error("ID 불러오기 오류:", err);
@@ -406,4 +410,46 @@ window.changePassword = changePassword;
 window.openChangeMode = openChangeMode;
 window.closeChangeMode = closeChangeMode;
 
+// 1. 모달 열기/닫기
+function openSugg() {
+  const m = document.getElementById("modal-sugg");
+  if(m) m.style.display = "flex";
+}
+function closeSugg() {
+  const m = document.getElementById("modal-sugg");
+  if(m) m.style.display = "none";
+  document.getElementById("s-title").value = "";
+  document.getElementById("s-content").value = "";
+}
+
+// 2. 파이어베이스로 전송
+async function sendSugg() {
+  if (!currentUser) { alert("로그인이 필요합니다."); return; }
+  
+  const title = document.getElementById("s-title").value.trim();
+  const content = document.getElementById("s-content").value.trim();
+  
+  if (!title || !content) { alert("제목과 내용을 모두 적어주세요."); return; }
+
+  try {
+    // Firestore 'suggestions' 컬렉션에 저장
+    await addDoc(collection(db, "suggestions"), {
+      uid: currentUser.uid,
+      writerID: currentUserIdText, // 학생 ID (예: s1A_01)
+      title: title,
+      content: content,
+      date: serverTimestamp()
+    });
+    alert("소중한 의견이 선생님께 전달되었습니다!");
+    closeSugg();
+  } catch (err) {
+    console.error(err);
+    alert("오류 발생: " + err.message);
+  }
+}
+
+// 3. HTML에서 쓸 수 있게 등록
+window.openSugg = openSugg;
+window.closeSugg = closeSugg;
+window.sendSugg = sendSugg;
 

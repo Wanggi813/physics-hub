@@ -260,7 +260,54 @@
       text-decoration:none;
 
     }
+/* ===== 의견 제안 모달 스타일 ===== */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+}
 
+.modal-content {
+  background: #0b1020;
+  border: 1px solid rgba(120, 150, 220, 0.5);
+  border-radius: 16px;
+  padding: 24px;
+  width: 90%; max-width: 420px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+  animation: modalPop 0.3s ease-out;
+}
+
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-content h3 { margin: 0 0 8px; color: #fff; font-size: 18px; }
+.modal-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+
+.input-group { margin-bottom: 12px; }
+.input-group label { display: block; font-size: 12px; color: #8aa1e0; margin-bottom: 4px; }
+.input-group input, .input-group textarea {
+  width: 100%;
+  background: #020617;
+  border: 1px solid #243166;
+  border-radius: 8px;
+  padding: 10px;
+  color: #e9efff;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+}
+.input-group input:focus, .input-group textarea:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.3);
+}
+
+.modal-actions {
+  display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;
+}
 
 
 
