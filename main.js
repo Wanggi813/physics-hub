@@ -21,7 +21,7 @@
     {title:"옴의 법칙", category:"전자/반도체", desc:"V=IR, 직렬/병렬 직관, 전류 흐름 애니메이션.", tags:["전압","전류"], emoji:"⚡", demo:"./옴의 법칙.html", curriculumId:"[12물리02-02]", thumb:"./thumb_nail/옴의_법칙.png"},
     {title:"원자모형", category:"시뮬레이션", desc:"보어/오비탈/전자구름 개념 시각화.", tags:["원자","준위"], emoji:"🧬", demo:"./원자모형.html", curriculumId:"[12전자03-04]", thumb:"./thumb_nail/원자모형.png"},
     {title:"이중슬릿", category:"광학", desc:"확률파동·간섭무늬·파라미터 조절.", tags:["슬릿","간섭"], emoji:"〰️", demo:"./이중슬릿.html", curriculumId:"[12전자03-01]", thumb:"./thumb_nail/이중슬릿.png"},
-    {title:"전자기유도", category:"전자/반도체", desc:"전자기 유도현상과 정류자의 역할.", tags:["전자기유도","정류자"], emoji:"⚡", demo:"./전자기유도.html", curriculumId:"[12물리02-05], [12점자01-05]", thumb:"./thumb_nail/전자기유도.png"}
+    {title:"전자기유도", category:"전자/반도체", desc:"전자기 유도현상과 정류자의 역할.", tags:["전자기유도","정류자"], emoji:"⚡", demo:"./전자기유도.html", curriculumId:"[12물리02-05], [12전자01-05]", thumb:"./thumb_nail/전자기유도.png"}
   ];
 
 
