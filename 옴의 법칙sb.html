@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>옴의 법칙 실험실 - 핀치 줌 추가판</title>
+    <title>옴의 법칙 실험실 - 태블릿 UI 터치 수정판</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;500;700&family=Poppins:wght@500;700&display=swap');
@@ -124,8 +124,6 @@
         let renderer;
         let isUIActive = false;
         let trashBinPos = { x: 350, y: 200, r: 40 };
-        
-        // 줌 관련 변수 추가
         let prevPinchDist = null;
         
         let trashIconTexture;
@@ -188,7 +186,6 @@
         function draw() {
             background(20);
 
-            // [수정] 핀치 줌 중일 때는 orbitControl 비활성화 (충돌 방지)
             if (!heldObj && !isUIActive && touches.length < 2) { 
                 orbitControl(1.5, 1.5, 0.05); 
             }
@@ -224,11 +221,10 @@
             calculateCircuit();
         }
 
-        /* --- [수정] 터치 및 마우스 이벤트 (핀치 줌 로직 추가) --- */
-        
         function handleInputStart(inputX, inputY) {
+            // UI가 활성화되어 있으면 3D 객체 선택 방지
             if (isUIActive) return false;
-            // 두 손가락 이상일 때는 물체를 잡지 않음 (줌 동작 우선)
+            
             if (touches.length >= 2) return false;
 
             if (!heldObj) {
@@ -272,7 +268,6 @@
                 heldObj.isCarried = false; 
                 heldObj = null;
             }
-            // 핀치 줌 종료 시 거리 초기화
             prevPinchDist = null;
         }
 
@@ -289,37 +284,45 @@
             handleInputEnd();
         }
 
-        // --- 터치 이벤트 핸들링 (줌 기능 포함) ---
-        function touchStarted() {
+        /* --- [중요 수정] 터치 이벤트 처리 --- */
+        // event 인자를 받아서 터치 대상이 캔버스인지 UI인지 구별
+        function touchStarted(event) {
+            // [해결 핵심] 터치한 대상(target)이 캔버스(renderer.elt)가 아니라면,
+            // (즉, 버튼이나 슬라이더 같은 UI 요소라면) 
+            // p5.js가 이벤트를 차단하지 않도록 true를 반환합니다.
+            // 이렇게 해야 버튼의 onclick이 정상적으로 실행됩니다.
+            if (event && event.target !== renderer.elt) {
+                return true;
+            }
+
             if (touches.length === 2) {
-                // 1. 두 손가락 터치 시작: 거리 저장
                 prevPinchDist = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y);
-                return false; // 브라우저 줌 방지
+                return false; 
             }
             
             if(touches.length > 0) {
                 let hit = handleInputStart(touches[0].x, touches[0].y);
+                // 물체를 잡았으면 화면 이동 차단 (return false)
                 if (hit) return false;
             }
+            // 물체를 안 잡았으면 카메라 회전을 위해 return true
             return true;
         }
 
         function touchMoved() {
-            // 2. 두 손가락 핀치 줌 로직
+            // 버튼 등을 터치한 상태에서 움직일 때는 p5.js 로직 무시
+            if (isUIActive) return true;
+
             if (touches.length === 2) {
                 let currentDist = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y);
                 if (prevPinchDist !== null) {
                     let delta = currentDist - prevPinchDist;
-                    // delta가 양수면 벌림(줌인), 음수면 오므림(줌아웃)
-                    // cam.move(0, 0, -val) -> val이 양수면 앞으로 이동(줌인)
-                    // 감도 조절을 위해 * 2
                     cam.move(0, 0, -delta * 3.0); 
                 }
                 prevPinchDist = currentDist;
-                return false; // 브라우저 스크롤/줌 방지
+                return false; 
             }
 
-            // 3. 부품 이동
             if (heldObj && touches.length > 0) {
                 let dx = mouseX - pmouseX;
                 let dy = mouseY - pmouseY;
@@ -331,21 +334,14 @@
 
         function touchEnded() {
             handleInputEnd();
-            // 손가락을 떼면 핀치 거리 초기화
-            if (touches.length < 2) {
-                prevPinchDist = null;
-            }
-            if (touches.length === 0) {
-                return false;
-            }
+            if (touches.length < 2) prevPinchDist = null;
+            if (touches.length === 0) return false;
         }
         
-        // [추가] 물리 마우스 휠 지원 (혹시 모를 태블릿 마우스 사용 대비)
         function mouseWheel(event) {
             if (!isUIActive) {
-                // event.delta가 양수면 휠 내림(줌아웃), 음수면 올림(줌인)
                 cam.move(0, 0, event.delta * 0.5);
-                return false; // 브라우저 스크롤 방지
+                return false;
             }
         }
 
