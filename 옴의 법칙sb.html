@@ -2,13 +2,21 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>옴의 법칙 실험실 - UI/UX 개선판</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>옴의 법칙 실험실 - 터치 개선판</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;500;700&family=Poppins:wght@500;700&display=swap');
         
-        body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: 'Noto Sans KR', sans-serif; }
+        /* [수정 1] 터치 동작 제어 (스크롤/줌 방지) */
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #1a1a1a; 
+            font-family: 'Noto Sans KR', sans-serif;
+            touch-action: none; /* 브라우저 기본 터치 동작 차단 */
+            user-select: none; /* 텍스트 선택 방지 */
+        }
         
         #ui-panel {
             position: absolute; top: 25px; left: 25px; pointer-events: none;
@@ -44,6 +52,7 @@
             color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.8); padding: 10px 30px;
             border-radius: 30px; pointer-events: none; font-size: 14px; font-weight: 500;
             border: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap; /* 줄바꿈 방지 */
         }
 
         .return-btn {
@@ -61,7 +70,9 @@
 <body>
 
     <div id="ui-panel">
-        <div class="control-box" onmouseover="isUIActive=true" onmouseout="isUIActive=false">
+        <div class="control-box" 
+             onmouseover="isUIActive=true" onmouseout="isUIActive=false"
+             ontouchstart="isUIActive=true" ontouchend="isUIActive=false">
             <span class="control-title">⚡ 전압 조절 (Voltage)</span>
             <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.95em;">
                 <span>입력:</span>
@@ -75,7 +86,9 @@
                    ontouchend="isUIActive=false">
         </div>
 
-        <div class="control-box" onmouseover="isUIActive=true" onmouseout="isUIActive=false">
+        <div class="control-box" 
+             onmouseover="isUIActive=true" onmouseout="isUIActive=false"
+             ontouchstart="isUIActive=true" ontouchend="isUIActive=false">
             <span class="control-title">📊 회로 정보</span>
             <div style="display:flex; justify-content:space-between; font-size:1.1em; color:#ddd; font-weight:bold;">
                 <span>합성 저항:</span>
@@ -87,7 +100,9 @@
             </div>
         </div>
 
-        <div class="control-box" onmouseover="isUIActive=true" onmouseout="isUIActive=false">
+        <div class="control-box" 
+             onmouseover="isUIActive=true" onmouseout="isUIActive=false"
+             ontouchstart="isUIActive=true" ontouchend="isUIActive=false">
             <span class="control-title">📦 부품 상자</span>
             <div class="btn-group">
                 <button class="btn-10" onclick="spawnResistor(10)">+ 10Ω 저항</button>
@@ -96,7 +111,7 @@
         </div>
     </div>
 
-    <div class="guide">🖱️ 우클릭 드래그: 시점 회전 | 휠: 줌 | 좌클릭: 부품 이동 | 🗑️ 빨간 통: 삭제</div>
+    <div class="guide">☝️ 원터치 드래그: 화면 회전 | 🤏 핀치: 줌 | 👆 부품 터치: 이동</div>
 
     <div class="control-box return-btn" onclick="location.href='./옴의 법칙.html'">
         <span class="control-title" style="color: white; margin-bottom: 0;">🔙 이전 실험실</span>
@@ -131,13 +146,11 @@
             cam.setPosition(0, -700, 800);
             cam.lookAt(0, 0, 0);
             
-            // 1. 쓰레기통 아이콘
             trashIconTexture = createGraphics(128, 128);
             trashIconTexture.textAlign(CENTER, CENTER);
             trashIconTexture.textSize(80);
             trashIconTexture.text("🗑️", 64, 64);
 
-            // 2. 화면 텍스처
             let createScreen = () => {
                 let pg = createGraphics(200, 100);
                 pg.textSize(40);
@@ -148,11 +161,10 @@
             pgAmp = createScreen();
             pgVolt = createScreen();
 
-            // 3. [수정] 한글 라벨 텍스처
             let createLabel = (text) => {
                 let pg = createGraphics(200, 60);
                 pg.textAlign(CENTER, CENTER);
-                pg.textSize(32); // 폰트 키움
+                pg.textSize(32); 
                 pg.fill(220);
                 pg.textStyle(BOLD);
                 pg.text(text, 100, 30);
@@ -162,7 +174,6 @@
             labelAmp = createLabel("전류계");
             labelVolt = createLabel("전압계");
         
-            // 슬롯
             let startX = -((COLS-1) * SLOT_GAP_X) / 2;
             let startY = -((ROWS-1) * SLOT_GAP_Y) / 2;
             for (let r = 0; r < ROWS; r++) {
@@ -175,7 +186,10 @@
         function draw() {
             background(20);
 
-            if (!heldObj && !isUIActive) { orbitControl(1.5, 1.5, 0.8); }
+            // [수정 2] 카메라 제어 조건: 물체를 잡고 있지 않고, UI를 건드리지 않을 때만 동작
+            if (!heldObj && !isUIActive) { 
+                orbitControl(1.5, 1.5, 0.05); // 감도 조절
+            }
 
             ambientLight(40);
             directionalLight(255, 250, 240, 0.6, -1, -0.8); 
@@ -183,14 +197,12 @@
             pointLight(255, 255, 255, 0, 0, 400);
 
             updateScreenTextures();
-
             drawEnvironment();
             drawLabBench(); 
             drawTrashBin(); 
 
+            // [수정 3] 물체 이동 로직 제거 (draw 함수 내에서 움직이지 않고 mouseDragged/touchMoved에서 직접 처리)
             if (heldObj) {
-                let zoomFactor = cam.eyeZ / 700; 
-                heldObj.x += movedX * zoomFactor; heldObj.y += movedY * zoomFactor;
                 heldObj.z = 60; 
                 let dTrash = dist(heldObj.x, heldObj.y, trashBinPos.x, trashBinPos.y);
                 if (dTrash < trashBinPos.r + 20) {
@@ -210,6 +222,106 @@
             drawCables();
             calculateCircuit();
         }
+
+        /* --- [추가] 터치 및 마우스 통합 이벤트 핸들링 --- */
+        
+        // 공통: 입력 시작 (클릭 또는 터치 시작)
+        function handleInputStart(inputX, inputY) {
+            if (isUIActive) return false;
+            if (!heldObj) {
+                let closest = null; let minDist = 70; // 터치 범위를 위해 60 -> 70으로 약간 확대
+                for (let r of resistors) {
+                    let d = dist(inputX, inputY, r.screenX, r.screenY);
+                    if (d < minDist) { minDist = d; closest = r; }
+                }
+                if (closest) {
+                    heldObj = closest; heldObj.isCarried = true;
+                    if (heldObj.slot) { heldObj.slot.occupied = null; heldObj.slot = null; }
+                    return true; // 물체를 잡음
+                }
+            }
+            return false; // 물체를 잡지 않음 (카메라 회전 등)
+        }
+
+        // 공통: 입력 이동 (드래그)
+        function handleInputMove(dx, dy) {
+            if (heldObj) {
+                // 카메라 줌 거리에 비례하여 이동 속도 보정
+                let zoomFactor = cam.eyeZ / 700; 
+                heldObj.x += dx * zoomFactor; 
+                heldObj.y += dy * zoomFactor;
+                return true; // 물체 이동 처리됨
+            }
+            return false;
+        }
+
+        // 공통: 입력 종료 (놓기)
+        function handleInputEnd() {
+            if (heldObj) {
+                let dTrash = dist(heldObj.x, heldObj.y, trashBinPos.x, trashBinPos.y);
+                if (dTrash < trashBinPos.r + 20) {
+                    let idx = resistors.indexOf(heldObj);
+                    if (idx > -1) resistors.splice(idx, 1);
+                } else {
+                    let target = getClosestSlot(heldObj);
+                    if (target && !target.occupied) {
+                        heldObj.x = target.x; heldObj.y = target.y; heldObj.z = 0; 
+                        heldObj.slot = target; target.occupied = heldObj;
+                    } else { heldObj.z = 5; }
+                }
+                heldObj.isCarried = false; 
+                heldObj = null;
+            }
+        }
+
+        // 1. 마우스 이벤트
+        function mousePressed() {
+            if (mouseButton !== LEFT) return;
+            handleInputStart(mouseX, mouseY);
+        }
+        
+        function mouseDragged() {
+            // p5.js에서 마우스 드래그 시 물체 이동 처리
+            // movedX, movedY 사용
+            handleInputMove(movedX, movedY);
+        }
+
+        function mouseReleased() {
+            handleInputEnd();
+        }
+
+        // 2. 터치 이벤트 (중요!)
+        function touchStarted() {
+            // 터치 시작 시 물체 선택 시도
+            // touches[0]을 사용하여 멀티터치 중 첫 번째 손가락 기준
+            if(touches.length > 0) {
+                let hit = handleInputStart(touches[0].x, touches[0].y);
+                if (hit) return false; // 물체를 잡았으면 기본 동작 차단
+            }
+            // 물체를 잡지 않았으면(빈 공간 터치) true를 반환하여 orbitControl이 동작하게 함
+            return true; 
+        }
+
+        function touchMoved() {
+            if (heldObj && touches.length > 0) {
+                // 모바일에서 movedX가 불안정할 수 있으므로 직접 계산
+                let dx = mouseX - pmouseX;
+                let dy = mouseY - pmouseY;
+                handleInputMove(dx, dy);
+                return false; // 드래그 중 스크롤 방지
+            }
+            return true; // 카메라 회전 허용
+        }
+
+        function touchEnded() {
+            handleInputEnd();
+            // 모든 손가락이 떼어졌을 때
+            if (touches.length === 0) {
+                return false;
+            }
+        }
+
+        /* ----------------------------------------------- */
 
         function updateScreenTextures() {
             pgPower.background(20); pgPower.fill(0, 255, 255);
@@ -237,11 +349,10 @@
             
             push(); translate(0, 0, 60.1); fill(10); circle(0, 0, trashBinPos.r * 1.8); pop();
             
-            // [수정] 아이콘 회전 수정 (세로로 서있게)
             push();
             translate(0, 0, 95 + sin(frameCount * 0.05) * 5); 
             rotateX(0); 
-            rotateY(frameCount * 0.02 + PI); // PI를 더해 정면을 보게 조정 가능
+            rotateY(frameCount * 0.02 + PI); 
             noStroke(); texture(trashIconTexture); plane(60, 60);
             pop();
             pop();
@@ -269,23 +380,13 @@
         function drawInstrument(x, y, h, labelTex, screenTex, nColor) {
             push();
             translate(x, y, h/2); 
-            
-            // 몸체
             fill(40, 45, 50); stroke(60); strokeWeight(1); specularMaterial(200); shininess(60);
             box(140, 120, h); 
-            
-            // [수정] 화면 위치: 위쪽으로 이동 (y: -25)
-            push(); translate(0, -25, h/2 + 1); fill(5); noStroke(); box(110, 45, 2); pop(); // 베이스
-            push(); translate(0, -25, h/2 + 2.1); noStroke(); texture(screenTex); plane(100, 35); pop(); // 화면
-
-            // [수정] 라벨 위치: 화면 바로 위 (y: -55) -> 혹은 화면 아래 (y: 10)
-            // 화면이 -25에 있으니 라벨은 그 아래 10 정도가 적당
+            push(); translate(0, -25, h/2 + 1); fill(5); noStroke(); box(110, 45, 2); pop(); 
+            push(); translate(0, -25, h/2 + 2.1); noStroke(); texture(screenTex); plane(100, 35); pop(); 
             push(); translate(0, 10, h/2 + 1); noStroke(); texture(labelTex); plane(120, 30); pop();
-
-            // [수정] 단자 위치: 맨 아래쪽으로 이동 (y: 40)
             push(); translate(-35, 40, h/2 + 2); drawSocket(nColor); pop();
             push(); translate(35, 40, h/2 + 2); drawSocket([20, 20, 20]); pop();
-
             pop();
         }
 
@@ -308,38 +409,23 @@
             noFill(); strokeWeight(4); 
             let wireD = -180; 
 
-            // 전선 좌표들도 기기 단자 위치 변경(y축 +40 보정)에 맞춰 수정
-            // Power (+): (-315, -105) -> (-385, -60) (대략적 위치 보정 필요)
-            // Power Supply: x=-350, y=-100. Sockets at local y=40 -> global y = -100 + 40 = -60.
-            // Ammeter: x=50, y=-280. Sockets at local y=40 -> global y = -280 + 40 = -240.
-            
-            // Power(+) -> Ammeter(In)
             stroke(255, 50, 80, 200); 
-            // Power Red Socket: (-350-35, -100+40) = (-385, -60)
             drawPlug(-385, -60, 92, [220, 20, 20]); 
-            // Ammeter Red Socket: (50-35, -280+40) = (15, -240)
             drawPlug(15, -240, 92, [220, 20, 20]);
             drawUnderCurve(-385, -60, 92, 15, -240, 92, wireD);
 
-            // Ammeter(Out) -> Board(+)
-            // Ammeter Black Socket: (50+35, -280+40) = (85, -240)
             drawPlug(85, -240, 92, [20, 20, 20]); 
             drawUnderCurve(85, -240, 92, -190, -155, 10, wireD);
 
-            // Power(-) -> Board(-)
             stroke(60, 60, 60, 200); 
-            // Power Black Socket: (-350+35, -100+40) = (-315, -60)
             drawPlug(-315, -60, 92, [20, 20, 20]);
             drawUnderCurve(-315, -60, 92, 190, -155, 10, wireD);
 
-            // Voltmeter Connects
             stroke(255, 220, 50, 200); 
-            // Voltmeter Red: (350-35, -280+40) = (315, -240)
             drawPlug(315, -240, 92, [255, 200, 0]);
             drawUnderCurve(315, -240, 92, -190, 155, 10, wireD);
             
             stroke(80, 80, 80, 200); 
-            // Voltmeter Black: (350+35, -280+40) = (385, -240)
             drawPlug(385, -240, 92, [20, 20, 20]);
             drawUnderCurve(385, -240, 92, 190, 155, 10, wireD);
         }
@@ -415,40 +501,6 @@
             let pw = pr[3]*cx + pr[7]*cy + pr[11]*cz + pr[15]*cw;
             if (pw !== 0) { px /= pw; py /= pw; }
             obj.screenX = (px + 1) * 0.5 * width; obj.screenY = (1 - py) * 0.5 * height;
-        }
-
-        function mousePressed() {
-            if (mouseButton !== LEFT || isUIActive) return;
-            if (!heldObj) {
-                let closest = null; let minDist = 60; 
-                for (let r of resistors) {
-                    let d = dist(mouseX, mouseY, r.screenX, r.screenY);
-                    if (d < minDist) { minDist = d; closest = r; }
-                }
-                if (closest) {
-                    heldObj = closest; heldObj.isCarried = true;
-                    if (heldObj.slot) { heldObj.slot.occupied = null; heldObj.slot = null; }
-                }
-            }
-        }
-
-        function mouseReleased() {
-            if (heldObj) {
-                let dTrash = dist(heldObj.x, heldObj.y, trashBinPos.x, trashBinPos.y);
-                if (dTrash < trashBinPos.r + 20) {
-                    let idx = resistors.indexOf(heldObj);
-                    if (idx > -1) resistors.splice(idx, 1);
-                    heldObj = null;
-                    return;
-                }
-
-                let target = getClosestSlot(heldObj);
-                if (target && !target.occupied) {
-                    heldObj.x = target.x; heldObj.y = target.y; heldObj.z = 0; 
-                    heldObj.slot = target; target.occupied = heldObj;
-                } else { heldObj.z = 5; }
-                heldObj.isCarried = false; heldObj = null;
-            }
         }
 
         function getClosestSlot(obj) {
