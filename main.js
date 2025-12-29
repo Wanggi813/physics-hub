@@ -3,7 +3,7 @@
     {title:"물리 공식 맞추기", category:"게임", desc:"물리 공식을 맞추자!", tags:["물리","공식"], emoji:"❤️", demo:"./물리 공식 맞추기.html", curriculumId:"ALL", thumb:"./thumb_nail/물리 공식 맞추기.png"},
     {title:"토크와 평형", category:"역학", desc:"물체를 이용해 토크평형 만들기", tags:["토크","평형"], emoji:"🧗‍♀️", demo:"./토크와 평형.html", curriculumId:"[12물리01-01]", thumb:"./thumb_nail/토크와_평형.png"},
     {title:"힘의 합력", category:"역학", desc:"여러 힘의 합력 알아보기", tags:["힘","알짜힘"], emoji:"🧗‍♀️", demo:"./힘의 평형.html", curriculumId:"[12역학01-01]", thumb:"./thumb_nail/힘의_평형.png"},
-    {title:"궤도 올리기", category:"역학", desc:"행성의 탈출속도와 위성의 궤도 알아보기", tags:["중력","탈출속도", "궤도"], emoji:"🧗‍♀️", demo:"./궤도 올리기.html", curriculumId:"[12물리01-04], [12물리01-05]", thumb:"./thumb_nail/궤도 올리기.png"},
+    {title:"궤도 올리기", category:"역학", desc:"행성의 탈출속도와 위성의 궤도 알아보기", tags:["중력","탈출속도", "궤도"], emoji:"🧗‍♀️", demo:"./궤도 올리기.html", curriculumId:"[12역학01-04], [12역학01-05]", thumb:"./thumb_nail/궤도 올리기.png"},
     {title:"일과 운동에너지", category:"역학", desc:"용수철을 이용해 일과 운동에너지를 비교", tags:["일","운동에너지"], emoji:"🧗‍♀️", demo:"./일과 운동에너지.html", curriculumId:"[12물리01-04]", thumb:"./thumb_nail/일과_운동에너지.png"},
     {title:"줄의 실험", category:"열", desc:"줄의 일의 열당량을 알아보자", tags:["줄","일의 열당량"], emoji:"🧗‍♀️", demo:"./줄의 실험.html", curriculumId:"[12물리01-05]", thumb:"./thumb_nail/줄의_실험.png"},
     {title:"RLC 공명", category:"전자/반도체", desc:"직렬 RLC 공명/위상·전류 변화 시각화.", tags:["회로","공명"], emoji:"🔄", demo:"./RLC 공명.html", curriculumId:"[12전자01-06]", thumb:"./thumb_nail/RLC회로.png"},
@@ -21,6 +21,7 @@
     {title:"옴의 법칙", category:"전자/반도체", desc:"V=IR, 직렬/병렬 직관, 전류 흐름 애니메이션.", tags:["전압","전류"], emoji:"⚡", demo:"./옴의 법칙.html", curriculumId:"[12물리02-02]", thumb:"./thumb_nail/옴의_법칙.png"},
     {title:"원자모형", category:"시뮬레이션", desc:"보어/오비탈/전자구름 개념 시각화.", tags:["원자","준위"], emoji:"🧬", demo:"./원자모형.html", curriculumId:"[12전자03-04]", thumb:"./thumb_nail/원자모형.png"},
     {title:"이중슬릿", category:"광학", desc:"확률파동·간섭무늬·파라미터 조절.", tags:["슬릿","간섭"], emoji:"〰️", demo:"./이중슬릿.html", curriculumId:"[12전자03-01]", thumb:"./thumb_nail/이중슬릿.png"},
+    {title:"전자기유도", category:"전자/반도체", desc:"전자기 유도현상과 정류자의 역할.", tags:["전자기유도","정류자"], emoji:"⚡", demo:"./전자기유도.html", curriculumId:"[12물리02-05], [12점자01-05]", thumb:"./thumb_nail/전자기유도.png"}
   ];
 
 
@@ -324,4 +325,3 @@ render();
   });
 
 })();
-
