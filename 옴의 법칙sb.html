@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>옴의 법칙 실험실 - 태블릿 UI 터치 수정판</title>
+    <title>옴의 법칙 실험실</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;500;700&family=Poppins:wght@500;700&display=swap');
@@ -13,20 +13,30 @@
             overflow: hidden; 
             background: #1a1a1a; 
             font-family: 'Noto Sans KR', sans-serif;
+            /* 캔버스 영역은 스크롤/줌 방지 */
             touch-action: none; 
             user-select: none;
+            -webkit-user-select: none;
         }
         
         #ui-panel {
-            position: absolute; top: 25px; left: 25px; pointer-events: none;
-            z-index: 10; display: flex; flex-direction: column; gap: 15px;
+            position: absolute; top: 25px; left: 25px; 
+            /* UI 패널 자체는 클릭 통과 (내부 박스만 클릭 가능) */
+            pointer-events: none; 
+            z-index: 100; /* p5 캔버스보다 확실히 위에 둠 */
+            display: flex; flex-direction: column; gap: 15px;
         }
         
         .control-box {
             background: rgba(30, 30, 30, 0.95); padding: 20px; border-radius: 12px;
-            color: white; border: 1px solid rgba(255,255,255,0.1); pointer-events: auto;
+            color: white; border: 1px solid rgba(255,255,255,0.1); 
+            /* 내부 UI는 클릭 가능 */
+            pointer-events: auto; 
             width: 260px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             backdrop-filter: blur(5px);
+            
+            /* [중요] UI 내부에서는 브라우저의 기본 터치/클릭 동작을 허용 */
+            touch-action: manipulation; 
         }
         
         .control-title { font-weight: 700; color: #ff6b81; margin-bottom: 12px; display: block; font-size: 1.1em; letter-spacing: -0.5px;}
@@ -41,10 +51,14 @@
             flex: 1; padding: 12px; border: none; border-radius: 8px;
             font-weight: 700; cursor: pointer; color: white; transition: all 0.3s;
             font-family: 'Noto Sans KR', sans-serif; font-size: 0.95em;
+            /* 모바일 버튼 탭 하이라이트 제거 */
+            -webkit-tap-highlight-color: transparent;
         }
         .btn-10 { background: linear-gradient(145deg, #a0522d, #8b4513); border: 1px solid #5d2e0d; }
         .btn-20 { background: linear-gradient(145deg, #ff4757, #c0392b); border: 1px solid #922b21; }
         button:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        /* 터치 시 눌림 효과 추가 */
+        button:active { transform: scale(0.95); }
 
         .guide {
             position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
@@ -58,6 +72,7 @@
             position: absolute; bottom: 25px; right: 25px; top: auto; left: auto;
             width: auto; padding: 12px 25px; pointer-events: auto;
             border-color: rgba(255, 255, 255, 0.1); cursor: pointer;
+            touch-action: manipulation;
         }
         .return-btn:hover {
             border-color: rgba(255, 255, 255, 0.3);
@@ -68,26 +83,25 @@
 </head>
 <body>
 
-    <div id="ui-panel">
-        <div class="control-box" 
-             onmouseover="isUIActive=true" onmouseout="isUIActive=false"
-             ontouchstart="isUIActive=true" ontouchend="isUIActive=false">
+    <div id="ui-panel" 
+         ontouchstart="event.stopPropagation()" 
+         ontouchmove="event.stopPropagation()"
+         ontouchend="event.stopPropagation()"
+         onmousedown="event.stopPropagation()"
+         onmousemove="event.stopPropagation()"
+         onmouseup="event.stopPropagation()">
+
+        <div class="control-box">
             <span class="control-title">⚡ 전압 조절 (Voltage)</span>
             <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.95em;">
                 <span>입력:</span>
                 <span id="volt-display" style="color:#00ffff; font-weight:700;">5.0 V</span>
             </div>
             <input type="range" min="0" max="20" step="0.5" value="5" 
-                   oninput="updateVoltage(this.value)" 
-                   onmousedown="isUIActive=true" 
-                   onmouseup="isUIActive=false"
-                   ontouchstart="isUIActive=true" 
-                   ontouchend="isUIActive=false">
+                   oninput="updateVoltage(this.value)">
         </div>
 
-        <div class="control-box" 
-             onmouseover="isUIActive=true" onmouseout="isUIActive=false"
-             ontouchstart="isUIActive=true" ontouchend="isUIActive=false">
+        <div class="control-box">
             <span class="control-title">📊 회로 정보</span>
             <div style="display:flex; justify-content:space-between; font-size:1.1em; color:#ddd; font-weight:bold;">
                 <span>합성 저항:</span>
@@ -99,9 +113,7 @@
             </div>
         </div>
 
-        <div class="control-box" 
-             onmouseover="isUIActive=true" onmouseout="isUIActive=false"
-             ontouchstart="isUIActive=true" ontouchend="isUIActive=false">
+        <div class="control-box">
             <span class="control-title">📦 부품 상자</span>
             <div class="btn-group">
                 <button class="btn-10" onclick="spawnResistor(10)">+ 10Ω 저항</button>
@@ -112,7 +124,10 @@
 
     <div class="guide">☝️ 드래그: 회전 | ✌️ 두 손가락: 줌(핀치) | 👆 부품: 이동</div>
 
-    <div class="control-box return-btn" onclick="location.href='./옴의 법칙.html'">
+    <div class="control-box return-btn" 
+         onclick="location.href='./옴의 법칙.html'"
+         ontouchstart="event.stopPropagation()"
+         onmousedown="event.stopPropagation()">
         <span class="control-title" style="color: white; margin-bottom: 0;">🔙 이전 실험실</span>
     </div>
 
@@ -122,6 +137,8 @@
         let heldObj = null;
         let cam;
         let renderer;
+        // isUIActive 변수는 이제 이벤트 차단 방식(stopPropagation) 덕분에 덜 중요해졌지만,
+        // 드래그 충돌 방지를 위해 남겨둡니다.
         let isUIActive = false;
         let trashBinPos = { x: 350, y: 200, r: 40 };
         let prevPinchDist = null;
@@ -142,6 +159,10 @@
         function setup() {
             renderer = createCanvas(windowWidth, windowHeight, WEBGL);
             pixelDensity(2);
+            
+            // [중요] 캔버스 ID 지정 (이벤트 타겟 구분용)
+            renderer.id('p5-canvas');
+            
             cam = createCamera();
             cam.setPosition(0, -700, 800);
             cam.lookAt(0, 0, 0);
@@ -186,7 +207,8 @@
         function draw() {
             background(20);
 
-            if (!heldObj && !isUIActive && touches.length < 2) { 
+            // UI 터치가 차단되므로 여기서는 touches.length 체크만으로 충분
+            if (!heldObj && touches.length < 2) { 
                 orbitControl(1.5, 1.5, 0.05); 
             }
 
@@ -222,9 +244,6 @@
         }
 
         function handleInputStart(inputX, inputY) {
-            // UI가 활성화되어 있으면 3D 객체 선택 방지
-            if (isUIActive) return false;
-            
             if (touches.length >= 2) return false;
 
             if (!heldObj) {
@@ -272,6 +291,8 @@
         }
 
         function mousePressed() {
+            // 마우스 클릭이 캔버스 위에서만 작동하도록 체크
+            if (mouseX < 0 || mouseX > width || mouseY < 0 || mouseY > height) return;
             if (mouseButton !== LEFT) return;
             handleInputStart(mouseX, mouseY);
         }
@@ -284,15 +305,14 @@
             handleInputEnd();
         }
 
-        /* --- [중요 수정] 터치 이벤트 처리 --- */
-        // event 인자를 받아서 터치 대상이 캔버스인지 UI인지 구별
+        /* --- 터치 이벤트 핸들링 --- */
+        
         function touchStarted(event) {
-            // [해결 핵심] 터치한 대상(target)이 캔버스(renderer.elt)가 아니라면,
-            // (즉, 버튼이나 슬라이더 같은 UI 요소라면) 
-            // p5.js가 이벤트를 차단하지 않도록 true를 반환합니다.
-            // 이렇게 해야 버튼의 onclick이 정상적으로 실행됩니다.
-            if (event && event.target !== renderer.elt) {
-                return true;
+            // [방어 코드] 
+            // HTML의 stopPropagation이 혹시 실패하더라도,
+            // 여기서 타겟이 캔버스가 아니면 p5 로직을 실행하지 않음
+            if (event.target.id !== 'p5-canvas') {
+                return true; 
             }
 
             if (touches.length === 2) {
@@ -302,17 +322,12 @@
             
             if(touches.length > 0) {
                 let hit = handleInputStart(touches[0].x, touches[0].y);
-                // 물체를 잡았으면 화면 이동 차단 (return false)
                 if (hit) return false;
             }
-            // 물체를 안 잡았으면 카메라 회전을 위해 return true
             return true;
         }
 
         function touchMoved() {
-            // 버튼 등을 터치한 상태에서 움직일 때는 p5.js 로직 무시
-            if (isUIActive) return true;
-
             if (touches.length === 2) {
                 let currentDist = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y);
                 if (prevPinchDist !== null) {
@@ -335,14 +350,12 @@
         function touchEnded() {
             handleInputEnd();
             if (touches.length < 2) prevPinchDist = null;
-            if (touches.length === 0) return false;
+            if (touches.length === 0) return false; // 모든 터치 종료 시 false 반환
         }
         
         function mouseWheel(event) {
-            if (!isUIActive) {
-                cam.move(0, 0, event.delta * 0.5);
-                return false;
-            }
+            cam.move(0, 0, event.delta * 0.5);
+            return false;
         }
 
         /* ----------------------------------------------- */
