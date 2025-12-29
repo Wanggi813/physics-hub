@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RLC 공명</title>
+  <title>RLC 공명 (둥근 관절 적용)</title>
   <style>
     :root{ --bg:#0b1020; --ink:#e2e8f0; --muted:#94a3b8; --primary:#38bdf8; }
     html,body{height:100%}
@@ -30,19 +30,11 @@
 
     /* ===== 도전 모드 패널 ===== */
     .game-panel{
-      position:fixed;
-      left:14px;
-      bottom:14px;
-      width:360px;
-      background:rgba(15,23,42,.78);
-      backdrop-filter: blur(8px);
-      border:1px solid rgba(148,163,184,.25);
-      border-radius:14px;
-      padding:12px;
-      z-index:12;
-      box-shadow:0 10px 28px rgba(9,12,28,.28);
-      font-size:13px;
-      line-height:1.4;
+      position:fixed; left:14px; bottom:14px; width:360px;
+      background:rgba(15,23,42,.78); backdrop-filter: blur(8px);
+      border:1px solid rgba(148,163,184,.25); border-radius:14px; padding:12px;
+      z-index:12; box-shadow:0 10px 28px rgba(9,12,28,.28);
+      font-size:13px; line-height:1.4;
     }
     .game-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
     .game-title{font-weight:800;font-size:14px}
@@ -51,33 +43,19 @@
     .game-question b{color:#38bdf8}
     .game-answers{display:none;gap:8px;flex-wrap:wrap;margin:6px 0 8px}
     .game-btn{
-      flex:1 1 calc(50% - 8px);
-      border-radius:999px;
-      border:1px solid rgba(148,163,184,.35);
-      background:rgba(2,6,23,.35);
-      color:rgba(226,232,240,.95);
-      padding:7px 10px;
-      font-size:12px;
-      cursor:pointer;
+      flex:1 1 calc(50% - 8px); border-radius:999px;
+      border:1px solid rgba(148,163,184,.35); background:rgba(2,6,23,.35);
+      color:rgba(226,232,240,.95); padding:7px 10px; font-size:12px; cursor:pointer;
     }
     .game-btn:hover:not(:disabled){background:rgba(2,6,23,.55)}
     .game-btn:disabled{opacity:.45;cursor:not-allowed}
-    .game-btn.primary{
-      flex:0 0 auto;
-      background:#0ea5e9;
-      border-color:#0ea5e9;
-      color:white;
-      font-weight:700;
-      padding:8px 12px;
-    }
+    .game-btn.primary{ flex:0 0 auto; background:#0ea5e9; border-color:#0ea5e9; color:white; font-weight:700; padding:8px 12px; }
     .game-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
     .game-score{font-variant-numeric:tabular-nums;color:rgba(226,232,240,.95)}
     .game-sub{color:rgba(148,163,184,.92);font-size:12px}
     .game-feedback{margin-top:8px;font-size:12px}
     .game-feedback.ok{color:#34d399}
     .game-feedback.bad{color:#fb7185}
-
-    /* 최고점수 뱃지 */
     .game-best-badge{
       display:inline-flex;align-items:center;gap:6px;
       padding:4px 10px;border-radius:999px;
@@ -88,35 +66,27 @@
     .best-label{font-size:11px;color:rgba(2,6,23,.65)}
     .best-icon{font-size:15px;line-height:1;text-shadow:0 0 6px rgba(251,191,36,0.55)}
     .best-value{font-weight:900;font-size:14px;color:#fb923c;min-width:26px;text-align:right}
-
     @keyframes bump{0%{transform:scale(1)}30%{transform:scale(1.06)}100%{transform:scale(1)}}
     .bump{animation:bump .35s ease-out}
-
-    /* 힌트 바 */
     .hint-wrap{display:none;margin:8px 0 10px;padding:10px;border-radius:12px;border:1px solid rgba(148,163,184,.22);background:rgba(2,6,23,.28)}
     .hint-title{font-size:12px;color:rgba(226,232,240,.85);margin-bottom:8px}
     .hint-bar{position:relative;height:10px;border-radius:999px;background:rgba(148,163,184,.18);overflow:hidden}
     .hint-band{position:absolute;top:0;height:100%;border-radius:999px;background:rgba(34,197,94,.35)}
     .hint-marker{position:absolute;top:-4px;width:2px;height:18px;background:rgba(56,189,248,.95)}
     .hint-meta{margin-top:6px;font-size:12px;color:rgba(148,163,184,.92)}
-
-    /* 목표 게이지 */
     .goal-wrap{display:none;margin:8px 0 10px;padding:10px;border-radius:12px;border:1px solid rgba(148,163,184,.22);background:rgba(2,6,23,.28)}
     .goal-title{font-size:12px;color:rgba(226,232,240,.85);margin-bottom:8px}
     .goal-bar{position:relative;height:10px;border-radius:999px;background:rgba(148,163,184,.18);overflow:hidden}
     .goal-zone{position:absolute;top:0;height:100%;border-radius:999px;background:rgba(251,191,36,.35)}
     .goal-fill{position:absolute;top:0;left:0;height:100%;border-radius:999px;background:rgba(56,189,248,.55)}
     .goal-meta{margin-top:6px;font-size:12px;color:rgba(148,163,184,.92)}
-
     @media (max-width: 860px){
       .game-panel{left:10px;right:10px;bottom:10px;width:auto}
       .hud{width:340px}
       .graphbox{width:300px}
     }
-
   </style>
 
-  <!-- 로컬 three.js (전역 THREE) -->
   <script src="./libs/three.min.js"></script>
 </head>
 <body>
@@ -136,7 +106,6 @@
 
     <div class="row"><label for="R">R (Ω)</label><span class="meter"><span id="Rval">50</span></span></div>
     <input id="R" type="range" min="5" max="200" step="1" value="50" />
-
 
     <div class="row"><label for="f">f (Hz)</label><span class="meter"><span id="fval">—</span></span></div>
     <input id="f" type="range" min="1" max="1000" step="1" value="200" />
@@ -161,7 +130,6 @@
   </div>
 
 
-  <!-- ===== 도전 모드 패널 (RLC 공명) ===== -->
   <div class="game-panel" id="gamePanel">
     <div class="game-header">
       <div>
@@ -174,13 +142,10 @@
         <span class="best-value" id="gp-best-value">0</span>
       </div>
     </div>
-
     <div class="game-question" id="gp-question">
       <b>도전 시작</b>을 누르면 라운드별 조건(L, C, R)이 자동으로 설정됩니다.<br>
       학생은 <b>슬라이더 조작만</b>으로 공명 상태를 찾아 <b>제출</b>하면 됩니다.
     </div>
-
-    <!-- 힌트 바 (1~5라운드에서만 표시) -->
     <div class="hint-wrap" id="gp-hint-wrap">
       <div class="hint-title">공명 힌트(쉬움): 초록 구간 안으로 f를 맞추세요</div>
       <div class="hint-bar">
@@ -189,8 +154,6 @@
       </div>
       <div class="hint-meta" id="gp-hint-meta"></div>
     </div>
-
-    <!-- 전류 목표 게이지 (9라운드) -->
     <div class="goal-wrap" id="gp-goal-wrap">
       <div class="goal-title">목표 전류 진폭 맞추기 (공명 근처 유지 + 목표 구간)</div>
       <div class="goal-bar">
@@ -199,13 +162,10 @@
       </div>
       <div class="goal-meta" id="gp-goal-meta"></div>
     </div>
-
-    <!-- 10라운드(형태 분류) -->
     <div class="game-answers" id="gp-answers">
       <button class="game-btn" id="btnNarrow">날카로운 공명(고Q)</button>
       <button class="game-btn" id="btnWide">둥근 공명(저Q)</button>
     </div>
-
     <div class="game-footer">
       <span class="game-score" id="gp-score">점수: 0점 / 500점</span>
       <span class="game-sub" id="gp-sub"></span>
@@ -272,6 +232,7 @@
         const off=camera.position.clone().sub(target); this.sph.setFromVector3(off);
         this.minPhi=0.01; this.maxPhi=Math.PI-0.01; this.minR=3; this.maxR=60;
         this.drag=false; this.lastX=0; this.lastY=0; this.rotSpeed=0.006; this.zoomSpeed=1.1;
+        
         dom.addEventListener('mousedown',e=>{ this.drag=true; this.lastX=e.clientX; this.lastY=e.clientY; });
         window.addEventListener('mouseup',()=>{ this.drag=false; });
         window.addEventListener('mousemove',e=>{
@@ -288,54 +249,42 @@
           this.sph.radius = Math.min(this.maxR, Math.max(this.minR, this.sph.radius*s));
           this.update();
         }, {passive:false});
-// === Touch support ===
-let lastDist = null;
-
-dom.addEventListener('touchstart', (e)=>{
-  if(e.touches.length === 1){
-    this.drag = true;
-    this.lastX = e.touches[0].clientX;
-    this.lastY = e.touches[0].clientY;
-  }
-  if(e.touches.length === 2){
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    lastDist = Math.hypot(dx, dy);
-  }
-}, {passive:false});
-
-dom.addEventListener('touchmove', (e)=>{
-  e.preventDefault();
-
-  // 한 손: 회전
-  if(e.touches.length === 1 && this.drag){
-    const dx = e.touches[0].clientX - this.lastX;
-    const dy = e.touches[0].clientY - this.lastY;
-    this.sph.theta -= dx * this.rotSpeed;
-    this.sph.phi = Math.min(this.maxPhi, Math.max(this.minPhi, this.sph.phi + dy * this.rotSpeed));
-    this.lastX = e.touches[0].clientX;
-    this.lastY = e.touches[0].clientY;
-    this.update();
-  }
-
-  // 두 손: 핀치 줌
-  if(e.touches.length === 2){
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    const dist = Math.hypot(dx, dy);
-    if(lastDist){
-      const scale = lastDist / dist;
-      this.sph.radius = Math.min(this.maxR, Math.max(this.minR, this.sph.radius * scale));
-      this.update();
-    }
-    lastDist = dist;
-  }
-}, {passive:false});
-
-dom.addEventListener('touchend', ()=>{
-  this.drag = false;
-  lastDist = null;
-});
+        
+        // Touch support
+        let lastDist = null;
+        dom.addEventListener('touchstart', (e)=>{
+          if(e.touches.length === 1){
+            this.drag = true; this.lastX = e.touches[0].clientX; this.lastY = e.touches[0].clientY;
+          }
+          if(e.touches.length === 2){
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            lastDist = Math.hypot(dx, dy);
+          }
+        }, {passive:false});
+        dom.addEventListener('touchmove', (e)=>{
+          e.preventDefault();
+          if(e.touches.length === 1 && this.drag){
+            const dx = e.touches[0].clientX - this.lastX;
+            const dy = e.touches[0].clientY - this.lastY;
+            this.sph.theta -= dx * this.rotSpeed;
+            this.sph.phi = Math.min(this.maxPhi, Math.max(this.minPhi, this.sph.phi + dy * this.rotSpeed));
+            this.lastX = e.touches[0].clientX; this.lastY = e.touches[0].clientY;
+            this.update();
+          }
+          if(e.touches.length === 2){
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const dist = Math.hypot(dx, dy);
+            if(lastDist){
+              const scale = lastDist / dist;
+              this.sph.radius = Math.min(this.maxR, Math.max(this.minR, this.sph.radius * scale));
+              this.update();
+            }
+            lastDist = dist;
+          }
+        }, {passive:false});
+        dom.addEventListener('touchend', ()=>{ this.drag = false; lastDist = null; });
         this.update();
       }
       update(){ const p=new THREE.Vector3().setFromSpherical(this.sph).add(this.target); this.camera.position.copy(p); this.camera.lookAt(this.target); }
@@ -347,26 +296,18 @@ dom.addEventListener('touchend', ()=>{
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor(0x07111f, 1);
-
-    // three r152+ vs 구버전 호환
-    if ('outputColorSpace' in renderer) {
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
-    } else if ('outputEncoding' in renderer) {
-      renderer.outputEncoding = THREE.sRGBEncoding;
-    }
+    if ('outputColorSpace' in renderer) renderer.outputColorSpace = THREE.SRGBColorSpace;
+    else if ('outputEncoding' in renderer) renderer.outputEncoding = THREE.sRGBEncoding;
     if ('ACESFilmicToneMapping' in THREE) renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
-
     elScene.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-const pmrem = new THREE.PMREMGenerator(renderer);
-
-const envLight = new THREE.Scene();
-envLight.add(new THREE.AmbientLight(0xffffff, 2.0));
-
-const envRT = pmrem.fromScene(envLight);
-scene.environment = envRT.texture;
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const envLight = new THREE.Scene();
+    envLight.add(new THREE.AmbientLight(0xffffff, 2.0));
+    const envRT = pmrem.fromScene(envLight);
+    scene.environment = envRT.texture;
     
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
     camera.position.set(10, 9, 15); camera.lookAt(0,0,0);
@@ -374,7 +315,6 @@ scene.environment = envRT.texture;
     document.getElementById('resetCam').onclick = ()=>{
       camera.position.set(10,9,15); orbit.sph.setFromVector3(camera.position.clone()); orbit.update();
     };
-
     
     // === Lights ===
     scene.add(new THREE.AmbientLight(0xffffff, 1.2));
@@ -388,59 +328,28 @@ scene.environment = envRT.texture;
     const coilMat = silverMat.clone();
     const capacitorMat = silverMat.clone();
 
-// === Metal texture (저항/코일/축전기판 표면 덮기) ===
-const texLoader = new THREE.TextureLoader();
-const metalTex = texLoader.load("./image/metal_tile.png");
+    // Metal Texture
+    const texLoader = new THREE.TextureLoader();
+    const metalTex = texLoader.load("./image/metal_tile.png");
+    if ("colorSpace" in metalTex) metalTex.colorSpace = THREE.SRGBColorSpace;
+    metalTex.wrapS = THREE.RepeatWrapping; metalTex.wrapT = THREE.RepeatWrapping;
 
-// 색 공간(three r152+ 대응)
-if ("colorSpace" in metalTex) metalTex.colorSpace = THREE.SRGBColorSpace;
+    const metalTex_res = metalTex.clone(); metalTex_res.repeat.set(3, 1);
+    const metalTex_cap = metalTex.clone(); metalTex_cap.repeat.set(1, 1);
+    const metalTex_coil = metalTex.clone(); metalTex_coil.repeat.set(10, 1);
+    
+    metalTex_res.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    metalTex_cap.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    metalTex_coil.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-// 타일링(반복) 설정
-metalTex.wrapS = THREE.RepeatWrapping;
-metalTex.wrapT = THREE.RepeatWrapping;
-
-// 반복 횟수(부품별로 체감 맞추기)
-// - 저항(원기둥): 둘레 방향으로 적당히 반복, 길이 방향도 약간 반복
-// - 축전기 판(박스): 판 위에서 결이 보이도록 반복
-// - 코일(튜브): 길게 늘어나므로 U 방향 반복을 크게 주는 편이 자연스러움
-const metalTex_res = metalTex.clone();
-metalTex_res.repeat.set(3, 1);
-
-const metalTex_cap = metalTex.clone();
-metalTex_cap.repeat.set(1, 1);
-
-const metalTex_coil = metalTex.clone();
-metalTex_coil.repeat.set(10, 1);
-
-// 선명도(사선에서 텍스처 뭉개짐 완화)
-metalTex_res.anisotropy = renderer.capabilities.getMaxAnisotropy();
-metalTex_cap.anisotropy = renderer.capabilities.getMaxAnisotropy();
-metalTex_coil.anisotropy = renderer.capabilities.getMaxAnisotropy();
-
-// 각 재질에 적용(원하는 3개만!)
-resistorMat.map  = metalTex_res;
-coilMat.map      = metalTex_coil;
-capacitorMat.map = metalTex_cap;
-
-    // 텍스처 색 왜곡 방지(곱셈 제거)
-resistorMat.color.set(0xffffff);
-coilMat.color.set(0xffffff);
-capacitorMat.color.set(0xffffff);
-
-// 금속 느낌 보정(취향값)
-resistorMat.metalness  = 0.85; resistorMat.roughness  = 0.28;
-coilMat.metalness      = 0.90; coilMat.roughness      = 0.22;
-capacitorMat.metalness = 0.88; capacitorMat.roughness = 0.26;
-
-// 변경 반영
-resistorMat.needsUpdate = true;
-coilMat.needsUpdate = true;
-capacitorMat.needsUpdate = true;
-
-
+    resistorMat.map = metalTex_res; resistorMat.color.set(0xffffff); resistorMat.metalness = 0.85; resistorMat.roughness = 0.28;
+    coilMat.map = metalTex_coil; coilMat.color.set(0xffffff); coilMat.metalness = 0.90; coilMat.roughness = 0.22;
+    capacitorMat.map = metalTex_cap; capacitorMat.color.set(0xffffff); capacitorMat.metalness = 0.88; capacitorMat.roughness = 0.26;
     
     // === Helpers ===
     const sideInner = 8, zWire = 0.0;
+    
+    // Cylinder Helper
     function cylinderBetween(a,b,r=0.08,mat=wireMat){
       const dir = new THREE.Vector3().subVectors(b,a); const len = dir.length();
       const geom = new THREE.CylinderGeometry(r, r, len, 24, 1, true);
@@ -452,13 +361,22 @@ capacitorMat.needsUpdate = true;
     }
     function updateCylinderBetween(mesh, a, b, r=0.08){
       const dir = new THREE.Vector3().subVectors(b,a); const len = dir.length();
-      mesh.geometry.dispose();
-      mesh.geometry = new THREE.CylinderGeometry(r, r, len, 24, 1, true);
+      mesh.geometry.dispose(); mesh.geometry = new THREE.CylinderGeometry(r, r, len, 24, 1, true);
       const mid = new THREE.Vector3().addVectors(a,b).multiplyScalar(0.5);
       mesh.position.copy(mid);
       mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
     }
+    
+    // Box Helper
     function boxAt(c, size, mat){ const g = new THREE.BoxGeometry(...size); const m = new THREE.Mesh(g, mat); m.position.copy(c); return m; }
+    
+    // ★ Joint Helper (구형 관절 추가) ★
+    function addJoint(pos, r=0.08, mat=wireMat){
+      const g = new THREE.SphereGeometry(r, 16, 16);
+      const m = new THREE.Mesh(g, mat);
+      m.position.copy(pos);
+      return m;
+    }
 
     const gModel = new THREE.Group(); scene.add(gModel);
     const P = {
@@ -479,11 +397,14 @@ capacitorMat.needsUpdate = true;
     const EBottom = splitEdge(P.BL, P.BR);
     const ELeft = splitEdge(P.TL, P.BL);
 
-    // Wires
+    // Wires (Main Loop)
     gModel.add(cylinderBetween(ETop.a, ETop.c1)); gModel.add(cylinderBetween(ETop.c2, ETop.b));
     gModel.add(cylinderBetween(ERight.a, ERight.c1)); gModel.add(cylinderBetween(ERight.c2, ERight.b));
     gModel.add(cylinderBetween(EBottom.a, EBottom.c1)); gModel.add(cylinderBetween(EBottom.c2, EBottom.b));
     gModel.add(cylinderBetween(ELeft.a, ELeft.c1)); gModel.add(cylinderBetween(ELeft.c2, ELeft.b));
+
+    // ★ Main Corners Joints (사각형 모서리 관절) ★
+    gModel.add(addJoint(P.TL), addJoint(P.TR), addJoint(P.BR), addJoint(P.BL));
 
     // === Components ===
     // AC source (top)
@@ -492,56 +413,31 @@ capacitorMat.needsUpdate = true;
     const acBody = new THREE.Mesh(new THREE.CylinderGeometry(0.65,0.65,0.18,48), silverMat);
     acBody.position.copy(acCenter); acBody.rotation.x = Math.PI/2; gModel.add(acBody);
 
-    // === AC 단자(원판-도선 연결) 추가 ===
-const acRadius = 0.65;      // acBody 반지름과 동일
-const acWireR  = 0.08;      // 도선 반지름(기존과 동일)
-const acDockEps = 0.02;     // 원판 표면에서 살짝 바깥으로(겹침 방지)
+    const acRadius = 0.65; const acWireR = 0.08; const acDockEps = 0.02;
+    const acContactL = acCenter.clone().add(new THREE.Vector3(-(acRadius + acDockEps), 0, 0));
+    const acContactR = acCenter.clone().add(new THREE.Vector3( (acRadius + acDockEps), 0, 0));
+    const acLeadL = cylinderBetween(ETop.c1, acContactL, acWireR, wireMat);
+    const acLeadR = cylinderBetween(acContactR, ETop.c2, acWireR, wireMat);
+    gModel.add(acLeadL, acLeadR);
 
-// 원판의 좌/우 가장자리 "접점" (월드 좌표)
-const acContactL = acCenter.clone().add(new THREE.Vector3(-(acRadius + acDockEps), 0, 0));
-const acContactR = acCenter.clone().add(new THREE.Vector3( (acRadius + acDockEps), 0, 0));
-
-// 상단 도선 끊긴 지점(ETop.c1, ETop.c2) ↔ 원판 접점 연결
-const acLeadL = cylinderBetween(ETop.c1, acContactL, acWireR, wireMat);
-const acLeadR = cylinderBetween(acContactR, ETop.c2, acWireR, wireMat);
-gModel.add(acLeadL, acLeadR);
+    // ★ AC Source Joints (전원부 연결 관절) ★
+    gModel.add(addJoint(ETop.c1), addJoint(ETop.c2)); // 도선 끊김 지점
+    gModel.add(addJoint(acContactL), addJoint(acContactR)); // 원판 접점
     
-// === AC 스티커(앞/뒷면 캡에 정확히) ===
-const acStickerTex = texLoader.load("./image/ac_icon.png");
-if ("colorSpace" in acStickerTex) acStickerTex.colorSpace = THREE.SRGBColorSpace;
-
-const acStickerMat = new THREE.MeshStandardMaterial({
-  map: acStickerTex,
-  transparent: true,
-  alphaTest: 0.02,
-  side: THREE.DoubleSide,
-  metalness: 0.0,
-  roughness: 0.8,
-  depthWrite: false,
-  polygonOffset: true,
-  polygonOffsetFactor: -2,
-  polygonOffsetUnits: -2,
-});
-
-const acStickerRadius = 0.65 * 1.15;
-const acStickerGeo = new THREE.CircleGeometry(acStickerRadius, 96);
-const eps = 0.002;
-
-// ✅ 실린더 캡은 로컬 ±Y 방향(기본 Cylinder 기준)
-const acStickerFront = new THREE.Mesh(acStickerGeo, acStickerMat);
-acStickerFront.position.set(0, +0.18/2 + eps, 0);   // +Y 캡 바깥
-acStickerFront.rotation.x = -Math.PI/2;             // Circle(+Z 법선) → +Y로 맞춤
-acStickerFront.rotation.z = 0;                      // 필요하면 여기만 돌려서 보정 (예: Math.PI/2)
-
-const acStickerBack = new THREE.Mesh(acStickerGeo, acStickerMat);
-acStickerBack.position.set(0, -0.18/2 - eps, 0);    // -Y 캡 바깥
-acStickerBack.rotation.x = +Math.PI/2;              // -Y 방향으로
-acStickerBack.rotation.z = Math.PI;                       // 앞면과 동일한 회전 보정값
-
-acStickerFront.renderOrder = 10;
-acStickerBack.renderOrder  = 10;
-
-acBody.add(acStickerFront, acStickerBack);
+    // AC Sticker
+    const acStickerTex = texLoader.load("./image/ac_icon.png");
+    if ("colorSpace" in acStickerTex) acStickerTex.colorSpace = THREE.SRGBColorSpace;
+    const acStickerMat = new THREE.MeshStandardMaterial({
+      map: acStickerTex, transparent: true, alphaTest: 0.02, side: THREE.DoubleSide, metalness: 0.0, roughness: 0.8,
+      depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+    });
+    const acStickerRadius = 0.65 * 1.15; const acStickerGeo = new THREE.CircleGeometry(acStickerRadius, 96); const eps = 0.002;
+    const acStickerFront = new THREE.Mesh(acStickerGeo, acStickerMat);
+    acStickerFront.position.set(0, +0.18/2 + eps, 0); acStickerFront.rotation.x = -Math.PI/2; acStickerFront.rotation.z = 0;
+    const acStickerBack = new THREE.Mesh(acStickerGeo, acStickerMat);
+    acStickerBack.position.set(0, -0.18/2 - eps, 0); acStickerBack.rotation.x = +Math.PI/2; acStickerBack.rotation.z = Math.PI;
+    acStickerFront.renderOrder = 10; acStickerBack.renderOrder = 10;
+    acBody.add(acStickerFront, acStickerBack);
     
     // Capacitor (right)
     const capCenter = new THREE.Vector3(sideInner/2, 0, zWire);
@@ -553,6 +449,9 @@ acBody.add(acStickerFront, acStickerBack);
     let capConnBot = cylinderBetween(capPlateBot.position, ERight.c2, 0.08);
     gModel.add(capConnTop, capConnBot);
 
+    // ★ Capacitor Joints (축전기 연결 관절) ★
+    gModel.add(addJoint(ERight.c1), addJoint(ERight.c2));
+
     // Inductor (bottom)
     const coilCenter = new THREE.Vector3(0, -sideInner/2, zWire);
     let coilRadius0 = 0.35, coilLen0 = 2.2, turns = 4, wireRadius = 0.08;
@@ -560,11 +459,8 @@ acBody.add(acStickerFront, acStickerBack);
     function makeCoilGeometry(){
       const pts = []; const NPTS = 400;
       for(let i=0;i<=NPTS;i++){
-        const t=i/NPTS;
-        const x=(t-0.5)*coilLen;
-        const ang=t*turns*Math.PI*2;
-        const y=Math.cos(ang)*coilRadius;
-        const z=Math.sin(ang)*coilRadius;
+        const t=i/NPTS; const x=(t-0.5)*coilLen; const ang=t*turns*Math.PI*2;
+        const y=Math.cos(ang)*coilRadius; const z=Math.sin(ang)*coilRadius;
         pts.push(new THREE.Vector3(x, y, z));
       }
       const path = new THREE.CatmullRomCurve3(pts);
@@ -576,6 +472,13 @@ acBody.add(acStickerFront, acStickerBack);
     let coilConnL = cylinderBetween(EBottom.c1, coilPortL, 0.08);
     let coilConnR = cylinderBetween(coilPortR, EBottom.c2, 0.08);
     gModel.add(coilConnL, coilConnR);
+
+    // ★ Inductor Joints (코일 연결 관절) ★
+    // 코일 길이는 가변적이므로 변수(Mesh)로 저장해두고 updateCoilGeom에서 위치 갱신
+    gModel.add(addJoint(EBottom.c1), addJoint(EBottom.c2)); // 고정된 도선 끝
+    const jointCoilL = addJoint(coilPortL); // 코일 왼쪽 포트
+    const jointCoilR = addJoint(coilPortR); // 코일 오른쪽 포트
+    gModel.add(jointCoilL, jointCoilR);
 
     // B-field arrows + halos
     const gB = new THREE.Group(); scene.add(gB);
@@ -599,7 +502,6 @@ acBody.add(acStickerFront, acStickerBack);
     function updateCoilGeom(){
       const LmH = parseFloat(LSlider.value); // 1~200 mH
       const Lnorm = THREE.MathUtils.clamp(LmH/50, 0.2, 5.0);
-      // 직관: r ∝ √L, l ∝ L^{-0.25}
       coilRadius = coilRadius0 * Math.sqrt(Lnorm);
       coilLen    = coilLen0    / Math.pow(Lnorm, 0.25);
       coilMesh.geometry.dispose(); coilMesh.geometry = makeCoilGeometry();
@@ -607,6 +509,11 @@ acBody.add(acStickerFront, acStickerBack);
       coilPortR = coilCenter.clone().add(new THREE.Vector3( coilLen/2, 0, 0));
       updateCylinderBetween(coilConnL, EBottom.c1, coilPortL, 0.08);
       updateCylinderBetween(coilConnR, coilPortR, EBottom.c2, 0.08);
+      
+      // ★ Update Dynamic Joints ★
+      jointCoilL.position.copy(coilPortL);
+      jointCoilR.position.copy(coilPortR);
+
       for(const arr of arrows){ const {tx,yOff,zOff} = arr.userData; arr.position.set(coilCenter.x + tx*coilLen, coilCenter.y + yOff, coilCenter.z + zOff); }
       for(let i=0;i<halos.length;i++){
         const r = coilRadius*haloScale[i];
@@ -631,6 +538,10 @@ acBody.add(acStickerFront, acStickerBack);
       const resPortBot = resCenter.clone().add(new THREE.Vector3(0, -resLen/2 - 0.15, 0));
       gModel.add(cylinderBetween(ELeft.c1, resPortTop, 0.08));
       gModel.add(cylinderBetween(resPortBot, ELeft.c2, 0.08));
+
+      // ★ Resistor Joints (저항 연결 관절) ★
+      gModel.add(addJoint(ELeft.c1), addJoint(ELeft.c2)); // 도선 끊김 지점
+      gModel.add(addJoint(resPortTop), addJoint(resPortBot)); // 저항 포트 연결
     }
 
     // Capacitor electron clouds
@@ -858,326 +769,154 @@ acBody.add(acStickerFront, acStickerBack);
     }
 
     function setMaskedHud(masked){
-      // 숫자 힌트(공식/값) 숨김 — 학생은 조작/그래프만 보고 판단
       const maskedText = masked ? '—' : null;
       if(masked){
-        F0val.textContent = '—';
-        Qval.textContent = '—';
-        BWval.textContent = '—';
-        Ratio.textContent = '—';
-        ResTag.style.opacity = '0.25';
+        F0val.textContent = '—'; Qval.textContent = '—'; BWval.textContent = '—'; Ratio.textContent = '—'; ResTag.style.opacity = '0.25';
       }
     }
 
     function setControlsEnabled({L=true,C=true,R=true,f=true,lock=true,vis=true}){
-      LSlider.disabled = !L;
-      CSlider.disabled = !C;
-      RSlider.disabled = !R;
-      FSlider.disabled = !f;
-      LockChk.disabled = !lock;
-      VisSlider.disabled = !vis;
+      LSlider.disabled = !L; CSlider.disabled = !C; RSlider.disabled = !R; FSlider.disabled = !f; LockChk.disabled = !lock; VisSlider.disabled = !vis;
     }
 
     function rand(min,max){ return min + Math.random()*(max-min); }
     function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
     function randomizeCircuitForRound(type){
-      // round 타입별로 조건을 다르게 뿌려서 체감 난이도 조절
-      // L(mH) 10~180, C(uF) 0.5~80, R(ohm) 10~150
       const LmH = Math.round(rand(12, 160));
       const CuF = Math.round(rand(0.6, 70)*10)/10;
       let Rv = 50;
 
       if(type === 'seek'){ Rv = pick([30,40,50,60,80]); }
       else if(type === 'seek_mid'){ Rv = pick([20,30,50,70,100]); }
-      else if(type === 'tune_amp'){
-        // 공명 진폭 조절이 가능하도록 R 범위를 넓게
-        Rv = pick([20,30,40,60,80,120,150]);
-      } else if(type === 'classify_q'){
-        // Q를 확실히 갈리게
-        Rv = pick([12, 18, 28, 45, 80, 120, 160]);
-      }
+      else if(type === 'tune_amp'){ Rv = pick([20,30,40,60,80,120,150]); }
+      else if(type === 'classify_q'){ Rv = pick([12, 18, 28, 45, 80, 120, 160]); }
 
-      LSlider.value = String(LmH);
-      CSlider.value = String(CuF);
-      RSlider.value = String(Rv);
-      refresh(); // f slider range + coil update
-
-      // lock은 게임 중 사용 안 함
+      LSlider.value = String(LmH); CSlider.value = String(CuF); RSlider.value = String(Rv);
+      refresh();
       LockChk.checked = false;
 
-      // 시작 주파수는 랜덤 (f0 주변 or 좀 떨어짐)
       const {f0} = params();
       let fStart = f0 * (type === 'seek' ? rand(0.85, 1.15) : rand(0.65, 1.45));
       fStart = Math.max(parseFloat(FSlider.min), Math.min(parseFloat(FSlider.max), fStart));
       FSlider.value = String(Math.round(fStart));
       lastF = Number(FSlider.value);
       moveCount = 0;
-      updateHintUI();
-      updateGoalUI();
+      updateHintUI(); updateGoalUI();
     }
 
     function updateHintUI(){
-      const Pp = params();
-      const f0 = Pp.f0;
+      const Pp = params(); const f0 = Pp.f0;
       const fMin = parseFloat(FSlider.min), fMax = parseFloat(FSlider.max);
       const fCur = parseFloat(FSlider.value);
       const toPct = (f)=> ((f - fMin) / (fMax - fMin)) * 100;
 
-      // marker
       hintMarker.style.left = `${toPct(fCur)}%`;
-
-      // band = f0*(1±tol)
-      const a = Math.max(fMin, f0*(1-tol));
-      const b = Math.min(fMax, f0*(1+tol));
-      const left = toPct(a);
-      const right = toPct(b);
-      hintBand.style.left = `${left}%`;
-      hintBand.style.width = `${Math.max(0, right-left)}%`;
-
-      hintMeta.textContent =
-        (roundType === 'seek')
-          ? `현재 f 위치를 초록 구간에 맞추면 정답(제출)!`
-          : `힌트 없음: 그래프 진폭이 최대가 되는 지점을 찾아 제출하세요.`;
+      const a = Math.max(fMin, f0*(1-tol)); const b = Math.min(fMax, f0*(1+tol));
+      const left = toPct(a); const right = toPct(b);
+      hintBand.style.left = `${left}%`; hintBand.style.width = `${Math.max(0, right-left)}%`;
+      hintMeta.textContent = (roundType === 'seek') ? `현재 f 위치를 초록 구간에 맞추면 정답(제출)!` : `힌트 없음: 그래프 진폭이 최대가 되는 지점을 찾아 제출하세요.`;
     }
 
     function updateGoalUI(){
-      const Pp = params();
-      const amp = Pp.Iamp;
-      // normalize gauge: 0~0.20 A 기준(보정)
+      const Pp = params(); const amp = Pp.Iamp;
       const maxA = 0.20;
       const fillPct = Math.max(0, Math.min(100, (amp/maxA)*100));
       goalFill.style.width = `${fillPct}%`;
-
-      // target zone
-      const a = Math.max(0, Math.min(maxA, targetAmpMin));
-      const b = Math.max(0, Math.min(maxA, targetAmpMax));
-      const left = (a/maxA)*100;
-      const width = ((b-a)/maxA)*100;
-      goalZone.style.left = `${left}%`;
-      goalZone.style.width = `${Math.max(0,width)}%`;
-
-      const {f0} = Pp;
-      const ratio = (Pp.f / f0);
+      const a = Math.max(0, Math.min(maxA, targetAmpMin)); const b = Math.max(0, Math.min(maxA, targetAmpMax));
+      const left = (a/maxA)*100; const width = ((b-a)/maxA)*100;
+      goalZone.style.left = `${left}%`; goalZone.style.width = `${Math.max(0,width)}%`;
+      const {f0} = Pp; const ratio = (Pp.f / f0);
       goalMeta.textContent = `현재: 전류 진폭≈${amp.toFixed(3)}A · f/f₀≈${ratio.toFixed(3)} (공명 근처 유지!)`;
     }
 
     function setPanelForRound(){
-      gpFeedbackEl.textContent = '';
-      gpFeedbackEl.className = 'game-feedback';
-      ansWrap.style.display = 'none';
-      hintWrap.style.display = 'none';
-      goalWrap.style.display = 'none';
+      gpFeedbackEl.textContent = ''; gpFeedbackEl.className = 'game-feedback';
+      ansWrap.style.display = 'none'; hintWrap.style.display = 'none'; goalWrap.style.display = 'none';
       gpSubEl.textContent = '';
 
-      // 기본(도전 모드가 아닐 때): 모든 조작 가능 + f=f0 토글 가능
       if(gameState === 'idle' || gameState === 'finished'){
-        gpQuestionEl.innerHTML =
-          `<b>도전 모드</b>를 누르면 라운드별 조건(L, C, R)이 자동으로 설정됩니다.<br>`+
-          `도전 모드가 아닐 때는 <b>f=f₀</b>를 자유롭게 켰다/껐다 할 수 있어요.`;
+        gpQuestionEl.innerHTML = `<b>도전 모드</b>를 누르면 라운드별 조건(L, C, R)이 자동으로 설정됩니다.<br>도전 모드가 아닐 때는 <b>f=f₀</b>를 자유롭게 켰다/껐다 할 수 있어요.`;
         btnMain.textContent = (gameState === 'finished') ? '다시 도전' : '도전 시작';
-        btnMain.disabled = false;
-        btnNarrow.disabled = true; btnWide.disabled = true;
-        setControlsEnabled({L:true,C:true,R:true,f:true,lock:true,vis:true});
-        setMaskedHud(false);
+        btnMain.disabled = false; btnNarrow.disabled = true; btnWide.disabled = true;
+        setControlsEnabled({L:true,C:true,R:true,f:true,lock:true,vis:true}); setMaskedHud(false);
         return;
       }
 
       const r = gameRound;
-
       if(roundType === 'seek'){
         hintWrap.style.display = 'block';
-        gpQuestionEl.innerHTML =
-          `<b>쉬움</b> · 공명 찾기 (1~5)<br>`+
-          `초록 구간(공명 근처) 안으로 <b>f</b>를 맞춘 뒤 <b>제출</b>하세요.`;
+        gpQuestionEl.innerHTML = `<b>쉬움</b> · 공명 찾기 (1~5)<br>초록 구간(공명 근처) 안으로 <b>f</b>를 맞춘 뒤 <b>제출</b>하세요.`;
         btnMain.textContent = '제출';
-        gpSubEl.textContent = '';
-        setControlsEnabled({L:false,C:false,R:false,f:true,lock:false,vis:true});
-        setMaskedHud(true);
+        setControlsEnabled({L:false,C:false,R:false,f:true,lock:false,vis:true}); setMaskedHud(true);
       } else if(roundType === 'seek_mid'){
-        // 6~8: 중간, 9~10: 어려움(조금 더 엄격한 tol)
-        const lvl = (r <= 8) ? '중간' : '어려움';
-        const rr  = (r <= 8) ? '(6~8)' : '(9~10)';
-        gpQuestionEl.innerHTML =
-          `<b>${lvl}</b> · 힌트 없이 공명 찾기 ${rr}<br>`+
-          `그래프 진폭이 가장 커지는 지점으로 <b>f</b>를 맞춘 뒤 <b>제출</b>하세요.`;
-        btnMain.textContent = '제출';
-        hintWrap.style.display = 'none';
-        gpSubEl.textContent = '';
-        setControlsEnabled({L:false,C:false,R:false,f:true,lock:false,vis:true});
-        setMaskedHud(true);
+        const lvl = (r <= 8) ? '중간' : '어려움'; const rr  = (r <= 8) ? '(6~8)' : '(9~10)';
+        gpQuestionEl.innerHTML = `<b>${lvl}</b> · 힌트 없이 공명 찾기 ${rr}<br>그래프 진폭이 가장 커지는 지점으로 <b>f</b>를 맞춘 뒤 <b>제출</b>하세요.`;
+        btnMain.textContent = '제출'; hintWrap.style.display = 'none';
+        setControlsEnabled({L:false,C:false,R:false,f:true,lock:false,vis:true}); setMaskedHud(true);
       }
     }
 
     function startNewGame(){
-      gameRound = 0;
-      currentScore = 0;
-      gameState = 'question';
-      updateScoreUI();
-      nextRound();
+      gameRound = 0; currentScore = 0; gameState = 'question';
+      updateScoreUI(); nextRound();
     }
 
     function nextRound(){
       gameRound++;
-      if(gameRound > TOTAL_ROUNDS){
-        endGame();
-        return;
-      }
+      if(gameRound > TOTAL_ROUNDS){ endGame(); return; }
       updateRoundUI();
+      if(gameRound <= 5){ roundType = 'seek'; tol = 0.03; moveLimit = 0; }
+      else if(gameRound <= 8){ roundType = 'seek_mid'; tol = 0.02; moveLimit = 0; }
+      else { roundType = 'seek_mid'; tol = 0.015; moveLimit = 0; }
 
-      // determine type
-      if(gameRound <= 5){
-        // 쉬움: 힌트(밴드) 표시 + 제출로 판정
-        roundType = 'seek';
-        tol = 0.03;
-        moveLimit = 0;
-      } else if(gameRound <= 8){
-        // 중간: 힌트 없음 + 조작 제한(다 쓰면 제출로 판정)
-        roundType = 'seek_mid';
-        tol = 0.02;
-        moveLimit = 0;
-      } else {
-        // 어려움(9~10): 6~8과 동일한 형태(공명 찾기)지만 조금 더 엄격하게
-        roundType = 'seek_mid';
-        tol = 0.015;
-        moveLimit = 0;
-      }
-
-      gameState = 'question';
-      randomizeCircuitForRound(roundType);
-
-      // (도전 모드) 자동 스윕/분류 라운드는 사용하지 않음
-      sweeping = false;
-
-
-      setPanelForRound();
-      btnMain.disabled = false;
+      gameState = 'question'; randomizeCircuitForRound(roundType); sweeping = false;
+      setPanelForRound(); btnMain.disabled = false;
     }
 
     function endGame(){
-      gameState = 'finished';
-      setControlsEnabled({L:true,C:true,R:true,f:true,lock:true,vis:true});
+      gameState = 'finished'; setControlsEnabled({L:true,C:true,R:true,f:true,lock:true,vis:true});
       gpFeedbackEl.className = 'game-feedback ok';
       gpFeedbackEl.textContent = `도전 종료! 총 점수 ${currentScore}점 / 500점. 최고 점수 갱신에 도전해 보세요.`;
-      btnMain.textContent = '다시 도전';
-      btnMain.disabled = false;
-      setMaskedHud(false);
-      bump(gpBestBadgeEl);
+      btnMain.textContent = '다시 도전'; btnMain.disabled = false; setMaskedHud(false); bump(gpBestBadgeEl);
     }
 
-    function isNearResonance(){
-      const Pp = params();
-      const rel = Math.abs(Pp.f - Pp.f0) / Pp.f0;
-      return rel < tol;
-    }
+    function isNearResonance(){ const Pp = params(); const rel = Math.abs(Pp.f - Pp.f0) / Pp.f0; return rel < tol; }
 
     function submitSeek(){
       const ok = isNearResonance();
-      if(ok){
-        currentScore += 50;
-        gpFeedbackEl.className = 'game-feedback ok';
-        gpFeedbackEl.textContent = `정답! +50점 (공명 포착)`;
-      } else {
-        gpFeedbackEl.className = 'game-feedback bad';
-        gpFeedbackEl.textContent = `오답! 공명 지점이 아닙니다.`;
-      }
-
-      if(currentScore > bestScore){
-        bestScore = currentScore;
-        if(window.saveBestScoreToFirebase) window.saveBestScoreToFirebase(bestScore);
-        bump(gpBestBadgeEl);
-      }
+      if(ok){ currentScore += 50; gpFeedbackEl.className = 'game-feedback ok'; gpFeedbackEl.textContent = `정답! +50점 (공명 포착)`; }
+      else { gpFeedbackEl.className = 'game-feedback bad'; gpFeedbackEl.textContent = `오답! 공명 지점이 아닙니다.`; }
+      if(currentScore > bestScore){ bestScore = currentScore; if(window.saveBestScoreToFirebase) window.saveBestScoreToFirebase(bestScore); bump(gpBestBadgeEl); }
       updateScoreUI();
-
-      // 다음 진행
-      if(gameRound >= TOTAL_ROUNDS){
-        btnMain.textContent = '최종 결과';
-      } else {
-        btnMain.textContent = '다음 라운드';
-      }
-      gameState = 'feedback';
-      setControlsEnabled({L:false,C:false,R:false,f:false,lock:false,vis:true});
-      btnMain.disabled = false;
-      setMaskedHud(false);
+      if(gameRound >= TOTAL_ROUNDS){ btnMain.textContent = '최종 결과'; } else { btnMain.textContent = '다음 라운드'; }
+      gameState = 'feedback'; setControlsEnabled({L:false,C:false,R:false,f:false,lock:false,vis:true}); btnMain.disabled = false; setMaskedHud(false);
     }
 
     function submitTuneAmp(){
-      const Pp = params();
-      const amp = Pp.Iamp;
-      const ampOk = (amp >= targetAmpMin && amp <= targetAmpMax);
-      const resOk = isNearResonance();
-      const ok = ampOk && resOk;
-
-      if(ok){
-        currentScore += 50;
-        gpFeedbackEl.className = 'game-feedback ok';
-        gpFeedbackEl.textContent = `정답! +50점 (공명 유지 + 목표 진폭 성공)`;
-      } else {
-        gpFeedbackEl.className = 'game-feedback bad';
-        gpFeedbackEl.textContent =
-          `오답! `+
-          `${resOk ? '공명은 OK' : '공명 근처가 아님'} · `+
-          `${ampOk ? '진폭은 OK' : '진폭이 목표 구간 밖'}`;
-      }
-
-      if(currentScore > bestScore){
-        bestScore = currentScore;
-        if(window.saveBestScoreToFirebase) window.saveBestScoreToFirebase(bestScore);
-        bump(gpBestBadgeEl);
-      }
+      const Pp = params(); const amp = Pp.Iamp; const ampOk = (amp >= targetAmpMin && amp <= targetAmpMax); const resOk = isNearResonance(); const ok = ampOk && resOk;
+      if(ok){ currentScore += 50; gpFeedbackEl.className = 'game-feedback ok'; gpFeedbackEl.textContent = `정답! +50점 (공명 유지 + 목표 진폭 성공)`; }
+      else { gpFeedbackEl.className = 'game-feedback bad'; gpFeedbackEl.textContent = `오답! ${resOk ? '공명은 OK' : '공명 근처가 아님'} · ${ampOk ? '진폭은 OK' : '진폭이 목표 구간 밖'}`; }
+      if(currentScore > bestScore){ bestScore = currentScore; if(window.saveBestScoreToFirebase) window.saveBestScoreToFirebase(bestScore); bump(gpBestBadgeEl); }
       updateScoreUI();
-
-      if(gameRound >= TOTAL_ROUNDS){
-        btnMain.textContent = '최종 결과';
-      } else {
-        btnMain.textContent = '다음 라운드';
-      }
-      gameState = 'feedback';
-      setControlsEnabled({L:false,C:false,R:false,f:false,lock:false,vis:true});
-      btnMain.disabled = false;
-      setMaskedHud(false);
+      if(gameRound >= TOTAL_ROUNDS){ btnMain.textContent = '최종 결과'; } else { btnMain.textContent = '다음 라운드'; }
+      gameState = 'feedback'; setControlsEnabled({L:false,C:false,R:false,f:false,lock:false,vis:true}); btnMain.disabled = false; setMaskedHud(false);
     }
 
     function answerQ(isNarrow){
       if(gameState !== 'question' || roundType !== 'classify_q') return;
-
-      sweeping = false;
-      const ok = (isNarrow === correctQIsNarrow);
-      if(ok){
-        currentScore += 50;
-        gpFeedbackEl.className = 'game-feedback ok';
-        gpFeedbackEl.textContent = `정답! +50점 (공명 곡선 판별 성공)`;
-      } else {
-        gpFeedbackEl.className = 'game-feedback bad';
-        gpFeedbackEl.textContent = `오답! 이번 라운드는 ${correctQIsNarrow ? '날카로운 공명(고Q)' : '둥근 공명(저Q)'} 입니다.`;
-      }
-
-      if(currentScore > bestScore){
-        bestScore = currentScore;
-        if(window.saveBestScoreToFirebase) window.saveBestScoreToFirebase(bestScore);
-        bump(gpBestBadgeEl);
-      }
+      sweeping = false; const ok = (isNarrow === correctQIsNarrow);
+      if(ok){ currentScore += 50; gpFeedbackEl.className = 'game-feedback ok'; gpFeedbackEl.textContent = `정답! +50점 (공명 곡선 판별 성공)`; }
+      else { gpFeedbackEl.className = 'game-feedback bad'; gpFeedbackEl.textContent = `오답! 이번 라운드는 ${correctQIsNarrow ? '날카로운 공명(고Q)' : '둥근 공명(저Q)'} 입니다.`; }
+      if(currentScore > bestScore){ bestScore = currentScore; if(window.saveBestScoreToFirebase) window.saveBestScoreToFirebase(bestScore); bump(gpBestBadgeEl); }
       updateScoreUI();
-
-      btnMain.textContent = (gameRound >= TOTAL_ROUNDS) ? '최종 결과' : '다음 라운드';
-      btnMain.disabled = false;
-      gameState = 'feedback';
-      setControlsEnabled({L:false,C:false,R:false,f:false,lock:false,vis:true});
-      setMaskedHud(false);
+      btnMain.textContent = (gameRound >= TOTAL_ROUNDS) ? '최종 결과' : '다음 라운드'; btnMain.disabled = false;
+      gameState = 'feedback'; setControlsEnabled({L:false,C:false,R:false,f:false,lock:false,vis:true}); setMaskedHud(false);
     }
 
-    // button wiring
     btnMain.addEventListener('click', ()=>{
-      if(gameState === 'idle' || gameState === 'finished'){
-        startNewGame();
-        return;
-      }
-      if(gameState === 'feedback'){
-        // next
-        nextRound();
-        return;
-      }
-      // question
+      if(gameState === 'idle' || gameState === 'finished'){ startNewGame(); return; }
+      if(gameState === 'feedback'){ nextRound(); return; }
       if(roundType === 'seek' || roundType === 'seek_mid') submitSeek();
       else if(roundType === 'tune_amp') submitTuneAmp();
     });
@@ -1185,15 +924,10 @@ acBody.add(acStickerFront, acStickerBack);
     btnNarrow.addEventListener('click', ()=>answerQ(true));
     btnWide.addEventListener('click', ()=>answerQ(false));
 
-    // movement count (6~8)
     FSlider.addEventListener('input', ()=>{
       if(gameState !== 'question') return;
-      // ✅ 6~10 라운드 조작 제한 제거: f는 언제든 조절 가능, 판정은 '제출'로만 진행
-      updateHintUI();
-      if(roundType === 'tune_amp') updateGoalUI();
+      updateHintUI(); if(roundType === 'tune_amp') updateGoalUI();
     });
-
-        // keep hint/goal updated
     [LSlider,CSlider,RSlider,FSlider].forEach(sl=>{
       sl.addEventListener('input', ()=>{
         if(gameState !== 'question') return;
@@ -1202,19 +936,12 @@ acBody.add(acStickerFront, acStickerBack);
       });
     });
 
-    // init panel
-    updateScoreUI();
-    updateRoundUI();
-    setPanelForRound();
-
+    updateScoreUI(); updateRoundUI(); setPanelForRound();
     function refresh(){ updateFSliderRange(); updateCoilGeom(); }
-    LSlider.addEventListener('input', refresh);
-    CSlider.addEventListener('input', refresh);
-    LockChk.addEventListener('change', refresh);
+    LSlider.addEventListener('input', refresh); CSlider.addEventListener('input', refresh); LockChk.addEventListener('change', refresh);
   })();
   </script>
 
-  <!-- ===== Firebase 최고점수 연동 (RLC 공명) ===== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
@@ -1233,9 +960,7 @@ acBody.add(acStickerFront, acStickerBack);
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db   = getFirestore(app);
-
     const SIM_ID = "RLC_공명";
-
     let firebaseUser = null;
 
     async function saveBestScore(score){
@@ -1243,9 +968,7 @@ acBody.add(acStickerFront, acStickerBack);
       try{
         const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
         await setDoc(ref, { score: Number(score)||0 }, { merge:true });
-      }catch(err){
-        console.error("[RLC 공명] 최고 점수 저장 오류:", err);
-      }
+      }catch(err){ console.error("[RLC 공명] 최고 점수 저장 오류:", err); }
     }
 
     async function loadBestScore(){
@@ -1258,13 +981,9 @@ acBody.add(acStickerFront, acStickerBack);
           const score = Number(data.score||0)||0;
           if(window.setBestScoreFromFirebase) window.setBestScoreFromFirebase(score);
         }
-      }catch(err){
-        console.error("[RLC 공명] 최고 점수 불러오기 오류:", err);
-      }
+      }catch(err){ console.error("[RLC 공명] 최고 점수 불러오기 오류:", err); }
     }
-
     window.saveBestScoreToFirebase = saveBestScore;
-
     onAuthStateChanged(auth, async (user)=>{
       firebaseUser = user;
       if(user) await loadBestScore();

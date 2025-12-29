@@ -3,9 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>직류 전동기 (태블릿 터치 지원)</title>
+  <title>직류 전동기 (최종: 둥근 코일 보정)</title>
   <style>
-    /* [색상 톤 다운] 눈이 편안한 색상 팔레트 */
     :root{ 
       --ink:#334155; 
       --primary:#0284c7; 
@@ -15,9 +14,8 @@
     }
     html, body {
       height: 100%; margin: 0; overflow: hidden;
-      /* 터치 스크롤 방지 (3D 조작 시 화면이 움직이지 않게) */
       touch-action: none; 
-      -webkit-user-select: none; /* 텍스트 선택 방지 */
+      -webkit-user-select: none;
       user-select: none;
     }
     
@@ -32,7 +30,7 @@
       padding: 10px 14px;
       display: flex; justify-content: space-between; align-items: center;
       z-index: 5;
-      pointer-events: none; /* 헤더가 터치를 가리지 않게 */
+      pointer-events: none; 
     }
     .brand { pointer-events: auto; font-weight: 700; font-size: 18px; color: #1e293b; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
     .small { font-size: 12px; color: #64748b; }
@@ -49,17 +47,12 @@
       border-radius: 12px; padding: 16px; z-index: 10;
       box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
       max-height: 80vh; overflow-y: auto;
-      /* 모바일에서 스크롤 부드럽게 */
       -webkit-overflow-scrolling: touch; 
     }
     .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin: 12px 0; }
     .row label { font-size: 14px; font-weight: 600; color: #475569; }
     
-    /* 슬라이더 터치 영역 확대 */
-    input[type=range] { 
-      width: 100%; accent-color: var(--primary); cursor: pointer; 
-      height: 24px; /* 터치하기 쉽게 높이 증가 */
-    }
+    input[type=range] { width: 100%; accent-color: var(--primary); cursor: pointer; height: 24px; }
     select { padding: 8px; border-radius: 4px; border: 1px solid #cbd5e1; color: #475569; font-size: 14px; }
     
     .status-box {
@@ -72,13 +65,11 @@
     /* 버튼 그룹 */
     .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
     .btn {
-      padding: 14px 8px; /* 버튼 터치 영역 확대 */
-      border-radius: 8px; border: none; cursor: pointer;
+      padding: 14px 8px; border-radius: 8px; border: none; cursor: pointer;
       font-size: 13px; font-weight: 600; color: white;
       background: #64748b; transition: all 0.2s;
       display: flex; justify-content: center; align-items: center; text-align: center;
       line-height: 1.3;
-      /* 모바일 터치 하이라이트 제거 */
       -webkit-tap-highlight-color: transparent; 
     }
     .btn:active { transform: scale(0.98); }
@@ -98,10 +89,9 @@
       background: rgba(255, 255, 255, 0.9);
       border-radius: 12px; padding: 10px; z-index: 11;
       box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
-      pointer-events: none; /* 그래프가 터치를 방해하지 않도록 (필요시 auto로 변경) */
+      pointer-events: none; 
     }
     
-    /* 작은 화면(모바일) 대응 */
     @media (max-width: 600px) {
       .hud { width: calc(100% - 40px); left: 20px; top: auto; bottom: 20px; max-height: 40vh; }
       .graphbox { top: 60px; right: 10px; width: 120px; opacity: 0.8; }
@@ -119,7 +109,7 @@
 
   <header>
     <div class="brand">🔷 직류 전동기 실험실</div>
-    <div class="small">Tablet Touch Ready</div>
+    <div class="small">Rounded Wire Joints (Tablet Touch Ready)</div>
   </header>
 
   <div id="scene"></div>
@@ -220,15 +210,14 @@
     camera.position.set(20, 15, 30);
     camera.lookAt(0, 0, 0);
 
-    // ★ [핵심 변경] 태블릿/모바일 터치 지원을 위한 OrbitControls 사용
-    // 기존의 커스텀 SimpleOrbit 대신 Three.js 공식 컨트롤러 사용
+    // OrbircControls (터치/마우스 지원 공식 컨트롤러)
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true; // 관성 효과 (부드럽게 멈춤)
+    controls.enableDamping = true; 
     controls.dampingFactor = 0.05;
-    controls.enableZoom = true;    // 핀치 줌 지원
-    controls.enablePan = false;    // 화면 이동 방지 (중심 유지)
-    controls.minDistance = 10;     // 줌인 제한
-    controls.maxDistance = 100;    // 줌아웃 제한
+    controls.enableZoom = true;
+    controls.enablePan = false; 
+    controls.minDistance = 10;
+    controls.maxDistance = 100;
 
     const ambLight = new THREE.AmbientLight(0xffffff, 0.7);
     scene.add(ambLight);
@@ -237,6 +226,7 @@
     scene.add(dirLight);
 
     // --- [색상 톤 다운] ---
+    // StandardMaterial을 사용하여 차분하고 고급스러운 질감 표현
     const matCopper = new THREE.MeshStandardMaterial({ color: 0xa65d29, roughness: 0.3, metalness: 0.6 });
     const matSteel = new THREE.MeshStandardMaterial({ color: 0xbdc3c7, roughness: 0.4, metalness: 0.5 });
     const matBrass = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3, metalness: 0.7 });
@@ -296,7 +286,7 @@
     const MAIN_Z = 7.0; 
     const BRUSH_Z = 7.4; 
     const COMM_CENTER_Z = MAIN_Z;
-    const COIL_END_Z = MAIN_Z - 1.0; 
+    const COIL_END_Z = MAIN_Z - 1.0; // 코일이 정류자와 겹치도록 설정
 
     function createCurvedBrushGeo() {
       const shape = new THREE.Shape();
@@ -324,14 +314,12 @@
 
     const wireGeo = new THREE.CylinderGeometry(0.2, 0.2, 8); 
     const wireL = new THREE.Mesh(wireGeo, matRed);
-    wireL.rotation.z = Math.PI/2; 
-    wireL.position.set(-5.8, 0, BRUSH_Z); 
+    wireL.rotation.z = Math.PI/2; wireL.position.set(-5.8, 0, BRUSH_Z); 
     const wireR = new THREE.Mesh(wireGeo, matBlue);
-    wireR.rotation.z = Math.PI/2;
-    wireR.position.set(5.8, 0, BRUSH_Z);
+    wireR.rotation.z = Math.PI/2; wireR.position.set(5.8, 0, BRUSH_Z);
     brushGroup.add(wireL, wireR);
 
-    // --- 4. 로터 생성 ---
+    // --- 4. 로터 생성 (코일 둥근 관절 적용) ---
     let rotorGroup = new THREE.Group();
     let arrows = []; 
 
@@ -367,8 +355,7 @@
         const startAngle = centerAngle - (copperArc / 2);
         const geo = new THREE.CylinderGeometry(1.2, 1.2, COMM_LEN, 32, 1, false, startAngle, copperArc);
         const mesh = new THREE.Mesh(geo, matBrass);
-        mesh.rotation.x = Math.PI/2; 
-        mesh.position.z = COMM_CENTER_Z; 
+        mesh.rotation.x = Math.PI/2; mesh.position.z = COMM_CENTER_Z; 
         rotorGroup.add(mesh);
       }
 
@@ -376,8 +363,9 @@
 
       for(let i=0; i<n; i++) {
         const cGroup = new THREE.Group();
-        const w=5, l=12, t=0.25;
+        const w=5, l=12, t=0.25; // t: 전선 굵기
         
+        // 1) 코일 주요 뼈대 (실린더)
         const sideL = new THREE.Mesh(new THREE.CylinderGeometry(t,t,l,8), matCopper); 
         sideL.rotation.x=Math.PI/2; sideL.position.x = -w/2;
         const sideR = new THREE.Mesh(new THREE.CylinderGeometry(t,t,l,8), matCopper); 
@@ -396,6 +384,32 @@
         connR.rotation.z = Math.PI/2; connR.position.x = connCenter; connR.position.z = COIL_END_Z;
 
         cGroup.add(sideL, sideR, sideB, connL, connR);
+
+        // ★ [최종 수정 핵심] 2) 둥근 관절 부분 (Sphere) 추가 ★
+        // 전선 실린더들이 만나는 모서리에 구를 배치하여 끊어진 부분 차단 및 부드럽게 연결
+        const jointGeo = new THREE.SphereGeometry(t, 12, 8); // 반지름 t (굵기 동일)
+
+        // 관절 1: 왼쪽 앞 모서리 (sideL-connL)
+        const jointLFront = new THREE.Mesh(jointGeo, matCopper);
+        jointLFront.position.set(-w/2, 0, COIL_END_Z);
+        cGroup.add(jointLFront);
+
+        // 관절 2: 왼쪽 뒤 모서리 (sideL-sideB)
+        const jointLBack = new THREE.Mesh(jointGeo, matCopper);
+        jointLBack.position.set(-w/2, 0, -l/2);
+        cGroup.add(jointLBack);
+
+        // 관절 3: 오른쪽 뒤 모서리 (sideR-sideB)
+        const jointRBack = new THREE.Mesh(jointGeo, matCopper);
+        jointRBack.position.set(w/2, 0, -l/2);
+        cGroup.add(jointRBack);
+
+        // 관절 4: 오른쪽 앞 모서리 (sideR-connR)
+        const jointRFront = new THREE.Mesh(jointGeo, matCopper);
+        jointRFront.position.set(w/2, 0, COIL_END_Z);
+        cGroup.add(jointRFront);
+
+        // 힘 화살표
         const arrL = createArrow(); arrL.position.x = -w/2;
         const arrR = createArrow(); arrR.position.x = w/2;
         cGroup.add(arrL, arrR);
@@ -429,8 +443,7 @@
             obj.L.visible = false; obj.R.visible = false;
           } else {
             obj.L.visible = true; obj.R.visible = true;
-            obj.L.scale.set(s, s, s);
-            obj.R.scale.set(s, s, s);
+            obj.L.scale.set(s, s, s); obj.R.scale.set(s, s, s);
             const radius = 2.5;
             const worldX_R = radius * Math.cos(totalRot);
             const worldX_L = radius * Math.cos(totalRot + Math.PI);
@@ -448,121 +461,64 @@
 
       if(rawInputCurrent < 0.01) torqueSum = 0;
       
-      const frictionCoef = 0.045; 
-      const friction = frictionCoef * angularVelocity; 
-      const inertia = 0.5;
-      const alpha = (torqueSum - friction) / inertia;
-      angularVelocity += alpha * 0.1;
-
-      const baseDt = 0.05; 
-      const dt = baseDt * currentSpeedFactor; 
-      currentAngle += angularVelocity * dt;
+      const frictionCoef = 0.045; friction = frictionCoef * angularVelocity; inertia = 0.5;
+      alpha = (torqueSum - friction) / inertia; angularVelocity += alpha * 0.1;
+      const dt = 0.05 * currentSpeedFactor; currentAngle += angularVelocity * dt;
       rotorGroup.rotation.z = currentAngle;
 
       const rpm = Math.round((angularVelocity/(2*Math.PI))*60);
-      dispIval.textContent = rawInputCurrent.toFixed(2);
-      dispBval.textContent = rawInputB.toFixed(2);
+      dispIval.textContent = rawInputCurrent.toFixed(2); dispBval.textContent = rawInputB.toFixed(2);
       dispI.textContent = (rawInputCurrent * currentDirection).toFixed(2);
-      dispFval.textContent = torqueSum.toFixed(2);
-      dispRPM.textContent = rpm;
+      dispFval.textContent = torqueSum.toFixed(2); dispRPM.textContent = rpm;
 
-      gBuf[gIdx] = rpm;
-      gIdx = (gIdx + 1) % 300;
+      gBuf[gIdx] = rpm; gIdx = (gIdx + 1) % 300;
     }
 
     function drawGraph() {
-      ctxG.clearRect(0,0,300,120);
-      ctxG.strokeStyle = 'rgba(200,200,200,0.5)'; ctxG.lineWidth=1;
+      ctxG.clearRect(0,0,300,120); ctxG.strokeStyle = 'rgba(200,200,200,0.5)'; ctxG.lineWidth=1;
       ctxG.beginPath(); ctxG.moveTo(0, 120); ctxG.lineTo(300, 120); ctxG.stroke();
-
-      ctxG.strokeStyle = '#0284c7'; 
-      ctxG.lineWidth = 2;
-      ctxG.beginPath();
-      let curMax = 5;
-      for(let i=0; i<300; i++) {
-        const v = Math.abs(gBuf[i]);
-        if(v > curMax) curMax = v;
-      }
+      ctxG.strokeStyle = '#0284c7'; ctxG.lineWidth = 2; ctxG.beginPath();
+      let curMax = 5; for(let i=0; i<300; i++) { const v = Math.abs(gBuf[i]); if(v > curMax) curMax = v; }
       maxGraphY = curMax + 1;
       for(let i=0; i<300; i++) {
-        const idx = (gIdx + i) % 300;
-        const val = gBuf[idx];
-        const x = i;
+        const idx = (gIdx + i) % 300; const val = gBuf[idx];
         const y = 120 - (Math.abs(val) / maxGraphY) * 110; 
-        if(i===0) ctxG.moveTo(x, y);
-        else ctxG.lineTo(x, y);
+        if(i===0) ctxG.moveTo(i, y); else ctxG.lineTo(i, y);
       }
-      ctxG.stroke();
-      ctxG.fillStyle = "#0284c7";
-      ctxG.font = "10px sans-serif";
-      ctxG.fillText("Max: " + maxGraphY.toFixed(0) + " RPM", 5, 15);
+      ctxG.stroke(); ctxG.fillStyle = "#0284c7"; ctxG.font = "10px sans-serif"; ctxG.fillText("Max: " + maxGraphY.toFixed(0) + " RPM", 5, 15);
     }
 
     function animate() {
       requestAnimationFrame(animate);
-      update();
-      drawGraph();
-      // ★ OrbitControls 업데이트 (관성 효과를 위해 필수)
-      controls.update();
+      update(); drawGraph();
+      controls.update(); // OrbitControls 관성 업데이트
       renderer.render(scene, camera);
     }
     
     selectCoils.onchange = () => createRotor(parseInt(selectCoils.value));
-    
     btnSlowToggle.onclick = () => {
-      if(currentSpeedFactor === NORMAL_SPEED_FACTOR) {
-        currentSpeedFactor = SLOW_SPEED_FACTOR;
-        btnSlowToggle.textContent = "🐢 0.1배속 적용 중 (클릭하여 해제)";
-        btnSlowToggle.classList.add("active-mode");
-      } else {
-        currentSpeedFactor = NORMAL_SPEED_FACTOR;
-        btnSlowToggle.textContent = "🐢 0.1배속 느리게 보기 (OFF)";
-        btnSlowToggle.classList.remove("active-mode");
-      }
+      currentSpeedFactor = (currentSpeedFactor === NORMAL_SPEED_FACTOR) ? SLOW_SPEED_FACTOR : NORMAL_SPEED_FACTOR;
+      btnSlowToggle.textContent = (currentSpeedFactor === SLOW_SPEED_FACTOR) ? "🐢 0.1배속 적용 중 (클릭하여 해제)" : "🐢 0.1배속 느리게 보기 (OFF)";
+      btnSlowToggle.classList.toggle("active-mode");
     };
-
-    btnForce.onclick = () => {
-      showForceArrows = !showForceArrows;
-      btnForce.classList.toggle('active');
-    };
-    
-    btnResetCam.onclick = () => {
-      camera.position.set(20, 15, 30);
-      controls.target.set(0, 0, 0); // 컨트롤 타겟 초기화
-      controls.update();
-    }
-    
-    btnMagnetSwap.onclick = () => {
-      magnetDirection *= -1; updateMagnetVisuals();
-    };
-    
+    btnForce.onclick = () => { showForceArrows = !showForceArrows; btnForce.classList.toggle('active'); };
+    btnResetCam.onclick = () => { camera.position.set(20, 15, 30); controls.target.set(0, 0, 0); controls.update(); }
+    btnMagnetSwap.onclick = () => { magnetDirection *= -1; updateMagnetVisuals(); };
     btnCurrentRev.onclick = () => {
       currentDirection *= -1;
-      if(currentDirection === 1) {
-        btnCurrentRev.innerHTML = "⚡ 전류 방향 변경<br>(정방향)";
-        btnCurrentRev.style.background = "var(--warn)";
-        wireL.material = matRed;
-        wireR.material = matBlue;
-      } else {
-        btnCurrentRev.innerHTML = "⚡ 전류 방향 변경<br>(역방향)";
-        btnCurrentRev.style.background = "#d35400"; 
-        wireL.material = matBlue;
-        wireR.material = matRed;
-      }
+      const isNormal = (currentDirection === 1);
+      btnCurrentRev.innerHTML = isNormal ? "⚡ 전류 방향 변경<br>(정방향)" : "⚡ 전류 방향 변경<br>(역방향)";
+      btnCurrentRev.style.background = isNormal ? "var(--warn)" : "#d35400";
+      wireL.material = isNormal ? matRed : matBlue;
+      wireR.material = isNormal ? matBlue : matRed;
     };
-    
     btnPause.onclick = () => {
       isPaused = !isPaused;
-      if(isPaused) {
-        btnPause.innerHTML = "▶ 재생"; btnPause.classList.add("paused");
-      } else {
-        btnPause.innerHTML = "⏸ 일시정지"; btnPause.classList.remove("paused");
-      }
+      btnPause.innerHTML = isPaused ? "▶ 재생" : "⏸ 일시정지"; btnPause.classList.toggle("paused");
     };
     
     window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth/window.innerHeight;
-      camera.updateProjectionMatrix();
+      camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
