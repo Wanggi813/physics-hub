@@ -28,6 +28,25 @@
     .brand { font-size: 20px; font-weight: 800; color: #334155; pointer-events: auto; }
     .brand span { color: var(--primary); }
 
+    /* [추가됨] 자유실험실 이동 버튼 스타일 */
+    .btn-link {
+      position: absolute; top: 60px; left: 24px; /* 헤더 바로 아래 위치 */
+      padding: 8px 20px;
+      background: #ffffff;
+      border: 1px solid var(--primary);
+      border-radius: 20px; /* 둥근 모양 */
+      color: var(--primary);
+      font-weight: 700; font-size: 13px;
+      cursor: pointer; z-index: 20;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      transition: all 0.2s ease;
+    }
+    .btn-link:hover {
+      background: var(--primary); color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(2, 132, 199, 0.25);
+    }
+
     /* 컨트롤 패널 */
     .hud {
       position: absolute; left: 20px; bottom: 20px; width: 300px;
@@ -77,8 +96,10 @@
 <body>
 
   <header>
-    <div class="brand">⚡ Ohm's Law <span>Pro</span></div>
+    <div class="brand">⚡ 옴의 법칙 <span>시뮬레이션</span></div>
   </header>
+
+  <button class="btn-link" onclick="location.href='./옴의 법칙sb.html'">🧪 자유실험실 이동</button>
 
   <div id="scene"></div>
   <button class="btn-reset" id="btnReset">카메라 초기화</button>

@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>옴의 법칙 실험실 - UI/UX 개선판</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;500;700&family=Poppins:wght@500;700&display=swap');
+        
+        body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: 'Noto Sans KR', sans-serif; }
+        
+        #ui-panel {
+            position: absolute; top: 25px; left: 25px; pointer-events: none;
+            z-index: 10; display: flex; flex-direction: column; gap: 15px;
+        }
+        
+        .control-box {
+            background: rgba(30, 30, 30, 0.95); padding: 20px; border-radius: 12px;
+            color: white; border: 1px solid rgba(255,255,255,0.1); pointer-events: auto;
+            width: 260px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+        
+        .control-title { font-weight: 700; color: #ff6b81; margin-bottom: 12px; display: block; font-size: 1.1em; letter-spacing: -0.5px;}
+        
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; cursor: pointer; }
+        input[type=range]::-webkit-slider-runnable-track { background: #555; height: 6px; border-radius: 3px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; background: #ff6b81; height: 18px; width: 18px; border-radius: 50%; margin-top: -6px; box-shadow: 0 0 10px rgba(255, 107, 129, 0.8); transition: 0.2s;}
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+        
+        .btn-group { display: flex; gap: 8px; margin-top: 15px; }
+        button {
+            flex: 1; padding: 12px; border: none; border-radius: 8px;
+            font-weight: 700; cursor: pointer; color: white; transition: all 0.3s;
+            font-family: 'Noto Sans KR', sans-serif; font-size: 0.95em;
+        }
+        .btn-10 { background: linear-gradient(145deg, #a0522d, #8b4513); border: 1px solid #5d2e0d; }
+        .btn-20 { background: linear-gradient(145deg, #ff4757, #c0392b); border: 1px solid #922b21; }
+        button:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+
+        .guide {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.8); padding: 10px 30px;
+            border-radius: 30px; pointer-events: none; font-size: 14px; font-weight: 500;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .return-btn {
+            position: absolute; bottom: 25px; right: 25px; top: auto; left: auto;
+            width: auto; padding: 12px 25px; pointer-events: auto;
+            border-color: rgba(255, 255, 255, 0.1); cursor: pointer;
+        }
+        .return-btn:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 10px rgba(255,255,255,0.1);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-panel">
+        <div class="control-box" onmouseover="isUIActive=true" onmouseout="isUIActive=false">
+            <span class="control-title">⚡ 전압 조절 (Voltage)</span>
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.95em;">
+                <span>입력:</span>
+                <span id="volt-display" style="color:#00ffff; font-weight:700;">5.0 V</span>
+            </div>
+            <input type="range" min="0" max="20" step="0.5" value="5" 
+                   oninput="updateVoltage(this.value)" 
+                   onmousedown="isUIActive=true" 
+                   onmouseup="isUIActive=false"
+                   ontouchstart="isUIActive=true" 
+                   ontouchend="isUIActive=false">
+        </div>
+
+        <div class="control-box" onmouseover="isUIActive=true" onmouseout="isUIActive=false">
+            <span class="control-title">📊 회로 정보</span>
+            <div style="display:flex; justify-content:space-between; font-size:1.1em; color:#ddd; font-weight:bold;">
+                <span>합성 저항:</span>
+                <span id="total-r-display" style="color:#ffd700;">∞ Ω</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:5px; font-size:0.9em; color:#aaa;">
+                <span>전체 전류:</span>
+                <span id="meter-amp">0.00 A</span>
+            </div>
+        </div>
+
+        <div class="control-box" onmouseover="isUIActive=true" onmouseout="isUIActive=false">
+            <span class="control-title">📦 부품 상자</span>
+            <div class="btn-group">
+                <button class="btn-10" onclick="spawnResistor(10)">+ 10Ω 저항</button>
+                <button class="btn-20" onclick="spawnResistor(20)">+ 20Ω 저항</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="guide">🖱️ 우클릭 드래그: 시점 회전 | 휠: 줌 | 좌클릭: 부품 이동 | 🗑️ 빨간 통: 삭제</div>
+
+    <div class="control-box return-btn" onclick="location.href='./옴의 법칙.html'">
+        <span class="control-title" style="color: white; margin-bottom: 0;">🔙 이전 실험실</span>
+    </div>
+
+    <script>
+        let resistors = [];
+        let slots = [];
+        let heldObj = null;
+        let cam;
+        let renderer;
+        let isUIActive = false;
+        let trashBinPos = { x: 350, y: 200, r: 40 };
+        
+        let trashIconTexture;
+        let pgPower, pgAmp, pgVolt;
+        let labelPower, labelAmp, labelVolt;
+
+        let sourceVoltage = 5.0;
+        let totalCurrent = 0;
+        let totalResistance = Infinity;
+        
+        const ROWS = 4;
+        const COLS = 4;
+        const SLOT_GAP_X = 85; 
+        const SLOT_GAP_Y = 65;
+
+        function setup() {
+            renderer = createCanvas(windowWidth, windowHeight, WEBGL);
+            pixelDensity(2);
+            cam = createCamera();
+            cam.setPosition(0, -700, 800);
+            cam.lookAt(0, 0, 0);
+            
+            // 1. 쓰레기통 아이콘
+            trashIconTexture = createGraphics(128, 128);
+            trashIconTexture.textAlign(CENTER, CENTER);
+            trashIconTexture.textSize(80);
+            trashIconTexture.text("🗑️", 64, 64);
+
+            // 2. 화면 텍스처
+            let createScreen = () => {
+                let pg = createGraphics(200, 100);
+                pg.textSize(40);
+                pg.textAlign(CENTER, CENTER);
+                return pg;
+            };
+            pgPower = createScreen();
+            pgAmp = createScreen();
+            pgVolt = createScreen();
+
+            // 3. [수정] 한글 라벨 텍스처
+            let createLabel = (text) => {
+                let pg = createGraphics(200, 60);
+                pg.textAlign(CENTER, CENTER);
+                pg.textSize(32); // 폰트 키움
+                pg.fill(220);
+                pg.textStyle(BOLD);
+                pg.text(text, 100, 30);
+                return pg;
+            }
+            labelPower = createLabel("전원 장치");
+            labelAmp = createLabel("전류계");
+            labelVolt = createLabel("전압계");
+        
+            // 슬롯
+            let startX = -((COLS-1) * SLOT_GAP_X) / 2;
+            let startY = -((ROWS-1) * SLOT_GAP_Y) / 2;
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    slots.push({ row: r, col: c, x: startX + c * SLOT_GAP_X, y: startY + r * SLOT_GAP_Y, occupied: null });
+                }
+            }
+        }
+
+        function draw() {
+            background(20);
+
+            if (!heldObj && !isUIActive) { orbitControl(1.5, 1.5, 0.8); }
+
+            ambientLight(40);
+            directionalLight(255, 250, 240, 0.6, -1, -0.8); 
+            directionalLight(150, 150, 200, 0.3, 1, -0.5); 
+            pointLight(255, 255, 255, 0, 0, 400);
+
+            updateScreenTextures();
+
+            drawEnvironment();
+            drawLabBench(); 
+            drawTrashBin(); 
+
+            if (heldObj) {
+                let zoomFactor = cam.eyeZ / 700; 
+                heldObj.x += movedX * zoomFactor; heldObj.y += movedY * zoomFactor;
+                heldObj.z = 60; 
+                let dTrash = dist(heldObj.x, heldObj.y, trashBinPos.x, trashBinPos.y);
+                if (dTrash < trashBinPos.r + 20) {
+                    push(); translate(trashBinPos.x, trashBinPos.y, 60);
+                    noFill(); stroke(255, 0, 0); strokeWeight(5); ellipse(0, 0, 100, 100); pop();
+                }
+                let closest = getClosestSlot(heldObj);
+                if (closest && !closest.occupied && dTrash > trashBinPos.r + 20) { drawSnapIndicator(closest); }
+            }
+
+            for (let s of slots) drawSlot(s);
+            for (let r of resistors) {
+                updateScreenPos(r);
+                r.display();
+            }
+
+            drawCables();
+            calculateCircuit();
+        }
+
+        function updateScreenTextures() {
+            pgPower.background(20); pgPower.fill(0, 255, 255);
+            pgPower.text(sourceVoltage.toFixed(1) + "V", 100, 50);
+
+            pgAmp.background(20); pgAmp.fill(34, 251, 153);
+            pgAmp.text(totalCurrent.toFixed(2) + "A", 100, 50);
+
+            pgVolt.background(20); pgVolt.fill(255, 204, 0);
+            pgVolt.text(sourceVoltage.toFixed(1) + "V", 100, 50);
+        }
+
+        function drawEnvironment() {
+            push(); translate(0, 0, -10); fill(25); noStroke();
+            specularMaterial(30); shininess(10); box(2500, 2500, 2); pop();
+        }
+
+        function drawTrashBin() {
+            push(); 
+            translate(trashBinPos.x, trashBinPos.y, 0);
+            noStroke(); fill(0, 100); circle(0, 0, 70); 
+            
+            push(); translate(0, 0, 30); rotateX(HALF_PI); 
+            fill(200, 50, 50); specularMaterial(100); shininess(30); noStroke(); cylinder(trashBinPos.r, 60); pop();
+            
+            push(); translate(0, 0, 60.1); fill(10); circle(0, 0, trashBinPos.r * 1.8); pop();
+            
+            // [수정] 아이콘 회전 수정 (세로로 서있게)
+            push();
+            translate(0, 0, 95 + sin(frameCount * 0.05) * 5); 
+            rotateX(0); 
+            rotateY(frameCount * 0.02 + PI); // PI를 더해 정면을 보게 조정 가능
+            noStroke(); texture(trashIconTexture); plane(60, 60);
+            pop();
+            pop();
+        }
+
+        function drawLabBench() {
+            drawFakeShadow(-350, -100, 0, 160, 130, 100); 
+            drawFakeShadow(50, -280, 0, 160, 130, 100);  
+            drawFakeShadow(350, -280, 0, 160, 130, 100); 
+            drawFakeShadow(0, 0, 0, 430, 350, 80);       
+
+            push(); translate(0, 0, -5); 
+            fill(20, 40, 25); stroke(15, 30, 20); strokeWeight(1); specularMaterial(50); shininess(20);
+            box(420, 340, 10); 
+            noFill(); stroke(120); strokeWeight(2); translate(0,0,6); rect(-210,-170, 420, 340, 8);
+            stroke(230, 160, 90); strokeWeight(6);
+            line(-190, -155, 1, -190, 155, 1); line(190, -155, 1, 190, 155, 1);
+            pop();
+
+            drawInstrument(-350, -100, 90, labelPower, pgPower, [0, 255, 255]);
+            drawInstrument(50, -280, 90, labelAmp, pgAmp, [34, 251, 153]);
+            drawInstrument(350, -280, 90, labelVolt, pgVolt, [255, 204, 0]);
+        }
+
+        function drawInstrument(x, y, h, labelTex, screenTex, nColor) {
+            push();
+            translate(x, y, h/2); 
+            
+            // 몸체
+            fill(40, 45, 50); stroke(60); strokeWeight(1); specularMaterial(200); shininess(60);
+            box(140, 120, h); 
+            
+            // [수정] 화면 위치: 위쪽으로 이동 (y: -25)
+            push(); translate(0, -25, h/2 + 1); fill(5); noStroke(); box(110, 45, 2); pop(); // 베이스
+            push(); translate(0, -25, h/2 + 2.1); noStroke(); texture(screenTex); plane(100, 35); pop(); // 화면
+
+            // [수정] 라벨 위치: 화면 바로 위 (y: -55) -> 혹은 화면 아래 (y: 10)
+            // 화면이 -25에 있으니 라벨은 그 아래 10 정도가 적당
+            push(); translate(0, 10, h/2 + 1); noStroke(); texture(labelTex); plane(120, 30); pop();
+
+            // [수정] 단자 위치: 맨 아래쪽으로 이동 (y: 40)
+            push(); translate(-35, 40, h/2 + 2); drawSocket(nColor); pop();
+            push(); translate(35, 40, h/2 + 2); drawSocket([20, 20, 20]); pop();
+
+            pop();
+        }
+
+        function drawSocket(col) {
+            fill(180); noStroke(); torus(11, 2.5);
+            fill(col); circle(0, 0, 17);
+            fill(0); circle(0, 0, 8);
+        }
+
+        function drawFakeShadow(x, y, z, w, h, opacity) {
+            push(); translate(x, y, z - 0.1); noStroke();
+            for(let i=0; i<5; i++){
+                fill(0, opacity * (1 - i*0.2));
+                ellipse(0, 0, w * (1 + i*0.1), h * (1 + i*0.1));
+            }
+            pop();
+        }
+
+        function drawCables() {
+            noFill(); strokeWeight(4); 
+            let wireD = -180; 
+
+            // 전선 좌표들도 기기 단자 위치 변경(y축 +40 보정)에 맞춰 수정
+            // Power (+): (-315, -105) -> (-385, -60) (대략적 위치 보정 필요)
+            // Power Supply: x=-350, y=-100. Sockets at local y=40 -> global y = -100 + 40 = -60.
+            // Ammeter: x=50, y=-280. Sockets at local y=40 -> global y = -280 + 40 = -240.
+            
+            // Power(+) -> Ammeter(In)
+            stroke(255, 50, 80, 200); 
+            // Power Red Socket: (-350-35, -100+40) = (-385, -60)
+            drawPlug(-385, -60, 92, [220, 20, 20]); 
+            // Ammeter Red Socket: (50-35, -280+40) = (15, -240)
+            drawPlug(15, -240, 92, [220, 20, 20]);
+            drawUnderCurve(-385, -60, 92, 15, -240, 92, wireD);
+
+            // Ammeter(Out) -> Board(+)
+            // Ammeter Black Socket: (50+35, -280+40) = (85, -240)
+            drawPlug(85, -240, 92, [20, 20, 20]); 
+            drawUnderCurve(85, -240, 92, -190, -155, 10, wireD);
+
+            // Power(-) -> Board(-)
+            stroke(60, 60, 60, 200); 
+            // Power Black Socket: (-350+35, -100+40) = (-315, -60)
+            drawPlug(-315, -60, 92, [20, 20, 20]);
+            drawUnderCurve(-315, -60, 92, 190, -155, 10, wireD);
+
+            // Voltmeter Connects
+            stroke(255, 220, 50, 200); 
+            // Voltmeter Red: (350-35, -280+40) = (315, -240)
+            drawPlug(315, -240, 92, [255, 200, 0]);
+            drawUnderCurve(315, -240, 92, -190, 155, 10, wireD);
+            
+            stroke(80, 80, 80, 200); 
+            // Voltmeter Black: (350+35, -280+40) = (385, -240)
+            drawPlug(385, -240, 92, [20, 20, 20]);
+            drawUnderCurve(385, -240, 92, 190, 155, 10, wireD);
+        }
+
+        function drawUnderCurve(x1, y1, z1, x2, y2, z2, dropZ) {
+            bezier(x1, y1, z1, x1, y1, dropZ, x2, y2, dropZ, x2, y2, z2);
+        }
+
+        function drawPlug(x, y, z, col) {
+            push(); translate(x, y, z); rotateX(PI/2);
+            noStroke(); fill(col); specularMaterial(200); shininess(80);
+            cylinder(7, 18); translate(0, 11, 0); fill(180); cylinder(3, 10);
+            pop();
+        }
+
+        function drawSlot(s) {
+            push(); translate(s.x, s.y, 2);
+            fill(10); stroke(120); strokeWeight(1.5); ellipse(0,0,15,15); 
+            fill(5); noStroke(); ellipse(0,0,8,8); 
+            stroke(230, 160, 90, 80); strokeWeight(2);
+            if (s.col < COLS-1) line(8, 0, SLOT_GAP_X-8, 0);
+            pop();
+        }
+
+        function drawSnapIndicator(slot) {
+            push(); translate(slot.x, slot.y, 5);
+            noFill(); stroke(0, 255, 100, 180); strokeWeight(2);
+            ellipse(0, 0, 28, 28); stroke(0, 255, 100, 100); line(0,-15, 0,15); line(-15,0, 15,0);
+            pop();
+        }
+
+        function updateVoltage(val) {
+            sourceVoltage = parseFloat(val);
+            document.getElementById('volt-display').innerText = sourceVoltage.toFixed(1) + " V";
+        }
+
+        function spawnResistor(val) {
+            let r = new Resistor(random(-100, 100), 250, val); resistors.push(r);
+        }
+
+        function calculateCircuit() {
+            let totalConductance = 0; let activeRows = 0;
+            for (let r = 0; r < ROWS; r++) {
+                let rowR = 0; let count = 0;
+                for (let c = 0; c < COLS; c++) {
+                    let s = slots[r*COLS + c];
+                    if (s.occupied) { rowR += s.occupied.val; count++; }
+                }
+                if (count > 0) { activeRows++; totalConductance += (1 / rowR); }
+            }
+            
+            if (activeRows > 0) {
+                totalResistance = 1 / totalConductance;
+                document.getElementById('total-r-display').innerText = totalResistance.toFixed(2) + " Ω";
+                totalCurrent = sourceVoltage / totalResistance;
+            } else {
+                totalResistance = Infinity;
+                document.getElementById('total-r-display').innerText = "∞ Ω (단선)";
+                totalCurrent = 0;
+            }
+            let ampEl = document.getElementById('meter-amp');
+            if(ampEl) ampEl.innerText = totalCurrent.toFixed(2) + " A";
+        }
+
+        function updateScreenPos(obj) {
+            let mv = renderer.uMVMatrix.mat4; let pr = renderer.uPMatrix.mat4;
+            let cx = mv[0]*obj.x + mv[4]*obj.y + mv[8]*obj.z + mv[12];
+            let cy = mv[1]*obj.x + mv[5]*obj.y + mv[9]*obj.z + mv[13];
+            let cz = mv[2]*obj.x + mv[6]*obj.y + mv[10]*obj.z + mv[14];
+            let cw = mv[3]*obj.x + mv[7]*obj.y + mv[11]*obj.z + mv[15];
+            let px = pr[0]*cx + pr[4]*cy + pr[8]*cz + pr[12]*cw;
+            let py = pr[1]*cx + pr[5]*cy + pr[9]*cz + pr[13]*cw;
+            let pw = pr[3]*cx + pr[7]*cy + pr[11]*cz + pr[15]*cw;
+            if (pw !== 0) { px /= pw; py /= pw; }
+            obj.screenX = (px + 1) * 0.5 * width; obj.screenY = (1 - py) * 0.5 * height;
+        }
+
+        function mousePressed() {
+            if (mouseButton !== LEFT || isUIActive) return;
+            if (!heldObj) {
+                let closest = null; let minDist = 60; 
+                for (let r of resistors) {
+                    let d = dist(mouseX, mouseY, r.screenX, r.screenY);
+                    if (d < minDist) { minDist = d; closest = r; }
+                }
+                if (closest) {
+                    heldObj = closest; heldObj.isCarried = true;
+                    if (heldObj.slot) { heldObj.slot.occupied = null; heldObj.slot = null; }
+                }
+            }
+        }
+
+        function mouseReleased() {
+            if (heldObj) {
+                let dTrash = dist(heldObj.x, heldObj.y, trashBinPos.x, trashBinPos.y);
+                if (dTrash < trashBinPos.r + 20) {
+                    let idx = resistors.indexOf(heldObj);
+                    if (idx > -1) resistors.splice(idx, 1);
+                    heldObj = null;
+                    return;
+                }
+
+                let target = getClosestSlot(heldObj);
+                if (target && !target.occupied) {
+                    heldObj.x = target.x; heldObj.y = target.y; heldObj.z = 0; 
+                    heldObj.slot = target; target.occupied = heldObj;
+                } else { heldObj.z = 5; }
+                heldObj.isCarried = false; heldObj = null;
+            }
+        }
+
+        function getClosestSlot(obj) {
+            let closest = null; let minDist = 45;
+            for (let s of slots) {
+                let d = dist(obj.x, obj.y, s.x, s.y);
+                if (d < minDist) { minDist = d; closest = s; }
+            }
+            return closest;
+        }
+
+        class Resistor {
+            constructor(x, y, val) {
+                this.x = x; this.y = y; this.z = 5;
+                this.val = val; this.slot = null; this.isCarried = false;
+                this.screenX = 0; this.screenY = 0;
+                this.b1 = (val===10)?color(100,50,20):color(200,30,30);
+                this.b2 = color(10); this.b3 = color(10);
+            }
+            
+            display() {
+                if (!this.slot || this.isCarried) {
+                    let shwW = this.isCarried ? 70 : 50;
+                    push(); translate(this.x, this.y, 0); rotateZ(PI/2);
+                    drawFakeShadow(0, 0, 1, shwW, 25, this.isCarried ? 40 : 60);
+                    pop();
+                } else if (this.slot) {
+                    drawFakeShadow(this.x - 38, this.y, 1, 15, 15, 70);
+                    drawFakeShadow(this.x + 38, this.y, 1, 15, 15, 70);
+                }
+
+                push(); translate(this.x, this.y, this.z);
+                if (this.isCarried) { rotateX(frameCount*0.05); scale(1.2); }
+                else { rotateZ(PI/2); if(this.slot) translate(0, 0, 18); }
+
+                noStroke(); fill(235, 220, 190); specularMaterial(100); shininess(20);
+                
+                let len = 40; 
+                let baseR = 7;
+                let detailX = 20; 
+                let detailY = 20; 
+                let endR = baseR + 4.0;
+
+                for(let i=0; i<detailY; i++) {
+                    beginShape(TRIANGLE_STRIP);
+                    for(let j=0; j<=detailX; j++) {
+                        let u = j/detailX;
+                        let theta = u * TWO_PI;
+                        let v1 = i/detailY; let v2 = (i+1)/detailY;
+                        let y1 = map(v1, 0, 1, -len/2, len/2); let y2 = map(v2, 0, 1, -len/2, len/2);
+                        let ny1 = map(v1, 0, 1, -1, 1); let ny2 = map(v2, 0, 1, -1, 1);
+                        let r1 = baseR + 4.0 * pow(ny1, 6); 
+                        let r2 = baseR + 4.0 * pow(ny2, 6);
+                        normal(cos(theta), 0, sin(theta)); 
+                        vertex(r1 * cos(theta), y1, r1 * sin(theta));
+                        vertex(r2 * cos(theta), y2, r2 * sin(theta));
+                    }
+                    endShape();
+                }
+
+                push(); translate(0, len/2, 0); sphere(endR); pop(); 
+                push(); translate(0, -len/2, 0); sphere(endR); pop(); 
+
+                stroke(200); strokeWeight(3); noFill(); specularMaterial(255); shininess(100);
+                if (this.slot && !this.isCarried) {
+                    beginShape(); vertex(0, -20, 0); vertex(0, -42, 0); vertex(0, -42, -18); endShape();
+                    beginShape(); vertex(0, 20, 0); vertex(0, 42, 0); vertex(0, 42, -18); endShape();
+                } else {
+                    line(0, -50, 0, 0, 50, 0);
+                }
+
+                specularMaterial(200); shininess(50);
+                let drawBand = (col, t_center) => {
+                    noStroke(); fill(col);
+                    let bandW = 0.08; 
+                    let v_start = t_center - bandW/2; let v_end = t_center + bandW/2;
+                    beginShape(TRIANGLE_STRIP);
+                    for(let j=0; j<=detailX; j++) {
+                        let theta = j/detailX * TWO_PI;
+                        let y1 = map(v_start, 0, 1, -len/2, len/2); let y2 = map(v_end, 0, 1, -len/2, len/2);
+                        let ny1 = map(v_start, 0, 1, -1, 1); let ny2 = map(v_end, 0, 1, -1, 1);
+                        let r1 = baseR + 4.0 * pow(ny1, 6) + 0.3;
+                        let r2 = baseR + 4.0 * pow(ny2, 6) + 0.3;
+                        normal(cos(theta), 0, sin(theta));
+                        vertex(r1*cos(theta), y1, r1*sin(theta));
+                        vertex(r2*cos(theta), y2, r2*sin(theta));
+                    }
+                    endShape();
+                };
+
+                drawBand(this.b1, 0.30); 
+                drawBand(this.b2, 0.40);
+                drawBand(this.b3, 0.60); 
+                drawBand(color(218, 165, 32), 0.70); 
+
+                pop();
+            }
+        }
+
+        function windowResized() { resizeCanvas(windowWidth, windowHeight); }
+    </script>
+</body>
+</html>
