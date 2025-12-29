@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>옴의 법칙 실험실 - 터치 개선판</title>
+    <title>옴의 법칙 실험실 - 핀치 줌 추가판</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;500;700&family=Poppins:wght@500;700&display=swap');
         
-        /* [수정 1] 터치 동작 제어 (스크롤/줌 방지) */
         body { 
             margin: 0; 
             overflow: hidden; 
             background: #1a1a1a; 
             font-family: 'Noto Sans KR', sans-serif;
-            touch-action: none; /* 브라우저 기본 터치 동작 차단 */
-            user-select: none; /* 텍스트 선택 방지 */
+            touch-action: none; 
+            user-select: none;
         }
         
         #ui-panel {
@@ -52,7 +51,7 @@
             color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.8); padding: 10px 30px;
             border-radius: 30px; pointer-events: none; font-size: 14px; font-weight: 500;
             border: 1px solid rgba(255,255,255,0.1);
-            white-space: nowrap; /* 줄바꿈 방지 */
+            white-space: nowrap; 
         }
 
         .return-btn {
@@ -111,7 +110,7 @@
         </div>
     </div>
 
-    <div class="guide">☝️ 원터치 드래그: 화면 회전 | 🤏 핀치: 줌 | 👆 부품 터치: 이동</div>
+    <div class="guide">☝️ 드래그: 회전 | ✌️ 두 손가락: 줌(핀치) | 👆 부품: 이동</div>
 
     <div class="control-box return-btn" onclick="location.href='./옴의 법칙.html'">
         <span class="control-title" style="color: white; margin-bottom: 0;">🔙 이전 실험실</span>
@@ -125,6 +124,9 @@
         let renderer;
         let isUIActive = false;
         let trashBinPos = { x: 350, y: 200, r: 40 };
+        
+        // 줌 관련 변수 추가
+        let prevPinchDist = null;
         
         let trashIconTexture;
         let pgPower, pgAmp, pgVolt;
@@ -186,9 +188,9 @@
         function draw() {
             background(20);
 
-            // [수정 2] 카메라 제어 조건: 물체를 잡고 있지 않고, UI를 건드리지 않을 때만 동작
-            if (!heldObj && !isUIActive) { 
-                orbitControl(1.5, 1.5, 0.05); // 감도 조절
+            // [수정] 핀치 줌 중일 때는 orbitControl 비활성화 (충돌 방지)
+            if (!heldObj && !isUIActive && touches.length < 2) { 
+                orbitControl(1.5, 1.5, 0.05); 
             }
 
             ambientLight(40);
@@ -201,7 +203,6 @@
             drawLabBench(); 
             drawTrashBin(); 
 
-            // [수정 3] 물체 이동 로직 제거 (draw 함수 내에서 움직이지 않고 mouseDragged/touchMoved에서 직접 처리)
             if (heldObj) {
                 heldObj.z = 60; 
                 let dTrash = dist(heldObj.x, heldObj.y, trashBinPos.x, trashBinPos.y);
@@ -223,13 +224,15 @@
             calculateCircuit();
         }
 
-        /* --- [추가] 터치 및 마우스 통합 이벤트 핸들링 --- */
+        /* --- [수정] 터치 및 마우스 이벤트 (핀치 줌 로직 추가) --- */
         
-        // 공통: 입력 시작 (클릭 또는 터치 시작)
         function handleInputStart(inputX, inputY) {
             if (isUIActive) return false;
+            // 두 손가락 이상일 때는 물체를 잡지 않음 (줌 동작 우선)
+            if (touches.length >= 2) return false;
+
             if (!heldObj) {
-                let closest = null; let minDist = 70; // 터치 범위를 위해 60 -> 70으로 약간 확대
+                let closest = null; let minDist = 70;
                 for (let r of resistors) {
                     let d = dist(inputX, inputY, r.screenX, r.screenY);
                     if (d < minDist) { minDist = d; closest = r; }
@@ -237,25 +240,22 @@
                 if (closest) {
                     heldObj = closest; heldObj.isCarried = true;
                     if (heldObj.slot) { heldObj.slot.occupied = null; heldObj.slot = null; }
-                    return true; // 물체를 잡음
+                    return true;
                 }
-            }
-            return false; // 물체를 잡지 않음 (카메라 회전 등)
-        }
-
-        // 공통: 입력 이동 (드래그)
-        function handleInputMove(dx, dy) {
-            if (heldObj) {
-                // 카메라 줌 거리에 비례하여 이동 속도 보정
-                let zoomFactor = cam.eyeZ / 700; 
-                heldObj.x += dx * zoomFactor; 
-                heldObj.y += dy * zoomFactor;
-                return true; // 물체 이동 처리됨
             }
             return false;
         }
 
-        // 공통: 입력 종료 (놓기)
+        function handleInputMove(dx, dy) {
+            if (heldObj) {
+                let zoomFactor = cam.eyeZ / 700; 
+                heldObj.x += dx * zoomFactor; 
+                heldObj.y += dy * zoomFactor;
+                return true;
+            }
+            return false;
+        }
+
         function handleInputEnd() {
             if (heldObj) {
                 let dTrash = dist(heldObj.x, heldObj.y, trashBinPos.x, trashBinPos.y);
@@ -272,17 +272,16 @@
                 heldObj.isCarried = false; 
                 heldObj = null;
             }
+            // 핀치 줌 종료 시 거리 초기화
+            prevPinchDist = null;
         }
 
-        // 1. 마우스 이벤트
         function mousePressed() {
             if (mouseButton !== LEFT) return;
             handleInputStart(mouseX, mouseY);
         }
         
         function mouseDragged() {
-            // p5.js에서 마우스 드래그 시 물체 이동 처리
-            // movedX, movedY 사용
             handleInputMove(movedX, movedY);
         }
 
@@ -290,34 +289,63 @@
             handleInputEnd();
         }
 
-        // 2. 터치 이벤트 (중요!)
+        // --- 터치 이벤트 핸들링 (줌 기능 포함) ---
         function touchStarted() {
-            // 터치 시작 시 물체 선택 시도
-            // touches[0]을 사용하여 멀티터치 중 첫 번째 손가락 기준
+            if (touches.length === 2) {
+                // 1. 두 손가락 터치 시작: 거리 저장
+                prevPinchDist = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y);
+                return false; // 브라우저 줌 방지
+            }
+            
             if(touches.length > 0) {
                 let hit = handleInputStart(touches[0].x, touches[0].y);
-                if (hit) return false; // 물체를 잡았으면 기본 동작 차단
+                if (hit) return false;
             }
-            // 물체를 잡지 않았으면(빈 공간 터치) true를 반환하여 orbitControl이 동작하게 함
-            return true; 
+            return true;
         }
 
         function touchMoved() {
+            // 2. 두 손가락 핀치 줌 로직
+            if (touches.length === 2) {
+                let currentDist = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y);
+                if (prevPinchDist !== null) {
+                    let delta = currentDist - prevPinchDist;
+                    // delta가 양수면 벌림(줌인), 음수면 오므림(줌아웃)
+                    // cam.move(0, 0, -val) -> val이 양수면 앞으로 이동(줌인)
+                    // 감도 조절을 위해 * 2
+                    cam.move(0, 0, -delta * 3.0); 
+                }
+                prevPinchDist = currentDist;
+                return false; // 브라우저 스크롤/줌 방지
+            }
+
+            // 3. 부품 이동
             if (heldObj && touches.length > 0) {
-                // 모바일에서 movedX가 불안정할 수 있으므로 직접 계산
                 let dx = mouseX - pmouseX;
                 let dy = mouseY - pmouseY;
                 handleInputMove(dx, dy);
-                return false; // 드래그 중 스크롤 방지
+                return false;
             }
-            return true; // 카메라 회전 허용
+            return true;
         }
 
         function touchEnded() {
             handleInputEnd();
-            // 모든 손가락이 떼어졌을 때
+            // 손가락을 떼면 핀치 거리 초기화
+            if (touches.length < 2) {
+                prevPinchDist = null;
+            }
             if (touches.length === 0) {
                 return false;
+            }
+        }
+        
+        // [추가] 물리 마우스 휠 지원 (혹시 모를 태블릿 마우스 사용 대비)
+        function mouseWheel(event) {
+            if (!isUIActive) {
+                // event.delta가 양수면 휠 내림(줌아웃), 음수면 올림(줌인)
+                cam.move(0, 0, event.delta * 0.5);
+                return false; // 브라우저 스크롤 방지
             }
         }
 
