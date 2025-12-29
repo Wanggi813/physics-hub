@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>옴의 법칙 실험실</title>
+    <title>옴의 법칙 실험실 - 태블릿 UI 완벽 수정판</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;500;700&family=Poppins:wght@500;700&display=swap');
@@ -13,29 +13,26 @@
             overflow: hidden; 
             background: #1a1a1a; 
             font-family: 'Noto Sans KR', sans-serif;
-            /* 캔버스 영역은 스크롤/줌 방지 */
             touch-action: none; 
             user-select: none;
             -webkit-user-select: none;
+            /* 모바일에서 길게 터치 시 컨텍스트 메뉴 방지 */
+            -webkit-touch-callout: none;
         }
         
         #ui-panel {
             position: absolute; top: 25px; left: 25px; 
-            /* UI 패널 자체는 클릭 통과 (내부 박스만 클릭 가능) */
             pointer-events: none; 
-            z-index: 100; /* p5 캔버스보다 확실히 위에 둠 */
+            z-index: 100; 
             display: flex; flex-direction: column; gap: 15px;
         }
         
         .control-box {
             background: rgba(30, 30, 30, 0.95); padding: 20px; border-radius: 12px;
             color: white; border: 1px solid rgba(255,255,255,0.1); 
-            /* 내부 UI는 클릭 가능 */
             pointer-events: auto; 
             width: 260px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             backdrop-filter: blur(5px);
-            
-            /* [중요] UI 내부에서는 브라우저의 기본 터치/클릭 동작을 허용 */
             touch-action: manipulation; 
         }
         
@@ -51,13 +48,11 @@
             flex: 1; padding: 12px; border: none; border-radius: 8px;
             font-weight: 700; cursor: pointer; color: white; transition: all 0.3s;
             font-family: 'Noto Sans KR', sans-serif; font-size: 0.95em;
-            /* 모바일 버튼 탭 하이라이트 제거 */
             -webkit-tap-highlight-color: transparent;
         }
         .btn-10 { background: linear-gradient(145deg, #a0522d, #8b4513); border: 1px solid #5d2e0d; }
         .btn-20 { background: linear-gradient(145deg, #ff4757, #c0392b); border: 1px solid #922b21; }
         button:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-        /* 터치 시 눌림 효과 추가 */
         button:active { transform: scale(0.95); }
 
         .guide {
@@ -66,13 +61,17 @@
             border-radius: 30px; pointer-events: none; font-size: 14px; font-weight: 500;
             border: 1px solid rgba(255,255,255,0.1);
             white-space: nowrap; 
+            z-index: 50;
         }
 
         .return-btn {
             position: absolute; bottom: 25px; right: 25px; top: auto; left: auto;
-            width: auto; padding: 12px 25px; pointer-events: auto;
+            width: auto; padding: 12px 25px; 
+            /* [수정] 포인터 이벤트 활성화 */
+            pointer-events: auto;
             border-color: rgba(255, 255, 255, 0.1); cursor: pointer;
             touch-action: manipulation;
+            z-index: 100; /* 캔버스 위로 올림 */
         }
         .return-btn:hover {
             border-color: rgba(255, 255, 255, 0.3);
@@ -126,8 +125,11 @@
 
     <div class="control-box return-btn" 
          onclick="location.href='./옴의 법칙.html'"
-         ontouchstart="event.stopPropagation()"
-         onmousedown="event.stopPropagation()">
+         ontouchstart="event.stopPropagation()" 
+         ontouchmove="event.stopPropagation()"
+         ontouchend="event.stopPropagation()"
+         onmousedown="event.stopPropagation()"
+         onmouseup="event.stopPropagation()">
         <span class="control-title" style="color: white; margin-bottom: 0;">🔙 이전 실험실</span>
     </div>
 
@@ -137,8 +139,6 @@
         let heldObj = null;
         let cam;
         let renderer;
-        // isUIActive 변수는 이제 이벤트 차단 방식(stopPropagation) 덕분에 덜 중요해졌지만,
-        // 드래그 충돌 방지를 위해 남겨둡니다.
         let isUIActive = false;
         let trashBinPos = { x: 350, y: 200, r: 40 };
         let prevPinchDist = null;
@@ -159,9 +159,7 @@
         function setup() {
             renderer = createCanvas(windowWidth, windowHeight, WEBGL);
             pixelDensity(2);
-            
-            // [중요] 캔버스 ID 지정 (이벤트 타겟 구분용)
-            renderer.id('p5-canvas');
+            renderer.id('p5-canvas'); // 캔버스 ID 지정
             
             cam = createCamera();
             cam.setPosition(0, -700, 800);
@@ -207,7 +205,7 @@
         function draw() {
             background(20);
 
-            // UI 터치가 차단되므로 여기서는 touches.length 체크만으로 충분
+            // 핀치 줌이 아닐 때만 회전 허용
             if (!heldObj && touches.length < 2) { 
                 orbitControl(1.5, 1.5, 0.05); 
             }
@@ -291,7 +289,6 @@
         }
 
         function mousePressed() {
-            // 마우스 클릭이 캔버스 위에서만 작동하도록 체크
             if (mouseX < 0 || mouseX > width || mouseY < 0 || mouseY > height) return;
             if (mouseButton !== LEFT) return;
             handleInputStart(mouseX, mouseY);
@@ -305,15 +302,9 @@
             handleInputEnd();
         }
 
-        /* --- 터치 이벤트 핸들링 --- */
-        
         function touchStarted(event) {
-            // [방어 코드] 
-            // HTML의 stopPropagation이 혹시 실패하더라도,
-            // 여기서 타겟이 캔버스가 아니면 p5 로직을 실행하지 않음
-            if (event.target.id !== 'p5-canvas') {
-                return true; 
-            }
+            // [방어 코드] 이벤트 타겟이 캔버스가 아니면 무시 (UI 버튼 터치 등)
+            if (event.target.id !== 'p5-canvas') return true;
 
             if (touches.length === 2) {
                 prevPinchDist = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y);
@@ -350,15 +341,13 @@
         function touchEnded() {
             handleInputEnd();
             if (touches.length < 2) prevPinchDist = null;
-            if (touches.length === 0) return false; // 모든 터치 종료 시 false 반환
+            if (touches.length === 0) return false;
         }
         
         function mouseWheel(event) {
             cam.move(0, 0, event.delta * 0.5);
             return false;
         }
-
-        /* ----------------------------------------------- */
 
         function updateScreenTextures() {
             pgPower.background(20); pgPower.fill(0, 255, 255);
