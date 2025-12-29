@@ -248,7 +248,6 @@
       Firebase Authentication / Firestore를 이용해 학생 계정을 등록·관리하는 페이지입니다.
     </p>
 
-    <!-- 잠금 상태 카드 -->
     <div class="card lock-card" id="lock-card">
       <p class="lock-title">관리자 비밀번호 확인</p>
       <p class="lock-sub">
@@ -267,10 +266,8 @@
       <p class="status-line" id="admin-lock-status"></p>
     </div>
 
-    <!-- 실제 관리자 기능 영역 -->
     <div id="admin-main" style="display:none;">
 
-      <!-- 1) 새 계정 생성 + ID 자동 생성 -->
       <div class="card">
         <h2>🧑‍🎓 단일 학생 계정 생성 <span class="badge">ID / 비밀번호 배포용</span></h2>
         <p class="hint">
@@ -292,7 +289,6 @@
           </div>
         </div>
 
-        <!-- ID 자동 생성 설정 -->
         <div class="row mt-4">
           <div>
             <label for="auto-prefix">ID 접두어 (선택)</label>
@@ -317,7 +313,6 @@
         <p class="status-line" id="create-status"></p>
       </div>
 
-      <!-- 2) CSV 일괄 계정 생성 -->
       <div class="card">
         <h2>📥 CSV 일괄 계정 생성 <span class="badge">여러 학생 한 번에 등록</span></h2>
         <p class="hint">
@@ -358,7 +353,6 @@
         <p class="status-line" id="bulk-status"></p>
       </div>
 
-      <!-- 3) 점수 / 사용자 목록 -->
       <div class="card">
         <h2>📊 점수 / 사용자 목록</h2>
         <div class="flex-between">
@@ -384,6 +378,41 @@
         </div>
         <p class="status-line" id="list-status"></p>
       </div>
+
+      <div class="card">
+        <h2>📢 건의함 수신 목록</h2>
+        <div class="flex-between">
+          <p class="hint">
+            학생들이 보낸 의견입니다. 확인 후 [삭제] 버튼을 눌러 목록에서 지울 수 있습니다.
+          </p>
+          <button class="secondary" id="btn-refresh-sugg">건의함 새로고침</button>
+        </div>
+        <div class="scroll">
+          <table style="min-width: 600px;">
+            <colgroup>
+              <col style="width: 50px;">
+              <col style="width: 140px;">
+              <col style="width: 100px;">
+              <col style="width: auto;">
+              <col style="width: 70px;">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>날짜</th>
+                <th>보낸 학생</th>
+                <th>제목 / 내용</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody id="sugg-tbody">
+              <tr><td colspan="5" class="small">데이터를 불러오려면 [건의함 새로고침]을 누르세요.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="status-line" id="sugg-status"></p>
+      </div>
+
     </div>
   </div>
 
@@ -405,7 +434,8 @@
       collection,
       query,
       orderBy,
-      limit
+      limit,
+      deleteDoc // <--- [추가됨] 삭제 기능용
     } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
     // ===== 2. Firebase 설정 (index와 동일 프로젝트) =====
@@ -542,7 +572,6 @@
         createStatus.textContent = `계정 생성 완료: ${id}`;
         createStatus.className = "status-line status-ok";
 
-        // 비밀번호 필드만 초기화 (ID는 남겨두어도 됨)
         newPassInput.value = "";
         newPass2Input.value = "";
 
@@ -564,7 +593,7 @@
     const bulkSummary = document.getElementById("bulk-summary");
     const bulkStatus = document.getElementById("bulk-status");
 
-    let csvRows = []; // {id, password, statusEl}
+    let csvRows = [];
 
     function resetCsvTable(){
       csvRows = [];
@@ -583,7 +612,6 @@
       if (!lines.length) return [];
 
       let startIndex = 0;
-      // 헤더가 있는지 간단히 검사
       const first = lines[0].toLowerCase();
       const hasHeader = first.includes("id") && (first.includes("password") || first.includes("pw"));
       if (hasHeader) startIndex = 1;
@@ -591,7 +619,7 @@
       const arr = [];
       for (let i = startIndex; i < lines.length; i++){
         const line = lines[i];
-        const parts = line.split(","); // 아주 단순 CSV (따옴표 처리 X)
+        const parts = line.split(","); 
         const id = (parts[0] || "").trim();
         const pw = (parts[1] || "").trim();
         if (!id) continue;
@@ -653,7 +681,7 @@
 
           csvRows.push({
             id: row.id,
-            password: row.password, // 나중에 비어 있으면 랜덤 생성
+            password: row.password, 
             statusEl: tdStatus
           });
         });
@@ -679,7 +707,6 @@
       bulkStatus.textContent = "계정을 순서대로 생성하는 중입니다…";
       bulkStatus.className = "status-line";
 
-      // 하나씩 순차적으로 처리 (동시 요청 과부하 방지)
       for (let i = 0; i < csvRows.length; i++){
         const row = csvRows[i];
         const id = row.id.trim();
@@ -693,7 +720,6 @@
         if (!pw || pw.length < 6) {
           pw = randomPassword(8);
           row.password = pw;
-          // 화면에도 표시 업데이트
           const pwCell = row.statusEl.previousElementSibling;
           if (pwCell) pwCell.textContent = pw + " (자동)";
         }
@@ -713,7 +739,7 @@
           row.statusEl.style.color = "#22c55e";
           success++;
 
-          await signOut(auth); // 다음 계정 생성 전 로그아웃
+          await signOut(auth);
         } catch (err) {
           console.error("CSV 계정 생성 오류:", err);
           row.statusEl.textContent = "실패: " + (err.code || err.message);
@@ -790,6 +816,98 @@
         listStatus.className = "status-line status-err";
       }
     });
+
+    // ===== 7. 건의함 불러오기 및 삭제 [새로 추가된 기능] =====
+    const btnRefreshSugg = document.getElementById("btn-refresh-sugg");
+    const suggTbody = document.getElementById("sugg-tbody");
+    const suggStatus = document.getElementById("sugg-status");
+
+    // 날짜 포맷 함수
+    function formatTime(timestamp) {
+      if (!timestamp) return "-";
+      const d = timestamp.toDate();
+      return d.getFullYear() + "-" +
+             String(d.getMonth()+1).padStart(2,"0") + "-" +
+             String(d.getDate()).padStart(2,"0") + " " +
+             String(d.getHours()).padStart(2,"0") + ":" +
+             String(d.getMinutes()).padStart(2,"0");
+    }
+
+    async function loadSuggestions() {
+      suggTbody.innerHTML = `<tr><td colspan="5" class="small">불러오는 중...</td></tr>`;
+      suggStatus.textContent = "";
+
+      try {
+        const q = query(collection(db, "suggestions"), orderBy("date", "desc"));
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+          suggTbody.innerHTML = `<tr><td colspan="5" class="small">도착한 의견이 없습니다.</td></tr>`;
+          suggStatus.textContent = "데이터 없음";
+          return;
+        }
+
+        let html = "";
+        let idx = 0;
+        snap.forEach((docSnap) => {
+          idx++;
+          const data = docSnap.data();
+          const docId = docSnap.id;
+          
+          const dateStr = formatTime(data.date);
+          const writer = data.writerID || data.userId || "(알수없음)";
+          const title = data.title || "(제목 없음)";
+          const content = data.content || "";
+
+          html += `
+            <tr>
+              <td>${idx}</td>
+              <td class="small" style="color:#9ca3af;">${dateStr}</td>
+              <td style="font-weight:bold; color:#a5b4fc;">${writer}</td>
+              <td>
+                <div style="font-weight:bold; margin-bottom:4px;">${title}</div>
+                <div class="small" style="white-space:pre-wrap;">${content}</div>
+              </td>
+              <td>
+                <button class="danger small btn-del-sugg" data-id="${docId}">삭제</button>
+              </td>
+            </tr>
+          `;
+        });
+
+        suggTbody.innerHTML = html;
+        suggStatus.textContent = `총 ${idx}건의 의견을 불러왔습니다.`;
+        suggStatus.className = "status-line status-ok";
+
+        // 삭제 버튼 이벤트 연결
+        document.querySelectorAll(".btn-del-sugg").forEach(btn => {
+          btn.addEventListener("click", async (e) => {
+            const idToDelete = e.target.getAttribute("data-id");
+            if(confirm("정말 이 의견을 삭제하시겠습니까?")) {
+              await deleteSuggestion(idToDelete);
+            }
+          });
+        });
+
+      } catch (err) {
+        console.error(err);
+        suggTbody.innerHTML = `<tr><td colspan="5" class="small">오류 발생</td></tr>`;
+        suggStatus.textContent = "불러오기 실패: " + err.message;
+        suggStatus.className = "status-line status-err";
+      }
+    }
+
+    async function deleteSuggestion(docId) {
+      try {
+        await deleteDoc(doc(db, "suggestions", docId));
+        alert("삭제되었습니다.");
+        loadSuggestions();
+      } catch (err) {
+        alert("삭제 실패: " + err.message);
+      }
+    }
+
+    btnRefreshSugg.addEventListener("click", loadSuggestions);
   </script>
 </body>
 </html>
