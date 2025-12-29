@@ -23,7 +23,7 @@
       min-height:100dvh;
     }
 
-    .wrap{max-width:1200px;margin:0 auto;padding:22px 16px 48px;position:relative}
+    .wrap{max-width:1600px;margin:0 auto;padding:22px 30px 48px;position:relative}
     header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;position:relative;z-index:2}
     h1{font-size:24px;margin:0 10px 0 0;display:flex;gap:10px;align-items:center}
     /* ===== Logo (favicon reuse) ===== */
@@ -68,7 +68,7 @@
     .empty{opacity:.7;border:1px dashed #2d3a66;border-radius:16px;padding:18px;text-align:center}
     .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(120,150,220,.35),transparent);margin:16px 0}
 
-    .ph-card{position:relative;z-index:2;max-width:1200px;margin:16px auto;border-radius:16px; border:1px solid var(--ph-border);
+    .ph-card{position:relative;z-index:2;max-width:1600px;margin:16px auto;border-radius:16px; border:1px solid var(--ph-border);
       background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0)); box-shadow:var(--shadow)}
     .ph-inner{display:flex;gap:16px;align-items:center;padding:14px}
     .ph-badge{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;background:#0f1a3d;border:1px solid var(--ph-border)}
