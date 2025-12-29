@@ -3,15 +3,23 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>직류 전동기 (통합 연결 수정본)</title>
+  <title>직류 전동기 (차분한 톤 수정)</title>
   <style>
-    :root{ --ink:#1e293b; --primary:#0ea5e9; --danger:#ef4444; --success:#22c55e; --warn:#f59e0b; }
+    /* [색상 톤 다운] 눈이 편안한 색상 팔레트로 변경 */
+    :root{ 
+      --ink:#334155; 
+      --primary:#0284c7; /* 쨍한 하늘색 -> 차분한 파랑 */
+      --danger:#d9534f;  /* 형광 빨강 -> 차분한 붉은색 */
+      --success:#16a34a; /* 형광 초록 -> 짙은 녹색 */
+      --warn:#d97706;    /* 형광 주황 -> 짙은 호박색 */
+    }
     html,body{height:100%; margin:0; overflow:hidden;}
     
     body {
       color: var(--ink);
       font-family: system-ui, sans-serif;
-      background: radial-gradient(circle at 50% 30%, #f0f9ff 0%, #cbd5e1 100%);
+      /* 배경도 너무 쨍한 흰색 대신 약간의 회색 톤 추가 */
+      background: radial-gradient(circle at 50% 30%, #f1f5f9 0%, #cbd5e1 100%);
     }
 
     header {
@@ -20,8 +28,8 @@
       display: flex; justify-content: space-between; align-items: center;
       z-index: 5;
     }
-    .brand { font-weight: 700; font-size: 18px; color: #0f172a; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
-    .small { font-size: 12px; color: #475569; }
+    .brand { font-weight: 700; font-size: 18px; color: #1e293b; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
+    .small { font-size: 12px; color: #64748b; }
     
     #scene { position: fixed; inset: 0; z-index: 0; }
     #scene canvas { display: block; width: 100vw; height: 100vh; outline: none; }
@@ -29,40 +37,40 @@
     /* HUD 패널 */
     .hud {
       position: fixed; left: 14px; top: 50px; width: 340px;
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.90); /* 투명도 조절 */
       backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,0.6);
+      border: 1px solid rgba(200,200,200,0.5);
       border-radius: 12px; padding: 16px; z-index: 10;
-      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
       max-height: 85vh; overflow-y: auto;
     }
     .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin: 8px 0; }
-    .row label { font-size: 14px; font-weight: 600; color: #334155; }
+    .row label { font-size: 14px; font-weight: 600; color: #475569; }
     
     input[type=range] { width: 100%; accent-color: var(--primary); cursor: pointer;}
-    select { padding: 4px; border-radius: 4px; border: 1px solid #cbd5e1; }
+    select { padding: 4px; border-radius: 4px; border: 1px solid #cbd5e1; color: #475569; }
     
     .status-box {
       margin-top: 12px; padding-top: 12px; 
       border-top: 1px solid #e2e8f0;
-      font-size: 13px; color: #475569; line-height: 1.6;
+      font-size: 13px; color: #64748b; line-height: 1.6;
     }
-    .val-highlight { color: #0ea5e9; font-weight: bold; }
+    .val-highlight { color: var(--primary); font-weight: bold; }
 
     /* 버튼 그룹 */
     .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; }
     .btn {
       padding: 10px 6px; border-radius: 6px; border: none; cursor: pointer;
       font-size: 12px; font-weight: 600; color: white;
-      background: #475569; transition: all 0.2s;
+      background: #64748b; transition: all 0.2s;
       display: flex; justify-content: center; align-items: center; text-align: center;
       line-height: 1.3;
     }
-    .btn:hover { background: #334155; transform: translateY(-1px); }
+    .btn:hover { background: #475569; transform: translateY(-1px); }
     .btn.active { background: var(--primary); box-shadow: 0 0 0 2px #bae6fd; }
     
     .btn-magnet { background: #6366f1; } 
-    .btn-current { background: #f59e0b; } 
+    .btn-current { background: var(--warn); } 
     .btn-pause { background: var(--danger); } 
     .btn-pause.paused { background: var(--success); }
     
@@ -74,7 +82,7 @@
       position: fixed; right: 14px; top: 50px; width: 300px;
       background: rgba(255, 255, 255, 0.9);
       border-radius: 12px; padding: 10px; z-index: 11;
-      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -83,7 +91,7 @@
 
   <header>
     <div class="brand">🔷 직류 전동기 실험실</div>
-    <div class="small">Connected: Coil-Commutator-Brush (Unified Z=7.0)</div>
+    <div class="small">Toned Down Colors</div>
   </header>
 
   <div id="scene"></div>
@@ -222,13 +230,30 @@
     dirLight.position.set(10, 20, 10);
     scene.add(dirLight);
 
-    const matCopper = new THREE.MeshStandardMaterial({ color: 0xb87333, roughness: 0.3, metalness: 0.7 });
-    const matSteel = new THREE.MeshStandardMaterial({ color: 0xe0e0e0, roughness: 0.4, metalness: 0.5 });
-    const matBrass = new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.3, metalness: 0.8 });
-    const matRed = new THREE.MeshPhongMaterial({ color: 0xff3333, shininess: 80 });
-    const matBlue = new THREE.MeshPhongMaterial({ color: 0x3333ff, shininess: 80 });
-    const matDark = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 });
-    const matArrow = new THREE.MeshPhongMaterial({ color: 0x39ff14, emissive: 0x004400 });
+    // --- [색상 수정] 눈이 편안한 톤 다운 컬러 팔레트 ---
+    // 기존의 형광색(PhongMaterial) 대신 StandardMaterial로 바꿔서 조금 더 고급스럽고 차분하게 표현
+    
+    // 코일 (구리): 약간 더 짙고 채도가 낮은 갈색
+    const matCopper = new THREE.MeshStandardMaterial({ color: 0xa65d29, roughness: 0.3, metalness: 0.6 });
+    
+    // 축 (철): 은은한 회색
+    const matSteel = new THREE.MeshStandardMaterial({ color: 0xbdc3c7, roughness: 0.4, metalness: 0.5 });
+    
+    // 정류자 (황동): 너무 샛노란 금색 대신 약간 묵직한 골드
+    const matBrass = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3, metalness: 0.7 });
+    
+    // N극/S극 및 전선: 채도를 낮춘 고급스러운 빨강/파랑
+    const colRed = 0xc0392b; // Alizarin Red (차분한 빨강)
+    const colBlue = 0x2980b9; // Belize Hole (차분한 파랑)
+
+    const matRed = new THREE.MeshStandardMaterial({ color: colRed, roughness: 0.4, metalness: 0.1 });
+    const matBlue = new THREE.MeshStandardMaterial({ color: colBlue, roughness: 0.4, metalness: 0.1 });
+    
+    // 브러쉬: 짙은 회색
+    const matDark = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.9 });
+    
+    // 힘 화살표: 형광 녹색 대신 약간 차분한 라임 그린
+    const matArrow = new THREE.MeshPhongMaterial({ color: 0x2ecc71, emissive: 0x004400, shininess: 50 });
 
     // 3. 객체 생성
     let magnetL, magnetR;
@@ -237,7 +262,9 @@
       const m = new THREE.Mesh(g, isN ? matRed : matBlue);
       const cvs = document.createElement('canvas'); cvs.width=64; cvs.height=64;
       const ctx = cvs.getContext('2d');
-      ctx.fillStyle = isN?'#b00':'#00b'; ctx.fillRect(0,0,64,64);
+      // 텍스처 배경색도 톤 다운된 색상 코드와 일치시킴
+      ctx.fillStyle = isN ? '#c0392b' : '#2980b9'; 
+      ctx.fillRect(0,0,64,64);
       ctx.fillStyle='white'; ctx.font='bold 40px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText(isN?'N':'S', 32, 32);
       const tex = new THREE.CanvasTexture(cvs);
@@ -258,9 +285,9 @@
     function updateMagnetVisuals() {
       const isNormal = magnetDirection === 1; 
       magnetL.material = isNormal ? matRed : matBlue;
-      updateMagnetLabel(magnetL, isNormal ? 'N' : 'S', isNormal ? '#b00' : '#00b');
+      updateMagnetLabel(magnetL, isNormal ? 'N' : 'S', isNormal ? '#c0392b' : '#2980b9');
       magnetR.material = isNormal ? matBlue : matRed;
-      updateMagnetLabel(magnetR, isNormal ? 'S' : 'N', isNormal ? '#00b' : '#b00');
+      updateMagnetLabel(magnetR, isNormal ? 'S' : 'N', isNormal ? '#2980b9' : '#c0392b');
     }
     function updateMagnetLabel(mesh, text, bgColor) {
       const labelMesh = mesh.children[0];
@@ -272,17 +299,16 @@
       labelMesh.material.map = new THREE.CanvasTexture(cvs);
     }
 
-    // --- [위치 통합 설정 (핵심 수정)] ---
-    // 사용자가 원하는 "Z=7.0"을 기준으로 모든 부품을 연동합니다.
+    // --- [위치 통합 설정] ---
     const MAIN_Z = 7.0; 
     
-    // 1) 브러쉬 위치: 정확히 7.0
+    // 1) 브러쉬 위치
     const BRUSH_Z = 7.4; 
     
-    // 2) 정류자 중심 위치: 정확히 7.0
+    // 2) 정류자 중심 위치
     const COMM_CENTER_Z = MAIN_Z;
     
-    // 3) 코일 끝 위치: 7.0보다 살짝 안쪽(6.0)까지 뻗어서 정류자와 겹치게 함 (분리 방지)
+    // 3) 코일 끝 위치
     const COIL_END_Z = MAIN_Z - 1.0; 
 
     function createCurvedBrushGeo() {
@@ -506,7 +532,8 @@
       ctxG.strokeStyle = 'rgba(200,200,200,0.5)'; ctxG.lineWidth=1;
       ctxG.beginPath(); ctxG.moveTo(0, 120); ctxG.lineTo(300, 120); ctxG.stroke();
 
-      ctxG.strokeStyle = '#0ea5e9'; ctxG.lineWidth = 2;
+      ctxG.strokeStyle = '#0284c7'; // Graph line color
+      ctxG.lineWidth = 2;
       ctxG.beginPath();
       
       let curMax = 5;
@@ -526,7 +553,7 @@
       }
       ctxG.stroke();
 
-      ctxG.fillStyle = "#0ea5e9";
+      ctxG.fillStyle = "#0284c7";
       ctxG.font = "10px sans-serif";
       ctxG.fillText("Max: " + maxGraphY.toFixed(0) + " RPM", 5, 15);
     }
@@ -571,10 +598,14 @@
       currentDirection *= -1;
       if(currentDirection === 1) {
         btnCurrentRev.innerHTML = "⚡ 전류 방향 변경<br>(정방향)";
-        btnCurrentRev.style.background = "#f59e0b";
+        btnCurrentRev.style.background = "var(--warn)";
+        wireL.material = matRed;
+        wireR.material = matBlue;
       } else {
         btnCurrentRev.innerHTML = "⚡ 전류 방향 변경<br>(역방향)";
-        btnCurrentRev.style.background = "#d97706";
+        btnCurrentRev.style.background = "#d35400"; // Darker Orange
+        wireL.material = matBlue;
+        wireR.material = matRed;
       }
     };
     
