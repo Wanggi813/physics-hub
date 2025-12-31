@@ -22,7 +22,8 @@
     {title:"원자모형", category:"시뮬레이션", desc:"보어/오비탈/전자구름 개념 시각화.", tags:["원자","준위"], emoji:"🧬", demo:"./simul/원자모형.html", curriculumId:"[12전자03-04]", thumb:"./thumb_nail/원자모형.png"},
     {title:"이중슬릿", category:"광학", desc:"확률파동·간섭무늬·파라미터 조절.", tags:["슬릿","간섭"], emoji:"〰️", demo:"./simul/이중슬릿.html", curriculumId:"[12전자03-01]", thumb:"./thumb_nail/이중슬릿.png"},
     {title:"전자기유도", category:"전자/반도체", desc:"전자기 유도현상과 정류자의 역할.", tags:["전자기유도","정류자"], emoji:"⚡", demo:"./simul/전자기유도.html", curriculumId:"[12물리02-05], [12전자01-05]", thumb:"./thumb_nail/전자기유도.png"},
-    {title:"전기장과 등전위면", category:"전자/반도체", desc:"전하가 만드는 전기장과 등전위면을 알아보자.", tags:["전기장","등전위면"], emoji:"⚡", demo:"./simul/전기장과 등전위면.html", curriculumId:"[12물리02-01], [12전자01-01]", thumb:"./thumb_nail/전기장과_등전위면.png"}
+    {title:"전기장과 등전위면", category:"전자/반도체", desc:"전하가 만드는 전기장과 등전위면을 알아보자.", tags:["전기장","등전위면"], emoji:"⚡", demo:"./simul/전기장과 등전위면.html", curriculumId:"[12물리02-01], [12전자01-01]", thumb:"./thumb_nail/전기장과_등전위면.png"},
+    {title:"편광과 LCD", category:"광학", desc:"편광의 원리와 LCD의 원리 알아보기", tags:["편광","LCD"], emoji:"🔭", demo:"./simul/편광과 LCD.html", curriculumId:"[12전자02-03]", thumb:"./thumb_nail/편광과 LCD.png"}
   ];
 
 
