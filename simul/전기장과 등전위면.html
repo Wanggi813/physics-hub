@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>전기장 시뮬레이션 (태블릿 터치 지원)</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* 스크롤 방지 */
+            background-color: #050505;
+            font-family: 'Pretendard', sans-serif;
+            color: white;
+            user-select: none;
+            touch-action: none; /* 브라우저 기본 제스처 차단 */
+        }
+
+        canvas { display: block; touch-action: none; }
+
+        /* 하단 전하 배치 패널 */
+        #ui-layer {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            background: rgba(30, 30, 30, 0.85);
+            padding: 15px 25px;
+            border-radius: 50px;
+            border: 1px solid #555;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            z-index: 10;
+        }
+
+        .charge-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: grab;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            transition: transform 0.1s;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            /* 모바일 드래그를 위해 상대 위치 설정 */
+            position: relative; 
+            touch-action: none;
+        }
+        .charge-btn:active { transform: scale(0.9); cursor: grabbing; }
+        
+        /* 전하 스타일 */
+        .pos-1 { background: radial-gradient(circleAt 30% 30%, #ff6b6b, #c0392b); border: 2px solid #ff9999; }
+        .neg-1 { background: radial-gradient(circleAt 30% 30%, #4facfe, #00f2fe); border: 2px solid #aaddff; }
+        .pos-2 { background: radial-gradient(circleAt 30% 30%, #ff0000, #8b0000); border: 2px solid #ff4444; box-shadow: 0 0 15px #ff0000; }
+        .neg-2 { background: radial-gradient(circleAt 30% 30%, #0000ff, #00008b); border: 2px solid #4444ff; box-shadow: 0 0 15px #0000ff; }
+
+        /* 드래그 중인 고스트 엘리먼트 */
+        .ghost-charge {
+            position: absolute;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0.8;
+            transform: translate(-50%, -50%);
+        }
+
+        /* 상단 컨트롤 패널 */
+        #top-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-end;
+            z-index: 10;
+        }
+
+        .control-group {
+            background: rgba(30, 30, 30, 0.8);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #555;
+            color: #ddd;
+            font-size: 14px;
+        }
+        
+        .group-title {
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #555;
+            padding-bottom: 5px;
+            display: block;
+        }
+
+        .control-item { margin-bottom: 5px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        input[type="checkbox"], input[type="radio"] { accent-color: #00ffcc; cursor: pointer; transform: scale(1.1); }
+
+        #tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #00ffcc;
+            color: #00ffcc;
+            padding: 8px 12px;
+            border-radius: 6px;
+            pointer-events: none;
+            font-family: monospace;
+            font-size: 13px;
+            display: none;
+            z-index: 20;
+            white-space: nowrap;
+        }
+        #instruction {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255,255,255,0.5);
+            pointer-events: none;
+            font-size: 15px;
+            text-shadow: 0 0 5px black;
+            z-index: 5;
+            width: 80%;
+            text-align: center;
+        }
+
+        #graph-overlay {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            width: 480px; 
+            height: 300px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid #888;
+            border-radius: 8px;
+            display: none;
+            padding: 10px;
+            z-index: 15;
+            pointer-events: none; 
+        }
+        #graph-title { font-size: 14px; color: #aaa; margin-bottom: 5px; text-align: center; }
+        
+        /* 모바일 대응 미디어 쿼리 */
+        @media (max-width: 768px) {
+            #graph-overlay {
+                width: 90%;
+                left: 5%;
+                bottom: 100px;
+            }
+            #top-controls { transform: scale(0.9); transform-origin: top right; }
+            .charge-btn { width: 40px; height: 40px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="instruction">터치하여 실험해보세요 (두 번 탭하면 삭제)</div>
+    <div id="tooltip"></div>
+    
+    <div id="top-controls">
+        <div class="control-group">
+            <span class="group-title">👁️ 보기 설정</span>
+            <label class="control-item"><input type="checkbox" id="chk-potential" checked> 등전위면 (Heatmap)</label>
+            <label class="control-item"><input type="checkbox" id="chk-field" checked> 전기장 (Vectors)</label>
+        </div>
+
+        <div class="control-group">
+            <span class="group-title">🛠️ 도구 선택</span>
+            <label class="control-item"><input type="radio" name="tool" value="cursor" checked> ✋ 기본 (전하 이동)</label>
+            <label class="control-item"><input type="radio" name="tool" value="voltmeter"> ⚡ 전위차계 (ΔV)</label>
+            <label class="control-item"><input type="radio" name="tool" value="graph"> 📈 그래프 (선 긋기)</label>
+        </div>
+    </div>
+
+    <div id="graph-overlay">
+        <div id="graph-title">V-r / E-r Graph</div>
+        <canvas id="graphCanvas" width="450" height="255"></canvas>
+    </div>
+
+    <canvas id="simCanvas"></canvas>
+
+    <div id="ui-layer">
+        <div class="charge-btn pos-1" data-q="1">+1</div>
+        <div class="charge-btn neg-1" data-q="-1">-1</div>
+        <div class="charge-btn pos-2" data-q="2">+2</div>
+        <div class="charge-btn neg-2" data-q="-2">-2</div>
+    </div>
+
+<script>
+/** 전역 설정 */
+const K = 8000; 
+const FIELD_SPACING = 25; 
+const MAX_ARROW_LEN = FIELD_SPACING * 0.95; 
+const GRID_BACKGROUND_SPACING = 66; 
+
+let charges = [];
+let testCharges = [];
+let canvas, ctx;
+let graphCanvas, graphCtx;
+let width, height;
+
+// 인터랙션 변수
+let mouseX = 0, mouseY = 0;
+let isDragging = false, draggedObj = null; 
+let dragOffsetX = 0, dragOffsetY = 0;
+let needsRedraw = true; 
+let cachedBackground = null;
+let lastTapTime = 0; // 더블 탭 감지용
+
+let showPotential = true;
+let showField = true;
+let currentTool = 'cursor'; 
+
+const voltmeter = {
+    probeA: { x: 100, y: 100, color: '#333333', label: 'COM' }, 
+    probeB: { x: 200, y: 100, color: '#ff3333', label: '+' },   
+    active: false
+};
+
+const graphTool = {
+    isDrawing: false,
+    startX: 0, startY: 0,
+    endX: 0, endY: 0,
+    data: [] 
+};
+
+/** 초기화 */
+function init() {
+    canvas = document.getElementById('simCanvas');
+    ctx = canvas.getContext('2d', { alpha: false });
+    
+    graphCanvas = document.getElementById('graphCanvas');
+    graphCtx = graphCanvas.getContext('2d');
+
+    resize();
+    window.addEventListener('resize', () => { resize(); needsRedraw = true; });
+
+    charges.push({x: window.innerWidth/2 - 150, y: window.innerHeight/2, q: 1, r: 20});
+    charges.push({x: window.innerWidth/2 + 150, y: window.innerHeight/2, q: -1, r: 20});
+
+    setupUI();
+    setupEvents(); // 터치/마우스 통합 이벤트 설정
+    loop();
+}
+
+function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+    voltmeter.probeA.x = width / 2 - 50; voltmeter.probeA.y = height - 150;
+    voltmeter.probeB.x = width / 2 + 50; voltmeter.probeB.y = height - 150;
+}
+
+/** 물리 엔진 */
+function getFieldAndPotential(x, y) {
+    let Ex = 0, Ey = 0, V = 0;
+    for (let c of charges) {
+        let dx = x - c.x;
+        let dy = y - c.y;
+        let distSq = dx*dx + dy*dy;
+        let dist = Math.sqrt(distSq);
+        if (dist < 5) dist = 5; 
+        if (distSq < 25) distSq = 25;
+        let E = (K * c.q) / distSq;
+        Ex += E * (dx / dist);
+        Ey += E * (dy / dist);
+        V += (K * c.q) / dist;
+    }
+    return { Ex, Ey, V };
+}
+
+/** 메인 루프 */
+function loop() {
+    if (needsRedraw) {
+        drawBackground();
+        needsRedraw = false; 
+    } else {
+        if (cachedBackground) ctx.putImageData(cachedBackground, 0, 0);
+        else { ctx.fillStyle = "#050505"; ctx.fillRect(0, 0, width, height); }
+    }
+    if (showField) drawFieldVectors();
+    updateAndDrawTestCharges();
+    drawCharges();
+    if (currentTool === 'voltmeter') drawVoltmeter();
+    if (currentTool === 'graph') drawGraphToolOnCanvas();
+    
+    // 모바일에서는 손가락이 가리므로 툴팁 위치 조정 필요할 수 있음
+    updateTooltip();
+    requestAnimationFrame(loop);
+}
+
+/** 그리기 함수들 (V3와 동일) */
+function drawBackground() {
+    if (!showPotential) {
+        ctx.fillStyle = "#050505"; ctx.fillRect(0, 0, width, height);
+    } else {
+        const imgData = ctx.createImageData(width, height);
+        const data = imgData.data;
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                let { V } = getFieldAndPotential(x, y);
+                const idx = (y * width + x) * 4;
+                let intensity = Math.min(200, Math.abs(V) * 0.6); 
+                let r = 0, g = 0, b = 0;
+                if (V > 0) { r = intensity; g = intensity * 0.1; b = intensity * 0.1; } 
+                else { r = intensity * 0.1; g = intensity * 0.1; b = intensity; }
+                let lineInterval = 40;
+                let lineFactor = (Math.abs(V) % lineInterval);
+                if (lineFactor < 2 || lineFactor > lineInterval - 2) { r += 50; g += 50; b += 50; }
+                data[idx] = r; data[idx+1] = g; data[idx+2] = b; data[idx+3] = 255;
+            }
+        }
+        ctx.putImageData(imgData, 0, 0);
+    }
+    ctx.save();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.15)"; ctx.lineWidth = 0.5;
+    for (let x = GRID_BACKGROUND_SPACING; x < width; x += GRID_BACKGROUND_SPACING) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+    }
+    for (let y = GRID_BACKGROUND_SPACING; y < height; y += GRID_BACKGROUND_SPACING) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+    }
+    ctx.restore();
+    cachedBackground = ctx.getImageData(0, 0, width, height);
+}
+
+function drawFieldVectors() {
+    ctx.lineWidth = 1.0;
+    for (let x = FIELD_SPACING/2; x < width; x += FIELD_SPACING) {
+        for (let y = FIELD_SPACING/2; y < height; y += FIELD_SPACING) {
+            let { Ex, Ey } = getFieldAndPotential(x, y);
+            let E_mag = Math.hypot(Ex, Ey);
+            if (E_mag < 0.01) continue;
+            let ux = Ex / E_mag; let uy = Ey / E_mag;
+            let len = MAX_ARROW_LEN * (E_mag / (E_mag + 0.6)); 
+            if (len > MAX_ARROW_LEN) len = MAX_ARROW_LEN;
+            if (len < 3) continue;
+            const halfLen = len / 2;
+            const startX = x - ux * halfLen; const startY = y - uy * halfLen;
+            const endX = x + ux * halfLen; const endY = y + uy * halfLen;
+            let opacity = Math.min(1, len / 10); 
+            ctx.strokeStyle = `rgba(255, 240, 50, ${opacity})`;
+            ctx.fillStyle = `rgba(255, 240, 50, ${opacity})`;
+            ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(endX, endY); ctx.stroke();
+            const headSize = Math.max(2, len * 0.25); 
+            ctx.beginPath(); ctx.moveTo(endX, endY);
+            ctx.lineTo(endX - headSize*ux + headSize*0.5*uy, endY - headSize*uy - headSize*0.5*ux);
+            ctx.lineTo(endX - headSize*ux - headSize*0.5*uy, endY - headSize*uy + headSize*0.5*ux);
+            ctx.fill();
+        }
+    }
+}
+
+function drawCharges() {
+    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "bold 16px Arial";
+    charges.forEach(c => {
+        ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        if (c.q > 0) { ctx.fillStyle = "#ff3333"; ctx.shadowColor = "#ff0000"; } 
+        else { ctx.fillStyle = "#3333ff"; ctx.shadowColor = "#0000ff"; }
+        ctx.shadowBlur = 15; ctx.fill(); ctx.shadowBlur = 0;
+        ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = "white"; ctx.fillText(c.q > 0 ? "+" + c.q : c.q, c.x, c.y);
+    });
+}
+
+function updateAndDrawTestCharges() {
+    for (let i = testCharges.length - 1; i >= 0; i--) {
+        let p = testCharges[i];
+        let { Ex, Ey } = getFieldAndPotential(p.x, p.y);
+        p.vx += Ex * 0.1; p.vy += Ey * 0.1;
+        let speed = Math.hypot(p.vx, p.vy);
+        if (speed > 12) { p.vx = (p.vx/speed)*12; p.vy = (p.vy/speed)*12; }
+        p.x += p.vx; p.y += p.vy; p.life--;
+        let hit = false;
+        for(let c of charges) if(Math.hypot(p.x-c.x, p.y-c.y) < c.r) hit = true;
+        if (p.life <= 0 || hit || p.x < 0 || p.x > width || p.y < 0 || p.y > height) testCharges.splice(i, 1);
+        else { ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fillStyle = "#ffff00"; ctx.fill(); }
+    }
+}
+
+function drawVoltmeter() {
+    const probes = [voltmeter.probeA, voltmeter.probeB];
+    const values = [];
+    ctx.save(); ctx.setLineDash([5, 5]); ctx.strokeStyle = "rgba(255,255,255,0.3)";
+    ctx.beginPath(); ctx.moveTo(probes[0].x, probes[0].y); ctx.lineTo(probes[1].x, probes[1].y); ctx.stroke(); ctx.restore();
+    probes.forEach(p => {
+        ctx.beginPath(); ctx.arc(p.x, p.y, 10, 0, Math.PI*2); ctx.fillStyle = p.color; ctx.fill();
+        ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y + 20); ctx.stroke();
+        const { V } = getFieldAndPotential(p.x, p.y);
+        values.push(V);
+        ctx.fillStyle = "white"; ctx.font = "12px monospace"; ctx.fillText(`${V.toFixed(1)}V`, p.x, p.y - 15);
+    });
+    const centerX = (probes[0].x + probes[1].x) / 2; const centerY = (probes[0].y + probes[1].y) / 2;
+    const diff = values[1] - values[0]; 
+    ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(centerX - 60, centerY - 15, 120, 30);
+    ctx.strokeStyle = "#00ffcc"; ctx.lineWidth = 1; ctx.strokeRect(centerX - 60, centerY - 15, 120, 30);
+    ctx.fillStyle = "#00ffcc"; ctx.font = "bold 14px monospace"; ctx.fillText(`ΔV: ${diff.toFixed(2)}`, centerX, centerY);
+}
+
+function drawGraphToolOnCanvas() {
+    if (!graphTool.isDrawing && graphTool.data.length === 0) return;
+    if (graphTool.isDrawing) {
+        ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(graphTool.startX, graphTool.startY); ctx.lineTo(graphTool.endX, graphTool.endY); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(graphTool.startX, graphTool.startY, 3, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(graphTool.endX, graphTool.endY, 3, 0, Math.PI*2); ctx.fill();
+    }
+}
+
+function calculateAndDrawGraph() {
+    const p1 = { x: graphTool.startX, y: graphTool.startY };
+    const p2 = { x: graphTool.endX, y: graphTool.endY };
+    const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+    if (dist < 10) return; 
+
+    const dx = p2.x - p1.x; const dy = p2.y - p1.y;
+    const ux = dx / dist; const uy = dy / dist;
+    const samples = 150;
+    const data = [];
+    let maxV = 1; let maxE = 1;
+
+    for(let i=0; i<=samples; i++) {
+        let t = i / samples;
+        let x = p1.x + dx * t; let y = p1.y + dy * t;
+        let { Ex, Ey, V } = getFieldAndPotential(x, y);
+        let E_proj = Ex * ux + Ey * uy;
+        if (Math.abs(V) > maxV) maxV = Math.abs(V);
+        if (Math.abs(E_proj) > maxE) maxE = Math.abs(E_proj);
+        data.push({ t, V, E: E_proj });
+    }
+
+    const gCanvas = graphCanvas; const gCtx = graphCtx;
+    const gw = gCanvas.width; const gh = gCanvas.height;
+    const cy = gh / 2;
+    gCtx.clearRect(0, 0, gw, gh);
+    gCtx.strokeStyle = "#555"; gCtx.lineWidth = 1;
+    gCtx.beginPath(); gCtx.moveTo(40, 10); gCtx.lineTo(40, gh - 10);
+    gCtx.moveTo(40, cy); gCtx.lineTo(gw-10, cy); gCtx.stroke();
+    gCtx.fillStyle = "#888"; gCtx.font = "12px sans-serif"; gCtx.fillText("0", 25, cy + 4);
+
+    const scaleV = (gh * 0.4) / (maxV > 1 ? maxV : 1);
+    const scaleE = (gh * 0.4) / (maxE > 1 ? maxE : 1);
+
+    gCtx.beginPath(); gCtx.strokeStyle = "#ff4444"; gCtx.lineWidth = 2;
+    for(let i=0; i<data.length; i++) {
+        let px = 40 + data[i].t * (gw - 50);
+        let py = cy - (data[i].V * scaleV);
+        if (py < 5) py = 5; if (py > gh - 5) py = gh - 5;
+        if(i===0) gCtx.moveTo(px, py); else gCtx.lineTo(px, py);
+    }
+    gCtx.stroke();
+
+    gCtx.beginPath(); gCtx.strokeStyle = "#ffff00"; gCtx.lineWidth = 2;
+    for(let i=0; i<data.length; i++) {
+        let px = 40 + data[i].t * (gw - 50);
+        let py = cy - (data[i].E * scaleE);
+        if (py < 5) py = 5; if (py > gh - 5) py = gh - 5;
+        if(i===0) gCtx.moveTo(px, py); else gCtx.lineTo(px, py);
+    }
+    gCtx.stroke();
+    gCtx.font = "12px sans-serif"; gCtx.textAlign = "left";
+    gCtx.fillStyle = "#ff4444"; gCtx.fillText(`Potential V (Max: ±${maxV.toFixed(1)})`, 50, 20);
+    gCtx.fillStyle = "#ffff00"; gCtx.fillText(`Electric Field E (Max: ±${maxE.toFixed(1)})`, 50, 38);
+}
+
+/** * 📱 UI & 이벤트 처리 (통합)
+ */
+function setupUI() {
+    const radios = document.getElementsByName('tool');
+    radios.forEach(r => {
+        r.addEventListener('change', (e) => {
+            currentTool = e.target.value;
+            const instruction = document.getElementById('instruction');
+            const graphOverlay = document.getElementById('graph-overlay');
+            if (currentTool === 'cursor') {
+                instruction.innerText = "기본 모드: 전하 드래그 / 빈 곳 터치하여 시험전하 발사";
+                graphOverlay.style.display = 'none';
+            } else if (currentTool === 'voltmeter') {
+                instruction.innerText = "전위차계: 탐침을 드래그하여 전위차 측정";
+                graphOverlay.style.display = 'none';
+            } else if (currentTool === 'graph') {
+                instruction.innerText = "그래프: 화면을 드래그하여 선 긋기";
+                graphOverlay.style.display = 'block';
+                graphCtx.clearRect(0,0,graphCanvas.width, graphCanvas.height);
+            }
+        });
+    });
+
+    document.getElementById('chk-potential').addEventListener('change', (e) => { showPotential = e.target.checked; needsRedraw = true; });
+    document.getElementById('chk-field').addEventListener('change', (e) => { showField = e.target.checked; });
+    
+    // 버튼 드래그 (모바일 + PC 통합 커스텀 드래그)
+    const buttons = document.querySelectorAll('.charge-btn');
+    buttons.forEach(btn => {
+        // Pointer 이벤트 사용 (마우스/터치 통합)
+        btn.addEventListener('pointerdown', (e) => {
+            if(currentTool !== 'cursor') return;
+            e.preventDefault(); // 텍스트 선택 등 방지
+            
+            const q = btn.getAttribute('data-q');
+            
+            // 고스트 엘리먼트 생성
+            const ghost = btn.cloneNode(true);
+            ghost.classList.add('ghost-charge');
+            document.body.appendChild(ghost);
+            
+            // 초기 위치 설정
+            moveGhost(ghost, e.clientX, e.clientY);
+
+            // 드래그 핸들러
+            function onPointerMove(moveEvent) {
+                moveGhost(ghost, moveEvent.clientX, moveEvent.clientY);
+            }
+
+            function onPointerUp(upEvent) {
+                // 캔버스 위인지 확인
+                const rect = canvas.getBoundingClientRect();
+                const x = upEvent.clientX;
+                const y = upEvent.clientY;
+
+                if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                    const canvasX = x - rect.left;
+                    const canvasY = y - rect.top;
+                    charges.push({ x: canvasX, y: canvasY, q: parseInt(q), r: 20 + Math.abs(q)*5 });
+                    needsRedraw = true;
+                }
+
+                // 정리
+                document.body.removeChild(ghost);
+                window.removeEventListener('pointermove', onPointerMove);
+                window.removeEventListener('pointerup', onPointerUp);
+            }
+
+            window.addEventListener('pointermove', onPointerMove);
+            window.addEventListener('pointerup', onPointerUp);
+        });
+    });
+}
+
+function moveGhost(el, x, y) {
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+}
+
+function setupEvents() {
+    // Canvas 이벤트 리스너 통합 (Pointer Events 사용 권장)
+    // 하지만, 기존 로직 호환성을 위해 mouse/touch 리스너를 각각 매핑하는 헬퍼 사용
+    
+    function handleStart(e) {
+        e.preventDefault(); // 스크롤 방지
+        const {x, y} = getEventPos(e);
+        const currentTime = new Date().getTime();
+
+        // 0. 더블 탭 감지 (300ms 이내)
+        if (currentTime - lastTapTime < 300 && currentTool === 'cursor') {
+            for (let i = 0; i < charges.length; i++) {
+                if (Math.hypot(x - charges[i].x, y - charges[i].y) < charges[i].r * 2) {
+                    charges.splice(i, 1);
+                    needsRedraw = true;
+                    return;
+                }
+            }
+        }
+        lastTapTime = currentTime;
+
+        // 1. 전위차계
+        if (currentTool === 'voltmeter') {
+            if (Math.hypot(x - voltmeter.probeA.x, y - voltmeter.probeA.y) < 30) { // 터치 영역 여유있게
+                isDragging = true; draggedObj = voltmeter.probeA;
+            } else if (Math.hypot(x - voltmeter.probeB.x, y - voltmeter.probeB.y) < 30) {
+                isDragging = true; draggedObj = voltmeter.probeB;
+            }
+            return;
+        }
+
+        // 2. 그래프
+        if (currentTool === 'graph') {
+            graphTool.isDrawing = true;
+            graphTool.startX = x; graphTool.startY = y;
+            graphTool.endX = x; graphTool.endY = y;
+            return;
+        }
+
+        // 3. 기본 모드
+        for (let c of charges) {
+            if (Math.hypot(x - c.x, y - c.y) < c.r * 2) { // 터치 인식 범위 확대
+                isDragging = true; draggedObj = c;
+                dragOffsetX = x - c.x; dragOffsetY = y - c.y;
+                return;
+            }
+        }
+        // 빈 공간 터치 시 시험전하
+        if (!isDragging) testCharges.push({x, y, vx: 0, vy: 0, life: 400});
+    }
+
+    function handleMove(e) {
+        e.preventDefault();
+        const {x, y} = getEventPos(e);
+        mouseX = x; mouseY = y;
+
+        if (currentTool === 'graph' && graphTool.isDrawing) {
+            graphTool.endX = x; graphTool.endY = y;
+            return;
+        }
+
+        if (isDragging && draggedObj) {
+            if (currentTool === 'voltmeter') {
+                draggedObj.x = x; draggedObj.y = y;
+            } else {
+                draggedObj.x = x - dragOffsetX;
+                draggedObj.y = y - dragOffsetY;
+                needsRedraw = true;
+            }
+        }
+    }
+
+    function handleEnd(e) {
+        e.preventDefault();
+        if (currentTool === 'graph' && graphTool.isDrawing) {
+            graphTool.isDrawing = false;
+            calculateAndDrawGraph();
+        }
+        isDragging = false; draggedObj = null;
+    }
+
+    // 마우스 & 터치 리스너 등록
+    canvas.addEventListener('mousedown', handleStart);
+    canvas.addEventListener('touchstart', handleStart, {passive: false});
+
+    canvas.addEventListener('mousemove', handleMove);
+    canvas.addEventListener('touchmove', handleMove, {passive: false});
+
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchend', handleEnd);
+}
+
+// 좌표 정규화 헬퍼
+function getEventPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    
+    if (e.changedTouches) { // 터치 이벤트
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+    } else { // 마우스 이벤트
+        clientX = e.clientX;
+        clientY = e.clientY;
+    }
+    return { x: clientX - rect.left, y: clientY - rect.top };
+}
+
+function updateTooltip() {
+    // 터치 디바이스에서는 툴팁이 손가락에 가려지므로 약간 위로 띄움
+    if (currentTool !== 'cursor') {
+        document.getElementById('tooltip').style.display = 'none';
+        return;
+    }
+    if(!mouseX) return;
+    let { Ex, Ey, V } = getFieldAndPotential(mouseX, mouseY);
+    let E_mag = Math.hypot(Ex, Ey).toFixed(2);
+    let tooltip = document.getElementById('tooltip');
+    
+    if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
+        tooltip.style.display = 'block';
+        tooltip.style.left = (mouseX + 20) + 'px'; // 손가락 오른쪽
+        tooltip.style.top = (mouseY - 40) + 'px'; // 손가락 위
+        tooltip.innerHTML = `전위(V): ${V.toFixed(2)}<br>전기장(E): ${E_mag}`;
+    } else {
+        tooltip.style.display = 'none';
+    }
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>특수상대성이론</title>
+<style>
+  html,body{
+    margin:0;height:100%;
+    background:#000;
+    overflow:hidden;
+    font-family:system-ui,Segoe UI,Arial,Helvetica,sans-serif
+  }
+  #scene{position:fixed;inset:0}
+  .ui{
+    position:fixed;top:16px;left:16px;z-index:10;
+    color:#e6ecff;display:flex;flex-direction:column;gap:10px
+  }
+  .panel{
+    background:rgba(8,12,28,.8);
+    border:1px solid #1f2e52;
+    border-radius:14px;
+    padding:10px 12px;
+    min-width:340px;
+    backdrop-filter:blur(8px)
+  }
+  .row{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center}
+  .label{font-size:12px;color:#9fb0d1}
+  .value{font-family:ui-monospace,Menlo,Consolas,monospace}
+  input[type=range]{width:100%}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .btn{
+    background:#0f1c3b;
+    border:1px solid #223a6b;
+    color:#e6ecff;
+    border-radius:10px;
+    padding:6px 10px;
+    font-size:12px;
+    cursor:pointer
+  }
+  .btn:hover{background:#13224a}
+  .chipbar{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .chip{
+    font:12px ui-monospace,Menlo,Consolas,monospace;
+    background:#0c1636;
+    border:1px solid #223565;
+    color:#dce7ff;
+    padding:5px 8px;
+    border-radius:10px
+  }
+  .rocket{
+    position:fixed;
+    left:40px;
+    top:50%;
+    transform:translateY(-50%);
+    width:180px;
+    z-index:5;
+    pointer-events:none;
+    filter:drop-shadow(0 8px 16px rgba(255,120,60,.25))
+  }
+
+  /* === 도전 박스 (오른쪽 위 HUD) === */
+  .challenge-box{
+    position:fixed;
+    top:16px;
+    right:16px;
+    z-index:15;
+    background:rgba(8,12,28,.9);
+    border:1px solid #24335b;
+    border-radius:14px;
+    padding:10px 12px;
+    min-width:210px;
+    color:#e5edff;
+    backdrop-filter:blur(10px);
+    box-shadow:0 12px 30px rgba(0,0,0,0.5);
+  }
+  .cb-title{
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.05em;
+    color:#9fb0d1;
+    margin-bottom:6px;
+    text-transform:uppercase;
+  }
+  .cb-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:4px;
+  }
+  .cb-label{
+    font-size:12px;
+    color:#9fb0d1;
+  }
+  .cb-value{
+    font-size:16px;
+    font-weight:800;
+    min-width:60px;
+    text-align:right;
+  }
+  .cb-best .cb-value{
+    color:#f59e0b;
+    text-shadow:0 0 6px rgba(245,158,11,0.7);
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:4px;
+  }
+  .cb-best .trophy{
+    font-size:18px;
+    filter:drop-shadow(0 0 4px rgba(250,204,21,0.9));
+  }
+  .cb-btn{
+    margin-top:6px;
+    width:100%;
+    border-radius:999px;
+    border:1px solid #2b3d6b;
+    background:linear-gradient(135deg,#1d4ed8,#22c55e);
+    color:#f9fafb;
+    font-size:13px;
+    font-weight:700;
+    padding:6px 0;
+    cursor:pointer;
+  }
+  .cb-btn:hover{
+    filter:brightness(1.05);
+  }
+  .cb-btn-secondary{
+    margin-top:4px;
+    background:linear-gradient(135deg,#0f172a,#1e293b);
+    border-color:#334155;
+    font-size:12px;
+    padding:5px 0;
+  }
+  .cb-btn-secondary:hover{
+    filter:brightness(1.08);
+  }
+  .cb-msg{
+    margin-top:6px;
+    font-size:11px;
+    line-height:1.45;
+    color:#cbd5f5;
+    min-height:32px;
+  }
+  .cb-msg small{
+    display:block;
+    color:#64748b;
+    margin-top:2px;
+  }
+
+  /* 최고점수 팝 애니메이션 */
+  @keyframes bestPop {
+    0%   { transform:scale(1); }
+    30%  { transform:scale(1.25); }
+    60%  { transform:scale(0.92); }
+    100% { transform:scale(1); }
+  }
+  .challenge-box .best-bump{
+    animation:bestPop .6s ease-out;
+  }
+</style>
+</head>
+<body>
+  <div id="scene"></div>
+
+  <!-- 관찰자 우주선(고정 실루엣) -->
+  <svg class="rocket" viewBox="0 0 320 200" aria-hidden="true">
+    <defs>
+      <linearGradient id="flame" x1="0" x2="1">
+        <stop offset="0" stop-color="#fff59d"/>
+        <stop offset="0.45" stop-color="#ffb74d"/>
+        <stop offset="1" stop-color="#ff5252"/>
+      </linearGradient>
+      <radialGradient id="glass" cx="50%" cy="50%" r="50%">
+        <stop offset="0" stop-color="#cfe9ff"/>
+        <stop offset="1" stop-color="#5aa0ff"/>
+      </radialGradient>
+      <linearGradient id="hull" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#eef2f9"/>
+        <stop offset="1" stop-color="#d6dce8"/>
+      </linearGradient>
+    </defs>
+    <g transform="translate(0,6)">
+      <path d="M16 100 L72 78 L72 122 Z" fill="url(#flame)" opacity="0.95">
+        <animate attributeName="d" dur="0.5s" repeatCount="indefinite"
+          values="M16 100 L72 78 L72 122 Z; M10 100 L72 64 L72 136 Z; M16 100 L72 78 L72 122 Z"/>
+      </path>
+    </g>
+    <g transform="translate(40,12)">
+      <path d="M50,50 Q180,20 270,80 Q290,100 270,120 Q180,180 50,150 Q30,140 30,100 Q30,60 50,50 Z"
+            fill="url(#hull)" stroke="#cfd6e6" stroke-width="4"/>
+      <path d="M70,80 Q90,100 70,120 Q60,110 60,90 Z"
+            fill="#d8dfea" stroke="#cfd6e6" stroke-width="3"/>
+      <path d="M210,80 Q230,100 210,120 Q200,110 200,90 Z"
+            fill="#d8dfea" stroke="#cfd6e6" stroke-width="3"/>
+      <circle cx="160" cy="100" r="24" fill="url(#glass)" stroke="#1c3d7a" stroke-width="6"/>
+      <circle cx="168" cy="92" r="9" fill="#eaf6ff" opacity="0.9"/>
+    </g>
+  </svg>
+
+  <!-- 왼쪽 상단 UI -->
+  <div class="ui">
+    <div class="panel">
+      <div class="row">
+        <div class="label">오브젝트</div>
+        <select id="objType">
+          <option value="moon" selected>보름달</option>
+          <option value="ship">우주선</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <div class="label">관측자 속도 v₁</div>
+        <div class="value" id="valV1">0.00</div>
+      </div>
+      <input id="speedObs" type="range" min="0" max="0.99" step="0.01" value="0.00"/>
+      <div class="btns">
+        <button class="btn" data-b1="0">0</button>
+        <button class="btn" data-b1="0.3">0.3c</button>
+        <button class="btn" data-b1="0.6">0.6c</button>
+        <button class="btn" data-b1="0.9">0.9c</button>
+        <button class="btn" data-b1="0.99">0.99c</button>
+      </div>
+
+      <div class="row">
+        <div class="label">상대 오브젝트 속도 v₂ (−c~+c)</div>
+        <div class="value" id="valV2">0.00</div>
+      </div>
+      <input id="speedObj" type="range" min="-0.99" max="0.99" step="0.01" value="0.00"/>
+
+      <div class="chipbar">
+        <div class="chip">v_rel = <span id="valVrel">-</span></div>
+        <div class="chip">γ_rel = <span id="valGamma">-</span></div>
+        <div class="chip">L/L₀ = <span id="valRatio">-</span></div>
+        <div class="chip">수축축: x,z</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 오른쪽 상단 도전 박스 -->
+  <div class="challenge-box">
+    <div class="cb-title">길이수축 도전</div>
+    <div class="cb-row">
+      <div class="cb-label">라운드</div>
+      <div class="cb-value" id="cb-round">-</div>
+    </div>
+    <div class="cb-row">
+      <div class="cb-label">점수</div>
+      <div class="cb-value" id="cb-score">0</div>
+    </div>
+    <div class="cb-row cb-best">
+      <div class="cb-label">최고점수</div>
+      <div class="cb-value best-badge">
+        <span class="trophy">🏆</span>
+        <span id="cb-best">0</span>
+      </div>
+    </div>
+    <button id="cb-start" class="cb-btn">도전</button>
+    <button id="cb-submit" class="cb-btn cb-btn-secondary">정답 제출</button>
+    <div class="cb-msg" id="cb-msg">
+      상대속도를 조절해<br/>길이 안내 바에서
+      <br>주황색 목표 길이에 맞춰 보세요.
+      <small>※ 정답일 때만 제출! / 라운드당 +50점, 총 10라운드</small>
+    </div>
+  </div>
+
+<script src="./libs/three.min.js"></script>
+<script>
+  (function(){
+    const elScene=document.getElementById('scene');
+    const renderer=new THREE.WebGLRenderer({antialias:true});
+    renderer.setPixelRatio(Math.min(2,devicePixelRatio));
+    renderer.setSize(innerWidth,innerHeight);
+    elScene.appendChild(renderer.domElement);
+
+    const scene=new THREE.Scene();
+    const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.1,4000);
+    camera.position.set(0,0,520);
+
+    const $=s=>document.querySelector(s);
+    const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+    const gammaOf=v=>1/Math.sqrt(1-Math.min(v*v,0.999999));
+    const OBS_W_PX=180, OBSPECT=200/320;
+    const sampleBeta=(min,max)=>min+Math.random()*(max-min);
+
+    const worldUnitsPerPixel=()=>(
+      Math.tan((camera.fov*Math.PI/180)/2)*camera.position.z*2
+    )/innerHeight;
+
+    // 우주선 텍스처 폭(픽셀 기준)
+    const SHIP_TEX_W_PX = 320;
+    const TAIL_INSET_LEFT_PX  = 10;
+    const TAIL_INSET_RIGHT_PX = 50;
+    const TAIL_SNUG_PX = 4;
+
+    // 실제 길이 (라벨/게임 계산용)
+    const REAL_LEN_MOON = 1737_000; // m
+    const REAL_LEN_SHIP = 100;      // m
+
+    /* ================= 별 + 꼬리 ================= */
+    const N=900, spreadX=2200, spreadY=1200, spreadZ=2500;
+    const starPos=new Float32Array(N*3);
+    for(let i=0;i<N;i++){
+      starPos[3*i  ]=(Math.random()*2-1)*spreadX;
+      starPos[3*i+1]=(Math.random()*2-1)*spreadY;
+      starPos[3*i+2]=-(Math.random())*spreadZ;
+    }
+    const starGeo=new THREE.BufferGeometry();
+    starGeo.setAttribute('position',new THREE.BufferAttribute(starPos,3));
+    const stars=new THREE.Points(
+      starGeo,
+      new THREE.PointsMaterial({color:0xffffff,size:1.8,depthWrite:false})
+    );
+    scene.add(stars);
+
+    const tailGeo=new THREE.BufferGeometry();
+    tailGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(N*6),3));
+    const starTails=new THREE.LineSegments(
+      tailGeo,
+      new THREE.LineBasicMaterial({color:0x88ccff,transparent:true,opacity:0.55})
+    );
+    scene.add(starTails);
+
+    /* ================= 오브젝트 그룹 ================= */
+    const objGroup=new THREE.Group();
+    scene.add(objGroup);
+
+    // 달
+const R = 130;
+
+const moonTex = new THREE.TextureLoader().load(
+  './image/moon.png',
+  () => console.log('moon.png 로드 성공'),
+  undefined,
+  (e) => console.error('moon.png 로드 실패:', e)
+);
+moonTex.colorSpace = THREE.SRGBColorSpace;
+moonTex.minFilter = THREE.LinearFilter;
+moonTex.magFilter = THREE.LinearFilter;
+
+const moonMat = new THREE.MeshBasicMaterial({
+  map: moonTex,
+  transparent: true,
+  side: THREE.DoubleSide,   // ✅ 앞/뒤 다 보이게
+  depthWrite: false
+});
+
+const moonGeo = new THREE.PlaneGeometry(2 * R, 2 * R);
+const moonMesh = new THREE.Mesh(moonGeo, moonMat);
+
+// ✅ 별/꼬리보다 앞에 오게(가끔 묻히는 현상 방지)
+moonMesh.renderOrder = 10;
+moonMesh.position.z = 1;    // 살짝 앞으로
+
+    // 상대 우주선(관찰자와 동일 실루엣 크기)
+    function shipTexture(h="#9ca3af",w="#6b7280",c1="#4a78a8",c2="#1d3557"){
+      const W=320,H=200,cv=document.createElement('canvas');
+      cv.width=W; cv.height=H;
+      const c=cv.getContext('2d');
+
+      c.fillStyle=h; c.strokeStyle="#4b5563"; c.lineWidth=4;
+      c.beginPath();
+      c.moveTo(50,50);
+      c.quadraticCurveTo(180,20,270,80);
+      c.quadraticCurveTo(290,100,270,120);
+      c.quadraticCurveTo(180,180,50,150);
+      c.quadraticCurveTo(30,140,30,100);
+      c.quadraticCurveTo(30,60,50,50);
+      c.closePath();
+      c.fill(); c.stroke();
+
+      c.fillStyle=w; c.strokeStyle="#4b5563"; c.lineWidth=3;
+      c.beginPath();
+      c.moveTo(70,80);
+      c.quadraticCurveTo(90,100,70,120);
+      c.quadraticCurveTo(60,110,60,90);
+      c.closePath();
+      c.fill(); c.stroke();
+
+      c.beginPath();
+      c.moveTo(210,80);
+      c.quadraticCurveTo(230,100,210,120);
+      c.quadraticCurveTo(200,110,200,90);
+      c.closePath();
+      c.fill(); c.stroke();
+
+      const g=c.createRadialGradient(160,100,10,160,100,24);
+      g.addColorStop(0,c1); g.addColorStop(1,c2);
+      c.fillStyle=g;
+      c.strokeStyle='#1e3a5f';
+      c.lineWidth=6;
+      c.beginPath();
+      c.arc(160,100,24,0,Math.PI*2);
+      c.fill(); c.stroke();
+
+      const tex=new THREE.CanvasTexture(cv);
+      tex.colorSpace=THREE.SRGBColorSpace;
+      return tex;
+    }
+    const shipMat=new THREE.MeshBasicMaterial({
+      map:shipTexture(),
+      transparent:true,
+      side:THREE.DoubleSide,
+      depthWrite:false
+    });
+    let shipMesh=new THREE.Mesh(new THREE.PlaneGeometry(1,1),shipMat);
+    function fitShipToObserver(){
+      const s=worldUnitsPerPixel();
+      const w=OBS_W_PX*s;
+      const h=(OBS_W_PX*OBSPECT)*s;
+      shipMesh.geometry.dispose();
+      shipMesh.geometry=new THREE.PlaneGeometry(w,h);
+    }
+    fitShipToObserver();
+
+    // 불꽃 스프라이트
+    function flameTex(){
+      const w=128,h=64,cv=document.createElement('canvas');
+      cv.width=w; cv.height=h;
+      const x=cv.getContext('2d');
+      const g=x.createLinearGradient(0,0,w,0);
+      g.addColorStop(0,"rgba(255,245,157,.95)");
+      g.addColorStop(.4,"rgba(255,183,77,.85)");
+      g.addColorStop(1,"rgba(255,82,82,0)");
+      x.fillStyle=g;
+      x.beginPath();
+      x.moveTo(w, h/2);
+      x.lineTo(0, 0);
+      x.lineTo(0, h);
+      x.closePath();
+      x.fill();
+      const t=new THREE.CanvasTexture(cv);
+      t.colorSpace=THREE.SRGBColorSpace;
+      t.minFilter=t.magFilter=THREE.LinearFilter;
+      return t;
+    }
+    const flame=new THREE.Sprite(new THREE.SpriteMaterial({
+      map:flameTex(),
+      transparent:true,
+      blending:THREE.AdditiveBlending,
+      opacity:.85,
+      depthWrite:false
+    }));
+    flame.visible=false;
+    scene.add(flame);
+
+    /* ================= 길이 바 + 라벨 ================= */
+    const barGroup=new THREE.Group();
+    scene.add(barGroup);
+
+    const bar=(color,op,h)=>new THREE.Mesh(
+      new THREE.PlaneGeometry(1,h),
+      new THREE.MeshBasicMaterial({color,transparent:true,opacity:op,depthWrite:false})
+    );
+    const barMax   = bar(0x6aa2ff,.35,6); // L0
+    const barCur   = bar(0x23f0b6,.85,4); // 현재 L
+    const barTarget= bar(0xf97316,.95,3); // 목표 L (주황색)
+    barCur.position.y   = 0;
+    barMax.position.y   = 6;
+    barTarget.position.y= 3;
+
+    barGroup.add(barMax,barCur,barTarget);
+
+    const makeLabel=text=>{
+      const size=42,pad=8,cv=document.createElement('canvas'),ctx=cv.getContext('2d');
+      ctx.font=`${size}px ui-monospace,Menlo,Consolas,monospace`;
+      const w=Math.ceil(ctx.measureText(text).width)+pad*2,h=size+pad*2;
+      cv.width=w; cv.height=h;
+      ctx.font=`${size}px ui-monospace,Menlo,Consolas,monospace`;
+      ctx.shadowColor='rgba(0,0,0,.7)';
+      ctx.shadowBlur=8;
+      ctx.fillStyle='#eaf2ff';
+      ctx.textBaseline='top';
+      ctx.fillText(text,pad,pad);
+      const tex=new THREE.CanvasTexture(cv);
+      tex.colorSpace=THREE.SRGBColorSpace;
+      const spr=new THREE.Sprite(new THREE.SpriteMaterial({
+        map:tex,transparent:true,depthWrite:false
+      }));
+      spr.scale.set(w*.5,h*.5,1);
+      spr.renderOrder=6;
+      return spr;
+    };
+    const setLabel=(spr,text)=>{
+      const size=42,pad=8,cv=document.createElement('canvas'),ctx=cv.getContext('2d');
+      ctx.font=`${size}px ui-monospace,Menlo,Consolas,monospace`;
+      const w=Math.ceil(ctx.measureText(text).width)+pad*2,h=size+pad*2;
+      cv.width=w; cv.height=h;
+      ctx.font=`${size}px ui-monospace,Menlo,Consolas,monospace`;
+      ctx.shadowColor='rgba(0,0,0,.7)';
+      ctx.shadowBlur=8;
+      ctx.fillStyle='#eaf2ff';
+      ctx.textBaseline='top';
+      ctx.fillText(text,pad,pad);
+      const tex=new THREE.CanvasTexture(cv);
+      spr.material.map=tex;
+      spr.material.needsUpdate=true;
+      spr.scale.set(w*.5,h*.5,1);
+    };
+    const labelMax=makeLabel('L₀');
+    const labelCur=makeLabel('L');
+    barGroup.add(labelMax,labelCur);
+
+    // v_rel HUD(우주선 아래)
+    const vHud=makeLabel('v_rel = 0.000 c');
+    scene.add(vHud);
+    function updateVHud(){
+      const y=objGroup.position.y - baseH()/2 - 26;
+      vHud.position.set(objGroup.position.x,y,objGroup.position.z+1.2);
+      vHud.visible=(sel.value==='ship');
+    }
+
+    /* ================= UI 요소 ================= */
+    const sel=$('#objType');
+    const sObs=$('#speedObs');
+    const sObj=$('#speedObj');
+    const tV1=$('#valV1');
+    const tV2=$('#valV2');
+    const tVrel=$('#valVrel');
+    const tG=$('#valGamma');
+    const tR=$('#valRatio');
+
+    document.querySelectorAll('.btn[data-b1]').forEach(b=>{
+      b.addEventListener('click',()=>{
+        sObs.value=b.dataset.b1;
+        updateAll();
+      });
+    });
+
+    let v1=parseFloat(sObs.value),
+        v2=parseFloat(sObj.value),
+        vRel=0,
+        Lratio=1;
+
+    const baseLenX=()=> sel.value==='moon' ? 2*R : shipMesh.geometry.parameters.width;
+    const baseH   =()=> sel.value==='moon' ? 2*R : shipMesh.geometry.parameters.height;
+
+    function resetObjectPosition(){
+      objGroup.position.set(300,-20,0);
+    }
+
+    function applySelection(){
+      const moon=sel.value==='moon';
+      if(moon){
+        sObj.value="0.00";
+        sObj.disabled=true;
+        if(!moonMesh.parent) objGroup.add(moonMesh);
+        if(shipMesh.parent) objGroup.remove(shipMesh);
+        moonMesh.visible=true;
+        flame.visible=false;
+        vHud.visible=false;
+      }else{
+        sObj.disabled=false;
+        if(moonMesh.parent) objGroup.remove(moonMesh);
+        if(!shipMesh.parent) objGroup.add(shipMesh);
+        shipMesh.visible=true;
+        vHud.visible=true;
+      }
+    }
+
+    function recalc(){
+      v1=parseFloat(sObs.value);
+      v2=(sel.value==='moon')?0:parseFloat(sObj.value);
+
+      vRel=clamp((v2-v1)/(1-v2*v1),-0.999999,0.999999);
+      const gamma=gammaOf(vRel);
+      Lratio=1/gamma;
+
+      tV1.textContent=v1.toFixed(2);
+      tV2.textContent=v2.toFixed(2);
+      tVrel.textContent=vRel.toFixed(3);
+      tG.textContent=gamma.toFixed(3);
+      tR.textContent=Lratio.toFixed(3);
+
+      setLabel(vHud,`v_rel = ${vRel.toFixed(3)} c`);
+    }
+
+    function applyTransform(){
+      objGroup.scale.set(Lratio,1,Lratio);
+    }
+
+    /* ========= 게임 상태 (길이수축 도전) ========= */
+    const elRound = document.getElementById('cb-round');
+    const elScore = document.getElementById('cb-score');
+    const elBest  = document.getElementById('cb-best');
+    const elMsg   = document.getElementById('cb-msg');
+    const btnStart= document.getElementById('cb-start');
+    const btnSubmit=document.getElementById('cb-submit');
+
+    let gameOn       = false;
+    let currentRound = 0;   // 1~10
+    let score        = 0;
+    let bestScore    = 0;
+    let targetRatio  = 1;   // 목표 L/L0
+    const RATIO_TOL  = 0.02; // ±2% 허용
+
+    function updateBestScoreUI(animate=false){
+      if(!elBest) return;
+      elBest.textContent = bestScore;
+      const badge = document.querySelector('.challenge-box .best-badge');
+      if(animate && badge){
+        badge.classList.remove('best-bump');
+        void badge.offsetWidth;  // reflow
+        badge.classList.add('best-bump');
+      }
+    }
+
+    // Firebase에서 불러온 최고점수 반영용
+    window.setBestScoreFromFirebase = function(scoreFromDb){
+      bestScore = Number(scoreFromDb) || 0;
+      updateBestScoreUI(false);
+    };
+
+    function resetGameUI(){
+      currentRound = 0;
+      score = 0;
+      elRound.textContent = '-';
+      elScore.textContent = '0';
+      elMsg.innerHTML =
+        '상대속도를 조절해<br/>길이 안내 바에서<br>주황색 목표 길이에 맞춰 보세요.'+
+        '<small>※ 정답일 때만 제출! / 라운드당 +50점, 총 10라운드</small>';
+      targetRatio = 1;
+      resetObjectPosition();
+    }
+
+    function startGame(){
+      score = 0;
+      currentRound = 1;
+      gameOn = true;
+      elScore.textContent = '0';
+      resetObjectPosition();
+      setupRound();
+    }
+
+function setupRound(){
+  elRound.textContent = currentRound + '/10';
+  resetObjectPosition();
+
+  if(currentRound <= 5){
+    // === 1~5 : 보름달 라운드 (그대로 유지) ===
+    sel.value = 'moon';
+    sObj.value = "0.00";
+    sObj.disabled = true;
+    sObs.disabled = false;
+    sObs.value = "0.00";
+    updateAll();
+
+    let beta;
+    if(currentRound <= 3){
+      beta = sampleBeta(0.3,0.7);   // 0.3~0.7c
+    }else{
+      beta = sampleBeta(0.7,0.97);  // 0.7~0.97c
+    }
+    const gamma = 1/Math.sqrt(1-beta*beta);
+    targetRatio = 1/gamma;
+
+    elMsg.innerHTML =
+      '보름달의 고유 길이 L₀가 주어진 상태에서<br>'+
+      '길이 안내 바 위의 <span style="color:#fb923c;font-weight:700;">주황색 목표 길이</span>에<br>'+
+      '현재 길이 L이 겹치도록 v₁을 조절한 뒤<br><b>정답 제출</b>을 누르세요.';
+  
+  } else {
+    // === 6~10 : 전부 우주선 라운드 ===
+    sel.value = 'ship';
+    sObj.disabled = false;
+    sObs.disabled = false;
+
+    let v2target, vRelTarget, v1target;
+
+    // 6~8 : 중~상 정도 속도, 9~10 : 아주 큰 상대속도
+    for(let tries=0; tries<200; tries++){
+      if(currentRound <= 8){
+        // 6~8 라운드
+        v2target = sampleBeta(0.3,0.7);              // 우주선 자체 속도
+        const sign = Math.random()<0.5 ? -1 : 1;
+        vRelTarget = sign * sampleBeta(0.4,0.8);     // 상대속도
+      }else{
+        // 9~10 라운드 (더 빡세게)
+        v2target = sampleBeta(0.4,0.9);
+        const sign = Math.random()<0.5 ? -1 : 1;
+        vRelTarget = sign * sampleBeta(0.6,0.97);
+      }
+
+      v1target = (v2target - vRelTarget)/(1 - vRelTarget*v2target);
+      if(v1target>=0 && v1target<=0.99) break;
+    }
+
+    sObj.value = v2target.toFixed(2);
+    sObs.value = "0.00";
+    updateAll();
+
+    const gamma = 1/Math.sqrt(1-vRelTarget*vRelTarget);
+    targetRatio = 1/gamma;
+
+    elMsg.innerHTML =
+      `우주선 속도 v₂ = <b>${v2target.toFixed(2)}c</b> 로 고정된 상태에서,<br>`+
+      '관측 길이 L이 <span style="color:#fb923c;font-weight:700;">주황색 목표 바</span>와<br>'+
+      '겹치도록 v₁을 조절한 뒤 <b>정답 제출</b>을 누르세요.';
+  }
+
+  updateBars();
+}
+
+    function finishRound(){
+      score += 50;
+      elScore.textContent = score.toString();
+
+      // 최고점수 갱신
+      if(score > bestScore){
+        bestScore = score;
+        updateBestScoreUI(true);
+        if(window.saveBestScoreToFirebase){
+          window.saveBestScoreToFirebase(bestScore);
+        }
+      }else{
+        updateBestScoreUI(false);
+      }
+
+      if(currentRound >= 10){
+        gameOn = false;
+        elMsg.innerHTML =
+          `🎉 모든 라운드 성공!<br><b>${score}점</b>을 달성했습니다.`;
+        targetRatio = 1;
+        updateBars();
+        resetObjectPosition();
+      }else{
+        elMsg.innerHTML = '✅ 정답! 곧 다음 라운드가 시작됩니다.';
+        setTimeout(()=>{
+          currentRound++;
+          setupRound();
+        },800);
+      }
+    }
+
+    function isCorrectNow(){
+      return Math.abs(Lratio - targetRatio) < RATIO_TOL;
+    }
+
+    function submitAnswer(){
+      if(!gameOn || currentRound===0){
+        elMsg.innerHTML =
+          '먼저 <b>도전</b> 버튼을 눌러<br>라운드를 시작해 주세요.';
+        return;
+      }
+      if(isCorrectNow()){
+        finishRound();
+      }else{
+        elMsg.innerHTML =
+          '❌ 아직 <span style="color:#fb923c;font-weight:700;">주황색 목표 길이</span>와 다릅니다.<br>'+
+          '슬라이더를 더 조절한 뒤 다시 제출해 보세요.';
+      }
+    }
+
+    btnStart.addEventListener('click', startGame);
+    btnSubmit.addEventListener('click', submitAnswer);
+
+    /* ================= 바 / 우주선 / HUD 업데이트 ================= */
+    function updateBars(){
+      const L0_screen = baseLenX();
+      const L_screen  = L0_screen * Lratio;
+      const L_target  = L0_screen * targetRatio;
+
+      barMax.scale.set(L0_screen,1,1);
+      barCur.scale.set(L_screen,1,1);
+      barTarget.scale.set(L_target,1,1);
+
+      const y = objGroup.position.y + baseH()/2 + 24;
+      barGroup.position.set(objGroup.position.x,y,objGroup.position.z+1);
+
+      // 목표 바는 게임 중일 때만 표시
+      barTarget.visible = gameOn && currentRound>0;
+
+      const realL0 = (sel.value==='moon') ? REAL_LEN_MOON : REAL_LEN_SHIP;
+      const realL  = realL0 * Lratio;
+
+      setLabel(labelMax, `L₀ = ${realL0.toLocaleString()} m`);
+      labelMax.position.set(0,18,0);
+
+      setLabel(labelCur, `L = ${realL.toFixed(1)} m`);
+      labelCur.position.set(0,-14,0);
+    }
+
+    function updateShipAndFlame(){
+      if (sel.value !== 'ship' || !shipMesh.visible) {
+        flame.visible = false;
+        return;
+      }
+
+      const movingLeft  = v2 <  0.0005;
+      const movingRight = v2 > -0.0005;
+
+      if (movingLeft) {
+        shipMat.map.repeat.x = -1;
+        shipMat.map.offset.x = 1;
+      } else {
+        shipMat.map.repeat.x =  1;
+        shipMat.map.offset.x = 0;
+      }
+      shipMat.needsUpdate = true;
+
+      const w = shipMesh.geometry.parameters.width * Lratio;
+      const h = shipMesh.geometry.parameters.height;
+
+      flame.visible = Math.abs(v2) > 0.005;
+      if (!flame.visible) return;
+
+      const baseLen = 0.22 * w;
+      const speed   = Math.abs(v2);
+      const pulse   = 1 + 0.18 * Math.sin(performance.now()*0.015);
+      const len     = baseLen * (0.3 + 0.9*speed) * pulse;
+      flame.scale.set(len, h*0.45, 1);
+
+      const insetL = (TAIL_INSET_LEFT_PX  - TAIL_SNUG_PX)  / SHIP_TEX_W_PX * w;
+      const insetR = (TAIL_INSET_RIGHT_PX - TAIL_SNUG_PX) / SHIP_TEX_W_PX * w;
+
+      if (movingLeft) {
+        flame.center.set(0, 0.5);
+        flame.material.rotation = 0;
+        const tailX = objGroup.position.x + (w/2) - insetR;
+        flame.position.set(tailX, objGroup.position.y, objGroup.position.z + 0.02);
+      }else{
+        flame.center.set(1, 0.5);
+        flame.material.rotation = Math.PI;
+        const tailX = objGroup.position.x - (w/2) + insetL;
+        flame.position.set(tailX, objGroup.position.y, objGroup.position.z + 0.02);
+      }
+      flame.material.needsUpdate = true;
+    }
+
+    function updateAll(){
+      applySelection();
+      if(sel.value==='ship') fitShipToObserver();
+      recalc();
+      applyTransform();
+      updateBars();
+      updateShipAndFlame();
+      updateVHud();
+    }
+
+    sObs.addEventListener('input',updateAll);
+    sObj.addEventListener('input',updateAll);
+    sel.addEventListener('change',updateAll);
+    updateAll();
+    resetGameUI();
+
+    addEventListener('resize',()=>{
+      renderer.setSize(innerWidth,innerHeight);
+      camera.aspect=innerWidth/innerHeight;
+      camera.updateProjectionMatrix();
+      fitShipToObserver();
+      updateBars();
+      updateVHud();
+    });
+
+    /* ================= 렌더 루프 ================= */
+    let last=performance.now();
+    function tick(now){
+      const dt=Math.min(.05,(now-last)/1000);
+      last=now;
+
+      const vRelX=-vRel;
+      objGroup.position.x -= vRelX * 180 * dt;
+
+      const halfW=Math.tan((camera.fov*Math.PI/180)/2)*camera.position.z*camera.aspect;
+      const rx=baseLenX()/2*Lratio;
+      const m=40;
+      if(objGroup.position.x < -halfW-rx-m) objGroup.position.x= halfW+rx+m;
+      else if(objGroup.position.x> halfW+rx+m) objGroup.position.x=-halfW-rx-m;
+
+      updateBars();
+      updateShipAndFlame();
+      updateVHud();
+
+      const pos=stars.geometry.attributes.position.array;
+      const tail=starTails.geometry.attributes.position.array;
+      const vx=v1*400*dt;
+      const tailL=v1*110;
+      for(let i=0;i<N;i++){
+        const ix=3*i,jx=6*i;
+        pos[ix]-=vx;
+        if(pos[ix]<-spreadX) pos[ix]=spreadX;
+        tail[jx  ]=pos[ix];
+        tail[jx+1]=pos[ix+1];
+        tail[jx+2]=pos[ix+2];
+        tail[jx+3]=pos[ix]+tailL;
+        tail[jx+4]=pos[ix+1];
+        tail[jx+5]=pos[ix+2];
+      }
+      stars.geometry.attributes.position.needsUpdate=true;
+      starTails.geometry.attributes.position.needsUpdate=true;
+
+      renderer.render(scene,camera);
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    resetObjectPosition();
+  })();
+</script>
+
+<!-- ===== Firebase 점수 연동 (상대성이론 길이수축 게임) ===== -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
+    authDomain: "simulation-67cd3.firebaseapp.com",
+    projectId: "simulation-67cd3",
+    storageBucket: "simulation-67cd3.appspot.com",
+    messagingSenderId: "615983461615",
+    appId: "1:615983461615:web:002e07bcea878eb6d5571a",
+    measurementId: "G-9RGN7LYE5W"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const SIM_ID = "상대성이론_길이수축";
+  let firebaseUser = null;
+
+  async function saveBestScore(score) {
+    if (!firebaseUser) return;
+    try {
+      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+      await setDoc(ref, { score: Number(score) || 0 }, { merge: true });
+    } catch (err) {
+      console.error("[상대성이론] 최고 점수 저장 오류:", err);
+    }
+  }
+
+  async function loadBestScore() {
+    if (!firebaseUser) return;
+    try {
+      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const data = snap.data();
+        const score = Number(data.score || 0) || 0;
+        if (window.setBestScoreFromFirebase) {
+          window.setBestScoreFromFirebase(score);
+        }
+      }
+    } catch (err) {
+      console.error("[상대성이론] 최고 점수 불러오기 오류:", err);
+    }
+  }
+
+  window.saveBestScoreToFirebase = saveBestScore;
+
+  onAuthStateChanged(auth, async (user) => {
+    firebaseUser = user;
+    if (user) {
+      await loadBestScore();
+    }
+  });
+</script>
+
+</body>
+</html>

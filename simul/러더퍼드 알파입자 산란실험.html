@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>러더퍼드 산란 실험 (Final Edu v2)</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent-color: #00ffff;
+            --gold-color: #ffd700;
+            --danger-color: #ff4444;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
+            height: 100%;
+        }
+
+        /* 왼쪽: 미시적 화면 */
+        .main-view {
+            flex: 2;
+            position: relative;
+            border-right: 1px solid #333;
+            background-color: #000;
+        }
+
+        canvas#microCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .info-overlay {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            pointer-events: none;
+        }
+        .title-label {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 6px 12px;
+            border-left: 4px solid var(--gold-color);
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+        .stats-box {
+            background: rgba(0, 0, 0, 0.85);
+            padding: 12px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            width: 230px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .val { font-weight: bold; font-family: 'Courier New', monospace; font-size: 1rem;}
+        .gold-text { color: var(--gold-color); }
+
+        /* 오른쪽: 사이드 패널 */
+        .side-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--panel-bg);
+            min-width: 350px;
+            border-left: 1px solid #333;
+        }
+
+        .macro-view {
+            flex: 1;
+            position: relative;
+            border-bottom: 1px solid #444;
+            background: #181818;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas#macroCanvas { width: 100%; height: 100%; display: block;}
+
+        .stats-view {
+            height: 180px; 
+            padding: 15px;
+            border-bottom: 1px solid #444;
+            background: #222;
+        }
+        canvas#histoCanvas { width: 100%; height: 100%; display: block;}
+
+        .controls {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .control-group label {
+            display: block; margin-bottom: 10px; font-size: 0.9rem; color: #ccc;
+        }
+        input[type="range"] { width: 100%; cursor: pointer; }
+
+        .checkbox-wrapper {
+            display: flex; align-items: center; font-size: 0.95rem;
+            cursor: pointer;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+        }
+        .checkbox-wrapper input { margin-right: 12px; transform: scale(1.2); }
+
+        .edu-note {
+            background: rgba(255, 215, 0, 0.1); 
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #ddd;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .edu-note strong { 
+            color: var(--gold-color); 
+            font-size: 1.05rem;
+            display: block;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(255,215,0,0.2);
+            padding-bottom: 5px;
+        }
+        .highlight {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            .container { flex-direction: column; }
+            .main-view { flex: 1.5; border-right: none; border-bottom: 1px solid #333; }
+            .side-panel { flex: 1; min-width: auto; }
+            .macro-view { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="main-view">
+        <canvas id="microCanvas"></canvas>
+        <div class="info-overlay">
+            <div class="title-label">View A: 금 원자핵 충돌</div>
+            <div class="stats-box">
+                <div class="stat-row"><span>총 발사된 입자:</span> <span id="totalCount" class="val">0</span></div>
+                <div class="stat-row"><span>직진/미세산란:</span> <span id="forwardCount" class="val">0</span></div>
+                <div class="stat-row"><span class="gold-text">후방 산란(>90°):</span> <span id="backCount" class="val gold-text">0</span></div>
+                <div style="border-top:1px solid #555; margin-top:8px; padding-top:8px; text-align:right;">
+                    실시간 산란 확률: <span id="ratioVal" style="color:var(--accent-color); font-weight:bold;">0.000</span>%
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="macro-view">
+            <div style="position:absolute; top:10px; left:10px; color:#888; font-size:0.8rem;">View B: 검출 스크린 (0° 포함)</div>
+            <canvas id="macroCanvas"></canvas>
+        </div>
+
+        <div class="stats-view">
+            <div style="font-size: 0.9rem; margin-bottom: 5px; color:#fff; display:flex; justify-content:space-between;">
+                <span>산란각 분포 (로그 스케일)</span>
+                <span style="font-size:0.75rem; color:#aaa;">*세로축: 입자 수(누적)</span>
+            </div>
+            <canvas id="histoCanvas"></canvas>
+        </div>
+
+        <div class="controls">
+            <div class="edu-note">
+                <strong>💡 실제 실험 팩트 (History)</strong>
+                실제 러더퍼드의 실험 데이터에 따르면, 90도 이상 튕겨 나가는 입자는 약 <span class="highlight">8,000개 중 1개 (0.0125%)</span>에 불과했습니다.<br><br>
+                러더퍼드는 이를 두고 <em>"마치 15인치 포탄을 얇은 종이에 쏘았는데, 튕겨 돌아온 것과 같은 믿을 수 없는 일"</em>이라고 표현했습니다.
+            </div>
+
+            <div class="control-group">
+                <label>알파 입자 에너지 (속도): <span id="energyVal" style="color:var(--accent-color); font-weight:bold;">15.0</span></label>
+                <input type="range" id="speedSlider" min="10" max="20" step="0.5" value="15">
+            </div>
+
+            <label class="checkbox-wrapper">
+                <input type="checkbox" id="thomsonCheck">
+                <span>톰슨 모형으로 보기 (원자핵 없음)</span>
+            </label>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 설정 ---
+    const K_COULOMB = 5; 
+    const ALPHA_Q = 2;      
+    const NUCLEUS_Z = 79; // Gold
+    const NUCLEUS_RADIUS = 4;
+    
+    // 기본 속도 15.0 (조절 범위 10 ~ 20)
+    let alphaSpeed = 15.0; 
+    let isThomson = false;
+    let particles = [];
+    let hits = []; 
+    let scatterData = new Array(18).fill(0); 
+    
+    let totalFired = 0;
+    let forwardScattered = 0; 
+    let backScattered = 0;    
+
+    // Canvas Contexts
+    const microCv = document.getElementById('microCanvas');
+    const microCtx = microCv.getContext('2d', { alpha: false });
+    const macroCv = document.getElementById('macroCanvas');
+    const macroCtx = macroCv.getContext('2d', { alpha: false });
+    const histoCv = document.getElementById('histoCanvas');
+    const histoCtx = histoCv.getContext('2d', { alpha: false });
+
+    // UI Elements
+    const elTotal = document.getElementById('totalCount');
+    const elForward = document.getElementById('forwardCount');
+    const elBack = document.getElementById('backCount');
+    const elRatio = document.getElementById('ratioVal');
+
+    function resize() {
+        const p = microCv.parentElement;
+        microCv.width = p.clientWidth;
+        microCv.height = p.clientHeight;
+        
+        const mp = macroCv.parentElement;
+        if(mp) {
+            macroCv.width = mp.clientWidth;
+            macroCv.height = mp.clientHeight;
+        }
+
+        const hp = histoCv.parentElement;
+        histoCv.width = hp.clientWidth;
+        histoCv.height = hp.clientHeight;
+    }
+    window.addEventListener('resize', resize);
+    setTimeout(resize, 100);
+
+    class Particle {
+        constructor() {
+            this.reset();
+        }
+
+        reset() {
+            this.x = -10; 
+            // 빔 생성 위치: 화면 전체 높이 (균등 분포)
+            this.y = Math.random() * microCv.height; 
+            this.vx = alphaSpeed;
+            this.vy = 0;
+            
+            this.trail = [];
+            this.historyLength = 30; 
+            this.dead = false;
+            
+            this.color = '#00ffff'; 
+            
+            totalFired++;
+            if(totalFired % 30 === 0) updateStatsUI();
+        }
+
+        update() {
+            if (this.dead) return;
+
+            // 최대 속도가 20으로 줄었으므로 subSteps 20이면 충분히 안전
+            const subSteps = 20; 
+            const dt = 1 / subSteps;
+
+            for (let i = 0; i < subSteps; i++) {
+                if (!isThomson) {
+                    const dx = this.x - microCv.width / 2;
+                    const dy = this.y - microCv.height / 2;
+                    const distSq = dx * dx + dy * dy;
+                    
+                    if (distSq < 2500) { 
+                        const dist = Math.sqrt(distSq);
+                        const safeDistSq = Math.max(distSq, NUCLEUS_RADIUS * NUCLEUS_RADIUS);
+                        const forceMag = (K_COULOMB * NUCLEUS_Z * ALPHA_Q) / safeDistSq;
+                        this.vx += (forceMag * (dx / dist)) * dt;
+                        this.vy += (forceMag * (dy / dist)) * dt;
+                    }
+                }
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+            }
+
+            this.trail.push({x: this.x, y: this.y});
+            if (this.trail.length > this.historyLength) this.trail.shift();
+
+            if (this.x < -50 || this.x > microCv.width + 50 || 
+                this.y < -50 || this.y > microCv.height + 50) {
+                this.finalize();
+            }
+        }
+
+        draw(ctx) {
+            if (this.dead) return;
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x - 1, this.y - 1, 2, 2); 
+            if (this.trail.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                for (let i = 1; i < this.trail.length; i++) {
+                    ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                }
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+
+        finalize() {
+            this.dead = true;
+            
+            const speed = Math.sqrt(this.vx*this.vx + this.vy*this.vy);
+            let angleRad = Math.acos(this.vx / speed);
+            let angleDeg = Math.abs(angleRad * 180 / Math.PI);
+            if (isNaN(angleDeg)) angleDeg = 0;
+
+            const bucketIndex = Math.min(Math.floor(angleDeg / 10), 17);
+            scatterData[bucketIndex]++;
+            
+            // View B 검출 로직
+            const macroAngle = Math.atan2(this.vy, this.vx);
+            const cx = macroCv.width / 2;
+            const cy = macroCv.height / 2;
+            const radius = Math.min(macroCv.width, macroCv.height) / 2 * 0.85;
+
+            let color = '#444'; 
+
+            if (angleDeg > 90) { 
+                backScattered++;
+                color = '#ffcc00'; // Gold
+                hits.push({x: cx + Math.cos(macroAngle) * radius, y: cy + Math.sin(macroAngle) * radius, life: 80, color: color, size: 5});
+            } else if (angleDeg > 5) {
+                forwardScattered++;
+                color = '#ff4444'; // Red
+                hits.push({x: cx + Math.cos(macroAngle) * radius, y: cy + Math.sin(macroAngle) * radius, life: 40, color: color, size: 3});
+            } else {
+                // 0도 검출: 청록색 작은 점
+                color = '#00ffff'; 
+                hits.push({x: cx + Math.cos(macroAngle) * radius, y: cy + Math.sin(macroAngle) * radius, life: 10, color: color, size: 1.5});
+            }
+
+            updateStatsUI();
+            
+            const idx = particles.indexOf(this);
+            if (idx > -1) particles.splice(idx, 1);
+        }
+    }
+
+    function updateStatsUI() {
+        elTotal.innerText = totalFired.toLocaleString();
+        elForward.innerText = (totalFired - backScattered).toLocaleString(); 
+        elBack.innerText = backScattered.toLocaleString();
+        const ratio = totalFired > 0 ? (backScattered / totalFired * 100).toFixed(3) : "0.000";
+        elRatio.innerText = ratio;
+    }
+
+    function drawHistogram() {
+        histoCtx.fillStyle = '#222';
+        histoCtx.fillRect(0, 0, histoCv.width, histoCv.height);
+        
+        const barWidth = histoCv.width / 18;
+        const bottomMargin = 20;
+        const topMargin = 20;
+        const drawHeight = histoCv.height - bottomMargin - topMargin;
+        
+        let maxVal = Math.max(...scatterData, 1);
+        
+        for (let i = 0; i < 18; i++) {
+            let count = scatterData[i];
+            let x = i * barWidth;
+            let h = 0;
+            if(count > 0) {
+                // 로그 스케일
+                h = (Math.log10(count + 1) / Math.log10(maxVal + 1)) * drawHeight;
+                if (h < 2) h = 2;
+            }
+            let y = histoCv.height - bottomMargin - h;
+
+            // 막대 색상
+            if (i >= 9) histoCtx.fillStyle = '#ffcc00'; 
+            else if (i > 0) histoCtx.fillStyle = '#ff4444'; 
+            else histoCtx.fillStyle = '#444'; 
+
+            histoCtx.fillRect(x + 2, y, barWidth - 4, h);
+            
+            // 숫자 표시
+            if (count > 0) {
+                histoCtx.fillStyle = '#fff';
+                histoCtx.font = '10px monospace';
+                histoCtx.textAlign = 'center';
+                
+                let textY = y - 4;
+                if (textY < 10) textY = y + 12;
+
+                let textStr = count.toString();
+                if(count >= 100000) textStr = (count/1000).toFixed(0) + 'k';
+                
+                histoCtx.fillText(textStr, x + barWidth/2, textY);
+            }
+
+            // 각도 라벨
+            if (i % 3 === 0) {
+                histoCtx.fillStyle = '#888';
+                histoCtx.font = '10px sans-serif';
+                histoCtx.textAlign = 'center';
+                histoCtx.fillText(i*10 + "°", x + barWidth/2, histoCv.height - 5);
+            }
+        }
+    }
+
+    function loop() {
+        microCtx.fillStyle = '#000000';
+        microCtx.fillRect(0, 0, microCv.width, microCv.height);
+
+        const cx = microCv.width / 2;
+        const cy = microCv.height / 2;
+
+        if (!isThomson) {
+            microCtx.fillStyle = '#ffcc00';
+            microCtx.beginPath();
+            microCtx.arc(cx, cy, NUCLEUS_RADIUS, 0, Math.PI * 2);
+            microCtx.fill();
+            microCtx.strokeStyle = '#333';
+            microCtx.beginPath();
+            microCtx.arc(cx, cy, 50, 0, Math.PI * 2);
+            microCtx.stroke();
+        } else {
+            microCtx.strokeStyle = '#522';
+            microCtx.beginPath();
+            microCtx.arc(cx, cy, 80, 0, Math.PI * 2);
+            microCtx.stroke();
+            microCtx.fillStyle = 'rgba(100,0,0,0.2)';
+            microCtx.fill();
+        }
+
+        if (particles.length < 50) { 
+            if(Math.random() < 0.5) particles.push(new Particle());
+        }
+
+        particles.forEach(p => {
+            p.update();
+            p.draw(microCtx);
+        });
+
+        // View B Draw
+        macroCtx.fillStyle = '#181818';
+        macroCtx.fillRect(0, 0, macroCv.width, macroCv.height);
+        
+        const mcx = macroCv.width / 2;
+        const mcy = macroCv.height / 2;
+        const mRadius = Math.min(macroCv.width, macroCv.height) / 2 * 0.85;
+
+        macroCtx.strokeStyle = '#333';
+        macroCtx.lineWidth = 1;
+        macroCtx.beginPath();
+        macroCtx.arc(mcx, mcy, mRadius, 0, Math.PI * 2);
+        macroCtx.stroke();
+        
+        macroCtx.fillStyle = '#ffcc00';
+        macroCtx.fillRect(mcx - 2, mcy - 2, 4, 4);
+
+        for (let i = hits.length - 1; i >= 0; i--) {
+            const h = hits[i];
+            macroCtx.fillStyle = h.color;
+            macroCtx.beginPath();
+            macroCtx.arc(h.x, h.y, h.size, 0, Math.PI * 2);
+            macroCtx.fill();
+            h.life--;
+            if (h.life <= 0) hits.splice(i, 1);
+        }
+
+        drawHistogram();
+        requestAnimationFrame(loop);
+    }
+
+    document.getElementById('speedSlider').addEventListener('input', (e) => {
+        alphaSpeed = parseFloat(e.target.value);
+        document.getElementById('energyVal').innerText = alphaSpeed.toFixed(1);
+    });
+
+    document.getElementById('thomsonCheck').addEventListener('change', (e) => {
+        isThomson = e.target.checked;
+        scatterData.fill(0);
+        totalFired = 0;
+        forwardScattered = 0;
+        backScattered = 0;
+        updateStatsUI();
+    });
+
+    loop();
+</script>
+</body>
+</html>

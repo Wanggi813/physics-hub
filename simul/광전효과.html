@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>광전효과 </title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg:#f9fafb;
+      --card:#ffffff;
+      --border:#e5e7eb;
+      --ink:#0f172a;
+      --muted:#6b7280;
+      --accent:#22c55e;
+      --accent-soft:#bbf7d0;
+      --accent-blue:#38bdf8;
+      --accent-yellow:#facc15;
+      --accent-red:#f97373;
+    }
+    *{box-sizing:border-box;}
+    html,body{
+      margin:0;
+      padding:0;
+      background:
+        radial-gradient(circle at top,#dbeafe 0,#f9fafb 55%);
+      color:var(--ink);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",system-ui,sans-serif;
+    }
+    .wrap{
+      max-width:1200px;
+      margin:20px auto 40px;
+      padding:0 16px;
+    }
+    h1{
+      margin:0 0 4px;
+      font-size:24px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    h1 span.badge{
+      font-size:11px;
+      padding:3px 8px;
+      border-radius:999px;
+      background:rgba(59,130,246,0.06);
+      border:1px solid rgba(59,130,246,0.25);
+      color:#1d4ed8;
+    }
+    .subtitle{
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:14px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:minmax(260px,340px) minmax(480px,1fr);
+      gap:16px;
+      align-items:start;
+    }
+    .panel,.card{
+      background:var(--card);
+      border-radius:18px;
+      border:1px solid var(--border);
+      box-shadow:0 18px 40px rgba(15,23,42,0.08);
+      padding:14px 14px 16px;
+    }
+    .panel h2{
+      margin:0 0 6px;
+      font-size:17px;
+    }
+    .row{
+      display:grid;
+      grid-template-columns:100px 1fr 60px;
+      gap:6px;
+      align-items:center;
+      margin:6px 0;
+    }
+    .row label{
+      font-size:12px;
+      color:var(--muted);
+    }
+    input[type="range"]{
+      width:100%;
+    }
+    select,
+    .out{
+      font-size:12px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      padding:5px 7px;
+      background:#f9fafb;
+      color:var(--ink);
+      text-align:center;
+      font-variant-numeric:tabular-nums;
+    }
+    .out{
+      background:#eff6ff;
+      color:#1d4ed8;
+    }
+    select:focus,
+    input[type="range"]:focus-visible{
+      outline:none;
+      box-shadow:0 0 0 1px rgba(59,130,246,0.5);
+    }
+    .readout{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:6px;
+      margin-top:8px;
+      font-size:11px;
+    }
+    .readout-item{
+      background:#eef2ff;
+      border-radius:12px;
+      padding:5px 8px;
+      border:1px solid #e0e7ff;
+    }
+    .readout-key{
+      color:var(--muted);
+      font-size:10px;
+    }
+    .readout-val{
+      font-weight:600;
+    }
+    .statusChip{
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      padding:4px 9px;
+      border-radius:999px;
+      font-size:11px;
+      margin-top:8px;
+      border:1px solid transparent;
+    }
+    .statusChip.off{
+      background:#f3f4f6;
+      color:#6b7280;
+      border-color:#e5e7eb;
+    }
+    .statusChip.emit{
+      background:#dcfce7;
+      color:#166534;
+      border-color:#86efac;
+    }
+    .statusChip.stop{
+      background:#fee2e2;
+      color:#b91c1c;
+      border-color:#fecaca;
+    }
+
+    #sim-holder{
+      width:100%;
+      min-height:500px;
+    }
+
+    .brand{
+      margin-top:18px;
+      text-align:center;
+      font-size:12px;
+      color:#4b5563;
+      letter-spacing:0.12em;
+      text-transform:uppercase;
+    }
+
+    /* 도전 모드 공용 스타일 */
+    .challenge-group{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px dashed #d4d4d8;
+      background:#faf5ff;
+      font-size:13px;
+    }
+    .challenge-group h3{
+      margin:0 0 6px;
+      font-size:15px;
+    }
+    .chip-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:6px 12px;
+      border-radius:999px;
+      border:1px solid #e5e7eb;
+      background:#ffffff;
+      font-size:12px;
+      cursor:pointer;
+      gap:4px;
+    }
+    .chip-btn:hover{
+      filter:brightness(1.03);
+    }
+    .bestScoreBox{
+      display:flex;
+      align-items:center;
+      gap:4px;
+      font-size:13px;
+      font-weight:600;
+    }
+    .bestLabel{color:#374151;}
+    .bestIcon{
+      font-size:17px;
+      filter:drop-shadow(0 0 4px rgba(255,200,0,0.7));
+    }
+    .bestValue{
+      font-size:18px;
+      font-weight:700;
+      color:#ffb300;
+      text-shadow:0 0 6px rgba(255,190,0,0.8);
+    }
+    .challenge-cond{
+      margin-top:4px;
+      font-size:12px;
+      color:#374151;
+      line-height:1.5;
+    }
+    .challenge-message{
+      margin-top:6px;
+      min-height:18px;
+      font-size:12px;
+      color:#6b7280;
+    }
+    .input-row{
+      margin-top:4px;
+      display:flex;
+      gap:6px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .input-row input[type="number"]{
+      border-radius:999px;
+      border:1px solid #d4d4d8;
+      padding:4px 8px;
+      font-size:12px;
+      width:90px;
+    }
+
+    @media (max-width:860px){
+      .grid{
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>
+    광전효과 시뮬레이션
+    <span class="badge">p5.js · 전자 방출 + I–V 곡선 + 도전 모드</span>
+  </h1>
+  <div class="subtitle">
+    파장·세기·전압을 바꾸면서, 반응이 없을 때도 <b>빛은 계속 들어오고</b>,
+    반응이 있을 때는 전자와 <b>I–V 특성</b>이 함께 나타납니다. 도전 모드에서 개념·계산 문제를 풀어보세요.
+  </div>
+
+  <div class="grid">
+    <!-- 왼쪽: 조작부 -->
+    <div class="panel">
+      <h2>실험 설정</h2>
+
+      <div class="row">
+        <label>금속(φ, eV)</label>
+        <select id="material">
+          <option value="Sodium|2.28" selected>나트륨 (2.28)</option>
+          <option value="Potassium|2.30">칼륨 (2.30)</option>
+          <option value="Cesium|1.90">세슘 (1.90)</option>
+          <option value="Calcium|2.90">칼슘 (2.90)</option>
+          <option value="Aluminum|4.08">알루미늄 (4.08)</option>
+          <option value="Zinc|4.30">아연 (4.30)</option>
+          <option value="Copper|4.70">구리 (4.70)</option>
+        </select>
+        <div class="out" id="phiOut">2.28</div>
+      </div>
+
+      <div class="row">
+        <label>파장 λ (nm)</label>
+        <input id="lambda" type="range" min="200" max="800" step="1" value="500">
+        <div class="out" id="lambdaOut">500</div>
+      </div>
+
+      <div class="row">
+        <label>세기 I (상대)</label>
+        <input id="intensity" type="range" min="0" max="1" step="0.01" value="0.60">
+        <div class="out" id="intensityOut">0.60</div>
+      </div>
+
+      <div class="row">
+        <label>전압 V (V)</label>
+        <input id="voltage" type="range" min="-5" max="5" step="0.1" value="0">
+        <div class="out" id="voltageOut">0.0</div>
+      </div>
+
+      <div class="readout">
+        <div class="readout-item">
+          <div class="readout-key">광자 에너지 E (eV)</div>
+          <div class="readout-val" id="Eev">–</div>
+        </div>
+        <div class="readout-item">
+          <div class="readout-key">문턱 파장 λ₀ (nm)</div>
+          <div class="readout-val" id="lam0">–</div>
+        </div>
+        <div class="readout-item">
+          <div class="readout-key">K<sub>max</sub> (eV)</div>
+          <div class="readout-val" id="Kmax">–</div>
+        </div>
+        <div class="readout-item">
+          <div class="readout-key">정지전압 V<sub>stop</sub> (V)</div>
+          <div class="readout-val" id="Vstop">–</div>
+        </div>
+      </div>
+
+      <div id="statusChip" class="statusChip off">
+        ● 전자 방출 없음
+      </div>
+    </div>
+
+    <!-- 오른쪽: p5.js 시뮬레이션 + I–V 그래프 + 도전 모드 -->
+    <div class="card">
+      <div id="sim-holder"></div>
+
+      <!-- 도전 모드 박스 -->
+      <div class="challenge-group" id="challengeGroup">
+        <h3>도전 모드</h3>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px;">
+          <button id="btnChallenge" class="chip-btn">도전 시작</button>
+          <div style="font-size:12px;color:var(--muted);">총 10라운드 · 정답당 50점</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:4px;font-size:13px;">
+          <div>라운드: <strong><span id="gpRound">-</span> / 10</strong></div>
+          <div>점수: <strong><span id="gpScore">0</span>점</strong></div>
+          <div class="bestScoreBox">
+            <span class="bestLabel">최고점수</span>
+            <span class="bestIcon">🏆</span>
+            <span id="gpBest" class="bestValue">0</span>
+          </div>
+        </div>
+
+        <!-- 1~5라운드: 전류 흐름 / 안 흐름 -->
+        <div id="phase1Box" style="display:none;">
+          <div style="font-size:12px;color:#374151;">
+            [1–5라운드] 주어진 조건에서 <b>광전류가 흐를지, 흐르지 않을지</b> 선택하세요.
+            (이 구간에서는 전자 애니메이션은 표시되지 않습니다.)
+          </div>
+          <div class="challenge-cond" id="phase1Cond"></div>
+          <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="chip-btn" id="btnFlowYes">전류 흐름</button>
+            <button class="chip-btn" id="btnFlowNo">전류 안 흐름</button>
+          </div>
+        </div>
+
+        <!-- 6~10라운드: 정지전압 맞추기 -->
+        <div id="phase2Box" style="display:none;">
+          <div style="font-size:12px;color:#374151;">
+            [6–10라운드] 조건은 항상 <b>전류가 흐르는 상황</b>입니다.<br>
+            아래 조건에서의 <b>정지전압 V<sub>stop</sub></b>을 계산해 입력하세요.
+          </div>
+          <div class="challenge-cond" id="phase2Cond"></div>
+          <div class="input-row">
+            <label style="font-size:12px;">정지전압 추정값:</label>
+            <input type="number" id="ansVstop" step="0.01" />
+            <span style="font-size:12px;">V</span>
+            <button class="chip-btn" id="btnSubmitVstop">정답 제출</button>
+          </div>
+          <div style="margin-top:4px;font-size:11px;color:#6b7280;">
+            6–8라운드: ±0.10 V 이내 정답 · 9–10라운드: ±0.05 V 이내 정답
+          </div>
+        </div>
+
+        <div id="gpMessage" class="challenge-message">
+          도전 모드를 시작하면 문제 유형과 조건이 여기 표시됩니다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="brand">왕왕 물리 시뮬레이션</div>
+</div>
+
+<!-- p5.js -->
+<script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+<script>
+  // ===== DOM + 전역 상태 =====
+  const matSel = document.getElementById('material');
+  const phiOut = document.getElementById('phiOut');
+  const lambdaSlider = document.getElementById('lambda');
+  const lambdaOut = document.getElementById('lambdaOut');
+  const intSlider = document.getElementById('intensity');
+  const intOut = document.getElementById('intensityOut');
+  const volSlider = document.getElementById('voltage');
+  const volOut = document.getElementById('voltageOut');
+  const EevOut = document.getElementById('Eev');
+  const lam0Out = document.getElementById('lam0');
+  const KmaxOut = document.getElementById('Kmax');
+  const VstopOut = document.getElementById('Vstop');
+  const statusChip = document.getElementById('statusChip');
+
+  // 도전 모드 DOM
+  const btnChallenge = document.getElementById('btnChallenge');
+  const gpRoundEl = document.getElementById('gpRound');
+  const gpScoreEl = document.getElementById('gpScore');
+  const gpBestEl  = document.getElementById('gpBest');
+  const gpMessageEl = document.getElementById('gpMessage');
+  const phase1Box = document.getElementById('phase1Box');
+  const phase2Box = document.getElementById('phase2Box');
+  const phase1CondEl = document.getElementById('phase1Cond');
+  const phase2CondEl = document.getElementById('phase2Cond');
+  const btnFlowYes = document.getElementById('btnFlowYes');
+  const btnFlowNo  = document.getElementById('btnFlowNo');
+  const ansVstopEl = document.getElementById('ansVstop');
+  const btnSubmitVstop = document.getElementById('btnSubmitVstop');
+
+  let phi_eV = 2.28;
+  let lambda_nm = 500;
+  let intensity = 0.60;
+  let V = 0;
+
+  // 파티클
+  let electrons = [];
+  let photons = [];
+
+  // 기하
+  let cathX, anodeX, regionTop, regionBottom, gapX;
+
+  // 시간
+  let lastMillis = 0;
+
+  // 상수: E[eV] ≈ 1240 / λ[nm]
+  const h_eV_nm = 1240;
+
+  // 금속 목록 (도전 모드용)
+  const MATERIALS = [
+    { name:'나트륨', key:'Sodium', phi:2.28, value:'Sodium|2.28' },
+    { name:'칼륨',   key:'Potassium', phi:2.30, value:'Potassium|2.30' },
+    { name:'세슘',   key:'Cesium', phi:1.90, value:'Cesium|1.90' },
+    { name:'칼슘',   key:'Calcium', phi:2.90, value:'Calcium|2.90' },
+    { name:'알루미늄', key:'Aluminum', phi:4.08, value:'Aluminum|4.08' },
+    { name:'아연',   key:'Zinc', phi:4.30, value:'Zinc|4.30' },
+    { name:'구리',   key:'Copper', phi:4.70, value:'Copper|4.70' },
+  ];
+
+  // ===== 도전 모드 상태 =====
+  const game = {
+    active:false,
+    round:0,
+    totalRounds:10,
+    score:0,
+    bestScore:Number(localStorage.getItem('photoelectricBestScore') || 0) || 0,
+    phase:0,            // 1: 흐름/안흐름, 2: 정지전압
+    correctFlow:false,  // phase1 정답
+    targetVstop:null,   // phase2 정답
+    hard:false          // 9–10 난이도 플래그
+  };
+  const SCORE_PER_CORRECT = 50;
+
+  function updateScoreUI(){
+    gpRoundEl.textContent = game.active ? game.round : '-';
+    gpScoreEl.textContent = game.score;
+    gpBestEl.textContent  = game.bestScore;
+  }
+  function setMessage(msg, good){
+    gpMessageEl.textContent = msg || '';
+    gpMessageEl.style.color = good ? '#16a34a' : '#6b7280';
+  }
+
+  updateScoreUI();
+
+  // DOM 이벤트
+  matSel.addEventListener('change', () => {
+    const [,phi] = matSel.value.split('|');
+    phi_eV = parseFloat(phi);
+    phiOut.textContent = phi_eV.toFixed(2);
+    resetParticles();
+  });
+
+  lambdaSlider.addEventListener('input', () => {
+    lambda_nm = parseFloat(lambdaSlider.value);
+    lambdaOut.textContent = lambda_nm.toFixed(0);
+  });
+
+  intSlider.addEventListener('input', () => {
+    intensity = parseFloat(intSlider.value);
+    intOut.textContent = intensity.toFixed(2);
+  });
+
+  volSlider.addEventListener('input', () => {
+    V = parseFloat(volSlider.value);
+    volOut.textContent = V.toFixed(1);
+  });
+
+  function resetParticles(){
+    electrons = [];
+    photons = [];
+  }
+
+  function disableControls(flag){
+    matSel.disabled = flag;
+    lambdaSlider.disabled = flag;
+    intSlider.disabled = flag;
+    volSlider.disabled = flag;
+  }
+
+  // ===== 도전 모드 로직 =====
+  function startChallenge(){
+    game.active = true;
+    game.round = 0;
+    game.score = 0;
+    game.phase = 0;
+    setMessage('도전 모드 시작! 1라운드부터 차근차근 풀어봅시다.', false);
+    nextRound();
+  }
+
+  function endChallenge(){
+    setMessage(`도전 종료! 최종 점수는 ${game.score}점입니다.`, true);
+    game.active = false;
+    game.phase = 0;
+    phase1Box.style.display = 'none';
+    phase2Box.style.display = 'none';
+    gpRoundEl.textContent = '-';
+    disableControls(false);
+  }
+
+  function applyScore(isCorrect){
+    if(isCorrect){
+      game.score += SCORE_PER_CORRECT;
+      setMessage(`정답입니다! +${SCORE_PER_CORRECT}점 🎉`, true);
+      if(game.score > game.bestScore){
+        game.bestScore = game.score;
+        localStorage.setItem('photoelectricBestScore', String(game.bestScore));
+        // Firebase 저장(있으면)
+        if(window.saveBestScoreToFirebase){
+          try{ window.saveBestScoreToFirebase(game.bestScore); }catch(e){}
+        }
+      }
+      updateScoreUI();
+    }else{
+      setMessage('아쉽지만 오답입니다. 다음 라운드로 넘어갑니다.', false);
+    }
+  }
+
+  function nextRound(){
+    if(!game.active) return;
+    if(game.round >= game.totalRounds){
+      endChallenge();
+      return;
+    }
+    game.round++;
+    updateScoreUI();
+
+    if(game.round <= 5){
+      game.phase = 1;
+      setupPhase1Round();
+    }else{
+      game.phase = 2;
+      game.hard = (game.round >= 9); // 9–10은 hard
+      setupPhase2Round();
+    }
+  }
+
+  // 1~5라운드: 전류 흐름 / 안 흐름
+  function setupPhase1Round(){
+    phase2Box.style.display = 'none';
+    phase1Box.style.display = 'block';
+    disableControls(true);
+    // 이 구간에서는 전자 애니메이션 숨기기 위해 electrons 리셋
+    resetParticles();
+
+    // 랜덤 금속 선택
+    const mat = MATERIALS[Math.floor(Math.random()*MATERIALS.length)];
+    matSel.value = mat.value;
+    phi_eV = mat.phi;
+    phiOut.textContent = phi_eV.toFixed(2);
+
+    // 문턱파장
+    const lam0 = h_eV_nm / phi_eV;
+
+    const willFlow = Math.random() < 0.5;
+
+    let lam, I, v;
+    if(willFlow){
+      // 항상 전류 흐르게: λ < λ0, V > -Vstop
+      lam = lam0 * (0.4 + 0.4*Math.random()); // 0.4~0.8 λ0
+      lam = Math.max(200, Math.min(780, lam));
+      const E = h_eV_nm / lam;
+      const Kmax = Math.max(0, E - phi_eV);
+      const Vstop = Kmax;
+      I = 0.4 + 0.6*Math.random();
+      // -0.5 Vstop ~ +1.5 Vstop 사이에서 선택 (항상 > -Vstop)
+      const minV = -0.5*Vstop;
+      const maxV = 1.5*Vstop + 2;
+      v = minV + (maxV-minV)*Math.random();
+    }else{
+      // 전류 안 흐르게: (1) hf<φ or (2) V <= -Vstop
+      if(Math.random()<0.5){
+        // hf < φ
+        lam = lam0 * (1.05 + 0.6*Math.random()); // 문턱보다 긴 파장
+        lam = Math.max(200, Math.min(800, lam));
+        I = 0.4 + 0.6*Math.random();
+        v = -3 + 6*Math.random();
+      }else{
+        // hf>φ 이지만 V <= -Vstop
+        lam = lam0 * (0.4 + 0.4*Math.random());
+        lam = Math.max(200, Math.min(780, lam));
+        const E = h_eV_nm / lam;
+        const Kmax = Math.max(0, E - phi_eV);
+        const Vstop = Kmax;
+        I = 0.4 + 0.6*Math.random();
+        const minV = -1.4*Vstop - 1;
+        const maxV = -1.0*Vstop;
+        v = minV + (maxV-minV)*Math.random();
+      }
+    }
+
+    lambda_nm = lam;
+    lambdaSlider.value = lam.toFixed(0);
+    lambdaOut.textContent = lam.toFixed(0);
+
+    intensity = I;
+    intSlider.value = I.toFixed(2);
+    intOut.textContent = I.toFixed(2);
+
+    V = v;
+    volSlider.value = v.toFixed(1);
+    volOut.textContent = v.toFixed(1);
+
+    // 실제로 currentForVoltage를 이용해 흐름 여부 판정
+    const {Kmax_eV} = computePhysics();
+    const Itest = currentForVoltage(V);
+    const flows = (Kmax_eV>0 && intensity>0 && Itest>0.01);
+    game.correctFlow = flows;
+
+    phase1CondEl.innerHTML =
+      `금속: <b>${mat.name}</b>, 파장: <b>${lambda_nm.toFixed(0)} nm</b>, ` +
+      `세기: <b>${intensity.toFixed(2)}</b>, 전압: <b>${V.toFixed(2)} V</b><br>` +
+      `이때 광전류가 흐를까요?`;
+
+    setMessage('조건을 보고 "전류 흐름 / 전류 안 흐름" 중 하나를 선택하세요.', false);
+  }
+
+  function handlePhase1Answer(choice){
+    if(!game.active || game.phase!==1) return;
+    const isCorrect = (choice === 'flow') === game.correctFlow;
+    applyScore(isCorrect);
+    setTimeout(nextRound, 900);
+  }
+
+  // 6~10라운드: 정지전압 맞추기 (항상 전류가 흐르는 조건)
+  function setupPhase2Round(){
+    phase1Box.style.display = 'none';
+    phase2Box.style.display = 'block';
+    disableControls(true);
+    resetParticles();
+
+    // 랜덤 금속
+    const mat = MATERIALS[Math.floor(Math.random()*MATERIALS.length)];
+    matSel.value = mat.value;
+    phi_eV = mat.phi;
+    phiOut.textContent = phi_eV.toFixed(2);
+
+    const lam0 = h_eV_nm / phi_eV;
+
+    let lam;
+    if(game.hard){
+      // 문턱에 굉장히 가까운 파장 (높은 난이도)
+      lam = lam0 * (0.90 + 0.09*Math.random()); // 0.90~0.99 λ0
+    }else{
+      // 좀 더 여유 (보통 난이도)
+      lam = lam0 * (0.6 + 0.25*Math.random()); // 0.60~0.85 λ0
+    }
+    lam = Math.max(200, Math.min(780, lam));
+
+    lambda_nm = lam;
+    lambdaSlider.value = lam.toFixed(0);
+    lambdaOut.textContent = lam.toFixed(0);
+
+    intensity = 0.5 + 0.5*Math.random();
+    intSlider.value = intensity.toFixed(2);
+    intOut.textContent = intensity.toFixed(2);
+
+    const {E_eV, Kmax_eV, Vstop_V} = computePhysics();
+    const Vstop = Vstop_V;
+
+    // 항상 전류가 흐르게: V > -Vstop
+    const minV = -0.4*Vstop;
+    const maxV = Vstop + 2;
+    V = minV + (maxV-minV)*Math.random();
+    volSlider.value = V.toFixed(1);
+    volOut.textContent = V.toFixed(1);
+
+    game.targetVstop = Vstop;
+
+    // 읽기 영역은 ??? 로 가리기 (도전 중 phase2일 때)
+    KmaxOut.textContent = '???';
+    VstopOut.textContent = '???';
+
+    phase2CondEl.innerHTML =
+      `금속: <b>${mat.name}</b>, 파장: <b>${lambda_nm.toFixed(0)} nm</b>, ` +
+      `세기: <b>${intensity.toFixed(2)}</b>, 인가전압: <b>${V.toFixed(2)} V</b><br>` +
+      `이때 광전류는 흐르고 있습니다. 이 상황에서의 정지전압 V<sub>stop</sub> 값을 계산해 보세요.`;
+
+    ansVstopEl.value = '';
+    setMessage(
+      game.hard
+        ? '문턱 파장에 매우 가까운 조건입니다. V_stop = K_max(eV) 를 이용해 소수 둘째 자리까지 계산해 보세요.'
+        : 'V_stop = K_max(eV) 관계를 이용해 정지전압을 계산해 보세요.',
+      false
+    );
+  }
+
+  function handleSubmitVstop(){
+    if(!game.active || game.phase!==2 || game.targetVstop==null) return;
+    const val = parseFloat(ansVstopEl.value);
+    if(isNaN(val)){
+      setMessage('정지전압을 숫자로 입력해 주세요.', false);
+      return;
+    }
+    const tol = game.hard ? 0.05 : 0.10;
+    const diff = Math.abs(val - game.targetVstop);
+    const isCorrect = diff <= tol;
+    applyScore(isCorrect);
+    setTimeout(()=>{
+      // 도전이 아닐 때를 대비해 읽기값 복구
+      const {Kmax_eV, Vstop_V} = computePhysics();
+      KmaxOut.textContent = Kmax_eV.toFixed(2);
+      VstopOut.textContent = Vstop_V.toFixed(2);
+      nextRound();
+    }, 900);
+  }
+
+  // 최고점수 Firebase에서 불러올 때 외부에서 사용
+  window.setBestScoreFromFirebase = function(score){
+    game.bestScore = Number(score) || 0;
+    updateScoreUI();
+  };
+
+  // 버튼 이벤트
+  if(btnChallenge){
+    btnChallenge.addEventListener('click', ()=>{
+      startChallenge();
+    });
+  }
+  if(btnFlowYes){
+    btnFlowYes.addEventListener('click', ()=>handlePhase1Answer('flow'));
+  }
+  if(btnFlowNo){
+    btnFlowNo.addEventListener('click', ()=>handlePhase1Answer('noflow'));
+  }
+  if(btnSubmitVstop){
+    btnSubmitVstop.addEventListener('click', handleSubmitVstop);
+  }
+
+  // ===== p5 스케치 =====
+  new p5(p => {
+    p.setup = function(){
+      const holder = p.select('#sim-holder');
+      const w = holder.width ? holder.width : 760;
+      const h = w * 0.75;
+      const cnv = p.createCanvas(w, h);
+      cnv.parent('sim-holder');
+      p.pixelDensity(window.devicePixelRatio || 1);
+      setupGeometry();
+      lastMillis = p.millis();
+    };
+
+    p.windowResized = function(){
+      const holder = p.select('#sim-holder');
+      const w = holder.width ? holder.width : 760;
+      const h = w * 0.75;
+      p.resizeCanvas(w,h);
+      p.pixelDensity(window.devicePixelRatio || 1);
+      setupGeometry();
+    };
+
+    function setupGeometry(){
+      cathX = p.width * 0.22;
+      anodeX = p.width * 0.78;
+      regionTop = p.height * 0.13;
+      regionBottom = p.height * 0.58;
+      gapX = (anodeX - 14) - (cathX + 14);
+      resetParticles();
+    }
+
+    p.draw = function(){
+      const now = p.millis();
+      const dt = Math.min(0.05, (now - lastMillis)/1000);
+      lastMillis = now;
+
+      updatePhysicsReadout();
+      updateParticles(dt);
+      drawScene();
+      drawIVGraph();
+    };
+
+    // ===== 물리량 계산 =====
+    function computePhysics(){
+      const E_eV = h_eV_nm / lambda_nm;
+      const lam0_nm = h_eV_nm / phi_eV;
+      const Kmax_eV = Math.max(0, E_eV - phi_eV);
+      const Vstop_V = Kmax_eV;
+      return {E_eV, lam0_nm, Kmax_eV, Vstop_V};
+    }
+    window.computePhysics = computePhysics; // 도전 세팅에서 사용
+
+    function updatePhysicsReadout(){
+      const {E_eV, lam0_nm, Kmax_eV, Vstop_V} = computePhysics();
+      EevOut.textContent = E_eV.toFixed(2);
+      lam0Out.textContent = lam0_nm.toFixed(0);
+
+      // 도전 phase2 진행 중에는 Kmax/Vstop 가리기
+      if(game.active && game.phase===2){
+        KmaxOut.textContent = '???';
+        VstopOut.textContent = '???';
+      }else{
+        KmaxOut.textContent = Kmax_eV.toFixed(2);
+        VstopOut.textContent = Vstop_V.toFixed(2);
+      }
+
+      if (Kmax_eV <= 0 || intensity <= 0){
+        statusChip.textContent = '● 전자 방출 없음 (빛은 입사하지만 hf < φ 또는 I=0)';
+        statusChip.className = 'statusChip off';
+      } else if (V < -Vstop_V + 0.05){
+        statusChip.textContent = '● 방출은 있으나 전류 ≈ 0 (정지 전압 부근)';
+        statusChip.className = 'statusChip stop';
+      } else {
+        statusChip.textContent = '● 전자 방출 & 전류 흐름';
+        statusChip.className = 'statusChip emit';
+      }
+    }
+
+    // ===== I–V 특성 =====
+    function currentForVoltage(Vtest){
+      const {Kmax_eV} = computePhysics();
+      if (Kmax_eV <= 0 || intensity <= 0) return 0;
+
+      const Vstop = Kmax_eV;
+      const I_sat = intensity * Math.max(0.3, Kmax_eV);
+
+      if (Vtest <= -Vstop) return 0;
+
+      const Veff = Vtest + Vstop;
+      const I = I_sat * (1 - Math.exp(-Veff/1.2));
+      return I;
+    }
+    window.currentForVoltage = currentForVoltage;
+
+    // ===== 파티클 =====
+    function wavelengthColor(wl){
+      if (wl < 380) wl=380;
+      if (wl > 780) wl=780;
+      let r=0,g=0,b=0;
+      if (wl < 440){ r=-(wl-440)/(440-380); g=0; b=1;}
+      else if (wl < 490){ r=0; g=(wl-440)/(490-440); b=1;}
+      else if (wl < 510){ r=0; g=1; b=-(wl-510)/(510-490);}
+      else if (wl < 580){ r=(wl-510)/(580-510); g=1; b=0;}
+      else if (wl < 645){ r=1; g=-(wl-645)/(645-580); b=0;}
+      else{ r=1; g=0; b=0;}
+      const s = 0.9;
+      return p.color(r*255*s,g*255*s,b*255*s);
+    }
+
+    function spawnPhotons(dt){
+      if (intensity <= 0) return;
+
+      const baseRate = 260;
+      const want = baseRate * intensity * dt;
+      let n = Math.floor(want);
+      if (p.random() < want-n) n++;
+
+      const col = wavelengthColor(lambda_nm);
+      const lampX = p.width * 0.06;
+      const lampY = (regionTop + regionBottom) / 2;
+
+      for (let i=0;i<n;i++){
+        const angle = p.random(-0.35, 0.35);
+        const speed = p.random(p.width*0.7, p.width*0.9);
+        const vx = speed * Math.cos(angle);
+        const vy = speed * Math.sin(angle);
+
+        photons.push({
+          x: lampX + Math.cos(angle)*24,
+          y: lampY + Math.sin(angle)*24,
+          vx,
+          vy,
+          col,
+          life:0
+        });
+        if (photons.length > 600) photons.shift();
+      }
+    }
+
+    // 정지전압 이상 음전압에서 돌아오는 운동 포함
+    function spawnElectron(Kmax_eV){
+      if (Kmax_eV <= 0) return;
+
+      // 도전 모드 1~5라운드에서는 전자 애니메이션 생략
+      if(game.active && game.phase===1) return;
+
+      const x0 = cathX + 14;
+      const minT = 1.2;
+      const maxT = 0.5;
+      const tCross = p.map(Kmax_eV, 0,5, minT, maxT, true);
+      const baseSpeed = gapX / tCross;
+
+      let willReachAnode = true;
+      let maxX = anodeX - 14;
+      let ax = 0;
+
+      if (V < 0 && Math.abs(V) >= Kmax_eV){
+        const frac = Kmax_eV / Math.abs(V);
+        const turnFrac = Math.min(frac, 1) * 0.96;
+        maxX = x0 + gapX * turnFrac;
+        willReachAnode = false;
+
+        const dist = Math.max(10, maxX - x0);
+        ax = - (baseSpeed * baseSpeed) / (2 * dist);
+      }
+
+      electrons.push({
+        x: x0,
+        y: p.random(regionTop+8, regionBottom-8),
+        vx: baseSpeed,
+        vy: p.random(-10,10),
+        ax,
+        life:0,
+        maxX,
+        willReachAnode
+      });
+      if (electrons.length > 350) electrons.shift();
+    }
+
+    function updateParticles(dt){
+      const {Kmax_eV} = computePhysics();
+      const canEmit = Kmax_eV > 0 && intensity>0;
+
+      // 항상 광자는 입사
+      spawnPhotons(dt);
+
+      // 광자
+      for (let i=photons.length-1;i>=0;i--){
+        const ph = photons[i];
+        ph.x += ph.vx * dt;
+        ph.y += ph.vy * dt;
+        ph.life += dt;
+
+        if (ph.x >= cathX-10 && ph.x <= cathX+4 &&
+            ph.y >= regionTop-12 && ph.y <= regionBottom+12){
+          if (canEmit && p.random() < 0.35){
+            spawnElectron(Kmax_eV);
+          }
+          photons.splice(i,1);
+        } else if (ph.x > anodeX+40 || ph.x < -40 ||
+                   ph.y < regionTop-60 || ph.y > regionBottom+60 ||
+                   ph.life>2.4){
+          photons.splice(i,1);
+        }
+      }
+
+      // 전자
+      for (let i=electrons.length-1;i>=0;i--){
+        const e = electrons[i];
+
+        e.vx += e.ax * dt;
+        e.x  += e.vx*dt;
+        e.y  += e.vy*dt;
+        e.life += dt;
+        e.vy *= 0.98;
+
+        if (e.y < regionTop+5 || e.y > regionBottom-5){
+          e.vy *= -1;
+        }
+
+        const cathStartX = cathX + 14;
+
+        if (!e.willReachAnode){
+          if (e.vx > 0 && e.x > e.maxX){
+            e.x = e.maxX;
+            e.vx = 0;
+          }
+          if (e.vx < 0 && e.x <= cathStartX){
+            electrons.splice(i,1);
+            continue;
+          }
+        } else {
+          if (e.x >= anodeX-12){
+            electrons.splice(i,1);
+            continue;
+          }
+        }
+
+        if (e.x < -40 || e.x > p.width+40 || e.life>4){
+          electrons.splice(i,1);
+        }
+      }
+    }
+
+    // ===== 그리기: 상단 시뮬레이션 =====
+    function drawScene(){
+      p.background(245, 248, 255);
+
+      const midY = p.height*0.60;
+
+      p.noStroke();
+      p.push();
+      const g1 = p.drawingContext.createLinearGradient(0,0,0,midY);
+      g1.addColorStop(0,'#e0f2fe');
+      g1.addColorStop(0.5,'#eff6ff');
+      g1.addColorStop(1,'#e5e7eb');
+      p.drawingContext.fillStyle = g1;
+      p.rect(0,0,p.width,midY);
+      p.pop();
+
+      p.noStroke();
+      p.fill(234,237,255,220);
+      p.rect(0,regionTop-12,p.width,regionBottom-regionTop+24,16);
+
+      p.stroke(148,163,184,180);
+      p.strokeWeight(2);
+      p.fill(250,250,255);
+      p.rect(cathX-14, regionTop, 28, regionBottom-regionTop, 8);
+
+      p.noStroke();
+      p.fill(191,219,254,110);
+      p.rect(cathX-14, regionTop, 28, regionBottom-regionTop, 8);
+
+      p.stroke(148,163,184,180);
+      p.strokeWeight(2);
+      p.fill(250,250,255);
+      p.rect(anodeX-14, regionTop, 28, regionBottom-regionTop, 8);
+
+      p.noStroke();
+      p.fill(107,114,128);
+      p.textSize(11);
+      p.textAlign(p.CENTER,p.BOTTOM);
+      p.text('금속(광전면)', cathX, regionTop-4);
+      p.text('수집전극', anodeX, regionTop-4);
+
+      const arrowY = regionBottom + 18;
+      let colV = p.color(148,163,184);
+      if (V>0) colV = p.color(34,197,94);
+      else if (V<0) colV = p.color(239,68,68);
+
+      p.stroke(colV);
+      p.strokeWeight(1.8);
+      p.line(cathX, arrowY, anodeX, arrowY);
+      if (V>0){
+        drawArrowHead(anodeX,arrowY,0);
+      }else if (V<0){
+        drawArrowHead(cathX,arrowY,Math.PI);
+      }
+      p.noStroke();
+      p.fill(55,65,81);
+      p.textAlign(p.CENTER,p.BOTTOM);
+      p.textSize(11);
+      p.text(`V = ${V.toFixed(1)} V`, (cathX+anodeX)/2, arrowY-6);
+
+      const lampX = p.width*0.06;
+      const lampY = (regionTop+regionBottom)/2;
+
+      p.push();
+      p.noStroke();
+      const beamCol = wavelengthColor(lambda_nm);
+      const baseAlpha = p.map(intensity, 0,1, 10, 55);
+      p.fill(p.red(beamCol), p.green(beamCol), p.blue(beamCol), baseAlpha);
+      p.beginShape();
+      p.vertex(lampX+18, lampY-40);
+      p.vertex(cathX-20, regionTop-10);
+      p.vertex(cathX-20, regionBottom+10);
+      p.vertex(lampX+18, lampY+40);
+      p.endShape(p.CLOSE);
+      p.pop();
+
+      p.noStroke();
+      p.fill(255,255,255);
+      p.circle(lampX, lampY, 48);
+      const colCore = wavelengthColor(lambda_nm);
+      p.fill(p.red(colCore), p.green(colCore), p.blue(colCore), 230);
+      p.circle(lampX, lampY, 32);
+
+      p.fill(255,255,255,180);
+      p.ellipse(lampX-10, lampY-10, 14,14);
+      p.ellipse(lampX+8, lampY+4, 6,6);
+
+      p.fill(31,41,55,180);
+      p.textAlign(p.CENTER,p.CENTER);
+      p.textSize(10);
+      p.text('λ', lampX, lampY-4);
+      p.text(lambda_nm.toFixed(0)+' nm', lampX, lampY+10);
+
+      for (const ph of photons){
+        p.noStroke();
+        p.fill(ph.col);
+        p.circle(ph.x, ph.y, 4);
+
+        p.stroke(148,163,184,100);
+        p.strokeWeight(1);
+        const tx = ph.x - ph.vx * 0.03;
+        const ty = ph.y - ph.vy * 0.03;
+        p.line(tx,ty, ph.x,ph.y);
+      }
+
+      for (const e of electrons){
+        p.noStroke();
+        p.fill(59,130,246);
+        p.circle(e.x,e.y,6);
+        p.stroke(59,130,246,140);
+        p.strokeWeight(1.4);
+        p.line(e.x-14,e.y-2,e.x,e.y);
+      }
+
+      p.stroke(226,232,240);
+      p.strokeWeight(1);
+      p.line(0, midY, p.width, midY);
+    }
+
+    function drawArrowHead(x,y,angle){
+      const len = 9;
+      p.push();
+      p.translate(x,y);
+      p.rotate(angle);
+      p.beginShape();
+      p.vertex(0,0);
+      p.vertex(-len, len*0.6);
+      p.vertex(-len, -len*0.6);
+      p.endShape(p.CLOSE);
+      p.pop();
+    }
+
+    // ===== 그리기: 하단 I–V 그래프 =====
+    function drawIVGraph(){
+      const top = p.height*0.64;
+      const bottom = p.height*0.96;
+      const left = p.width*0.10;
+      const right = p.width*0.90;
+
+      p.noStroke();
+      p.fill(249,250,251);
+      p.rect(0,top-8,p.width,bottom-top+12);
+
+      const samples = 80;
+      let maxI = 0;
+      const data = [];
+      for (let i=0;i<=samples;i++){
+        const Vtest = p.map(i,0,samples,-5,5);
+        const I = currentForVoltage(Vtest);
+        data.push({V:Vtest,I});
+        if (I>maxI) maxI = I;
+      }
+      if (maxI <= 0) maxI = 1;
+
+      p.stroke(209,213,219);
+      p.strokeWeight(1);
+      p.line(left, bottom, right, bottom);
+      p.line(left, bottom, left, top);
+
+      const xZero = p.map(0,-5,5,left,right);
+      p.stroke(209,213,219,180);
+      p.strokeWeight(1);
+      p.line(xZero, bottom, xZero, top);
+
+      p.noStroke();
+      p.fill(107,114,128);
+      p.textAlign(p.CENTER,p.TOP);
+      p.textSize(10);
+      p.text('인가 전압 V (V)', (left+right)/2, bottom+3);
+      p.push();
+      p.translate(left-14, (top+bottom)/2);
+      p.rotate(-Math.PI/2);
+      p.text('전류 I (임의 단위)', 0,0);
+      p.pop();
+
+      p.textAlign(p.CENTER,p.TOP);
+      p.text('-5', left, bottom+2);
+      p.text('0', xZero, bottom+2);
+      p.text('5', right, bottom+2);
+
+      p.noFill();
+      p.stroke(56,189,248);
+      p.strokeWeight(2);
+      p.beginShape();
+      for (let i=0;i<data.length;i++){
+        const Vt = data[i].V;
+        const It = data[i].I;
+        const x = p.map(Vt,-5,5,left,right);
+        const y = p.map(It,0,maxI,bottom,top+6);
+        p.vertex(x,y);
+      }
+      p.endShape();
+
+      const Icur = currentForVoltage(V);
+      const x0 = p.map(V,-5,5,left,right);
+      const y0 = p.map(Icur,0,maxI,bottom,top+6);
+      p.noStroke();
+      p.fill(34,197,94);
+      p.circle(x0,y0,7);
+
+      p.fill(55,65,81);
+      p.textAlign(p.LEFT,p.BOTTOM);
+      const label = `I(V = ${V.toFixed(1)} V) ≈ ${Icur.toFixed(2)} (임의 단위)`;
+      p.text(label, left+4, top-4);
+    }
+  });
+</script>
+
+<!-- Firebase: 도플러 파일과 동일한 방식으로 최고점수 저장 -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
+    authDomain: "simulation-67cd3.firebaseapp.com",
+    projectId: "simulation-67cd3",
+    storageBucket: "simulation-67cd3.appspot.com",
+    messagingSenderId: "615983461615",
+    appId: "1:615983461615:web:002e07bcea878eb6d5571a",
+    measurementId: "G-9RGN7LYE5W"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  const SIM_ID = "광전효과";
+  let firebaseUser = null;
+
+  async function saveBestScore(score) {
+    if (!firebaseUser) return;
+    try {
+      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+      await setDoc(ref, { score: Number(score) || 0 }, { merge: true });
+    } catch (err) {
+      console.error("[광전효과] 최고 점수 저장 오류:", err);
+    }
+  }
+
+  async function loadBestScore() {
+    if (!firebaseUser) return;
+    try {
+      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const data  = snap.data();
+        const score = Number(data.score || 0) || 0;
+        if (window.setBestScoreFromFirebase) {
+          window.setBestScoreFromFirebase(score);
+        }
+      }
+    } catch (err) {
+      console.error("[광전효과] 최고 점수 불러오기 오류:", err);
+    }
+  }
+
+  // 도전 모드 스크립트에서 호출
+  window.saveBestScoreToFirebase = saveBestScore;
+
+  onAuthStateChanged(auth, async (user) => {
+    firebaseUser = user;
+    if (user) {
+      await loadBestScore();
+    }
+  });
+</script>
+</body>
+</html>

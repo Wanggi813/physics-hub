@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" id="vp" content="width=1200">
+<script>
+  const BASE = 1200; // PC 기준 폭(원하는 PC 가로폭)
+  function fit() {
+    const w = Math.min(window.innerWidth, screen.width);
+    const s = w / BASE;
+    document.getElementById('vp').setAttribute(
+      'content',
+      `width=${BASE}, initial-scale=${s}, minimum-scale=${s}, maximum-scale=${s}, user-scalable=no`
+    );
+  }
+  addEventListener('resize', fit);
+  addEventListener('orientationchange', fit);
+  fit();
+</script>
+<title>수소원자모형</title>
+
+<!-- 로컬 라이브러리 -->
+<script src="./libs/p5.min.js"></script>
+<script src="./libs/three.min.js"></script>
+
+<style>
+  :root{--bg:#f7fafc;--panel:#fff;--ink:#0b1020;--ink-dim:#4b5563;--accent:#2563eb;--line:#e5e7eb}
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans KR",Apple SD Gothic Neo,sans-serif
+  }
+  header{
+    padding:12px 16px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#fff;
+    position:sticky;
+    top:0;
+    z-index:1
+  }
+  header h1{margin:0;font-size:18px}
+  header .hint{font-size:12px;color:var(--ink-dim)}
+  .app{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    padding:12px;
+    min-height:calc(100vh - 60px)
+  }
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    display:grid;
+    grid-template-rows:auto auto 1fr auto;
+    box-shadow:0 6px 18px rgba(0,0,0,.04)
+  }
+  .panel h2{font-size:16px;margin:12px}
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    padding:0 12px 8px
+  }
+  .controls.controls-3d{
+    gap:8px;
+    padding:0 12px 6px;
+    max-height:64px;
+    overflow:hidden
+  }
+  .group{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:#f3f4f6;
+    border:1px solid var(--line);
+    padding:6px 10px;
+    border-radius:10px
+  }
+  .pill{
+    padding:2px 8px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    font-size:11px;
+    color:var(--ink-dim);
+    background:#fff
+  }
+  .canvas-wrap{
+    position:relative;
+    overflow:hidden;
+    border-top:1px solid var(--line);
+    border-bottom-left-radius:14px;
+    border-bottom-right-radius:14px
+  }
+  #p5-wrap{min-height:720px}
+  #three-wrap{min-height:640px;height:640px}
+  #p5-container,#three-container{width:100%;height:100%}
+  .note{
+    padding:10px 12px;
+    border-top:1px solid var(--line);
+    font-size:12px;
+    color:var(--ink-dim);
+    background:#fff
+  }
+  button.primary{
+    cursor:pointer;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:6px 10px;
+    border-radius:8px;
+    font-weight:700;
+    font-size:13px;
+    white-space:nowrap
+  }
+  button.primary:disabled{
+    opacity:0.4;
+    cursor:default
+  }
+
+  @media (max-width:1024px){
+    .app{grid-template-columns:1fr}
+  }
+
+  /* ===== 퀴즈 버튼 ===== */
+  .quiz-btn{
+    cursor:pointer;
+    border:1px solid var(--line);
+    background:#f9fafb;
+    border-radius:999px;
+    padding:4px 10px;
+    font-size:13px;
+    transition:background .15s ease,border-color .15s ease,transform .12s ease;
+  }
+  .quiz-btn:hover{
+    background:#eff6ff;
+    border-color:#bfdbfe;
+  }
+  .quiz-btn:active{
+    transform:scale(0.96);
+  }
+  .quiz-btn.correct{
+    background:#dcfce7;
+    border-color:#86efac;
+    color:#166534;
+  }
+  .quiz-btn.wrong{
+    background:#fee2e2;
+    border-color:#fecaca;
+    color:#991b1b;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>수소원자모형 양자화 시뮬레이터  <span class="pill">보어의 원자이론 + 오비탈 퀴즈</span></h1>
+  <div class="hint">왕왕 물리시뮬레이션</div>
+</header>
+
+<main class="app">
+  <!-- 2D: 궤도의 양자화 -->
+  <section class="panel">
+    <h2>궤도의 양자화 </h2>
+    <div class="controls" id="ctrl-2d">
+      <div class="group">
+        <label>주양자수 n</label>
+        <input id="nSlider" type="range" min="1" max="8" step="1" value="3"/>
+        <span id="nLabel" class="pill">n = 3</span>
+      </div>
+      <div class="group">
+        <label>파동 진폭</label>
+        <input id="ampSlider" type="range" min="2" max="50" step="1" value="12"/>
+        <span id="ampLabel" class="pill">A = 12</span>
+      </div>
+      <div class="group">
+        <label>애니메이션</label>
+        <select id="animMode">
+          <option value="standing" selected>정지파</option>
+          <option value="traveling">주행파</option>
+        </select>
+      </div>
+    </div>
+    <div class="canvas-wrap" id="p5-wrap"><div id="p5-container"></div></div>
+    <div class="note">조건: <b>2πR = n·λ</b>, <b>L = nħ</b>.</div>
+  </section>
+
+  <!-- 3D: 오비탈 + 퀴즈 -->
+  <section class="panel">
+    <h2>오비탈 (s, p, d, f) 전자구름 + 등가면</h2>
+    <div class="controls controls-3d" id="ctrl-3d">
+      <div class="group" id="groupL">
+        <label>l</label>
+        <select id="l3">
+          <option value="0">0 (s)</option>
+          <option value="1" selected>1 (p)</option>
+          <option value="2">2 (d)</option>
+          <option value="3">3 (f)</option>
+        </select>
+      </div>
+      <div class="group" id="groupM">
+        <label>m</label>
+        <select id="m3"></select>
+      </div>
+      <div class="group">
+        <label for="orbitalToggle">오비탈 모형(등가면)</label>
+        <input id="orbitalToggle" type="checkbox" checked />
+      </div>
+      <button id="regen" class="primary">재생성</button>
+      <!-- ★ 퀴즈 게임 버튼 -->
+      <button id="challengeBtn" class="primary" style="background:#16a34a;">도전</button>
+    </div>
+    <div class="canvas-wrap" id="three-wrap"><div id="three-container"></div></div>
+    <!-- 이 note가 게임 정보/버튼/피드백 영역으로 사용됨 -->
+    <div class="note" id="gameNote"></div>
+  </section>
+</main>
+
+<script>
+// ===== 공통 설정 =====
+const CONFIG = {
+  renderer: { pixelRatioMax: 1.25, bg: 0xffffff },
+  points:   { count: 60000, size: 0.3, opacity: 0.3, shapeBeta: 1.6 },
+  iso:      { scale: 1.5, exp: 0.7, opacity: 0.9 },
+  axes:     { len: 1.8, thick: 0.02, opacity: 0.8, labelScale: [0.35, 0.18] },
+  colors:   { pos:[0.20,0.55,1.00], neg:[1.00,0.35,0.30] }
+};
+</script>
+
+<!-- 2D: p5 -->
+<script>
+(()=>{
+  const nS=document.getElementById('nSlider'), aS=document.getElementById('ampSlider');
+  const nL=document.getElementById('nLabel'), aL=document.getElementById('ampLabel');
+  const am=document.getElementById('animMode');
+
+  let sketch=p=>{
+    let t=0;
+    const getWH=()=>{const parent=document.getElementById('p5-container');return [parent.clientWidth,Math.max(parent.clientHeight,720)]};
+    p.setup = ()=>{const [w,h]=getWH(); p.createCanvas(w,h).parent('p5-container'); p.angleMode(p.RADIANS);};
+    p.windowResized = ()=>{const [w,h]=getWH(); p.resizeCanvas(w,h);};
+    p.draw=()=>{
+      p.background(250,252,255);
+      const n=+nS.value, A=+aS.value; nL.textContent=`n = ${n}`; aL.textContent=`A = ${A}`;
+      p.translate(p.width/2,p.height/2);
+      const R=Math.min(p.width,p.height)*(0.10+0.02*n);
+      p.noFill(); p.stroke(30,41,59); p.strokeWeight(1.5); p.circle(0,0,R*2);
+      p.stroke(37,99,235); p.strokeWeight(2.2); p.beginShape();
+      const seg=1200;
+      for(let i=0;i<=seg;i++){
+        const th=i/seg*p.TWO_PI;
+        const ph=(am.value==='standing'?Math.cos(t*1.2)*Math.sin(n*th):Math.sin(n*th-t*1.6));
+        const r=R+A*ph; p.vertex(r*Math.cos(th), r*Math.sin(th));
+      }
+      p.endShape();
+      p.noStroke(); p.fill(239,68,68);
+      for(let k=0;k<2*n;k++){const th=k*Math.PI/n; p.circle(R*Math.cos(th), R*Math.sin(th), 6);}
+      p.noStroke(); p.fill(71,85,105); p.textAlign(p.CENTER); p.textSize(14); p.text('2πR = n·λ,  L = nħ', 0, -R-24);
+      t+=0.02;
+    };
+  };
+  new p5(sketch);
+})();
+</script>
+
+<!-- 3D: Three.js (+ 오비탈 퀴즈 게임) -->
+<script>
+(()=>{
+  // ===== SimpleOrbit (OrbitControls 대체) =====
+ class SimpleOrbit{
+  constructor(camera, dom, target=new THREE.Vector3(0,0,0)){
+    this.camera=camera; this.dom=dom; this.target=target;
+
+    this.sph = new THREE.Spherical(6.5, Math.PI/3, -Math.PI/6);
+    const off=camera.position.clone().sub(target);
+    this.sph.setFromVector3(off);
+
+    this.minPhi=0.05; this.maxPhi=Math.PI-0.05;
+    this.minR=2.2; this.maxR=20;
+
+    this.rotSpeed=0.0020;
+    this.zoomSpeed=1.1;
+
+    this.enableDamping=true; this.damp=0.12;
+    this._vTheta=0; this._vPhi=0; this._vR=0;
+
+    // ✅ 터치/펜/마우스 통합 (Pointer Events)
+    dom.style.touchAction = "none";
+
+    const pts = new Map(); // pointerId -> {x,y}
+    let pinchStartDist = 0;
+    let pinchStartR = this.sph.radius;
+
+    const dist = (a,b)=>{
+      const dx=a.x-b.x, dy=a.y-b.y;
+      return Math.hypot(dx,dy);
+    };
+
+    dom.addEventListener('pointerdown', (e)=>{
+      dom.setPointerCapture(e.pointerId);
+      pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+
+      if(pts.size===2){
+        const [p1,p2]=[...pts.values()];
+        pinchStartDist = dist(p1,p2);
+        pinchStartR = this.sph.radius;
+      }
+    });
+
+    dom.addEventListener('pointermove', (e)=>{
+      if(!pts.has(e.pointerId)) return;
+
+      const p = pts.get(e.pointerId);
+      const nx = e.clientX, ny = e.clientY;
+      const dx = nx - p.x;
+      const dy = ny - p.y;
+
+      // 업데이트
+      p.x = nx; p.y = ny;
+      pts.set(e.pointerId, p);
+
+      if(pts.size===1){
+        // ✅ 한 손가락/마우스 드래그: 회전
+        this._vTheta -= dx*this.rotSpeed;
+        this._vPhi   += dy*this.rotSpeed;
+      }else if(pts.size===2){
+        // ✅ 두 손가락 핀치: 줌
+        const [p1,p2]=[...pts.values()];
+        const d = dist(p1,p2);
+        if(pinchStartDist>0){
+          const ratio = d / pinchStartDist;
+          // ratio>1 이면 벌림(줌인) → radius 감소
+          const newR = pinchStartR / Math.max(0.05, ratio);
+          // damping에 자연스럽게 섞이게 _vR로 처리
+          const safeR = Math.max(this.minR, Math.min(this.maxR, newR));
+          this._vR += Math.log(safeR / this.sph.radius);
+        }
+      }
+    });
+
+    const endPointer = (e)=>{
+      pts.delete(e.pointerId);
+      if(pts.size<2){
+        pinchStartDist = 0;
+      }else{
+        const [p1,p2]=[...pts.values()];
+        pinchStartDist = dist(p1,p2);
+        pinchStartR = this.sph.radius;
+      }
+    };
+
+    dom.addEventListener('pointerup', endPointer);
+    dom.addEventListener('pointercancel', endPointer);
+    dom.addEventListener('pointerleave', endPointer);
+
+    // ✅ 마우스 휠 줌(PC)
+    dom.addEventListener('wheel', e=>{
+      e.preventDefault();
+      const s=(e.deltaY>0?1:-1);
+      this._vR += s*Math.log(this.zoomSpeed);
+    }, {passive:false});
+
+    this.update(true);
+  }
+
+  update(immediate=false){
+    if(this.enableDamping && !immediate){
+      this.sph.theta += this._vTheta; this._vTheta *= (1-this.damp);
+      this.sph.phi   += this._vPhi;   this._vPhi   *= (1-this.damp);
+      this.sph.radius*= Math.exp(this._vR); this._vR *= (1-this.damp);
+    }else{
+      this.sph.theta += this._vTheta;
+      this.sph.phi   += this._vPhi;
+      this.sph.radius*= Math.exp(this._vR);
+      this._vTheta=this._vPhi=this._vR=0;
+    }
+
+    this.sph.phi = Math.max(this.minPhi, Math.min(this.maxPhi, this.sph.phi));
+    this.sph.radius = Math.max(this.minR, Math.min(this.maxR, this.sph.radius));
+
+    const p=new THREE.Vector3().setFromSpherical(this.sph).add(this.target);
+    this.camera.position.copy(p);
+    this.camera.lookAt(this.target);
+  }
+}
+
+  // DOM
+  const wrap=document.getElementById('three-container');
+  const box=document.getElementById('three-wrap');
+  const lSel=document.getElementById('l3');
+  const mSel=document.getElementById('m3');
+  const groupL=document.getElementById('groupL');
+  const groupM=document.getElementById('groupM');
+  const btn=document.getElementById('regen');
+  const tgl=document.getElementById('orbitalToggle');
+  const challengeBtn=document.getElementById('challengeBtn');
+  const noteEl=document.getElementById('gameNote');
+
+  // ===== 게임 상태 =====
+  let gameMode=false;
+  let gameRound=0;
+  const maxRounds=10;
+  let gameScore=0;
+  let bestScore=0;      // 현재까지의 최고점수
+  let currentCorrectL=null;
+  let currentCorrectN=null;
+  let currentCorrectM=null;
+  let awaitingNext=false;
+  let lastMessage="";
+  let currentOptions=[]; // 이번 라운드 선택지(4개)
+
+  // Firebase에서 최고점 불러올 때 사용할 함수 (전역으로 노출)
+  window.setBestScoreFromFirebase = function(scoreFromDb){
+    bestScore = Number(scoreFromDb) || 0;
+  };
+
+  const lName = l => (l===0?"s":l===1?"p":l===2?"d":"f");
+  const getStageForRound = (r)=>{
+    if(r<=5) return 1;   // l만
+    if(r<=7) return 2;   // n + l
+    return 3;            // n + l + m
+  };
+  const fmtM = m => (m>0?`+${m}`:`${m}`);
+
+  function fmtCorrectLabel(stage){
+    const n=currentCorrectN, l=currentCorrectL, m=currentCorrectM;
+    if(stage===1) return `${lName(l)} 오비탈`;
+    if(stage===2) return `${n}${lName(l)} 오비탈`;
+    return `${n}${lName(l)} (m = ${fmtM(m)})`;
+  }
+
+  function setFreeModeUI(){
+    if(!noteEl) return;
+    noteEl.innerHTML =
+      `<div><b>자유 모드</b>입니다. l, m과 오비탈 모형 토글을 바꾸며 다양한 오비탈 전자구름과 등가면을 관찰해 보세요.</div>
+       <div style="margin-top:4px;color:#6b7280;">퀴즈 게임을 시작하려면 상단의 <b>도전</b> 버튼을 눌러 주세요.</div>`;
+  }
+
+  function renderGameStatus(){
+    if(!noteEl) return;
+    if(!gameMode){
+      setFreeModeUI();
+      return;
+    }
+    const stage = getStageForRound(gameRound);
+    let desc;
+    if(stage===1){
+      desc = "이 전자구름은 어떤 오비탈(l)에 해당할까요? (s, p, d, f 중에서 선택)";
+    }else if(stage===2){
+      desc = "이 전자구름은 어떤 오비탈 (주양자수 n과 l)일까요? 예: 2p, 3d 등";
+    }else{
+      desc = "이 전자구름은 어떤 오비탈 (n, l, 자화양자수 m)일까요? 예: 2p (m = +1) 등";
+    }
+
+    // 선택지 버튼 HTML 생성
+    const buttonsHTML = currentOptions.map((opt,idx)=>{
+      let label;
+      if(stage===1){
+        label = `${lName(opt.l)} 오비탈`;
+      }else if(stage===2){
+        label = `${opt.n}${lName(opt.l)} 오비탈`;
+      }else{
+        label = `${opt.n}${lName(opt.l)} (m = ${fmtM(opt.m)})`;
+      }
+      return `<button class="quiz-btn" data-idx="${idx}">${label}</button>`;
+    }).join("");
+
+    noteEl.innerHTML = `
+      <div><b>오비탈 퀴즈 게임</b> — 라운드 <b>${gameRound}</b> / ${maxRounds}, 점수 <b>${gameScore}</b>점, 최고점수 <b>${bestScore}</b>점</div>
+      <div style="margin-top:4px;">${desc}</div>
+      <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
+        ${buttonsHTML}
+      </div>
+      <div id="gameMessage" style="margin-top:6px; font-size:12px; color:#4b5563;">${lastMessage}</div>
+    `;
+
+    // 버튼 이벤트 연결
+    noteEl.querySelectorAll('.quiz-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const idx=parseInt(btn.dataset.idx,10);
+        handleOptionClick(idx, btn);
+      });
+    });
+  }
+
+  function handleOptionClick(idx, btnEl){
+    if(!gameMode || awaitingNext) return;
+    const stage = getStageForRound(gameRound);
+    const opt = currentOptions[idx];
+    const msgEl = document.getElementById('gameMessage');
+
+    let isCorrect = false;
+    if(stage===1){
+      isCorrect = (opt.l === currentCorrectL);
+    }else if(stage===2){
+      isCorrect = (opt.l === currentCorrectL && opt.n === currentCorrectN);
+    }else{
+      isCorrect = (opt.l === currentCorrectL && opt.n === currentCorrectN && opt.m === currentCorrectM);
+    }
+
+    if(isCorrect){
+      gameScore += 50;
+      if (gameScore > bestScore) {
+        bestScore = gameScore;
+        // ★ Firebase에 최고 점수 저장 (정의되어 있을 때만)
+        if (window.saveBestScoreToFirebase) {
+          window.saveBestScoreToFirebase(bestScore);
+        }
+      }
+      lastMessage = `정답입니다! 정답은 <b>${fmtCorrectLabel(stage)}</b> 입니다. (+50점)`;
+      if(btnEl){btnEl.classList.add('correct');}
+    }else{
+      lastMessage = `아쉬워요. 정답은 <b>${fmtCorrectLabel(stage)}</b> 입니다.`;
+      if(btnEl){btnEl.classList.add('wrong');}
+    }
+    if(msgEl) msgEl.innerHTML = lastMessage;
+
+    awaitingNext = true;
+    setTimeout(()=>{
+      startNextRound();
+      awaitingNext=false;
+    }, 900);
+  }
+
+  function startGame(){
+    gameMode=true;
+    gameRound=0;
+    gameScore=0;
+    lastMessage="";
+    currentCorrectL=currentCorrectN=currentCorrectM=null;
+    awaitingNext=false;
+
+    // 등가면 숨기고, UI 잠그고, l/m 그룹 숨기기
+    showIso=false;
+    tgl.checked=false;
+    tgl.disabled=true;
+    lSel.disabled=true;
+    mSel.disabled=true;
+    if(groupL) groupL.style.display="none";
+    if(groupM) groupM.style.display="none";
+    btn.disabled=true;
+    challengeBtn.textContent="그만하기";
+
+    startNextRound();
+  }
+
+  function endGame(){
+    const finalScore = gameScore;
+    gameMode=false;
+    currentCorrectL=currentCorrectN=currentCorrectM=null;
+    awaitingNext=false;
+
+    tgl.disabled=false;
+    lSel.disabled=false;
+    mSel.disabled=false;
+    if(groupL) groupL.style.display="";
+    if(groupM) groupM.style.display="";
+    btn.disabled=false;
+    challengeBtn.textContent="도전";
+
+    // 토글 상태에 맞게 등가면 다시 표시 가능
+    showIso = tgl.checked;
+    if(isoMesh) isoMesh.visible = showIso;
+
+    if(noteEl){
+      noteEl.innerHTML =
+        `<div><b>게임 종료!</b> 총 점수: <b>${finalScore}</b>점, 최고점수 <b>${bestScore}</b>점 (최대 ${maxRounds*50}점)</div>
+         <div style="margin-top:4px;">다시 도전하려면 상단의 <b>도전</b> 버튼을 눌러 주세요.</div>`;
+    }
+  }
+
+  // 이번 라운드의 보기를 생성 (항상 4개)
+  function generateOptions(stage){
+    const opts=[];
+    const correct = { n: currentCorrectN, l: currentCorrectL, m: currentCorrectM };
+
+    // 첫 번째는 정답
+    opts.push({...correct});
+
+    const maxN = 4;
+    function randomNForL(l){
+      const minN = Math.max(1, l+1);
+      const range = Math.max(1, maxN-minN+1);
+      return minN + Math.floor(Math.random()*range);
+    }
+    function randomMForL(l){
+      const mMin = -l;
+      const mMax = l;
+      return mMin + Math.floor(Math.random()*(mMax-mMin+1 || 1));
+    }
+
+    while(opts.length < 4){
+      let cand = {};
+      if(stage===1){
+        cand.l = Math.floor(Math.random()*4);
+        cand.n = correct.n;
+        cand.m = correct.m;
+      }else if(stage===2){
+        cand.l = Math.floor(Math.random()*4);
+        cand.n = randomNForL(cand.l);
+        cand.m = correct.m;
+      }else{
+        cand.l = Math.floor(Math.random()*4);
+        cand.n = randomNForL(cand.l);
+        cand.m = randomMForL(cand.l);
+      }
+      // 중복 방지
+      if(!opts.some(o=>o.l===cand.l && o.n===cand.n && o.m===cand.m)){
+        opts.push(cand);
+      }
+    }
+    // 섞기
+    for(let i=opts.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [opts[i],opts[j]]=[opts[j],opts[i]];
+    }
+    return opts;
+  }
+
+  function startNextRound(){
+    if(!gameMode){
+      setFreeModeUI();
+      return;
+    }
+    if(gameRound>=maxRounds){
+      endGame();
+      return;
+    }
+    gameRound += 1;
+
+    // 무작위 오비탈 선택 (l=0,1,2,3, n은 1~4, n>=l+1, m은 -l..+l)
+    const maxN = 4;
+    const l = Math.floor(Math.random()*4);
+    const nMin = Math.max(1, l+1);
+    const nRange = Math.max(1, maxN-nMin+1);
+    const n = nMin + Math.floor(Math.random()*nRange);
+    const mMin = -l;
+    const mMax = l;
+    const m = mMin + Math.floor(Math.random()*(mMax-mMin+1 || 1)); // l=0이면 0
+
+    currentCorrectL = l;
+    currentCorrectN = n;
+    currentCorrectM = m;
+
+    // 3D 표시를 위해 l, m만 그대로 사용 (n은 현재 시각화에는 직접 반영하지 않음)
+    lSel.value = String(l);
+    populateM();
+    mSel.value = String(m);
+
+    // 게임 중: 등가면 숨긴 상태로 전자구름만 생성
+    regen(true);
+    const stage = getStageForRound(gameRound);
+    currentOptions = generateOptions(stage);
+    lastMessage = "";
+    renderGameStatus();
+  }
+
+  // ===== Scene / Camera / Renderer =====
+  const scene=new THREE.Scene();
+  scene.background=new THREE.Color(CONFIG.renderer.bg);
+  const cam=new THREE.PerspectiveCamera(45,1,0.1,100); cam.position.set(3.2,2.8,3.8);
+  const rnd=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+  rnd.setPixelRatio(Math.min(window.devicePixelRatio||1, CONFIG.renderer.pixelRatioMax));
+  rnd.setSize(box.clientWidth||880, Math.max(box.clientHeight||640,560), false);
+  wrap.appendChild(rnd.domElement);
+  Object.assign(rnd.domElement.style,{display:'block',width:'100%',height:'100%'});
+rnd.domElement.style.touchAction = "none"; // ✅ 터치 제스처를 우리가 받기
+
+  const ctl=new SimpleOrbit(cam,rnd.domElement,new THREE.Vector3(0,0,0));
+
+  // Lights & nucleus
+  scene.add(new THREE.AmbientLight(0xffffff,0.9));
+  const dl=new THREE.DirectionalLight(0xffffff,0.65); dl.position.set(3,5,2); scene.add(dl);
+  scene.add(new THREE.Mesh(new THREE.SphereGeometry(0.06,24,24), new THREE.MeshStandardMaterial({color:0xef4444,roughness:0.5})));
+
+  // === XYZ 축 + 라벨 ===
+  (function makeAxes(){
+    const {len:AX_LEN, thick:AX_THICK, opacity:AX_OPA, labelScale} = CONFIG.axes;
+    function labelSprite(text,color='#111827'){
+      const c=document.createElement('canvas'); c.width=256; c.height=128;
+      const g=c.getContext('2d'); g.scale(2,2);
+      g.font='bold 28px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto';
+      g.textAlign='center'; g.textBaseline='middle';
+      g.strokeStyle='rgba(0,0,0,0.35)'; g.lineWidth=3; g.fillStyle=color;
+      g.strokeText(text,64,32); g.fillText(text,64,32);
+      const tex=new THREE.CanvasTexture(c);
+      return new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true}));
+    }
+    function axis(dir,color,label){
+      const g=new THREE.Group();
+      const mat=new THREE.MeshPhongMaterial({color,transparent:true,opacity:AX_OPA});
+      const shaft=new THREE.Mesh(new THREE.CylinderGeometry(AX_THICK,AX_THICK,AX_LEN*0.9,18),mat);
+      shaft.position.y=AX_LEN*0.45;
+      const head=new THREE.Mesh(new THREE.ConeGeometry(AX_THICK*2.0,AX_LEN*0.18,24),mat);
+      head.position.y=AX_LEN*0.9;
+      g.add(shaft,head);
+      const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),dir.clone().normalize());
+      g.quaternion.copy(q);
+      const sp=labelSprite(label); sp.scale.set(labelScale[0],labelScale[1],1); sp.position.y=AX_LEN*1.08;
+      g.add(sp);
+      return g;
+    }
+    const axes=new THREE.Group();
+    axes.add(axis(new THREE.Vector3(1,0,0),0xff4d4d,'x'));
+    axes.add(axis(new THREE.Vector3(0,1,0),0x22c55e,'y'));
+    axes.add(axis(new THREE.Vector3(0,0,1),0x3b82f6,'z'));
+    scene.add(axes);
+  })();
+
+  // 원형 점 텍스처
+  const circTex=(()=>{
+    const c=document.createElement('canvas'); c.width=c.height=96;
+    const g=c.getContext('2d'), r=48, gr=g.createRadialGradient(r,r,0,r,r,r);
+    gr.addColorStop(0,'rgba(255,255,255,1)');
+    gr.addColorStop(0.7,'rgba(255,255,255,1)');
+    gr.addColorStop(1,'rgba(255,255,255,0)');
+    g.fillStyle=gr; g.beginPath(); g.arc(r,r,r,0,Math.PI*2); g.fill();
+    const t=new THREE.CanvasTexture(c); t.minFilter=t.magFilter=THREE.LinearFilter; return t;
+  })();
+
+  // 전자구름(Points) / 등가면
+  let pts,gP,mP,raf=null,isoMesh, Amax=1;
+  let showIso = tgl.checked;
+
+  // 수학부: 실수형 구면조화 (형상만) + 방사 엔벨롭
+  const realY=(l,m,th,ph)=>{
+    const s=Math.sin(th),c=Math.cos(th);
+    if(l===0)return 1;
+    if(l===1){
+      if(m===0)return c;
+      if(m===1)return s*Math.cos(ph);
+      if(m===-1)return s*Math.sin(ph);
+    }
+    if(l===2){
+      if(m===0)return 3*c*c-1;
+      if(m===1)return s*c*Math.cos(ph);
+      if(m===-1)return s*c*Math.sin(ph);
+      if(m===2)return s*s*Math.cos(2*ph);
+      if(m===-2)return s*s*Math.sin(2*ph);
+    }
+    if(l===3){
+      if(m===0)return 5*c*c*c-3*c;
+      if(m===1)return s*(5*c*c-1)*Math.cos(ph);
+      if(m===-1)return s*(5*c*c-1)*Math.sin(ph);
+      if(m===2)return s*s*c*Math.cos(2*ph);
+      if(m===-2)return s*s*c*Math.sin(2*ph);
+      if(m===3)return s*s*s*Math.cos(3*ph);
+      if(m===-3)return s*s*s*Math.sin(3*ph);
+    }
+    return 0;
+  };
+  const rEnv=(r,l)=>Math.pow(r+1e-6,2*l)*Math.exp(-2*r);
+
+  // |Y_l^m| 최대값 근사
+  function computeAngularMax(l,m){
+    let maxA=0;
+    const thSeg=128, phSeg=256;
+    for(let i=0;i<=thSeg;i++){
+      const th=Math.PI*(i/thSeg);
+      for(let j=0;j<=phSeg;j++){
+        const ph=2*Math.PI*(j/phSeg);
+        const a=Math.abs(realY(l,m,th,ph));
+        if(a>maxA) maxA=a;
+      }
+    }
+    return Math.max(1e-6, maxA);
+  }
+
+  function initPoints(N){
+    if(pts){scene.remove(pts); gP?.dispose(); mP?.dispose();}
+    gP=new THREE.BufferGeometry();
+    gP.setAttribute('position',new THREE.BufferAttribute(new Float32Array(N*3),3));
+    gP.setAttribute('color',new THREE.BufferAttribute(new Float32Array(N*3),3));
+    mP=new THREE.PointsMaterial({
+      size: CONFIG.points.size,
+      sizeAttenuation:true,
+      map:circTex, alphaTest:.3, transparent:true, opacity:CONFIG.points.opacity,
+      vertexColors:true, depthWrite:false
+    });
+    pts=new THREE.Points(gP,mP); pts.frustumCulled=false; scene.add(pts);
+  }
+
+  // 각도 분포를 |Y|^β로 가중한 수용-거절 샘플링
+  function fillPoints(N,l,m){
+    const pos=gP.attributes.position.array, col=gP.attributes.color.array;
+    const R=6, S=1.4/R;
+    const POS=CONFIG.colors.pos, NEG=CONFIG.colors.neg;
+    const beta = CONFIG.points.shapeBeta;
+
+    let accepted=0, tried=0, batch=4000;
+    if(raf)cancelAnimationFrame(raf);
+
+    (function step(){
+      const limit = Math.min(N, accepted + batch);
+      while(accepted < limit && tried < N*100){
+        tried++;
+        // 제안 분포: 구면 균일 + 지수형 반지름
+        const u=Math.random()*2-1;
+        const th=Math.acos(Math.max(-1,Math.min(1,u)));
+        const ph=Math.random()*Math.PI*2;
+        const r=Math.min(R, -Math.log(1-Math.random())*2.2);
+
+        const s=Math.sin(th), cx=s*Math.cos(ph), cy=s*Math.sin(ph), cz=Math.cos(th);
+        const A=realY(l,m,th,ph), aAbs=Math.abs(A);
+        const p = Math.pow(aAbs / Amax, beta);      // 0~1
+        if(Math.random() > p) continue;
+
+        const val=Math.pow(aAbs,1.2)*rEnv(r,l), b=.6+.4*(val/(1+.75*val)), rr=r*S;
+        pos[3*accepted]=cx*rr; pos[3*accepted+1]=cy*rr; pos[3*accepted+2]=cz*rr;
+        const rgb = (A>=0)? [POS[0]*b,POS[1]*b,POS[2]*b] : [NEG[0]*b,NEG[1]*b,NEG[2]*b];
+        col[3*accepted]=rgb[0]; col[3*accepted+1]=rgb[1]; col[3*accepted+2]=rgb[2];
+        accepted++;
+      }
+      gP.setDrawRange(0,accepted);
+      gP.attributes.position.needsUpdate = gP.attributes.color.needsUpdate = true;
+
+      if(accepted < N){ raf=requestAnimationFrame(step); }
+      else { gP.computeBoundingSphere(); frameAll(); }
+    })();
+  }
+
+  // 등가면(오비탈 모형)
+  function buildIso(l,m){
+    const {scale, exp, opacity}=CONFIG.iso;
+    if(isoMesh){scene.remove(isoMesh); isoMesh.geometry.dispose(); isoMesh.material.dispose();}
+    const thSeg=96, phSeg=192, row=phSeg+1, P=[],C=[],I=[];
+    for(let i=0;i<=thSeg;i++){
+      const th=Math.PI*(i/thSeg), s=Math.sin(th), c=Math.cos(th);
+      for(let j=0;j<=phSeg;j++){
+        const ph=2*Math.PI*(j/phSeg), A=realY(l,m,th,ph), mag=Math.pow(Math.abs(A),exp), r=scale*(.9*mag+.05);
+        P.push(r*s*Math.cos(ph), r*s*Math.sin(ph), r*c);
+        (A>=0)? C.push(...CONFIG.colors.pos): C.push(...CONFIG.colors.neg);
+      }
+    }
+    for(let i=0;i<thSeg;i++)
+      for(let j=0;j<phSeg;j++){
+        const a=i*row+j,b=a+1,c=(i+1)*row+j,d=c+1;
+        I.push(a,c,b,b,c,d);
+      }
+    const g=new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));
+    g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));
+    g.setIndex(I); g.computeVertexNormals();
+    isoMesh=new THREE.Mesh(g,new THREE.MeshPhongMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:true,opacity}));
+    scene.add(isoMesh);
+    // 게임 중에는 등가면 숨기기
+    isoMesh.visible = (!gameMode && showIso);
+  }
+
+  // 카메라 프레이밍
+  function frameAll(margin=1.25){
+    let r1=0,r2=0;
+    if(isoMesh && isoMesh.visible){ isoMesh.geometry.computeBoundingSphere(); r1=isoMesh.geometry.boundingSphere.radius; }
+    if(gP){ gP.computeBoundingSphere(); r2=gP.boundingSphere.radius; }
+    const r=Math.max(r1,r2,1);
+    const vF=THREE.MathUtils.degToRad(cam.fov), hF=2*Math.atan(Math.tan(vF/2)*cam.aspect);
+    const d=Math.max((r*margin)/Math.tan(vF/2),(r*margin)/Math.tan(hF/2));
+    const dir=new THREE.Vector3().subVectors(cam.position,new THREE.Vector3(0,0,0)).normalize();
+    cam.position.copy(dir.multiplyScalar(d));
+    cam.lookAt(0,0,0);
+    cam.updateProjectionMatrix();
+  }
+
+  // UI 로직
+  function populateM(){
+    const l=+lSel.value;
+    mSel.innerHTML='';
+    for(let m=-l;m<=l;m++){
+      const o=document.createElement('option');
+      o.value=m; o.textContent=m;
+      if(m===0) o.selected=true;
+      mSel.appendChild(o);
+    }
+  }
+
+  function regen(gameOnly=false){
+    const l=+lSel.value, m=+mSel.value||0;
+    Amax = computeAngularMax(l,m);
+    initPoints(CONFIG.points.count);
+    fillPoints(CONFIG.points.count,l,m);
+    // 게임일 때도 isoMesh는 만들어 두되, 보이지만 않게
+    buildIso(l,m);
+    frameAll(1.25);
+  }
+
+  // 이벤트 바인딩 초기화
+  populateM();
+  regen();
+  setFreeModeUI();
+
+  lSel.addEventListener('change',()=>{ if(!gameMode){populateM(); regen();} });
+  mSel.addEventListener('change',()=>{ if(!gameMode) regen(); });
+  btn.addEventListener('click',()=>{ if(!gameMode) regen(); });
+
+  // 등가면 on/off (전자구름은 항상 표시)
+  tgl.addEventListener('change', ()=>{
+    if(gameMode) return; // 게임 중엔 무시
+    showIso = tgl.checked;
+    if(isoMesh){
+      isoMesh.visible = showIso;
+      frameAll(1.25);
+    }else if(showIso){
+      const l=+lSel.value, m=+mSel.value||0;
+      buildIso(l,m);
+      frameAll(1.25);
+    }
+  });
+
+  // 도전 버튼: 게임 시작/종료 토글
+  challengeBtn.addEventListener('click', ()=>{
+    if(!gameMode){
+      startGame();
+    }else{
+      endGame();
+    }
+  });
+
+  function onResize(){
+    const w=box.clientWidth||880,h=Math.max(box.clientHeight||640,560);
+    cam.aspect=w/h; cam.updateProjectionMatrix();
+    rnd.setSize(w,h,false);
+    frameAll(1.25);
+  }
+  if('ResizeObserver'in window){new ResizeObserver(onResize).observe(box)} else {addEventListener('resize',onResize)}
+  onResize();
+
+  (function loop(){
+    requestAnimationFrame(loop);
+    ctl.update();
+    rnd.render(scene,cam);
+  })();
+})();
+</script>
+
+<!-- ===== Firebase 점수 연동 (원자모형 퀴즈) ===== -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
+    authDomain: "simulation-67cd3.firebaseapp.com",
+    projectId: "simulation-67cd3",
+    storageBucket: "simulation-67cd3.appspot.com",
+    messagingSenderId: "615983461615",
+    appId: "1:615983461615:web:002e07bcea878eb6d5571a",
+    measurementId: "G-9RGN7LYE5W"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // ★ 이 시뮬레이션 id (허브 합계 계산에 쓰일 이름)
+  const SIM_ID = "원자모형_퀴즈";
+
+  let firebaseUser = null;
+
+  // Firestore에 최고 점수 저장
+  async function saveBestScore(score) {
+    if (!firebaseUser) return;
+    try {
+      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+      await setDoc(ref, { score: Number(score) || 0 }, { merge: true });
+    } catch (err) {
+      console.error("[원자모형 퀴즈] 최고 점수 저장 오류:", err);
+    }
+  }
+
+  // 기존 최고 점수 로드
+  async function loadBestScore() {
+    if (!firebaseUser) return;
+    try {
+      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const data = snap.data();
+        const score = Number(data.score || 0) || 0;
+        if (window.setBestScoreFromFirebase) {
+          window.setBestScoreFromFirebase(score);
+        }
+      }
+    } catch (err) {
+      console.error("[원자모형 퀴즈] 최고 점수 불러오기 오류:", err);
+    }
+  }
+
+  // 전역에 노출 → 게임 스크립트에서 호출
+  window.saveBestScoreToFirebase = saveBestScore;
+
+  // 로그인 상태 바뀔 때마다 해당 유저 기준 최고점 로딩
+  onAuthStateChanged(auth, async (user) => {
+    firebaseUser = user;
+    if (user) {
+      await loadBestScore();
+    }
+  });
+</script>
+
+</body>
+</html>

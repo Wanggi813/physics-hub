@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
+<title>이중슬릿 </title>
+<script src="https://unpkg.com/p5@1.9.0/lib/p5.min.js"></script>
+<style>
+  :root{
+    --bg:#020617;
+    --panel:#020617d9;
+    --accent:#38bdf8;
+    --accent2:#22c55e;
+    --radius:14px;
+    --shadow:0 14px 30px rgba(0,0,0,.6);
+  }
+  *{
+    box-sizing:border-box;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Pretendard,Malgun Gothic,sans-serif;
+  }
+  html,body{
+    margin:0;
+    height:100%;
+    overflow:hidden;
+    background:radial-gradient(circle at top,#0b1120 0%,#020617 55%,#000 100%);
+    color:#e5e7eb;
+  }
+  #sim{
+    position:fixed;
+    inset:0;
+    width:100vw;
+    height:100vh;
+    touch-action:none;
+  }
+
+  .ui{
+    position:fixed;
+    top:14px;
+    left:14px;
+    z-index:10;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    max-width:360px;
+  }
+  .panel{
+    background:var(--panel);
+    border-radius:var(--radius);
+    border:1px solid rgba(148,163,184,.6);
+    padding:12px 12px 10px;
+    box-shadow:var(--shadow);
+    backdrop-filter:blur(16px);
+  }
+
+  .modes{
+    display:flex;
+    gap:8px;
+    margin-bottom:6px;
+  }
+  .mode-btn{
+    flex:1;
+    border-radius:999px;
+    border:1px solid rgba(148,163,184,.7);
+    padding:7px 10px;
+    font-size:13px;
+    color:#e5e7eb;
+    background:linear-gradient(135deg,#020617,#020617);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+  }
+  .mode-btn span.dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+  }
+  .mode-btn.wave span.dot{background:var(--accent);}
+  .mode-btn.elec span.dot{background:var(--accent2);}
+  .mode-btn.active{
+    border-color:#e5e7eb;
+    background:radial-gradient(circle at top,#0f172a,#020617);
+  }
+
+  .rows{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    margin-bottom:6px;
+  }
+  .row{
+    display:grid;
+    grid-template-columns:130px 1fr 72px;
+    gap:8px;
+    align-items:center;
+  }
+  .row label{
+    font-size:12px;
+    color:#cbd5f5;
+    line-height:1.3;
+  }
+  .row output{
+    font-size:12px;
+    color:#e5e7eb;
+    text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+  input[type="range"]{
+    width:100%;
+    -webkit-appearance:none;
+    appearance:none;
+    background:transparent;
+  }
+  input[type="range"]::-webkit-slider-runnable-track{
+    height:6px;
+    background:#0f172a;
+    border-radius:999px;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    appearance:none;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--accent);
+    border:2px solid #e5e7eb;
+    margin-top:-6px;
+    box-shadow:0 0 0 4px rgba(56,189,248,.25);
+    cursor:pointer;
+  }
+  input[type="range"]::-moz-range-track{
+    height:6px;
+    background:#0f172a;
+    border-radius:999px;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--accent);
+    border:2px solid #e5e7eb;
+    box-shadow:0 0 0 4px rgba(56,189,248,.25);
+    cursor:pointer;
+  }
+
+  .toggles{
+    display:flex;
+    gap:8px;
+    margin-top:6px;
+    flex-wrap:wrap;
+    margin-bottom:6px;
+  }
+  .chip{
+    border-radius:999px;
+    border:1px solid rgba(148,163,184,.7);
+    padding:4px 9px;
+    font-size:11px;
+    color:#9ca3af;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    cursor:pointer;
+    background:#020617;
+  }
+  .chip input{
+    accent-color:var(--accent);
+  }
+
+  .challenge{
+    margin-top:4px;
+    padding:8px 9px 6px;
+    border-radius:12px;
+    border:1px dashed rgba(148,163,184,.6);
+    background:rgba(15,23,42,.9);
+  }
+  .challenge h3{
+    margin:0 0 4px;
+    font-size:13px;
+    color:#e5e7eb;
+  }
+  .ch-top{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    margin-bottom:4px;
+    flex-wrap:wrap;
+  }
+  .ch-desc{
+    font-size:11px;
+    color:#9ca3af;
+  }
+  .ch-stats{
+    display:flex;
+    gap:10px;
+    font-size:12px;
+    color:#cbd5f5;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-bottom:4px;
+  }
+  .ch-answers{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-top:2px;
+  }
+  .ch-message{
+    margin-top:4px;
+    font-size:11px;
+    color:#9ca3af;
+    min-height:16px;
+  }
+
+  .bestScoreBox {
+    display:flex;
+    align-items:center;
+    gap:4px;
+    font-size:13px;
+    font-weight:600;
+  }
+  .bestLabel {
+    color:#e5e7eb;
+  }
+  .bestIcon {
+    font-size:16px;
+    filter:drop-shadow(0 0 4px rgba(255,200,0,.7));
+  }
+  .bestValue {
+    font-size:16px;
+    font-weight:700;
+    color:#ffb300;
+    text-shadow:0 0 6px rgba(255,190,0,.8);
+  }
+
+  @media (max-width:640px){
+    .ui{
+      top:8px;
+      left:8px;
+      max-width:280px;
+    }
+    .row{grid-template-columns:120px 1fr 64px;}
+  }
+</style>
+</head>
+<body>
+<div id="sim"></div>
+
+<div class="ui">
+  <div class="panel">
+    <div class="modes">
+      <button class="mode-btn wave active" data-mode="wave">
+        <span class="dot"></span>파동 모드
+      </button>
+      <button class="mode-btn elec" data-mode="electron">
+        <span class="dot"></span>전자 모드
+      </button>
+    </div>
+
+    <div class="rows">
+      <div class="row">
+        <label>파장 λ (nm)</label>
+        <input id="lambda" type="range" min="350" max="750" step="1" value="530">
+        <output id="oLam">530</output>
+      </div>
+      <div class="row">
+        <label>슬릿 간격 d (임의 단위)</label>
+        <input id="d" type="range" min="5" max="200" step="1" value="50">
+        <output id="oD">50</output>
+      </div>
+      <div class="row">
+        <label>슬릿 폭 a (임의 단위)</label>
+        <input id="a" type="range" min="0" max="10" step="0.1" value="1.0">
+        <output id="oA">1.0</output>
+      </div>
+    </div>
+
+    <div class="toggles">
+      <label class="chip">
+        <input id="envelope" type="checkbox" checked> 단일슬릿 포락선 효과
+      </label>
+      <label class="chip">
+        <input id="approx" type="checkbox"> 소각 근사 (시각만 영향)
+      </label>
+    </div>
+
+    <div class="challenge">
+      <h3>도전 모드</h3>
+      <div class="ch-top">
+        <button id="btnChallenge" class="chip">이중슬릿 도전 시작</button>
+        <div class="ch-desc">총 10라운드 · 정답당 50점</div>
+      </div>
+      <div class="ch-stats">
+        <div>라운드: <strong><span id="chRound">-</span> / 10</strong></div>
+        <div>점수: <strong><span id="chScore">0</span>점</strong></div>
+        <div class="bestScoreBox">
+          <span class="bestLabel">최고점수</span>
+          <span class="bestIcon">🏆</span>
+          <span id="chBest" class="bestValue">0</span>
+        </div>
+      </div>
+      <div class="ch-answers">
+        <button id="btnCons" class="chip">보강 간섭 (극대)</button>
+        <button id="btnDes"  class="chip">상쇄 간섭 (극소)</button>
+      </div>
+      <div class="ch-message" id="chMessage">도전 시작 버튼을 누르면 게임이 시작됩니다.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+// 화면 기반 파라미터 (물리 단위 대신 "시각 파라미터")
+const P = {
+  lambdaNm: 530,  // nm 슬라이더 값 (screen gap 스케일용)
+  dUnit: 50,      // 임의 단위 (슬릿 사이 거리 → 화면에서 슬릿 간격 스케일링)
+  aUnit: 1,      // 임의 단위 (슬릿 폭 스케일링)
+  viewH: 0.20,    // 실제 m는 의미 약함, 포락선용
+  envelope: true,
+  approx: false,
+  mode: 'wave'
+};
+
+let gTopY=0,gBotY=0,gMidY=0,gPlateX=0,gScreenX=0,gSrcX=0,gSrcY=0,gHeight=0;
+let baseSlitSpanPx = 120;
+
+// 게임 상태
+const game = {
+  active:false,
+  round:0,
+  totalRounds:10,
+  score:0,
+  bestScore:Number(localStorage.getItem('doubleSlitBestScore') || 0) || 0,
+  testYPix:null,
+  correctType:null // 'cons' | 'des'
+};
+const SCORE_PER_ROUND = 50;
+
+// UI
+const lambdaEl = $('#lambda');
+const dEl      = $('#d');
+const aEl      = $('#a');
+const oLamEl   = $('#oLam');
+const oDEl     = $('#oD');
+const oAEl     = $('#oA');
+const envelopeEl = $('#envelope');
+const approxEl   = $('#approx');
+const btnCons   = $('#btnCons');
+const btnDes    = $('#btnDes');
+const btnChallenge = $('#btnChallenge');
+const chRoundEl = $('#chRound');
+const chScoreEl = $('#chScore');
+const chBestEl  = $('#chBest');
+const chMsgEl   = $('#chMessage');
+
+function refreshLabels(){
+  oLamEl.textContent = P.lambdaNm.toFixed(0);
+  oDEl.textContent   = P.dUnit.toFixed(0);
+  oAEl.textContent   = P.aUnit.toFixed(1);
+}
+function setSlidersEnabled(enabled){
+  lambdaEl.disabled = !enabled;
+  dEl.disabled      = !enabled;
+  aEl.disabled      = !enabled;
+  envelopeEl.disabled = !enabled;
+  approxEl.disabled   = !enabled;
+}
+function updateGameUI(){
+  chRoundEl.textContent = game.active ? game.round : '-';
+  chScoreEl.textContent = game.score;
+  chBestEl.textContent  = game.bestScore;
+}
+function setGameMessage(msg, good=false){
+  chMsgEl.textContent = msg || '';
+  chMsgEl.style.color = good ? '#4ade80' : '#9ca3af';
+}
+
+// 화면 세로 픽셀 ↔ 가상의 실제 길이
+function metersPerPixY(){
+  const span = (gBotY - gTopY);
+  if(span <= 1) return 0;
+  return P.viewH / span;
+}
+function yPixToMeters(yPix){
+  const mPerPix = metersPerPixY();
+  return (yPix - gMidY)*mPerPix;
+}
+
+// 슬릿 기하 (화면 기준)
+function getSlitGeom(){
+  const dScale = P.dUnit / 50; // 50 기준
+  const slitSpan = baseSlitSpanPx * dScale;
+  const aScale  = (P.aUnit || 1) / 20;
+  const baseH = 30;
+  let slitH = baseH * aScale;
+  const maxH = Math.max(8, 0.9*slitSpan);
+  slitH = Math.max(6, Math.min(160, Math.min(slitH,maxH)));
+  const y1 = gMidY - slitSpan/2;
+  const y2 = gMidY + slitSpan/2;
+  return {slitSpan, slitH, y1, y2};
+}
+
+// 화면 상 "파장" (gap, 픽셀 단위) - 모든 간섭식이 여기 기준
+function wavelengthPix(){
+  const gapBase = 28; // 기준 픽셀 간격
+  return gapBase * (P.lambdaNm / 550); // λ=550nm일 때 gapBase
+}
+
+// 화면 강도 (0~1) — Δr/gap 기반, P.lambdaNm은 gap으로만 들어감
+function intensityScreenPix(yp){
+  const {y1,y2} = getSlitGeom();
+  const dx = gScreenX - gPlateX;
+  const gap = wavelengthPix();
+
+  const dy1 = yp - y1;
+  const dy2 = yp - y2;
+  const r1 = Math.sqrt(dx*dx + dy1*dy1);
+  const r2 = Math.sqrt(dx*dx + dy2*dy2);
+
+  const phaseArg = (r2 - r1)/gap; // 화면 기준 "위상 차이" (단위: gap)
+  let I = 0.5 * (1 + Math.cos(2*Math.PI*phaseArg));
+
+  if(P.envelope && P.aUnit > 0){
+    const y_m = yPixToMeters(yp);
+    const kEnv = Math.PI * P.aUnit * y_m / (P.viewH || 1);
+    const S = Math.abs(kEnv) < 1e-6 ? 1 : Math.sin(kEnv)/kEnv;
+    I *= S*S;
+  }
+  return Math.max(0,Math.min(1,I));
+}
+
+// 전자 모드
+const hits = [];
+const movingElectrons = [];
+const MAX_HITS = 15000;
+const MAX_MOVING = 400;
+
+function sampleYPixForElectron(){
+  for(let i=0;i<80;i++){
+    const yp = gTopY + Math.random()*(gBotY-gTopY);
+    const I = intensityScreenPix(yp);
+    if(Math.random() < I) return yp;
+  }
+  return gTopY + Math.random()*(gBotY-gTopY);
+}
+
+// 점수 처리
+function applyCorrectScore(isCorrect){
+  if(!isCorrect){
+    setGameMessage('아쉽지만 오답입니다. 다음 라운드로 넘어갑니다.');
+    return;
+  }
+  game.score += SCORE_PER_ROUND;
+  setGameMessage(`정답입니다! +${SCORE_PER_ROUND}점 🎉`, true);
+
+  if(game.score > game.bestScore){
+    game.bestScore = game.score;
+    localStorage.setItem('doubleSlitBestScore', String(game.bestScore));
+    if(window.saveBestScoreToFirebase){
+      try{ window.saveBestScoreToFirebase(game.bestScore); }catch(e){}
+    }
+  }
+  updateGameUI();
+}
+
+function endChallenge(){
+  setGameMessage(`도전 종료! 최종 점수는 ${game.score}점입니다.`, true);
+  game.active = false;
+  game.round  = 0;
+  game.testYPix = null;
+  game.correctType = null;
+  setSlidersEnabled(true);
+  updateGameUI();
+}
+
+// ★ 화면 기준 "이론상" 극대/극소 찾기
+//   조건: phaseArg = (r2-r1)/gap
+//   극대: phaseArg ≈ 정수, 극소: phaseArg ≈ 반정수
+function pickTheoreticalPointScreen(){
+  const {y1,y2} = getSlitGeom();
+  const dx = gScreenX - gPlateX;
+  const gap = wavelengthPix();
+  const candidates = [];
+  const step = 1; // y step (px)
+  const eps = 0.04; // 정수/반정수 허용 오차
+
+  for(let yp = Math.floor(gTopY); yp <= Math.floor(gBotY); yp += step){
+    const dy1 = yp - y1;
+    const dy2 = yp - y2;
+    const r1 = Math.sqrt(dx*dx + dy1*dy1);
+    const r2 = Math.sqrt(dx*dx + dy2*dy2);
+    const phase = (r2 - r1)/gap; // 무차원
+
+    const mInt  = Math.round(phase);
+    const diffI = Math.abs(phase - mInt);
+
+    const mHalf = Math.round(phase - 0.5) + 0.5;
+    const diffH = Math.abs(phase - mHalf);
+
+    if(diffI < eps){
+      candidates.push({yPix: yp, type:'cons'});
+    }else if(diffH < eps){
+      candidates.push({yPix: yp, type:'des'});
+    }
+  }
+
+  if(!candidates.length) return null;
+  const idx = Math.floor(Math.random()*candidates.length);
+  return candidates[idx];
+}
+
+// 라운드 셋업
+function setupRound(){
+  // 파라미터: 파장이 짧고, 슬릿 간격 크고, 슬릿 폭 적당히 작게 → 무늬 많이
+  const lamNm = 380 + Math.random()*80;   // 380~460
+  const dUnit = 80 + Math.random()*50;    // 80~130
+  const aUnit = 2  + Math.random()*5;     // 2~7
+
+  P.lambdaNm = lamNm;
+  P.dUnit    = dUnit;
+  P.aUnit    = aUnit;
+
+  lambdaEl.value = lamNm.toFixed(0);
+  dEl.value      = dUnit.toFixed(0);
+  aEl.value      = aUnit.toFixed(0);
+  refreshLabels();
+
+  let pt = pickTheoreticalPointScreen();
+
+  // 실패 시 백업: 강도 기반
+  if(!pt){
+    let chosenY = gMidY;
+    let chosenType = 'cons';
+    let found = false;
+    for(let i=0;i<200;i++){
+      const yp = gTopY + Math.random()*(gBotY-gTopY);
+      const I = intensityScreenPix(yp);
+      if(I >= 0.8){ chosenY=yp; chosenType='cons'; found=true; break;}
+      if(I <= 0.2){ chosenY=yp; chosenType='des';  found=true; break;}
+    }
+    if(found) pt = {yPix:chosenY, type:chosenType};
+  }
+
+  if(pt){
+    game.testYPix    = pt.yPix;
+    game.correctType = pt.type;
+  }else{
+    game.testYPix    = gMidY;
+    game.correctType = 'cons';
+  }
+
+  const phaseLabel = (game.round <=5) ? '[1–5] 패턴 보이는 상태' : '[6–10] 스크린 가린 상태';
+  setGameMessage(`${phaseLabel}에서 빨간 점이 보강/상쇄 간섭 중 어느 지점인지 골라보세요.`);
+}
+
+function nextRound(){
+  if(!game.active) return;
+  if(game.round >= game.totalRounds){
+    endChallenge();
+    return;
+  }
+  game.round++;
+  updateGameUI();
+  setupRound();
+}
+
+function handleAnswer(choice){
+  if(!game.active || !game.correctType) return;
+  const isCorrect = (choice === game.correctType);
+  applyCorrectScore(isCorrect);
+  setTimeout(nextRound, 700);
+}
+
+function startChallenge(){
+  game.active = true;
+  game.round  = 0;
+  game.score  = 0;
+  game.testYPix = null;
+  game.correctType = null;
+  setSlidersEnabled(false);
+  setGameMessage('도전 모드 시작! 화면 패턴 기준 이론 극대/극소가 선택됩니다.');
+  updateGameUI();
+  nextRound();
+}
+
+// UI 바인딩
+function bindUI(){
+  lambdaEl.addEventListener('input',e=>{
+    P.lambdaNm = Number(e.target.value);
+    refreshLabels();
+  });
+  dEl.addEventListener('input',e=>{
+    P.dUnit = Number(e.target.value);
+    refreshLabels();
+  });
+  aEl.addEventListener('input',e=>{
+    P.aUnit = Number(e.target.value);
+    refreshLabels();
+  });
+  envelopeEl.addEventListener('change',e=>{
+    P.envelope = e.target.checked;
+  });
+  approxEl.addEventListener('change',e=>{
+    P.approx = e.target.checked;
+  });
+
+  document.querySelectorAll('.mode-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      P.mode = btn.dataset.mode === 'electron' ? 'electron' : 'wave';
+      if(P.mode === 'electron'){
+        hits.length = 0;
+        movingElectrons.length = 0;
+      }
+    });
+  });
+
+  if(btnChallenge){
+    btnChallenge.addEventListener('click', startChallenge);
+  }
+  if(btnCons){
+    btnCons.addEventListener('click', ()=>handleAnswer('cons'));
+  }
+  if(btnDes){
+    btnDes.addEventListener('click', ()=>handleAnswer('des'));
+  }
+
+  updateGameUI();
+  setGameMessage('도전 모드 시작 버튼을 눌러 간섭 극대/극소를 맞혀보세요.');
+}
+
+// p5 스케치
+let sketch = p => {
+  let W,H;
+  let tSec = 0;
+  let stripeBuffer;
+
+  p.setup = () => {
+    const holder = document.getElementById('sim');
+    const rect = holder.getBoundingClientRect();
+    W = rect.width;
+    H = rect.height;
+    gHeight = H;
+    let c = p.createCanvas(W,H);
+    c.parent('sim');
+    p.pixelDensity(Math.max(1, window.devicePixelRatio || 1));
+    stripeBuffer = p.createGraphics(W,H);
+    computeLayout(W,H);
+    bindUI();
+    refreshLabels();
+  };
+
+  p.windowResized = () => {
+    const holder = document.getElementById('sim');
+    const rect = holder.getBoundingClientRect();
+    W = rect.width;
+    H = rect.height;
+    gHeight = H;
+    p.resizeCanvas(W,H);
+    stripeBuffer = p.createGraphics(W,H);
+    computeLayout(W,H);
+  };
+
+  function computeLayout(W,H){
+    gTopY = H*0.12;
+    gBotY = H*0.88;
+    gMidY = (gTopY+gBotY)/2;
+    gPlateX = W*0.35;
+    gScreenX = W*0.82;
+    gSrcX = W*0.12;
+    gSrcY = gMidY;
+  }
+
+  function drawBackground(){
+    p.noStroke();
+    p.fill(5,10,26,230);
+    p.rect(0,0,W,H);
+  }
+
+  function drawBarrierAndSource(){
+    p.noStroke();
+    p.fill(10,15,35,255);
+    p.rect(gPlateX-6, gTopY, 12, gBotY-gTopY);
+    p.stroke(37,99,235,210);
+    p.noFill();
+    p.rect(gPlateX-6, gTopY, 12, gBotY-gTopY);
+
+    const {slitSpan, slitH, y1, y2} = getSlitGeom();
+    p.noStroke();
+    p.fill(226,232,240);
+    p.rect(gPlateX-6, y1 - slitH/2, 12, slitH);
+    p.rect(gPlateX-6, y2 - slitH/2, 12, slitH);
+
+    p.noStroke();
+    p.fill(248,250,252);
+    p.circle(gSrcX, gSrcY, 18);
+
+    const osc = 0.6 + 0.4*Math.sin(tSec*6.0);
+    p.noFill();
+    p.stroke(56,189,248,160);
+    p.strokeWeight(2);
+    p.circle(gSrcX, gSrcY, 22 + 6*osc);
+  }
+
+  function drawWaveFromSources(t){
+    const {slitH, y1, y2} = getSlitGeom();
+    const N = 7;
+    const gap = wavelengthPix();
+    const speed = 140;
+    const rStart = (t*speed) % gap;
+    const maxRadius = (gScreenX - gPlateX) * 1.4;
+
+    for(const baseY of [y1, y2]){
+      for(let i=0;i<N;i++){
+        const fy = (i+0.5)/N - 0.5;
+        const cy = baseY + fy*slitH;
+
+        const phase = t*7.0 + fy*3.0;
+        const alphaDot = 160 + 80*Math.sin(phase);
+        p.noStroke();
+        p.fill(191,219,254,alphaDot);
+        p.circle(gPlateX, cy, 5);
+
+        p.noFill();
+        p.stroke(96,165,250,130);
+        p.strokeWeight(1.0);
+        for(let rr = rStart; rr < maxRadius; rr += gap){
+          p.arc(gPlateX, cy, rr*2, rr*2, -0.30*Math.PI, 0.30*Math.PI);
+        }
+      }
+    }
+  }
+
+  function drawScreenBase(){
+    p.noStroke();
+    p.fill(5,8,20,255);
+    p.rect(gScreenX, 0, W-gScreenX+10, H);
+    p.noFill();
+    p.stroke(248,250,252,220);
+    p.strokeWeight(1.6);
+    p.rect(gScreenX, 0, W-gScreenX+10, H);
+  }
+
+  function drawStripeBackground(){
+    if(game.active && game.round >= 6){
+      return; // 6~10 라운드는 패턴 숨기기
+    }
+    stripeBuffer.clear();
+    const left = gScreenX;
+    const right = W;
+    for(let yp=0; yp<=H; yp++){
+      const I = intensityScreenPix(yp);
+      const Igamma = Math.pow(I, 1/1.2);
+      const v = Math.round(255*Igamma);
+      stripeBuffer.stroke(v,v,v);
+      stripeBuffer.line(left, yp, right, yp);
+    }
+    p.image(stripeBuffer,0,0);
+  }
+
+  function drawElectronHits(){
+    p.noStroke();
+    for(const h of hits){
+      const age = (tSec - h.t);
+      const alpha = Math.max(0, Math.min(1, 1.0 - age/6.0));
+      const baseA = 200 + Math.min(80, hits.length/80);
+      p.fill(248,250,252, baseA*alpha);
+      p.circle(h.x, h.y, 3.0);
+      if(alpha>0.3){
+        p.fill(94,234,212,140*alpha);
+        p.circle(h.x, h.y, 5.2);
+      }
+    }
+  }
+
+  function spawnMovingElectrons(dt){
+    const targetCount = Math.round(18 * (H/600));
+    const {slitH, y1, y2} = getSlitGeom();
+
+    for(let i=0;i<targetCount;i++){
+      if(movingElectrons.length >= MAX_MOVING) break;
+
+      const yPix = sampleYPixForElectron();
+      const yPlate = gSrcY + (yPix - gSrcY) * (gPlateX - gSrcX) / (gScreenX - gSrcX);
+      const inSlit1 = (yPlate >= y1 - slitH/2) && (yPlate <= y1 + slitH/2);
+      const inSlit2 = (yPlate >= y2 - slitH/2) && (yPlate <= y2 + slitH/2);
+      if(!inSlit1 && !inSlit2) continue;
+
+      const T = 1.6 + Math.random()*0.4;
+      const vx = (gScreenX - gSrcX)/T;
+      const vy = (yPix - gSrcY)/T;
+
+      movingElectrons.push({
+        x: gSrcX,
+        y: gSrcY,
+        vx, vy,
+        targetY: yPix,
+        born: tSec,
+        life: T
+      });
+    }
+  }
+
+  function updateAndDrawMovingElectrons(dt){
+    for(let i=movingElectrons.length-1;i>=0;i--){
+      const e = movingElectrons[i];
+      e.x += e.vx*dt;
+      e.y += e.vy*dt;
+
+      const age = tSec - e.born;
+      const tailAlpha = Math.max(0, 200 - age*90);
+      p.noFill();
+      p.stroke(52,211,153,tailAlpha);
+      p.strokeWeight(1.4);
+      p.circle(e.x, e.y, 9);
+
+      p.noStroke();
+      p.fill(248,250,252,240);
+      p.circle(e.x, e.y, 3.4);
+
+      if(e.x >= gScreenX){
+        hits.push({x: gScreenX + 4 + Math.random()*(W-gScreenX-10), y: e.targetY, t: tSec});
+        if(hits.length > MAX_HITS) hits.shift();
+        movingElectrons.splice(i,1);
+      }
+    }
+  }
+
+  p.draw = () => {
+    const dt = p.deltaTime/1000;
+    tSec += dt;
+
+    drawBackground();
+    drawBarrierAndSource();
+
+    if(P.mode === 'wave'){
+      drawWaveFromSources(tSec);
+    }
+
+    drawScreenBase();
+    drawStripeBackground();
+
+    // 도전 모드 빨간 점: 스크린 왼쪽 테두리에 붙이기
+    if(game.active && game.testYPix != null){
+      const xDot = gScreenX + 4;
+      p.noStroke();
+      p.fill(244,63,94,230);
+      p.circle(xDot, game.testYPix, 7);
+      p.fill(248,250,252,220);
+      p.circle(xDot, game.testYPix, 3);
+    }
+
+    if(P.mode === 'electron'){
+      spawnMovingElectrons(dt);
+      updateAndDrawMovingElectrons(dt);
+      drawElectronHits();
+    }
+
+    p.stroke(248,250,252,120);
+    p.strokeWeight(1.2);
+    const mid = (gTopY+gBotY)/2;
+    p.line(gScreenX-4, mid, W, mid);
+  };
+};
+
+new p5(sketch);
+
+// Firebase 최고점수 동기화용 훅
+window.setBestScoreFromFirebase = function(score){
+  game.bestScore = Number(score) || 0;
+  updateGameUI();
+};
+</script>
+
+<!-- Firebase 연동 -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
+    authDomain: "simulation-67cd3.firebaseapp.com",
+    projectId: "simulation-67cd3",
+    storageBucket: "simulation-67cd3.appspot.com",
+    messagingSenderId: "615983461615",
+    appId: "1:615983461615:web:002e07bcea878eb6d5571a",
+    measurementId: "G-9RGN7LYE5W"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  const SIM_ID = "이중슬릿";
+
+  let firebaseUser = null;
+
+  async function saveBestScore(score) {
+    if (!firebaseUser) return;
+    try {
+      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+      await setDoc(ref, { score: Number(score) || 0 }, { merge: true });
+    } catch (err) {
+      console.error("[이중슬릿] 최고 점수 저장 오류:", err);
+    }
+  }
+
+  async function loadBestScore() {
+    if (!firebaseUser) return;
+    try {
+      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const data  = snap.data();
+        const score = Number(data.score || 0) || 0;
+        if (window.setBestScoreFromFirebase) {
+          window.setBestScoreFromFirebase(score);
+        }
+      }
+    } catch (err) {
+      console.error("[이중슬릿] 최고 점수 불러오기 오류:", err);
+    }
+  }
+
+  window.saveBestScoreToFirebase = saveBestScore;
+
+  onAuthStateChanged(auth, async (user) => {
+    firebaseUser = user;
+    if (user) {
+      await loadBestScore();
+    }
+  });
+</script>
+</body>
+</html>
+

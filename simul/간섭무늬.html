@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>간섭무늬</title>
+  <style>
+    html, body {
+      height:100%; margin:0;
+      background:#0a0a0a; color:#e6e6e6;
+      font-family:system-ui, sans-serif;
+      overscroll-behavior: none;
+    }
+    .wrap {
+      width:min(92vmin, 720px);
+      aspect-ratio:1 / 1;
+      margin:3vmin auto 0.8rem;
+      background:#000;
+      border-radius:14px;
+      box-shadow:0 12px 40px rgba(0,0,0,.55);
+      overflow:hidden;
+      touch-action:none;
+    }
+    canvas#sim {
+      width:100%; height:100%; display:block;
+      cursor:grab;
+      touch-action:none;
+      -webkit-user-select:none; user-select:none;
+    }
+    .panel {
+      width:min(92vmin, 720px);
+      margin:0 auto 0.6rem;
+      display:grid;
+      grid-template-columns: 120px 1fr 62px;
+      gap:8px 12px;
+      align-items:center;
+      font-size:14px;
+    }
+    .panel label { color:#bdbdbd }
+    .panel input[type="range"], .panel select { width:100% }
+    .badge {
+      width:min(92vmin, 720px);
+      margin:0 auto 0.6rem;
+      text-align:center; color:#9b9b9b; font-size:12px;
+    }
+    .brand {
+      width:min(92vmin, 720px);
+      margin:0 auto 2rem;
+      text-align:center;
+      color:#c7f36b; font-weight:700;
+      letter-spacing:.02em;
+      text-shadow:0 1px 10px rgba(199,243,107,.25);
+    }
+
+    /* === 간섭 도전 박스 (밝은 색) === */
+.challenge-box{
+  position:fixed;
+
+  /* 📍 위치: 왼쪽 아래 */
+  left:14px;
+  bottom:14px;
+  top:auto;
+  transform:none;
+
+  /* 📐 폭: 화면에 맞게 자동 조절 */
+  width:clamp(220px, 38vw, 420px);
+  max-width:calc(100vw - 28px);
+
+  z-index:20;
+  background:rgba(255,255,255,0.98);
+  border:1px solid #e2e8f0;
+  border-radius:14px;
+  padding:10px 12px;
+  color:#0f172a;
+  box-shadow:0 12px 28px rgba(148,163,184,0.55);
+  font-size:13px;
+  line-height:1.45;
+}
+    .cb-title{
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.08em;
+      color:#2563eb;
+      margin-bottom:6px;
+      text-transform:uppercase;
+    }
+    .cb-rows{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:6px;
+    }
+    .cb-row{
+      flex:1;
+      display:flex;
+      justify-content:space-between;
+      align-items:baseline;
+      margin-bottom:2px;
+    }
+    .cb-label{
+      font-size:12px;
+      color:#64748b;
+    }
+    .cb-value{
+      font-size:15px;
+      font-weight:800;
+      text-align:right;
+      color:#0f172a;
+    }
+    .cb-best .cb-value{
+      color:#f59e0b;
+      text-shadow:0 0 5px rgba(245,158,11,0.6);
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:4px;
+    }
+    .cb-best .trophy{
+      font-size:18px;
+    }
+    .cb-btn-row{
+      display:flex;
+      gap:8px;
+      margin-top:4px;
+    }
+    .cb-btn{
+      flex:1;
+      border-radius:999px;
+      border:1px solid #bfdbfe;
+      background:linear-gradient(135deg,#2563eb,#38bdf8);
+      color:#f9fafb;
+      font-size:13px;
+      font-weight:700;
+      padding:6px 0;
+      cursor:pointer;
+    }
+    .cb-btn:hover{
+      filter:brightness(1.05);
+    }
+    .cb-btn-secondary{
+      flex:1;
+      background:#e5e7eb;
+      border-color:#cbd5e1;
+      color:#111827;
+      font-size:12px;
+      padding:6px 0;
+    }
+    .cb-btn-secondary:hover{
+      background:#d1d5db;
+    }
+    .cb-msg{
+      margin-top:6px;
+      font-size:11.5px;
+      line-height:1.5;
+      color:#4b5563;
+      min-height:40px;
+    }
+    .cb-msg small{
+      display:block;
+      color:#9ca3af;
+      margin-top:2px;
+    }
+
+    @keyframes bestPop {
+      0%   { transform:scale(1); }
+      30%  { transform:scale(1.25); }
+      60%  { transform:scale(0.92); }
+      100% { transform:scale(1); }
+    }
+    #int-challenge .best-badge{
+      animation:none;
+    }
+    #int-challenge .best-badge.best-bump{
+      animation:bestPop .6s ease-out;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <canvas id="sim"></canvas>
+  </div>
+
+  <!-- 간섭 도전 박스 -->
+  <div class="challenge-box" id="int-challenge">
+    <div class="cb-title">간섭 도전</div>
+    <div class="cb-rows">
+      <div style="flex:1.1">
+        <div class="cb-row">
+          <div class="cb-label">라운드</div>
+          <div class="cb-value" id="int-round">-</div>
+        </div>
+        <div class="cb-row">
+          <div class="cb-label">점수</div>
+          <div class="cb-value" id="int-score">0</div>
+        </div>
+      </div>
+      <div class="cb-row cb-best" style="flex:1">
+        <div class="cb-label">최고점수</div>
+        <div class="cb-value best-badge">
+          <span class="trophy">🏆</span>
+          <span id="int-best">0</span>
+        </div>
+      </div>
+    </div>
+    <div class="cb-btn-row">
+      <button id="int-start" class="cb-btn">도전</button>
+      <button id="int-check" class="cb-btn cb-btn-secondary">정답 확인</button>
+    </div>
+    <div class="cb-msg" id="int-msg">
+      아래 캔버스의 <b>검은색 선</b>은 현재 설정으로 만든 간섭무늬 단면이고,<br>
+      <b style="color:#f97316">주황색 선</b>은 목표 간섭무늬입니다.<br>
+      파장 슬라이더와 파원 위치를 조절해 두 선을 최대한 겹치게 만들어 보세요.
+      <small>총 10라운드 · 정답마다 +50점 · 오답은 0점</small>
+    </div>
+  </div>
+
+  <!-- 원래 조작 패널 -->
+  <div class="panel">
+    <label for="lambda">파장 λ</label>
+    <input id="lambda" type="range" min="16" max="200" step="2" value="60">
+    <output id="lambdaOut">60</output>
+
+    <label for="speed">위상속도 v</label>
+    <input id="speed" type="range" min="20" max="400" step="5" value="140">
+    <output id="speedOut">140</output>
+
+    <label for="expo">노출</label>
+    <input id="expo" type="range" min="2000" max="60000" step="1000" value="22000">
+    <output id="expoOut">22000</output>
+
+    <label for="sources">파원 개수</label>
+    <select id="sources">
+      <option value="1">1개</option>
+      <option value="2" selected>2개</option>
+      <option value="3">3개</option>
+    </select>
+  </div>
+
+  <div class="badge">
+    드래그/터치: 파원 이동 • 감쇠 = <b>1/√r</b><br>
+    <span style="color:#f97316">주황색 선</span>: 목표 무늬 · <span style="color:#e5e7eb">검은색 선</span>: 현재 무늬
+  </div>
+  <div class="brand">왕왕물리시뮬레이션</div>
+
+<script>
+/* ==== 원형파 간섭 시뮬레이터 + 단면 그래프 API ==== */
+(() => {
+  const canvas = document.getElementById('sim');
+  const ctx = canvas.getContext('2d');
+
+  // UI 엘리먼트
+  const $λ = document.getElementById('lambda'), $λOut=document.getElementById('lambdaOut');
+  const $v = document.getElementById('speed'), $vOut=document.getElementById('speedOut');
+  const $ex = document.getElementById('expo'), $exOut=document.getElementById('expoOut');
+  const $src = document.getElementById('sources');
+
+  let lambda=+$λ.value, v=+$v.value, exposure=+$ex.value;
+  let numSources = +$src.value;
+
+  // 파원 배열 (정규화 좌표)
+  let sources = [
+    { x:0.35, y:0.5 },
+    { x:0.65, y:0.5 },
+    { x:0.5,  y:0.3 }
+  ];
+
+  // 캔버스/이미지 버퍼
+  let W=0,H=0,imgData,data;
+  let rAll=[], invSqrtAll=[];
+  let dragging=null, rebuildScheduled=false, draggingActive=false;
+
+  // 게임용: 목표 프로파일(주황색 선)
+  let targetProfile = null;
+
+  function resizeCanvasToContainer(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.max(1, window.devicePixelRatio||1);
+    const w=Math.round(rect.width*dpr), h=Math.round(rect.height*dpr);
+    if(w===W && h===H) return;
+    W=w; H=h;
+    canvas.width=W; canvas.height=H;
+    imgData=ctx.createImageData(W,H); data=imgData.data;
+    rebuildCache();
+  }
+
+  function rebuildCache(){
+    rAll=[]; invSqrtAll=[];
+    for(let si=0; si<numSources; si++){
+      const S={x:sources[si].x*W, y:sources[si].y*H};
+      const r=new Float32Array(W*H), invSqrt=new Float32Array(W*H);
+      let i=0;
+      for(let y=0;y<H;y++){
+        const dy=y-S.y;
+        for(let x=0;x<W;x++,i++){
+          const d=Math.hypot(x-S.x,dy)+1e-4;
+          r[i]=d; invSqrt[i]=1/Math.sqrt(d);
+        }
+      }
+      rAll.push(r); invSqrtAll.push(invSqrt);
+    }
+  }
+
+  // ----- 드래그(마우스/터치) 처리 -----
+  function canvasToNorm(ev){
+    const rect=canvas.getBoundingClientRect();
+    return {
+      x:Math.min(1,Math.max(0,(ev.clientX-rect.left)/rect.width)),
+      y:Math.min(1,Math.max(0,(ev.clientY-rect.top)/rect.height))
+    };
+  }
+
+  function blockScroll(ev){ if(draggingActive) ev.preventDefault(); }
+
+  canvas.addEventListener('pointerdown', e=>{
+    e.preventDefault();
+    canvas.setPointerCapture?.(e.pointerId);
+    canvas.style.cursor='grabbing';
+    draggingActive=true;
+
+    const n=canvasToNorm(e);
+    let nearest=0, best=1e9;
+    for(let i=0;i<numSources;i++){
+      const d=Math.hypot(n.x-sources[i].x, n.y-sources[i].y);
+      if(d<best){best=d; nearest=i;}
+    }
+    dragging=nearest;
+  }, {passive:false});
+
+  canvas.addEventListener('pointermove', e=>{
+    if(dragging==null) return;
+    e.preventDefault();
+    sources[dragging]=canvasToNorm(e);
+    if(!rebuildScheduled){
+      rebuildScheduled=true;
+      requestAnimationFrame(()=>{ rebuildCache(); rebuildScheduled=false; });
+    }
+  }, {passive:false});
+
+  function endDrag(e){
+    if(dragging!=null){
+      dragging=null;
+      canvas.releasePointerCapture?.(e.pointerId);
+      canvas.style.cursor='grab';
+      draggingActive=false;
+      rebuildCache();
+    }
+  }
+  canvas.addEventListener('pointerup', endDrag, {passive:false});
+  canvas.addEventListener('pointercancel', endDrag, {passive:false});
+  canvas.addEventListener('lostpointercapture', ()=>{ dragging=null; draggingActive=false; }, {passive:true});
+  document.addEventListener('touchmove', blockScroll, {passive:false});
+  document.addEventListener('gesturestart', blockScroll, {passive:false});
+
+  // ----- UI 이벤트 -----
+  $λ.addEventListener('input',e=>{lambda=+e.target.value;$λOut.textContent=lambda;});
+  $v.addEventListener('input',e=>{v=+e.target.value;$vOut.textContent=v;});
+  $ex.addEventListener('input',e=>{exposure=+e.target.value;$exOut.textContent=exposure;});
+  $src.addEventListener('change',e=>{numSources=+e.target.value; rebuildCache();});
+
+  $λOut.textContent=lambda; $vOut.textContent=v; $exOut.textContent=exposure;
+
+  // ----- 중앙 단면 프로파일 계산 -----
+  function computeProfile(lambdaVal, srcList){
+    const prof = new Float32Array(W || 1);
+    if(!W || !H || !srcList || srcList.length===0) return prof;
+    const k = (2*Math.PI) / lambdaVal;
+    const yMid = H*0.5;
+    for(let x=0;x<W;x++){
+      let amp = 0;
+      for(let si=0; si<srcList.length; si++){
+        const sx = srcList[si].x * W;
+        const sy = srcList[si].y * H;
+        const dx = x - sx;
+        const dy = yMid - sy;
+        const r  = Math.hypot(dx,dy) + 1e-4;
+        amp += Math.sin(k*r) / Math.sqrt(r);
+      }
+      const I = amp*amp;
+      prof[x] = I;
+    }
+    // 0~1로 정규화
+    let max = 0;
+    for(let x=0;x<W;x++) if(prof[x]>max) max=prof[x];
+    const inv = max>0 ? 1/max : 1;
+    for(let x=0;x<W;x++) prof[x]*=inv;
+    return prof;
+  }
+
+  function drawGraph(currentProf){
+    if(!W || !H) return;
+    const graphHeight = Math.min(80, H*0.25);
+    const marginBottom = 12;
+    const yBase = H - marginBottom;
+    const yTop  = yBase - graphHeight;
+
+    ctx.save();
+    // 배경 박스
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.fillRect(0, yTop, W, graphHeight);
+
+    // 가운데 기준선
+    ctx.strokeStyle = 'rgba(148,163,184,0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, yBase - graphHeight*0.5);
+    ctx.lineTo(W, yBase - graphHeight*0.5);
+    ctx.stroke();
+
+    // 목표(주황색) 프로파일
+    if(targetProfile && targetProfile.length === W){
+      ctx.strokeStyle = '#f97316';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for(let x=0;x<W;x++){
+        const y = yBase - targetProfile[x]*graphHeight*0.9;
+        if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    }
+
+    // 현재(검은색) 프로파일
+    if(currentProf && currentProf.length === W){
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      for(let x=0;x<W;x++){
+        const y = yBase - currentProf[x]*graphHeight*0.9;
+        if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  // ----- 렌더 루프 -----
+  function render(tMs){
+    resizeCanvasToContainer();
+    const t=tMs/1000;
+    const k=(2*Math.PI)/lambda, omega=k*v;
+    if(rAll.length!==numSources) rebuildCache();
+
+    let i=0;
+    for(let y=0;y<H;y++){
+      for(let x=0;x<W;x++,i++){
+        let a=0;
+        for(let si=0;si<numSources;si++){
+          a += Math.sin(k*rAll[si][i] - omega*t) * invSqrtAll[si][i];
+        }
+        let I=a*a*exposure; if(I>255) I=255;
+        const g=I|0, o=i*4;
+        data[o]=g; data[o+1]=g; data[o+2]=g; data[o+3]=255;
+      }
+    }
+    ctx.putImageData(imgData,0,0);
+
+    // 파원 표시
+    ctx.fillStyle='#ffffff';
+    const rDot = 3*(window.devicePixelRatio||1);
+    for(let si=0;si<numSources;si++){
+      ctx.beginPath();
+      ctx.arc(sources[si].x*W, sources[si].y*H, rDot, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // 중앙 단면 그래프 (검은색 선 + 주황색 선)
+    const currentProf = computeProfile(lambda, sources.slice(0,numSources));
+    drawGraph(currentProf);
+
+    requestAnimationFrame(render);
+  }
+
+  resizeCanvasToContainer();
+  requestAnimationFrame(render);
+  window.addEventListener('resize',resizeCanvasToContainer);
+
+  // ===== 게임용 API 공개 =====
+  window.InterferenceGameAPI = {
+    getConfig(){
+      return {
+        lambda,
+        v,
+        exposure,
+        numSources,
+        sources: sources.slice(0,numSources).map(s=>({x:s.x,y:s.y}))
+      };
+    },
+    setLambda(val){
+      lambda = val;
+      $λ.value = String(Math.round(val));
+      $λOut.textContent = String(Math.round(val));
+    },
+    setConfig(cfg){
+      if(typeof cfg.lambda === 'number'){
+        lambda = cfg.lambda;
+        $λ.value = String(Math.round(lambda));
+        $λOut.textContent = String(Math.round(lambda));
+      }
+      if(typeof cfg.v === 'number'){
+        v = cfg.v;
+        $v.value = String(Math.round(v));
+        $vOut.textContent = String(Math.round(v));
+      }
+      if(typeof cfg.exposure === 'number'){
+        exposure = cfg.exposure;
+        $ex.value = String(Math.round(exposure));
+        $exOut.textContent = String(Math.round(exposure));
+      }
+      if(typeof cfg.numSources === 'number'){
+        numSources = Math.max(1, Math.min(3, cfg.numSources|0));
+        $src.value = String(numSources);
+      }
+      if(cfg.sources && cfg.sources.length){
+        for(let i=0;i<Math.min(numSources, cfg.sources.length);i++){
+          sources[i].x = Math.min(1, Math.max(0, cfg.sources[i].x));
+          sources[i].y = Math.min(1, Math.max(0, cfg.sources[i].y));
+        }
+      }
+      rebuildCache();
+    },
+    computeProfile,
+    setTargetProfile(profile){
+      targetProfile = profile;
+    }
+  };
+})();
+</script>
+
+<!-- ==== 간섭 도전 게임 로직 (10라운드, 50점씩) ==== -->
+<script>
+(function(){
+  const elRound = document.getElementById('int-round');
+  const elScore = document.getElementById('int-score');
+  const elBest  = document.getElementById('int-best');
+  const elMsg   = document.getElementById('int-msg');
+  const btnStart= document.getElementById('int-start');
+  const btnCheck= document.getElementById('int-check');
+
+  let score = 0;
+  let bestScore = 0;
+  let round = 0;
+  let targetLambda = null;
+  let targetProfile = null;
+  let fixedSources = null;   // 한 게임 동안 고정할 파원 위치
+  let playing = false;
+
+  function randInt(min, max){
+    return Math.floor(min + Math.random()*(max-min+1));
+  }
+
+  function updateBestScoreUI(animate){
+    if(!elBest) return;
+    elBest.textContent = bestScore;
+    const badge = document.querySelector('#int-challenge .best-badge');
+    if(animate && badge){
+      badge.classList.remove('best-bump');
+      void badge.offsetWidth;
+      badge.classList.add('best-bump');
+    }
+  }
+
+  // Firebase에서 최고점 불러올 때 쓸 콜백
+  window.setBestScoreFromFirebase = function(scoreFromDb){
+    bestScore = Number(scoreFromDb) || 0;
+    updateBestScoreUI(false);
+  };
+
+  function resetGameText(){
+    elMsg.innerHTML =
+      '아래 캔버스의 <b>검은색 선</b>은 현재 설정으로 만든 간섭무늬 단면이고,<br>'+
+      '<b style="color:#f97316">주황색 선</b>은 목표 간섭무늬입니다.<br>'+
+      '파장 슬라이더와 파원 위치를 조절해 두 선을 최대한 겹치게 만들어 보세요.'+
+      '<small>총 10라운드 · 정답마다 +50점 · 오답은 0점</small>';
+  }
+
+  function startNewRun(){
+    const api = window.InterferenceGameAPI;
+    if(!api){
+      elMsg.textContent = '시뮬레이터가 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.';
+      return;
+    }
+    score = 0;
+    round = 1;
+    elScore.textContent = '0';
+    elRound.textContent = '1/10';
+    playing = true;
+
+    // 현재 파원 배치를 한 게임 동안 고정
+    const cfg = api.getConfig();
+    fixedSources = cfg.sources;
+
+    setupRound();
+  }
+
+  function setupRound(){
+    const api = window.InterferenceGameAPI;
+    if(!api || !fixedSources || !playing) return;
+
+    // 라운드마다 새로운 목표 λ 생성 (지금 λ와 어느 정도 차이나게)
+    const currentLambda = api.getConfig().lambda;
+    let newLambda = randInt(24, 180);
+    let tries = 0;
+    while(Math.abs(newLambda - currentLambda) < 10 && tries < 30){
+      newLambda = randInt(24, 180);
+      tries++;
+    }
+    targetLambda = newLambda;
+
+    // 목표 프로파일 계산 & 주황색 선으로 설정
+    targetProfile = api.computeProfile(targetLambda, fixedSources);
+    api.setTargetProfile(targetProfile);
+
+    // 플레이어 시작값은 목표에서 살짝 벗어나게 세팅
+    const startLambda = targetLambda + randInt(-40,40);
+    api.setLambda(Math.max(16, Math.min(200, startLambda)));
+
+    elRound.textContent = round + '/10';
+    elScore.textContent = String(score);
+    elMsg.innerHTML =
+      `라운드 ${round}: <b style="color:#f97316">주황색 목표 선</b>을 잘 보고,<br>`+
+      `<b>검은색 선</b>이 최대한 겹치도록 λ와 파원 위치를 조절해 보세요.`+
+      '<small>준비가 되면 [정답 확인] 버튼을 눌러 채점합니다.</small>';
+  }
+
+  function checkAnswer(){
+    const api = window.InterferenceGameAPI;
+    if(!api){
+      elMsg.textContent = '시뮬레이터가 아직 준비되지 않았습니다.';
+      return;
+    }
+    if(!playing || round===0 || !fixedSources || !targetProfile){
+      elMsg.innerHTML = '먼저 <b>도전</b> 버튼으로 게임을 시작해 주세요.';
+      return;
+    }
+
+    const cfg = api.getConfig();
+    const currentProfile = api.computeProfile(cfg.lambda, fixedSources);
+
+    // 두 프로파일의 평균 차이로 정답 판정
+    const W = Math.min(currentProfile.length, targetProfile.length);
+    if(W === 0){
+      elMsg.textContent = '프로파일 계산에 문제가 생겼습니다.';
+      return;
+    }
+
+    let diffSum = 0;
+    const step = 4; // 계산량 줄이기
+    let count = 0;
+    for(let x=0;x<W;x+=step){
+      diffSum += Math.abs(currentProfile[x] - targetProfile[x]);
+      count++;
+    }
+    const avgDiff = diffSum / Math.max(1, count);  // 0 ~ 2 정도 범위
+
+    const threshold = 0.18; // 이 값이 작을수록 더 빡셈
+    const correct = (avgDiff < threshold);
+
+    if(correct){
+      score += 50;
+      elScore.textContent = String(score);
+
+      if(score > bestScore){
+        bestScore = score;
+        updateBestScoreUI(true);
+        if(window.saveBestScoreToFirebase){
+          window.saveBestScoreToFirebase(bestScore);
+        }
+      }else{
+        updateBestScoreUI(false);
+      }
+
+      elMsg.innerHTML =
+        '✅ 정답입니다! +50점<br>'+
+        `<small>두 선의 평균 차이: ${avgDiff.toFixed(3)} (기준 ${threshold.toFixed(2)} 이하)</small>`;
+    }else{
+      elMsg.innerHTML =
+        '❌ 아직 차이가 큽니다. 이번 라운드는 0점입니다.<br>'+
+        `<small>두 선의 평균 차이: ${avgDiff.toFixed(3)} (기준 ${threshold.toFixed(2)} 이하)</small>`;
+    }
+
+    if(round >= 10){
+      const final = score;
+      playing = false;
+      setTimeout(()=>{
+        elRound.textContent = '-';
+        elMsg.innerHTML =
+          `게임이 끝났습니다.<br><b>최종 점수: ${final}점</b>`+
+          '<small>다시 도전하려면 [도전] 버튼을 눌러 주세요.</small>';
+      }, 700);
+    }else{
+      setTimeout(()=>{
+        round++;
+        setupRound();
+      }, 700);
+    }
+  }
+
+  btnStart.addEventListener('click', ()=>{
+    startNewRun();
+  });
+
+  btnCheck.addEventListener('click', ()=>{
+    checkAnswer();
+  });
+
+  // 처음 안내 문구 세팅
+  resetGameText();
+})();
+</script>
+
+<!-- ==== Firebase 최고점 저장 (상대성이론/렌즈와 동일 구조) ==== -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
+    authDomain: "simulation-67cd3.firebaseapp.com",
+    projectId: "simulation-67cd3",
+    storageBucket: "simulation-67cd3.appspot.com",
+    messagingSenderId: "615983461615",
+    appId: "1:615983461615:web:002e07bcea878eb6d5571a",
+    measurementId: "G-9RGN7LYE5W"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const SIM_ID = "간섭무늬_도전게임";
+  let firebaseUser = null;
+
+  async function saveBestScore(score) {
+    if (!firebaseUser) return;
+    try {
+      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+      await setDoc(ref, { score: Number(score) || 0 }, { merge: true });
+    } catch (err) {
+      console.error("[간섭 도전] 최고 점수 저장 오류:", err);
+    }
+  }
+
+  async function loadBestScore() {
+    if (!firebaseUser) return;
+    try {
+      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const data = snap.data();
+        const score = Number(data.score || 0) || 0;
+        if (window.setBestScoreFromFirebase) {
+          window.setBestScoreFromFirebase(score);
+        }
+      }
+    } catch (err) {
+      console.error("[간섭 도전] 최고 점수 불러오기 오류:", err);
+    }
+  }
+
+  window.saveBestScoreToFirebase = saveBestScore;
+
+  onAuthStateChanged(auth, async (user) => {
+    firebaseUser = user;
+    if (user) {
+      await loadBestScore();
+    }
+  });
+</script>
+
+</body>
+</html>
