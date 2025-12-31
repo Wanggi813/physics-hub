@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>편광 필름 실험 - 최종 완성 (미세 틈 적용)</title>
+    <title>편광 필름 실험 - 편안한 색감 (Comfortable Tone)</title>
     <style>
         /* Pretendard 폰트 적용 */
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -15,60 +15,60 @@
             top: 20px; left: 20px;
             width: 320px;
             padding: 25px;
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid #e0e0e0;
+            background: rgba(255, 255, 255, 0.95); /* 불투명도 약간 높임 */
+            border: 1px solid #e2e8f0;
             border-radius: 16px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
             z-index: 100;
         }
 
-        h1 { margin: 0 0 5px 0; font-size: 1.3rem; color: #111; text-align: center; font-weight: 800; letter-spacing: -0.5px;}
-        p.sub { margin: 0 0 20px 0; font-size: 0.9rem; color: #666; border-bottom: 2px solid #f5f5f5; padding-bottom: 15px; text-align: center;}
+        h1 { margin: 0 0 5px 0; font-size: 1.3rem; color: #1e293b; text-align: center; font-weight: 800; letter-spacing: -0.5px;}
+        p.sub { margin: 0 0 20px 0; font-size: 0.9rem; color: #64748b; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; text-align: center;}
         
         .control-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-size: 0.95rem; color: #333; font-weight: 700; }
+        label { display: block; margin-bottom: 8px; font-size: 0.95rem; color: #334155; font-weight: 700; }
         
         input[type=range] { 
-            width: 100%; cursor: pointer; accent-color: #444; 
-            height: 6px; background: #eee; border-radius: 5px;
+            width: 100%; cursor: pointer; accent-color: #475569; 
+            height: 6px; background: #e2e8f0; border-radius: 5px;
         }
         
         /* 버튼 스타일 */
         .btn {
             width: 100%; padding: 14px;
-            background: #f7f7f7; border: 1px solid #ddd; color: #333;
+            background: #f8fafc; border: 1px solid #cbd5e1; color: #334155;
             border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.95rem;
             transition: all 0.2s ease;
             display: flex; justify-content: center; align-items: center; gap: 8px;
             font-family: 'Pretendard', sans-serif;
             margin-bottom: 8px;
         }
-        .btn:hover { background: #eee; }
+        .btn:hover { background: #f1f5f9; }
         .btn.active {
-            background: #333; border-color: #000; color: white;
-            box-shadow: 0 4px 10px rgba(0,0,0, 0.2);
+            background: #334155; border-color: #1e293b; color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0, 0.1);
         }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; background: #f1f5f9; color: #94a3b8; }
 
         .checkbox-wrapper {
             display: gap: 10px; align-items: center; margin-bottom: 8px;
-            padding: 12px; background: #f9f9f9; border-radius: 8px;
+            padding: 12px; background: #f8fafc; border-radius: 8px;
             cursor: pointer; display: flex;
             transition: background 0.2s;
         }
-        .checkbox-wrapper:hover { background: #f0f0f0; }
+        .checkbox-wrapper:hover { background: #f1f5f9; }
 
-        /* 제3 편광판 강조 스타일 */
+        /* 제3 편광판 강조 스타일 (차분한 블루) */
         .special-wrapper {
-            background-color: #eef2ff; 
-            border: 1px solid #c7d2fe;
+            background-color: #eff6ff; 
+            border: 1px solid #bfdbfe;
         }
-        .special-wrapper:hover { background-color: #e0e7ff; }
-        .special-text { font-size: 0.8rem; color: #666; margin-top: -5px; padding-left: 5px; line-height: 1.4; }
+        .special-wrapper:hover { background-color: #dbeafe; }
+        .special-text { font-size: 0.8rem; color: #64748b; margin-top: -5px; padding-left: 5px; line-height: 1.4; }
 
         #graph-wrapper {
             background: #fff;
-            border: 1px solid #eee;
+            border: 1px solid #e2e8f0;
             border-radius: 12px;
             padding: 10px;
             margin-top: 20px;
@@ -76,7 +76,7 @@
 
         #instruction {
             position: absolute; bottom: 30px; width: 100%; text-align: center;
-            color: #aaa; font-size: 0.85rem; pointer-events: none; font-weight: 500;
+            color: #94a3b8; font-size: 0.85rem; pointer-events: none; font-weight: 500;
         }
     </style>
     
@@ -92,13 +92,13 @@
 <body>
 
 <div id="ui-container">
-    <h1>편광과 LCD</h1>
+    <h1>편광 필름 실험실</h1>
     <p class="sub">말뤼스 법칙과 필름의 밝기 변화</p>
     
     <div class="control-group">
         <label style="display:flex; justify-content:space-between;">
             제2 편광판 회전
-            <span id="angleVal" style="color:#000; font-family:'Pretendard'; font-size:1.1rem;">0°</span>
+            <span id="angleVal" style="color:#0f172a; font-family:'Pretendard'; font-size:1.1rem;">0°</span>
         </label>
         <input type="range" id="angleSlider" min="0" max="90" value="0" step="1">
     </div>
@@ -106,8 +106,8 @@
     <div class="control-group">
         <label>실생활 응용 (LCD)</label>
         <div class="checkbox-wrapper">
-            <input type="checkbox" id="lcdCheck" style="width:18px; height:18px; accent-color:#333; cursor:pointer;">
-            <span style="font-size:0.9rem; color:#555;" onclick="document.getElementById('lcdCheck').click()">액정 분자층 보기</span>
+            <input type="checkbox" id="lcdCheck" style="width:18px; height:18px; accent-color:#334155; cursor:pointer;">
+            <span style="font-size:0.9rem; color:#475569;" onclick="document.getElementById('lcdCheck').click()">액정 분자층 보기</span>
         </div>
         <button id="voltageBtn" class="btn" disabled>
             ⚡ 전압 스위치 (꺼짐)
@@ -115,10 +115,10 @@
     </div>
 
     <div class="control-group">
-        <label style="color:#4f46e5;">심화 실험 (Vector)</label>
+        <label style="color:#2563eb;">심화 실험 (Vector)</label>
         <div class="checkbox-wrapper special-wrapper">
-            <input type="checkbox" id="thirdPolCheck" style="width:18px; height:18px; accent-color:#4f46e5; cursor:pointer;">
-            <span style="font-size:0.9rem; color:#4f46e5; font-weight:bold;" onclick="document.getElementById('thirdPolCheck').click()">제3의 편광판 (45°) 끼우기</span>
+            <input type="checkbox" id="thirdPolCheck" style="width:18px; height:18px; accent-color:#2563eb; cursor:pointer;">
+            <span style="font-size:0.9rem; color:#2563eb; font-weight:bold;" onclick="document.getElementById('thirdPolCheck').click()">제3의 편광판 (45°) 끼우기</span>
         </div>
         <div class="special-text">
             * 90°로 어두워진 상태에서 끼워보세요.<br>
@@ -139,51 +139,89 @@
 
     // --- 1. 기본 설정 ---
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xffffff);
+    scene.background = new THREE.Color(0xffffff); // 깔끔한 흰색
 
     const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 3000);
     camera.position.set(180, 80, 250); 
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.outputColorSpace = THREE.SRGBColorSpace; 
+    // 톤 매핑으로 밝은 빛을 부드럽게 처리
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
     document.body.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    // --- 2. 조명 (고급 광원) ---
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); 
+    // --- 2. 조명 (편안한 스튜디오 조명 세팅) ---
+    // 전체 베이스 조명: 0.7 정도로 적당히 밝게
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); 
     scene.add(ambientLight);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    
+    // 방향성 조명: 그림자를 부드럽게
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
     dirLight.position.set(50, 200, 100);
     scene.add(dirLight);
+
+    // 하이라이트용: 강도를 낮춰서 눈부심 방지
+    const spotLight = new THREE.SpotLight(0xffffff, 500);
+    spotLight.position.set(0, 150, 50);
+    spotLight.angle = Math.PI / 3;
+    spotLight.penumbra = 0.5;
+    scene.add(spotLight);
+
 
     // --- 3. 오브젝트 생성 ---
     const X_START = -180, X_POL1 = -60, X_LCD_S = -40, X_LCD_E = 40, X_POL2 = 60, X_END = 180;
     const WAVE_RES = 0.8, AMP = 18, FREQ = 0.15;
     
-    const matMol = new THREE.MeshBasicMaterial({ color: 0xaa00aa });
+    // [컬러 팔레트 정의 - 눈이 편안한 파스텔/딥 톤]
+    const COLOR_SRC = 0xf59e0b; // 차분한 앰버 (Amber)
+    const COLOR_MID = 0x0ea5e9; // 편안한 스카이 블루 (Sky)
+    const COLOR_END = 0x8b5cf6; // 부드러운 바이올렛 (Violet)
+    const COLOR_FILM = 0xcfe8fc; // 아주 연한 하늘색 필름
+    const COLOR_MOL = 0xa78bfa;  // 연한 보라색 (액정)
+
+    // 액정 분자 재질 (고급스러운 유리 느낌)
+    const matMol = new THREE.MeshPhysicalMaterial({ 
+        color: COLOR_MOL,       
+        metalness: 0.1,        
+        roughness: 0.2,        
+        clearcoat: 1.0,        
+        clearcoatRoughness: 0.1,
+        transmission: 0.0, // 투명도 제거하여 더 잘보이게
+        opacity: 1.0,
+    });
 
     // 2D 필름 생성 함수
-    function createPure2DFilm(xPos, colorHex = 0x88ccff) {
+    function createPure2DFilm(xPos, colorHex = COLOR_FILM) {
         const group = new THREE.Group();
         group.position.x = xPos;
 
         const filmGeo = new THREE.PlaneGeometry(86, 86);
-        const filmMat = new THREE.MeshStandardMaterial({ 
+        const filmMat = new THREE.MeshPhysicalMaterial({ 
             color: colorHex, 
             transparent: true, 
-            opacity: 0.25, 
+            opacity: 0.4, // 적당한 투명도
             side: THREE.DoubleSide, 
             depthWrite: false,
-            roughness: 0.3,
-            metalness: 0.1
+            roughness: 0.2,
+            clearcoat: 0.5
         });
         const film = new THREE.Mesh(filmGeo, filmMat);
         film.rotation.y = Math.PI / 2;
         film.name = "filmMesh";
         group.add(film);
+
+        // 테두리 프레임 (가시성 향상)
+        const frameGeo = new THREE.EdgesGeometry(filmGeo);
+        const frameMat = new THREE.LineBasicMaterial({ color: 0x94a3b8, transparent:true, opacity:0.5 });
+        const frame = new THREE.LineSegments(frameGeo, frameMat);
+        frame.rotation.y = Math.PI/2;
+        group.add(frame);
 
         const lineGeo = new THREE.BufferGeometry();
         const vertices = [];
@@ -194,7 +232,7 @@
             vertices.push(-0.1, -size, z_loc); vertices.push(-0.1, size, z_loc);
         }
         lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-        const lineMat = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 1 });
+        const lineMat = new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.4 });
         const lines = new THREE.LineSegments(lineGeo, lineMat);
         group.add(lines);
 
@@ -202,26 +240,26 @@
         return group;
     }
 
-    // 전구 생성 (예쁜 광원)
+    // 전구 (눈이 안 아픈 따뜻한 빛)
     const bulbGroup = new THREE.Group();
     bulbGroup.position.x = X_START;
-    const bulbLight = new THREE.PointLight(0xfff0aa, 2.5, 300, 1);
+    const bulbLight = new THREE.PointLight(0xffb700, 1.5, 400, 1); // 강도 조절
     bulbGroup.add(bulbLight);
 
     const bulbGeo = new THREE.SphereGeometry(12, 32, 32);
     const bulbMat = new THREE.MeshStandardMaterial({
-        color: 0xffffcc,
-        emissive: 0xffcc44, 
-        emissiveIntensity: 1.5,
+        color: 0xffeebb,
+        emissive: 0xffb700, 
+        emissiveIntensity: 1.0, // 너무 눈부시지 않게
         transparent: true,
         opacity: 0.9,
-        roughness: 0.1
+        roughness: 0.3
     });
     const bulbMesh = new THREE.Mesh(bulbGeo, bulbMat);
     bulbGroup.add(bulbMesh);
 
     const socketGeo = new THREE.CylinderGeometry(6, 6, 10, 16);
-    const socketMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.8, roughness: 0.2 });
+    const socketMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.5, roughness: 0.5 });
     const socketMesh = new THREE.Mesh(socketGeo, socketMat);
     socketMesh.rotation.z = Math.PI / 2;
     socketMesh.position.x = -12; 
@@ -234,9 +272,9 @@
     const polMid = createPure2DFilm(0);
     polMid.rotation.x = Math.PI / 4; 
     polMid.visible = false;
-    polMid.children[0].material.color.setHex(0xaaddaa); 
+    polMid.children[0].material.color.setHex(0xa7f3d0); // 부드러운 민트색
 
-    // --- 4. 파동 (Waves) ---
+    // --- 4. 파동 (Waves) - 차분한 색상 적용 ---
     // 1) 소스 파동
     const srcWaves = [];
     const srcGroup = new THREE.Group();
@@ -246,7 +284,7 @@
         for(let x=X_START+10; x<=X_POL1; x+=WAVE_RES) pts.push(new THREE.Vector3(x,0,0));
         const line = new THREE.Line(
             new THREE.BufferGeometry().setFromPoints(pts),
-            new THREE.LineBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0.5 })
+            new THREE.LineBasicMaterial({ color: COLOR_SRC, transparent: true, opacity: 0.7 })
         );
         line.rotation.x = (i/24) * Math.PI * 2;
         srcGroup.add(line);
@@ -260,7 +298,7 @@
     }
     const midWave = new THREE.Line(
         new THREE.BufferGeometry().setFromPoints(midPts),
-        new THREE.LineBasicMaterial({ color: 0x00aaaa, linewidth: 2 })
+        new THREE.LineBasicMaterial({ color: COLOR_MID, linewidth: 2 })
     );
     scene.add(midWave);
 
@@ -269,7 +307,7 @@
     for(let x=X_POL2; x<=X_END; x+=WAVE_RES) endPts.push(new THREE.Vector3(x,0,0));
     const endWave = new THREE.Line(
         new THREE.BufferGeometry().setFromPoints(endPts),
-        new THREE.LineBasicMaterial({ color: 0xaa00aa, linewidth: 2.5, transparent: true, opacity: 1.0 })
+        new THREE.LineBasicMaterial({ color: COLOR_END, linewidth: 2.5, transparent: true, opacity: 1.0 })
     );
     scene.add(endWave);
 
@@ -310,22 +348,16 @@
         const twistRad = (1.0 - state.voltCurrent) * (Math.PI / 2);
         if(state.lcd) { mols.forEach(m => { m.mesh.rotation.x = m.t * twistRad; m.mesh.position.y = Math.sin(simTime + m.t*10) * 1; }); }
 
-        // [중간 파동 업데이트]
         const midPos = midWave.geometry.attributes.position.array;
-        
         for(let i=0; i<midPos.length/3; i++) {
             const x = X_POL1 + i*0.5;
             let currentAng = 0, currentAmp = AMP;
-            
             if(state.lcd) { if(x >= X_LCD_S && x <= X_LCD_E) { const t = (x - X_LCD_S)/(X_LCD_E - X_LCD_S); currentAng = t * twistRad; } else if(x > X_LCD_E) currentAng = twistRad; }
             if(state.thirdPol && !state.lcd) { if (x > 0) { currentAng = Math.PI / 4; currentAmp = AMP * Math.cos(Math.PI/4); } }
             
-            // [핵심 변경] 끊기는 구간을 0.3으로 줄여 시각적으로 1px처럼 보이게 함
-            // x는 0.5 간격이므로 0.3으로 설정하면 x=0인 지점만 NaN 처리되어
-            // -0.5와 +0.5 사이의 선 하나만 그려지지 않음 (가장 최소 단위)
+            // 미세 틈 (0.3)
             if(state.thirdPol && !state.lcd && Math.abs(x) < 0.3) { 
-                midPos[i*3+1] = NaN; // Y
-                midPos[i*3+2] = NaN; // Z
+                midPos[i*3+1] = NaN; midPos[i*3+2] = NaN; 
             } else {
                 const disp = Math.sin(x*FREQ - simTime) * currentAmp; 
                 midPos[i*3+1] = disp * Math.cos(currentAng); 
@@ -348,12 +380,11 @@
 
         const filmMesh = pol2.getObjectByName("filmMesh");
         if(filmMesh) {
-            const filmColorClear = new THREE.Color(0x88ccff), filmColorDark = new THREE.Color(0x111111);
-            filmMesh.material.color.copy(filmColorDark).lerp(filmColorClear, intensity); filmMesh.material.opacity = 0.85 - (0.6 * intensity);
+            const filmColorClear = new THREE.Color(COLOR_FILM), filmColorDark = new THREE.Color(0x1e293b);
+            filmMesh.material.color.copy(filmColorDark).lerp(filmColorClear, intensity); filmMesh.material.opacity = 0.85 - (0.5 * intensity);
         }
 
-        bulbMat.emissiveIntensity = 1.5 + Math.sin(simTime * 2) * 0.1;
-        bulbLight.intensity = 2.5 + Math.sin(simTime * 2) * 0.2;
+        bulbMat.emissiveIntensity = 1.0 + Math.sin(simTime * 2) * 0.2; 
 
         updateGraph(intensity, state.angle); controls.update(); renderer.render(scene, camera);
     }
@@ -373,7 +404,26 @@
     // --- 그래프 ---
     const gCanvas = document.getElementById('graphCanvas'); const ctx = gCanvas.getContext('2d');
     function updateGraph(int, deg) {
-        const w = gCanvas.width, h = gCanvas.height; ctx.clearRect(0,0,w,h); ctx.strokeStyle = "#ddd"; ctx.lineWidth=1; ctx.beginPath(); for(let y=20; y<=h-20; y+=20) { ctx.moveTo(40,y); ctx.lineTo(w-10,y); } ctx.stroke(); ctx.strokeStyle = "#999"; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(40,15); ctx.lineTo(40,h-20); ctx.lineTo(w-10,h-20); ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = "#ccc"; ctx.setLineDash([4,4]); for(let x=0; x<=w-50; x++) { const r = (x/(w-50)) * (Math.PI/2); const y = (h-20) - (Math.cos(r)**2)*(h-30); if(x===0) ctx.moveTo(40+x,y); else ctx.lineTo(40+x,y); } ctx.stroke(); ctx.setLineDash([]); const clampDeg = Math.min(deg, 90); const px = 40 + (clampDeg/90)*(w-50); const py = (h-20) - int*(h-30); const intensityColor = Math.floor(int * 150); let barColor = `rgb(${intensityColor}, 0, ${intensityColor})`; ctx.fillStyle = barColor; ctx.fillRect(40, py, px-40, (h-20)-py); ctx.fillStyle = barColor; ctx.beginPath(); ctx.arc(px,py,4,0,Math.PI*2); ctx.fill(); ctx.fillStyle = "#555"; ctx.font = "12px Pretendard"; ctx.fillText("최대", 10, 22); ctx.fillText("0°", 35, h-5); ctx.fillText("90°", w-25, h-5); ctx.fillStyle = "#333"; ctx.font = "bold 13px monospace"; ctx.fillText(`밝기: ${(int*100).toFixed(0)}%`, w-90, 20);
+        const w = gCanvas.width, h = gCanvas.height; ctx.clearRect(0,0,w,h); 
+        ctx.strokeStyle = "#e2e8f0"; ctx.lineWidth=1; ctx.beginPath(); for(let y=20; y<=h-20; y+=20) { ctx.moveTo(40,y); ctx.lineTo(w-10,y); } ctx.stroke(); 
+        ctx.strokeStyle = "#cbd5e1"; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(40,15); ctx.lineTo(40,h-20); ctx.lineTo(w-10,h-20); ctx.stroke(); 
+        
+        ctx.beginPath(); ctx.strokeStyle = "#94a3b8"; ctx.setLineDash([4,4]); 
+        for(let x=0; x<=w-50; x++) { const r = (x/(w-50)) * (Math.PI/2); const y = (h-20) - (Math.cos(r)**2)*(h-30); if(x===0) ctx.moveTo(40+x,y); else ctx.lineTo(40+x,y); } ctx.stroke(); ctx.setLineDash([]); 
+        
+        const clampDeg = Math.min(deg, 90); const px = 40 + (clampDeg/90)*(w-50); const py = (h-20) - int*(h-30); 
+        
+        // 막대 색상: 라벤더/보라 계열
+        const r = 139 + Math.floor(int * 50);
+        const g = 92  + Math.floor(int * 50);
+        const b = 246; // 고정된 밝은 보라색 베이스
+        let barColor = `rgb(${r}, ${g}, ${b})`; 
+        
+        ctx.fillStyle = barColor; ctx.fillRect(40, py, px-40, (h-20)-py); 
+        ctx.beginPath(); ctx.arc(px,py,4,0,Math.PI*2); ctx.fill(); 
+        
+        ctx.fillStyle = "#64748b"; ctx.font = "12px Pretendard"; ctx.fillText("최대", 10, 22); ctx.fillText("0°", 35, h-5); ctx.fillText("90°", w-25, h-5); 
+        ctx.fillStyle = "#334155"; ctx.font = "bold 13px monospace"; ctx.fillText(`밝기: ${(int*100).toFixed(0)}%`, w-90, 20);
     }
     window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
     animate();
