@@ -870,7 +870,7 @@ window.setInitialBestScore = function(val) {
 <!-- ===== Firebase Integration (수정됨: 12.4.0 & 예외 처리) ===== -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+  import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
   import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
   // 보내주신 파일의 설정값 사용
@@ -898,12 +898,16 @@ window.setInitialBestScore = function(val) {
   async function initAuth() {
     if(window.logDebug) window.logDebug("인증 시도 중...");
     try {
-      // 익명 로그인 시도 (설정에 따라 실패할 수 있음 - 실패 시 조용히 넘어감)
-      await signInAnonymously(auth);
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        if(window.logDebug) window.logDebug("토큰으로 로그인 시도...");
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        if(window.logDebug) window.logDebug("익명 로그인 시도...");
+        await signInAnonymously(auth);
+      }
     } catch (e) {
-      if(window.logDebug) window.logDebug("인증 실패 (오프라인 모드): " + e.code);
-      console.warn("Firebase Auth Warning: 인증이 제한되었거나 설정되지 않았습니다. 오프라인 모드로 실행됩니다.", e.code);
-      // 게임은 계속 진행됨
+      if(window.logDebug) window.logDebug("인증 실패: " + e.code);
+      console.warn("Auth Failed", e);
     }
   }
   initAuth();
