@@ -2,848 +2,848 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>물리 공식 타이핑 레인 </title>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"/>
+<title>물리 공식 칠판 배틀</title>
 
-<!-- ✅ p5.js 로컬 로드 -->
-<script src="./libs/p5.min.js"></script>
+<!-- p5.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 
 <style>
+/* 칠판 느낌의 손글씨 폰트 로드 */
+@import url('https://fonts.googleapis.com/css2?family=Gamja+Flower&family=Noto+Sans+KR:wght@400;700&display=swap');
+
 :root{
-  --card:#ffffff;
-  --border:#dbeafe;
-  --ink:#0f172a;
-  --muted:#475569;
-  --accent:#38bdf8;
-  --good:#22c55e;
-  --bad:#ef4444;
-  --shadow:0 10px 30px rgba(0,0,0,0.10);
-}
-html,body{
-  margin:0; height:100%;
-  font-family:system-ui,"Noto Sans KR",sans-serif;
-  color:var(--ink);
-  overflow:hidden;
-  background: radial-gradient(1200px 700px at 15% -10%, #f2fbff, #ffffff);
+  --chalk-white: #f3f4f6;
+  --chalk-yellow: #fde047;
+  --chalk-blue: #67e8f9;
+  --chalk-red: #fca5a5;
+  --chalk-green: #86efac;
+  
+  /* 유리 질감 (다크) */
+  --glass-bg: rgba(0, 0, 0, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 
-/* 패널 유리 느낌 */
-.panel{
-  position:fixed; top:16px; bottom:16px; width:300px;
-  background: rgba(255,255,255,0.88);
-  border:1px solid rgba(219,234,254,0.95);
-  border-radius:16px;
-  padding:14px;
-  box-shadow:var(--shadow);
-  overflow:auto;
-  z-index:10;
+body {
+  margin: 0; padding: 0;
+  overflow: hidden;
+  font-family: 'Gamja Flower', cursive; /* 메인 폰트 변경 */
+  background-color: #2b3a33;
+  color: var(--chalk-white);
+  user-select: none;
+}
+
+canvas {
+  display: block;
+  position: absolute;
+  top: 0; left: 0;
+  z-index: 0;
+}
+
+/* UI 레이어 */
+#ui-layer {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+}
+
+/* === 좌측: 랭킹 & 점수 === */
+.left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 240px;
+  pointer-events: auto;
+}
+
+.score-card {
+  background: var(--glass-bg);
   backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  text-align: center;
 }
-#left{left:16px}
-#right{right:16px}
-h3{margin:6px 0 10px;font-size:15px}
-small{color:var(--muted)}
-input{
-  width:100%;
-  padding:10px 12px;
-  border-radius:12px;
-  border:1px solid rgba(219,234,254,0.95);
-  font-size:14px;
-  outline:none;
+.score-label { font-size: 1.2rem; color: #cbd5e1; opacity: 0.8; }
+.score-val { 
+  font-size: 3.5rem; 
+  font-weight: bold; 
+  color: var(--chalk-white);
+  text-shadow: 2px 2px 0px rgba(0,0,0,0.3);
+  line-height: 1;
+  margin: 4px 0;
 }
-input:focus{border-color:rgba(56,189,248,0.75)}
-.row{display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;}
-.badge{
-  font-size:12px;
-  padding:3px 10px;
-  border-radius:999px;
-  background:rgba(56,189,248,0.10);
-  border:1px solid rgba(56,189,248,0.22);
-  color:#075985;
-}
-.badge.good{
-  background:rgba(34,197,94,0.12);
-  border-color:rgba(34,197,94,0.22);
-  color:#166534;
-}
-.badge.warn{
-  background:rgba(245,158,11,0.12);
-  border-color:rgba(245,158,11,0.22);
-  color:#92400e;
-}
-.msg{font-size:13px; color:var(--muted); min-height:18px; margin-top:8px}
-.msg.good{color:var(--good); font-weight:800}
-.msg.bad{color:var(--bad); font-weight:800}
-.answer{font-size:13px; padding:3px 0}
-.d1{ color:#0f766e }
-.d2{ color:#0369a1 }
-.d3{ color:#7c2d12 }
+.combo-text { font-size: 1.4rem; color: var(--chalk-yellow); animation: pulse 1s infinite; }
 
-/* 최고점수 */
-.bestWrap{
-  margin-top:12px;
-  padding-top:10px;
-  border-top:1px dashed rgba(219,234,254,0.9);
+/* 랭킹 보드 */
+.rank-board {
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+  flex-grow: 1; /* 남은 공간 차지 */
+  max-height: 400px;
+  display: flex;
+  flex-direction: column;
 }
-.bestLabel{font-size:13px; color:var(--muted); margin-bottom:6px}
-.bestValue{
-  color:#f59e0b;
-  text-shadow:0 0 6px rgba(245,158,11,0.7);
-  display:flex;
-  align-items:center;
-  gap:6px;
-  font-weight:900;
-  font-size:22px;
+.rank-title {
+  font-size: 1.5rem; border-bottom: 1px dashed rgba(255,255,255,0.3);
+  padding-bottom: 8px; margin-bottom: 10px;
+  display: flex; justify-content: space-between; align-items: center;
 }
-.bestValue .trophy{
-  font-size:20px;
-  filter:drop-shadow(0 0 4px rgba(250,204,21,0.9));
+.rank-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex:1; }
+.rank-item {
+  display: flex; justify-content: space-between;
+  padding: 6px 0;
+  font-size: 1.2rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
-@keyframes bestPop {
-  0%   { transform:scale(1); }
-  30%  { transform:scale(1.25); }
-  60%  { transform:scale(0.92); }
-  100% { transform:scale(1); }
-}
-.best-bump{ animation:bestPop 0.6s ease-out; }
+.rank-item.top1 { color: var(--chalk-yellow); font-weight: bold; }
+.rank-item.me { color: var(--chalk-green); }
+.rank-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* 캔버스는 투명(교실 배경이 p5로 그려짐) */
-canvas{
-  position:fixed;
-  left:332px; right:332px;
-  top:16px; bottom:16px;
-  border-radius:20px;
-  background: rgba(255,255,255,0.25);
-  border:1px solid rgba(219,234,254,0.95);
-  box-shadow:0 10px 30px rgba(0,0,0,0.10);
-  z-index:5;
+/* 닉네임 입력 */
+.nick-input-box {
+  margin-top: 10px;
+  display: flex; gap: 6px;
 }
+#nickname {
+  width: 100%;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  padding: 6px;
+  border-radius: 4px;
+  font-family: 'Gamja Flower', cursive;
+  font-size: 1.1rem;
+  outline: none;
+}
+#btn-save-nick {
+  background: var(--chalk-blue);
+  color: #1e293b;
+  border: none;
+  border-radius: 4px;
+  padding: 0 10px;
+  cursor: pointer;
+  font-family: 'Gamja Flower', cursive;
+  font-weight: bold;
+}
+
+/* === 우측: 정답표 === */
+.right-panel {
+  width: 220px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+  overflow-y: auto;
+  pointer-events: auto;
+  height: fit-content;
+  max-height: 80%;
+}
+.panel-head { font-size: 1.4rem; color: #e2e8f0; margin-bottom: 12px; border-bottom: 1px dashed rgba(255,255,255,0.3); padding-bottom: 6px; }
+.answer-row {
+  display: block;
+  font-size: 1.15rem;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
+  color: #cbd5e1;
+}
+.answer-row.highlight { color: var(--chalk-yellow); background: rgba(255,255,255,0.1); }
+
+/* === 하단: 입력창 === */
+.bottom-area {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  pointer-events: auto;
+}
+
+/* 상태 배지 */
+.badges { display: flex; gap: 10px; margin-bottom: 4px; }
+.badge {
+  padding: 4px 12px; border-radius: 20px;
+  background: #fff; color: #000;
+  font-weight: bold; font-size: 1.1rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  display: none; align-items: center; gap: 6px;
+}
+.bd-x2 { background: var(--chalk-yellow); color: #854d0e; }
+.bd-fr { background: var(--chalk-blue); color: #164e63; }
+.bd-sh { background: var(--chalk-green); color: #14532d; }
+
+/* 메시지 박스 */
+#msg-box {
+  font-size: 1.5rem;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+  min-height: 1.6em;
+  text-align: center;
+}
+
+/* 입력창 wrapper */
+.input-container {
+  position: relative;
+  width: 100%;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+#ans {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 1.8rem;
+  font-family: 'Gamja Flower', cursive; /* 입력창도 손글씨 폰트 */
+  border: 3px solid rgba(255,255,255,0.5);
+  border-radius: 100px; /* 둥근 캡슐형 */
+  background: rgba(40, 40, 40, 0.85);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  text-align: center;
+  outline: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+#ans::placeholder { color: rgba(255,255,255,0.4); font-size: 1.4rem; }
+#ans:focus {
+  border-color: var(--chalk-blue);
+  background: rgba(50, 50, 50, 0.95);
+  transform: scale(1.02);
+  box-shadow: 0 15px 40px rgba(103, 232, 249, 0.2);
+}
+
+@keyframes pulse { 0%{transform:scale(1);} 50%{transform:scale(1.05);} 100%{transform:scale(1);} }
+@keyframes shake { 
+  0% { transform: translateX(0); } 25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); }
+}
+.shake { animation: shake 0.3s ease-in-out; }
+
 </style>
 </head>
-
 <body>
-  <div id="left" class="panel">
-    <h3>⌨️ 입력</h3>
-    <input id="ans" placeholder="정답 입력 후 Enter (띄어쓰기 정확히)" />
-    <div class="msg" id="msg">공식이 떨어지면, 그 공식의 이름을 입력하세요.</div>
 
-    <h3 style="margin-top:14px;">점수</h3>
-    <div class="row">
-      <div style="font-size:34px;font-weight:900;color:var(--accent)" id="score">0</div>
-      <span class="badge" id="perCorrectBadge">정답 +20</span>
-      <span class="badge" id="speedBadge">속도 1.00×</span>
+<div id="ui-layer">
+  
+  <!-- 좌측 패널: 점수 & 랭킹 -->
+  <div class="left-panel">
+    <div class="score-card">
+      <div class="score-label">현재 점수</div>
+      <div class="score-val" id="score">0</div>
+      <div class="combo-text" id="combo-ui">0 COMBO</div>
     </div>
-
-    <div class="row" style="margin-top:6px;">
-      <span class="badge good" id="comboBadge">콤보 0</span>
-    </div>
-
-    <!-- 아이템 상태 -->
-    <div class="row" style="margin-top:10px;">
-      <span class="badge" id="x2Badge" style="display:none;">점수 2배</span>
-      <span class="badge warn" id="freezeBadge" style="display:none;">시간 정지</span>
-      <span class="badge good" id="shieldBadge" style="display:none;">보호막</span>
-    </div>
-
-    <!-- 최고점수 -->
-    <div class="bestWrap">
-      <div class="bestLabel">최고점수</div>
-      <div class="bestValue" id="bestTop">
-        <span class="trophy">🏆</span>
-        <span class="best-number">0</span>
+    
+    <div class="rank-board">
+      <div class="rank-title">
+        <span>🏆 명예의 전당</span>
+        <span style="font-size:0.9rem; opacity:0.7">Top 5</span>
       </div>
-      <div style="margin-top:6px;font-size:12px;color:var(--muted);line-height:1.45">
-        * 로그인되어 있으면 Firebase에서 불러오고, 갱신 시 저장합니다.
+      <ul class="rank-list" id="rank-list">
+        <li style="text-align:center; padding:20px; opacity:0.5">로딩중...</li>
+      </ul>
+      
+      <div class="nick-input-box">
+        <input id="nickname" maxlength="6" placeholder="닉네임 (최대 6자)" />
+        <button id="btn-save-nick">변경</button>
       </div>
     </div>
-
-    <p style="margin-top:12px; font-size:12px; line-height:1.45; color:var(--muted);">
-      • 정답 +20 (점수 2배 중에는 +40)<br>
-      • 콤보가 쌓이면 <b>추가 보너스</b>가 붙어요<br>
-      • 아이템: 점수 2배 / 시간 정지 / 보호막<br>
-      • 입력: <b>한글·숫자·공백</b>만 (띄어쓰기 정확히)
-    </p>
   </div>
 
-  <div id="right" class="panel">
-    <h3>📘 정답 목록 <small>(띄어쓰기 그대로)</small></h3>
-    <div id="answers"></div>
-
-    <h3 style="margin-top:14px;">🎁 아이템 목록</h3>
-    <div class="answer">점수 2배</div>
-    <div class="answer">시간 정지</div>
-    <div class="answer">보호막</div>
+  <!-- 우측 패널: 커닝 페이퍼 -->
+  <div class="right-panel">
+    <div class="panel-head">📘 족보 (정답 목록)</div>
+    <div id="answers-container"></div>
   </div>
+
+  <!-- 하단: 입력 영역 -->
+  <div class="bottom-area">
+    <div class="badges">
+      <div class="badge bd-x2" id="bd-x2">⚡ 점수 2배</div>
+      <div class="badge bd-fr" id="bd-fr">❄️ 시간 정지</div>
+      <div class="badge bd-sh" id="bd-sh">🛡️ 보호막 ON</div>
+    </div>
+    <div id="msg-box">공식이 떨어지면 이름을 적어주세요!</div>
+    <div class="input-container">
+      <input id="ans" type="text" placeholder="여기에 입력하세요..." autocomplete="off" />
+    </div>
+  </div>
+
+</div>
 
 <script>
-/* =========================
-   데이터(공식)
-   ========================= */
+/* =========================================
+   게임 데이터
+   ========================================= */
 const FORMULAS = [
-  {formula:"v = v₀ + at",             answer:"속력 공식",         diff:1, unit:"운동"},
-  {formula:"x = x₀ + v₀t + ½at²",     answer:"등가속도 공식",     diff:2, unit:"운동"},
-  {formula:"F = ma",                  answer:"뉴턴 제2법칙",      diff:1, unit:"운동"},
-  {formula:"p = mv",                  answer:"운동량",           diff:1, unit:"운동"},
-  {formula:"FΔt = Δp",                answer:"충격량",           diff:2, unit:"운동"},
-  {formula:"W = Fd",                  answer:"일",               diff:1, unit:"운동"},
-  {formula:"K = ½mv²",                answer:"운동 에너지",       diff:1, unit:"운동"},
-  {formula:"U = mgh",                 answer:"중력 퍼텐셜 에너지", diff:2, unit:"운동"},
-  {formula:"E = K + U",               answer:"역학적 에너지",     diff:2, unit:"운동"},
-
-  {formula:"a = v² / r",              answer:"구심 가속도",       diff:2, unit:"원운동"},
-  {formula:"F = mv² / r",             answer:"구심력",           diff:2, unit:"원운동"},
-  {formula:"v = rω",                  answer:"선속도",           diff:2, unit:"원운동"},
-  {formula:"ω = 2π / T",              answer:"각속도",           diff:2, unit:"원운동"},
-
-  {formula:"v = fλ",                  answer:"파동 속력",        diff:1, unit:"파동"},
-  {formula:"f = 1 / T",               answer:"진동수",           diff:1, unit:"파동"},
-  {formula:"y = A sin(ωt)",           answer:"단순 조화 운동",     diff:3, unit:"파동"},
-
-  {formula:"n = c / v",               answer:"굴절률",           diff:2, unit:"광학"},
-  {formula:"n₁sinθ₁ = n₂sinθ₂",       answer:"스넬의 법칙",       diff:2, unit:"광학"},
-  {formula:"sinθc = n₂ / n₁",         answer:"임계각",           diff:3, unit:"광학"},
-  {formula:"θi = θr",                 answer:"반사 법칙",         diff:1, unit:"광학"},
-  {formula:"d sinθ = mλ",             answer:"이중 슬릿",         diff:3, unit:"광학"},
-
-  {formula:"V = IR",                  answer:"옴의 법칙",         diff:1, unit:"전기"},
-  {formula:"P = VI",                  answer:"전력",             diff:1, unit:"전기"},
-  {formula:"Q = It",                  answer:"전하량",           diff:1, unit:"전기"},
-  {formula:"V = Q / C",               answer:"축전기 공식",      diff:2, unit:"전기"}
+  {formula:"v = v₀ + at",             answer:"속력 공식",      diff:1},
+  {formula:"x = x₀ + v₀t + ½at²",     answer:"등가속도 공식",  diff:2},
+  {formula:"F = ma",                  answer:"뉴턴 제2법칙",   diff:1},
+  {formula:"p = mv",                  answer:"운동량",        diff:1},
+  {formula:"FΔt = Δp",                answer:"충격량",        diff:2},
+  {formula:"W = Fd",                  answer:"일",            diff:1},
+  {formula:"K = ½mv²",                answer:"운동 에너지",    diff:1},
+  {formula:"U = mgh",                 answer:"퍼텐셜 에너지",  diff:2},
+  {formula:"E = K + U",               answer:"역학적 에너지",  diff:2},
+  {formula:"a = v² / r",              answer:"구심 가속도",    diff:2},
+  {formula:"F = mv² / r",             answer:"구심력",        diff:2},
+  {formula:"v = rω",                  answer:"선속도",        diff:2},
+  {formula:"ω = 2π / T",              answer:"각속도",        diff:2},
+  {formula:"v = fλ",                  answer:"파동 속력",     diff:1},
+  {formula:"f = 1 / T",               answer:"진동수",        diff:1},
+  {formula:"y = A sin(ωt)",           answer:"단순 조화 운동", diff:3},
+  {formula:"n = c / v",               answer:"굴절률",        diff:2},
+  {formula:"n₁sinθ₁ = n₂sinθ₂",       answer:"스넬의 법칙",    diff:2},
+  {formula:"sinθc = n₂ / n₁",         answer:"임계각",        diff:3},
+  {formula:"V = IR",                  answer:"옴의 법칙",      diff:1},
+  {formula:"P = VI",                  answer:"전력",          diff:1},
+  {formula:"Q = It",                  answer:"전하량",        diff:1}
 ];
 
-/* =========================
-   아이템
-   ========================= */
+// ✅ 수정: 아이템에 'answer' 속성 추가 (텍스트만)
 const ITEMS = [
-  {
-    kind:"item",
-    title:"점수 2배",
-    answer:"점수 2배",
-    desc:"10초 동안 정답 점수 2배",
-    apply(){ effectX2Until = millis() + 10000; }
-  },
-  {
-    kind:"item",
-    title:"시간 정지",
-    answer:"시간 정지",
-    desc:"5초 동안 드롭 정지",
-    apply(){ freezeUntil = millis() + 5000; }
-  },
-  {
-    kind:"item",
-    title:"보호막",
-    answer:"보호막",
-    desc:"10초 동안 미스 1회 무시",
-    apply(){ shieldUntil = millis() + 10000; shieldCharges = 1; }
-  }
+  { type:"x2", title:"점수 2배", answer:"점수 2배", color:"#fde047", duration:10000 },
+  { type:"freeze", title:"시간 정지", answer:"시간 정지", color:"#67e8f9", duration:5000 },
+  { type:"shield", title:"보호막", answer:"보호막", color:"#86efac", duration:10000 }
 ];
 
-/* =========================
-   우측 정답 목록
-   ========================= */
-const answersBox = document.getElementById("answers");
-FORMULAS
-  .map(x=>({a:x.answer,d:x.diff}))
-  .sort((p,q)=>p.d-q.d || p.a.localeCompare(q.a))
-  .forEach(({a,d})=>{
-    const div=document.createElement("div");
-    div.className="answer d"+d;
-    div.textContent=a;
-    answersBox.appendChild(div);
-  });
+/* =========================================
+   게임 변수 & 상태
+   ========================================= */
+let drops = [];
+let particles = [];
+let score = 0;
+let combo = 0;
+let lastSpawnTime = 0;
+let shakeTime = 0; // 화면 흔들림 타이머
 
-/* =========================
-   점수/최고점수/콤보
-   ========================= */
-let score=0, bestScore=0;
-let totalCorrect=0;
+// 효과 상태 (만료 시간 millis)
+let effectUntil = { x2:0, freeze:0, shield:0 };
+let shieldCount = 0;
 
-let combo=0;              // 연속 정답
-let comboFlash=0;         // 콤보 텍스트 이펙트 타이머(프레임)
+// 난이도 조절
+let speedMultiplier = 1.0;
+let spawnRate = 2000;
 
-const BASE_PER_CORRECT = 20;
-const MISS_PENALTY = 20;
+/* =========================================
+   P5.js 시각화 (칠판 & 이펙트)
+   ========================================= */
 
-// 콤보 보너스: 3콤보부터 +2씩(최대 +20 보너스)
-function comboBonus(){
-  if(combo < 3) return 0;
-  return Math.min(20, 2 * (combo - 2));
-}
-
-function perCorrectNow(){
-  const base = isX2Active() ? BASE_PER_CORRECT*2 : BASE_PER_CORRECT;
-  return base + comboBonus();
-}
-
-function updateScoreUI(){
-  document.getElementById("score").textContent = score;
-  const x2Text = isX2Active() ? " (2배)" : "";
-  const bonus = comboBonus();
-  document.getElementById("perCorrectBadge").textContent =
-    `정답 +${BASE_PER_CORRECT}${x2Text}` + (bonus>0 ? ` +콤보${bonus}` : "");
-  document.getElementById("comboBadge").textContent = `콤보 ${combo}`;
-}
-
-function updateBestScoreUI(animate=false){
-  const container = document.getElementById("bestTop");
-  const numSpan = container.querySelector(".best-number");
-  numSpan.textContent = bestScore;
-  if(animate){
-    container.classList.remove("best-bump");
-    void container.offsetWidth;
-    container.classList.add("best-bump");
-  }
-}
-
-window.setBestScoreFromFirebase = function(scoreFromDb){
-  bestScore = Number(scoreFromDb) || 0;
-  updateBestScoreUI(false);
-};
-
-/* =========================
-   난이도/속도
-   ========================= */
-let drops=[];
-let lastSpawn=0;
-
-function spawnIntervalMs(){
-  return Math.max(1050, 2200 * Math.pow(0.992, totalCorrect));
-}
-function fallSpeedPxPerSec(){
-  return Math.min(110, 35 * Math.pow(1.006, totalCorrect));
-}
-function speedFactor(){
-  return fallSpeedPxPerSec()/35;
-}
-
-/* =========================
-   이펙트/아이템 상태
-   ========================= */
-let bursts=[];
-function spawnBurst(x,y,good=true){
-  const n = good ? 36 : 18;
-  for(let i=0;i<n;i++){
-    bursts.push({
-      x,y,
-      vx: random(-260,260),
-      vy: random(-320,120),
-      life: random(0.35,0.80),
-      t: 0,
-      good
-    });
-  }
-}
-
-let freezeUntil = 0;
-let effectX2Until = 0;
-let shieldUntil = 0;
-let shieldCharges = 0;
-
-function isFrozen(){ return millis() < freezeUntil; }
-function isX2Active(){ return millis() < effectX2Until; }
-function isShieldActive(){ return millis() < shieldUntil && shieldCharges > 0; }
-
-function updateEffectBadges(){
-  const x2 = document.getElementById("x2Badge");
-  const fr = document.getElementById("freezeBadge");
-  const sh = document.getElementById("shieldBadge");
-
-  x2.style.display = isX2Active() ? "inline-flex" : "none";
-  fr.style.display = isFrozen() ? "inline-flex" : "none";
-  sh.style.display = isShieldActive() ? "inline-flex" : "none";
-
-  if(isShieldActive()) sh.textContent = `보호막 (${shieldCharges})`;
-  else sh.textContent = "보호막";
-}
-
-/* =========================
-   드롭 생성
-   ========================= */
-const ITEM_CHANCE = 0.13;
-
-function spawnDrop(){
-  const isItem = Math.random() < ITEM_CHANCE;
-
-  if(isItem){
-    const it = random(ITEMS);
-    const w = 320, h = 74;
-    const x = random(w/2 + 20, width - w/2 - 20);
-    const y = -40;
-    drops.push({
-      kind:"item",
-      title: it.title,
-      answer: it.answer,
-      desc: it.desc,
-      apply: it.apply,
-      unit:"아이템",
-      diff: 0,
-      x,y,w,h,
-      v: fallSpeedPxPerSec() * random(0.85, 1.00)
-    });
-    return;
-  }
-
-  const f = random(FORMULAS);
-  const w = constrain(240 + f.formula.length*8, 260, 560);
-  const h = 74;
-  const x = random(w/2 + 20, width - w/2 - 20);
-  const y = -40;
-  drops.push({
-    kind:"formula",
-    formula:f.formula,
-    answer:f.answer,
-    unit:f.unit,
-    diff:f.diff,
-    x,y,w,h,
-    v: fallSpeedPxPerSec() * random(0.92, 1.06)
-  });
-}
-
-/* =========================
-   경고 라인 + 화면 흔들림
-   ========================= */
-let shakeT = 0;
-let shakePow = 0;
-
-function triggerShake(power=1){
-  shakeT = Math.max(shakeT, 10);
-  shakePow = Math.max(shakePow, power);
-}
-
-function dangerLevel(){
-  // 바닥 근처에 공식이 있으면 위험
-  const warnY = height - 34;
-  let max = 0;
-  for(const d of drops){
-    if(d.kind !== "formula") continue;
-    const y = d.y + d.h/2;
-    if(y > warnY){
-      const t = constrain((y - warnY)/28, 0, 1);
-      max = Math.max(max, t);
-    }
-  }
-  return max; // 0~1
-}
-
-/* =========================
-   입력/UI refs
-   ========================= */
-const inputEl = document.getElementById("ans");
-const msgEl   = document.getElementById("msg");
-
-/* =========================
-   교실 배경(이미지 없이) + 칠판 글씨
-   ========================= */
-function drawGrid(){
-  push();
-  stroke(219,234,254,80);
-  strokeWeight(1);
-  for(let x=0;x<=width;x+=56) line(x,0,x,height);
-  for(let y=0;y<=height;y+=56) line(0,y,width,y);
-  pop();
-}
-
-function drawClassroomBG(){
-  // 벽(그라데이션)
-  noStroke();
-  for(let y=0;y<height;y+=3){
-    const t = y/height;
-    fill(240 + 10*(1-t), 248 + 6*(1-t), 255, 255);
-    rect(0,y,width,3);
-  }
-
-  // 바닥(나무톤)
-  const floorH = Math.floor(height*0.18);
-  const floorY = height - floorH;
-  for(let y=floorY;y<height;y+=2){
-    const t = (y-floorY)/floorH;
-    fill(235-25*t, 222-35*t, 195-45*t, 255);
-    rect(0,y,width,2);
-  }
-  stroke(150,120,90,45);
-  for(let x=0;x<width;x+=28) line(x,floorY,x,height);
-  noStroke();
-
-  // 칠판
-  const bx = width*0.10, by = height*0.09, bw = width*0.80, bh = height*0.38;
-  fill(12, 90, 70, 255);
-  rect(bx,by,bw,bh,18);
-  stroke(255,255,255,22);
-  noFill();
-  rect(bx+6,by+6,bw-12,bh-12,14);
-  noStroke();
-
-  // 칠판 트레이
-  fill(235, 238, 245, 210);
-  rect(bx, by+bh+10, bw, 14, 10);
-
-
-  // 옅은 그리드
-  drawGrid();
-
-  // 비네팅
-  for(let i=0;i<14;i++){
-    noFill();
-    stroke(0,0,0, 10);
-    rect(i,i,width-2*i,height-2*i,20);
-  }
-  noStroke();
-
-  // ✅ 칠판에 “미션/콤보/아이템” 표시 (분필 느낌)
-  push();
-  const chalkX = bx + 26;
-  const chalkY = by + 34;
-  textAlign(LEFT, TOP);
-  textFont("system-ui");
-  noStroke();
-
-  fill(245, 250, 255, 210);
-  textSize(22);
-  text("오늘의 미션", chalkX, chalkY);
-
-  fill(245, 250, 255, 185);
-  textSize(16);
-  text("공식이 떨어지면 이름을 입력하자!", chalkX, chalkY+34);
-
-  // 콤보 강조
-  const cTxt = `콤보: ${combo}`;
-  fill(255, 255, 255, 210);
-  textSize(18);
-  text(cTxt, chalkX, chalkY+66);
-
-  // 아이템 상태 라인
-  let line2 = [];
-  if(isX2Active()) line2.push("점수 2배");
-  if(isFrozen()) line2.push("시간 정지");
-  if(isShieldActive()) line2.push(`보호막(${shieldCharges})`);
-  fill(255,255,255,180);
-  textSize(14);
-  text("아이템: " + (line2.length? line2.join(" · ") : "없음"), chalkX, chalkY+92);
-
-  pop();
-}
-
-/* =========================
-   드롭/카드 그리기
-   ========================= */
-function drawDrop(d){
-  push();
-  translate(d.x, d.y);
-
-  // shadow
-  noStroke();
-  fill(0,0,0,18);
-  rectMode(CENTER);
-  rect(4,5,d.w,d.h,16);
-
-  // card
-  stroke(219,234,254);
-  strokeWeight(1);
-  if(d.kind === "item") fill(255, 252, 235);
-  else fill(255);
-  rect(0,0,d.w,d.h,16);
-
-  // pill
-  noStroke();
-  if(d.kind === "item") fill(245,158,11,35);
-  else fill(56,189,248,35);
-  rect(-d.w/2+54,-d.h/2+14,98,22,999);
-
-  if(d.kind === "item") fill(146,64,14);
-  else fill(2,132,199);
-  textAlign(CENTER,CENTER);
-  textSize(11);
-  text(d.unit, -d.w/2+54, -d.h/2+14);
-
-  // text
-  fill(15,23,42);
-  textAlign(CENTER,CENTER);
-
-  if(d.kind === "item"){
-    textSize(20);
-    text(`🎁 ${d.title}`, 0, 4);
-    textSize(11);
-    fill(71,85,105);
-    text(d.desc, 0, 26);
-  }else{
-    textSize(d.diff===3?18:20);
-    text(d.formula, 0, 8);
-  }
-
-  pop();
-}
-
-/* =========================
-   메시지
-   ========================= */
-function setMsg(type, text){
-  msgEl.classList.remove("good","bad");
-  msgEl.classList.add(type);
-  msgEl.textContent = text;
-}
-
-/* =========================
-   p5 라이프사이클
-   ========================= */
 function setup(){
-  const c=createCanvas(window.innerWidth-664, window.innerHeight-32);
-  c.parent(document.body);
-  c.position(332,16);
-  pixelDensity(1);
-  textFont("system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, sans-serif");
-
-  inputEl.addEventListener("keydown",(e)=>{
-    if(e.key==="Enter") submit();
+  createCanvas(windowWidth, windowHeight);
+  // 노이즈 질감을 미리 생성할 수도 있지만, draw에서 간단히 처리
+  
+  // 입력창 이벤트 연결
+  const inp = document.getElementById("ans");
+  inp.addEventListener("keydown", (e)=>{
+    if(e.key === "Enter") checkAnswer();
   });
-
-  lastSpawn = millis();
-  updateScoreUI();
-  updateBestScoreUI(false);
+  
+  // ✅ 화면 클릭 시 입력창으로 포커스 복귀 (사용자 편의)
+  document.body.addEventListener("click", (e)=>{
+    // 버튼, 입력창 등을 클릭한게 아니라면 포커스
+    if(e.target.tagName !== "BUTTON" && e.target.tagName !== "INPUT"){
+      inp.focus();
+    }
+  });
+  
+  inp.focus();
+  
+  // 정답표 채우기
+  const ansCon = document.getElementById("answers-container");
+  FORMULAS.sort((a,b)=>a.answer.localeCompare(b.answer)).forEach(f=>{
+    const d = document.createElement("div");
+    d.className = "answer-row";
+    d.textContent = f.answer;
+    ansCon.appendChild(d);
+  });
 }
 
 function windowResized(){
-  resizeCanvas(window.innerWidth-664, window.innerHeight-32);
-}
-
-/* 콤보 이펙트 텍스트 */
-function drawComboOverlay(){
-  if(comboFlash <= 0) return;
-  const t = comboFlash / 18; // 1->0
-  const s = 1 + (1-t)*0.25;
-  push();
-  translate(width*0.5, height*0.12);
-  scale(s);
-  textAlign(CENTER,CENTER);
-  noStroke();
-  fill(56,189,248, 40 + 120*t);
-  textSize(54);
-  text("COMBO!", 0, 0);
-  fill(15,23,42, 70 + 160*t);
-  textSize(34);
-  text(`${combo} 콤보`, 0, 44);
-  pop();
-  comboFlash--;
+  resizeCanvas(windowWidth, windowHeight);
 }
 
 function draw(){
-  // 위험 감지(정지 중엔 위험 연출 약화)
-  const danger = isFrozen() ? 0 : dangerLevel();
-
-  // 화면 흔들림
-  if(danger > 0.55) triggerShake(0.9 + danger);
-  let sx=0, sy=0;
-  if(shakeT > 0){
-    sx = random(-4,4) * shakePow;
-    sy = random(-3,3) * shakePow;
-    shakeT--;
-    shakePow *= 0.88;
-  }else{
-    shakePow = 0;
+  // 1. 배경 그리기 (리얼 칠판)
+  drawBlackboard();
+  
+  // 2. 화면 흔들림 적용
+  if(shakeTime > 0){
+    const mag = map(shakeTime, 0, 15, 0, 6);
+    translate(random(-mag, mag), random(-mag, mag));
+    shakeTime--;
   }
 
-  push();
-  translate(sx,sy);
+  const now = millis();
+  
+  // 3. 스폰 로직 & 난이도 조절 수정
+  // [수정] 속도 상한 제거: 점수가 오를수록 계속 빨라짐 (Math.min 제거)
+  speedMultiplier = 0.5 + (score / 2000); 
+  
+  // 스폰 주기: 점수에 따라 빨라짐 (최소 0.5초까지)
+  spawnRate = Math.max(500, 2500 - (score / 2));
 
-  // 교실 배경 + 칠판 미션/콤보
-  drawClassroomBG();
-
-  // 경고 라인(바닥 직전)
-  const warnY = height - 34;
-  const pulse = 0.5 + 0.5*sin(frameCount*0.22);
-  if(danger > 0){
-    stroke(239,68,68, 80 + 120*danger*pulse);
-    strokeWeight(3);
-    line(18, warnY, width-18, warnY);
-    noStroke();
-    fill(239,68,68, 18 + 40*danger);
-    rect(18, warnY-8, width-36, 16, 10);
-  }
-
-  // 스폰(정지 중엔 스폰 멈춤)
-  if(!isFrozen()){
-    if(millis()-lastSpawn >= spawnIntervalMs() && drops.length < 8){
+  if(now > effectUntil.freeze){
+    if(now - lastSpawnTime > spawnRate){
       spawnDrop();
-      lastSpawn = millis();
+      lastSpawnTime = now;
     }
   }
 
-  const dt = deltaTime/1000;
-  const floorY = height - 10;
-
-  // 드롭 업데이트/미스 처리
-  for(let i=drops.length-1;i>=0;i--){
-    const d = drops[i];
-    if(!isFrozen()) d.y += d.v * dt;
-
+  // 4. 드롭(공식) 업데이트 & 그리기
+  const deadZone = height - 100; // 바닥 기준
+  
+  for(let i=drops.length-1; i>=0; i--){
+    let d = drops[i];
+    
+    // 이동 (Freeze 상태면 멈춤)
+    if(now > effectUntil.freeze){
+      d.y += d.speed * speedMultiplier * (deltaTime/16);
+    }
+    
     drawDrop(d);
-
-    if(d.y + d.h/2 >= floorY){
-      if(d.kind === "formula"){
-        if(isShieldActive()){
-          shieldCharges -= 1;
-          setMsg("good", "보호막! 미스 1회 무시");
-          spawnBurst(d.x, floorY-14, true);
-        }else{
-          // 콤보 끊기
+    
+    // 바닥 닿음 처리
+    if(d.y > deadZone){
+      if(d.isItem){
+        // 아이템은 그냥 사라짐
+        uiMsg("bad", "아이템을 놓쳤어요 ㅠㅠ");
+      } else {
+        // 공식 놓침
+        if(shieldCount > 0 && now < effectUntil.shield){
+          shieldCount--;
+          uiMsg("good", "🛡️ 보호막이 방어했습니다!");
+          spawnParticles(d.x, deadZone, 10, "#86efac"); // 초록 파티클
+        } else {
+          // 데미지
+          score = Math.max(0, score - 20);
           combo = 0;
-          score = Math.max(0, score - MISS_PENALTY);
-          setMsg("bad", `미스! (-${MISS_PENALTY}) 정답: ${d.answer}`);
-          spawnBurst(d.x, floorY-14, false);
+          shakeTime = 15; // 화면 흔들림
+          uiMsg("bad", `놓쳤습니다! 정답: ${d.answer}`);
+          spawnParticles(d.x, deadZone, 20, "#fca5a5"); // 빨강 파티클
         }
-        updateScoreUI();
-      }else{
-        // 아이템은 놓쳐도 패널티 없음
-        setMsg("bad", `아이템 놓침: ${d.title}`);
-        spawnBurst(d.x, floorY-14, false);
       }
-      drops.splice(i,1);
+      drops.splice(i, 1);
+      updateUI();
     }
   }
 
-  // 파티클
-  for(let i=bursts.length-1;i>=0;i--){
-    const p = bursts[i];
-    p.t += dt;
-    p.vy += 560*dt;
-    p.x += p.vx*dt;
-    p.y += p.vy*dt;
-    if(p.t > p.life){ bursts.splice(i,1); continue; }
-    const a = 1 - p.t/p.life;
+  // 5. 파티클 이펙트
+  for(let i=particles.length-1; i>=0; i--){
+    let p = particles[i];
+    p.life -= 2;
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.1; // 중력
+    
     noStroke();
-    if(p.good) fill(34,197,94, 220*a);
-    else       fill(239,68,68, 200*a);
-    circle(p.x,p.y, 4 + 6*a);
-    fill(56,189,248, 120*a);
-    circle(p.x,p.y, 10 + 14*a);
+    fill(p.r, p.g, p.b, p.life * 2.5);
+    circle(p.x, p.y, p.size);
+    
+    if(p.life <= 0) particles.splice(i,1);
   }
 
-  // 콤보 오버레이
-  drawComboOverlay();
+  // 6. UI 상태 업데이트 (시간제한 아이템 등)
+  updateBadgeUI(now);
+}
 
+// === 그리기 헬퍼 함수 ===
+
+function drawBlackboard(){
+  // 기본 녹색 배경
+  background(43, 66, 56);
+  
+  // 노이즈 텍스처 (분필 가루 느낌)
+  loadPixels();
+  // 성능 최적화를 위해 매 프레임 전체 픽셀 조작은 무거움.
+  // 대신 반투명한 노이즈 이미지를 덮거나, 간단한 그라데이션 사용.
+  // 여기서는 p5 그리기 함수로 '지우개 자국' 느낌만 냄.
+  
+  noStroke();
+  fill(255, 255, 255, 15); // 희미한 하얀색
+  
+  // 거친 지우개 자국 몇 개
+  ellipse(width*0.2, height*0.3, 400, 200);
+  ellipse(width*0.7, height*0.6, 500, 300);
+  
+  // 비네팅 (가장자리 어둡게)
+  strokeWeight(60);
+  stroke(20, 30, 25, 100); // 반투명 검정 테두리
+  noFill();
+  rect(0,0,width,height);
+  noStroke();
+}
+
+function drawDrop(d){
+  push();
+  translate(d.x, d.y);
+  
+  // 중앙 기준 드로잉 설정 (아이템 텍스트 정렬 해결)
+  rectMode(CENTER);
+
+  // 그림자
+  fill(0,0,0,50);
+  noStroke();
+  rect(3, 3, d.w, d.h, 6);
+  
+  // 본체
+  if(d.isItem){
+    // 아이템: 색상있는 카드
+    stroke(255);
+    strokeWeight(1);
+    fill(d.color);
+    rect(0, 0, d.w, d.h, 6);
+    
+    fill(50);
+    textAlign(CENTER, CENTER);
+    textSize(20);
+    // 화면 표시에는 이모지 포함 (시각적 재미), 답안 인식은 answer 속성(텍스트) 사용
+    text(`🎁 ${d.title}`, 0, 0);
+    
+  } else {
+    // 공식: 떨림 제거하고 안정적인 사각형 사용
+    stroke(255, 255, 255, 200);
+    strokeWeight(2);
+    noFill();
+    
+    // 기존의 random vertex 코드를 제거하고 사각형으로 변경
+    rect(0, 0, d.w, d.h, 6);
+    
+    // 내용
+    noStroke();
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(24);
+    // 공식
+    text(d.formula, 0, -5);
+    // 난이도 표시 (아래 점)
+    fill(255, 255, 255, 150);
+    let dots = "•".repeat(d.diff);
+    textSize(14);
+    text(dots, 0, 18);
+  }
   pop();
-
-  document.getElementById("speedBadge").textContent = `속도 ${speedFactor().toFixed(2)}×`;
-  updateEffectBadges();
 }
 
-/* =========================
-   제출 처리(한글+숫자+공백 허용)
-   ========================= */
-function submit(){
-  const s = inputEl.value.trim();
+function spawnDrop(){
+  const isItem = random() < 0.1; // 10% 확률
+  
+  // [수정] 좌측 패널(240px + 20px 패딩)과 우측 패널(220px + 20px 패딩)을 확실히 피하기 위해 안전 구역 설정
+  let safeLeft = 320;
+  let safeRight = width - 300;
 
-  if(!s){ setMsg("bad","입력이 비어 있어요."); return; }
-
-  // ✅ 숫자 허용
-  if(!/^[가-힣0-9 ]+$/.test(s)){
-    setMsg("bad","한글, 숫자, 공백만 입력할 수 있어요.");
-    inputEl.value=""; return;
+  // 만약 화면이 너무 좁아서(모바일 등) 안전 구역이 꼬이면 중앙으로 강제
+  if(safeLeft >= safeRight){
+    safeLeft = width/2 - 20;
+    safeRight = width/2 + 20;
   }
+  
+  const spawnX = random(safeLeft, safeRight);
+  
+  if(isItem){
+    const item = random(ITEMS);
+    drops.push({
+      isItem: true,
+      ...item,
+      x: spawnX,
+      y: -50,
+      w: 160, h: 50,
+      speed: 1.5,
+      color: item.color
+    });
+  } else {
+    const f = random(FORMULAS);
+    drops.push({
+      isItem: false,
+      ...f,
+      x: spawnX,
+      y: -50,
+      w: textWidth(f.formula)*1.2 + 60, 
+      h: 60,
+      speed: 1.0 + (f.diff * 0.2) // 기본 속도 계수
+    });
+  }
+}
 
-  // 정확 일치(띄어쓰기 포함), 가장 아래부터
-  let best=-1, bestY=-1;
-  for(let i=0;i<drops.length;i++){
-    if(drops[i].answer === s && drops[i].y > bestY){
-      bestY = drops[i].y; best = i;
+function spawnParticles(x, y, count, colorHex){
+  const c = color(colorHex);
+  for(let i=0; i<count; i++){
+    particles.push({
+      x: x, y: y,
+      vx: random(-3, 3),
+      vy: random(-4, 1),
+      life: 100, // frame
+      size: random(3, 8),
+      r: red(c), g: green(c), b: blue(c)
+    });
+  }
+}
+
+/* =========================================
+   게임 로직
+   ========================================= */
+
+function checkAnswer(){
+  const inp = document.getElementById("ans");
+  const rawVal = inp.value.trim();
+  if(!rawVal) return;
+  
+  // 띄어쓰기 무시를 위해 공백 제거 후 비교
+  const val = rawVal.replace(/\s+/g, "");
+
+  // 가장 아래(y가 큰) 녀석부터 매칭
+  let hitIdx = -1;
+  let maxY = -9999;
+  
+  for(let i=0; i<drops.length; i++){
+    // ✅ 안전 장치: 정답 속성이 없는 경우 건너뛰기 (에러 방지)
+    if(!drops[i].answer) continue;
+
+    const dropAns = drops[i].answer.replace(/\s+/g, ""); // 정답도 공백 제거하고 비교
+    if(dropAns === val && drops[i].y > maxY){
+      maxY = drops[i].y;
+      hitIdx = i;
     }
   }
-
-  if(best >= 0){
-    const hit = drops[best];
-    drops.splice(best,1);
-
-    if(hit.kind === "item"){
-      hit.apply();
-      setMsg("good", `아이템 획득! ${hit.title}`);
-      spawnBurst(hit.x, hit.y, true);
-    }else{
-      // ✅ 정답: 콤보 증가 + 점수
+  
+  if(hitIdx !== -1){
+    // 정답!
+    const d = drops[hitIdx];
+    drops.splice(hitIdx, 1);
+    
+    if(d.isItem){
+      applyItem(d);
+      uiMsg("good", `아이템 획득: ${d.title}`);
+      spawnParticles(d.x, d.y, 15, d.color);
+    } else {
       combo++;
-      comboFlash = 18; // 콤보 이펙트 발동
-
-      const gain = perCorrectNow();
-      score += gain;
-      totalCorrect++;
-
-      updateScoreUI();
-      setMsg("good", `정답! (+${gain}) → ${hit.answer}`);
-      spawnBurst(hit.x, hit.y, true);
-
-      // 최고점수 갱신 + Firebase 저장
-      if(score > bestScore){
-        bestScore = score;
-        updateBestScoreUI(true);
-        if(window.saveBestScoreToFirebase) window.saveBestScoreToFirebase(bestScore);
-      }
+      let bonus = Math.min(20, (combo-1)*5);
+      let add = 20 + bonus;
+      if(millis() < effectUntil.x2) add *= 2;
+      
+      score += add;
+      uiMsg("good", `정답! +${add}`);
+      spawnParticles(d.x, d.y, 25, "#f3f4f6"); // 하얀 분필가루
+      
+      // 최고점수 체크
+      checkBestScore();
     }
-  }else{
-    // 오답: 콤보 깨짐(게임 맛)
+    
+  } else {
+    // 오답
     combo = 0;
-    updateScoreUI();
-    setMsg("bad","오답! (띄어쓰기까지 정확히 입력했는지 확인)");
-    spawnBurst(width*0.5, height*0.75, false);
-    triggerShake(0.9);
+    score = Math.max(0, score - 10);
+    shakeTime = 10;
+    uiMsg("bad", "틀렸습니다!");
+    
+    // 입력창 흔들림 CSS
+    const el = document.querySelector(".input-container");
+    el.classList.remove("shake");
+    void el.offsetWidth;
+    el.classList.add("shake");
   }
-
-  inputEl.value="";
+  
+  inp.value = "";
+  updateUI();
 }
+
+function applyItem(item){
+  const now = millis();
+  if(item.type === "x2") effectUntil.x2 = now + item.duration;
+  if(item.type === "freeze") effectUntil.freeze = now + item.duration;
+  if(item.type === "shield") {
+    effectUntil.shield = now + item.duration;
+    shieldCount = 1;
+  }
+}
+
+function updateUI(){
+  document.getElementById("score").textContent = score;
+  document.getElementById("combo-ui").textContent = combo > 1 ? `${combo} COMBO!` : "";
+  document.getElementById("combo-ui").style.opacity = combo > 1 ? 1 : 0;
+}
+
+function updateBadgeUI(now){
+  document.getElementById("bd-x2").style.display = (now < effectUntil.x2) ? "flex" : "none";
+  document.getElementById("bd-fr").style.display = (now < effectUntil.freeze) ? "flex" : "none";
+  const shEl = document.getElementById("bd-sh");
+  if(shieldCount > 0 && now < effectUntil.shield){
+    shEl.style.display = "flex";
+    shEl.textContent = `🛡️ 보호막 (${shieldCount})`;
+  } else {
+    shEl.style.display = "none";
+  }
+}
+
+function uiMsg(type, text){
+  const box = document.getElementById("msg-box");
+  box.textContent = text;
+  box.style.color = type === "good" ? "var(--chalk-green)" : "var(--chalk-red)";
+  box.style.transform = "scale(1.2)";
+  setTimeout(()=> box.style.transform = "scale(1)", 200);
+}
+
+/* =========================================
+   Firebase 랭킹 시스템
+   ========================================= */
+let myBestScore = 0;
+let myNickname = "학생" + Math.floor(Math.random()*1000);
+
+// 로컬 최고점수 체크 & 서버 저장 시도
+function checkBestScore(){
+  if(score > myBestScore){
+    myBestScore = score;
+    // Firebase 저장
+    if(window.saveScoreToFirestore) window.saveScoreToFirestore(myNickname, myBestScore);
+  }
+}
+
+// 닉네임 변경
+document.getElementById("btn-save-nick").addEventListener("click", ()=>{
+  const val = document.getElementById("nickname").value.trim();
+  if(val) {
+    myNickname = val;
+    uiMsg("good", `닉네임 변경: ${val}`);
+    // 닉네임 바꾸면 현재 최고기록으로 다시 업데이트 (이름 갱신용)
+    if(myBestScore > 0 && window.saveScoreToFirestore) {
+      window.saveScoreToFirestore(myNickname, myBestScore);
+    }
+  }
+});
+
+// 외부에서 랭킹 리스트 UI 업데이트
+window.updateRankingBoard = function(rankData) {
+  const list = document.getElementById("rank-list");
+  list.innerHTML = "";
+  
+  if(!rankData || rankData.length === 0){
+    list.innerHTML = "<li style='padding:10px; opacity:0.6'>기록 없음</li>";
+    return;
+  }
+  
+  rankData.forEach((item, index) => {
+    const li = document.createElement("li");
+    li.className = "rank-item";
+    if(index === 0) li.classList.add("top1");
+    // 내 기록인지 확인 (간단히 이름으로 비교하거나, uid 비교가 정확하지만 여기선 시각적 처리만)
+    if(item.name === myNickname) li.classList.add("me");
+    
+    li.innerHTML = `
+      <span class="rank-name">${index+1}. ${item.name}</span>
+      <span>${item.score}</span>
+    `;
+    list.appendChild(li);
+  });
+  
+  // 내 최고점수 항목 추가 (랭킹에 없으면 하단에 표기)
+  // (생략: 위 리스트가 Top 5이므로, 공간 부족시 생략하거나 별도 표기)
+};
+
 </script>
 
-<!-- ===== Firebase 최고점수 연동 ===== -->
+<!-- ===== Firebase Module: 랭킹 시스템 ===== -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+  import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+  import { getFirestore, doc, setDoc, collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
-    authDomain: "simulation-67cd3.firebaseapp.com",
-    projectId: "simulation-67cd3",
-    storageBucket: "simulation-67cd3.appspot.com",
-    messagingSenderId: "615983461615",
-    appId: "1:615983461615:web:002e07bcea878eb6d5571a",
-    measurementId: "G-9RGN7LYE5W"
-  };
+  // 1. 설정
+  const firebaseConfig = JSON.parse(
+    '{"apiKey":"AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w","authDomain":"simulation-67cd3.firebaseapp.com","projectId":"simulation-67cd3","storageBucket":"simulation-67cd3.appspot.com","messagingSenderId":"615983461615","appId":"1:615983461615:web:002e07bcea878eb6d5571a"}'
+  );
+  const appId = "default-app-id"; // 전역 변수 __app_id가 없는 경우 대비
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  const SIM_ID = "공식_타이핑";
-  let firebaseUser = null;
+  let currentUser = null;
 
-  async function saveBestScore(score) {
-    if (!firebaseUser) return;
+  // 2. 인증
+  async function initAuth() {
     try {
-      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
-      await setDoc(ref, { score: Number(score) || 0 }, { merge: true });
-    } catch (err) {
-      console.error("[공식 타이핑] 최고 점수 저장 오류:", err);
-    }
-  }
-
-  async function loadBestScore() {
-    if (!firebaseUser) return;
-    try {
-      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        const data = snap.data();
-        const score = Number(data.score || 0) || 0;
-        if (window.setBestScoreFromFirebase) window.setBestScoreFromFirebase(score);
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
       }
-    } catch (err) {
-      console.error("[공식 타이핑] 최고 점수 불러오기 오류:", err);
+    } catch (e) {
+      console.error("인증 실패:", e);
     }
   }
+  initAuth();
 
-  window.saveBestScoreToFirebase = saveBestScore;
+  // 3. 점수 저장 함수 (전역 노출)
+  window.saveScoreToFirestore = async function(nickname, score) {
+    if(!currentUser) return;
+    
+    // Public Leaderboard에 저장
+    // Path: artifacts/{appId}/public/data/leaderboard/{uid}
+    // Rule 1 준수
+    const leaderboardRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', currentUser.uid);
+    
+    try {
+      await setDoc(leaderboardRef, {
+        name: nickname,
+        score: score,
+        uid: currentUser.uid,
+        updatedAt: Date.now()
+      });
+      console.log("랭킹 저장 완료");
+    } catch(e) {
+      console.error("랭킹 저장 실패", e);
+    }
+  };
 
-  onAuthStateChanged(auth, async (user) => {
-    firebaseUser = user;
-    if (user) await loadBestScore();
+  // 4. 랭킹 리스너 (실시간 업데이트)
+  onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    if(user){
+      // 랭킹 불러오기
+      // Rule 2: No complex queries. Just fetch collection or simple orderBy if possible.
+      // 여기서는 'leaderboard' 컬렉션을 구독. (데이터가 아주 많으면 limit 필수지만, Rule 2 제약 안에서 해결)
+      // *주의: artifacts 경로 사용
+      const lbCol = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
+      
+      // onSnapshot으로 실시간 수신
+      onSnapshot(lbCol, (snapshot) => {
+        let allScores = [];
+        snapshot.forEach(doc => {
+          allScores.push(doc.data());
+        });
+        
+        // JS에서 정렬 (Rule 2: Fetch all -> Sort in memory)
+        allScores.sort((a,b) => b.score - a.score);
+        
+        // Top 5 자르기
+        const top5 = allScores.slice(0, 5);
+        
+        // UI 업데이트
+        if(window.updateRankingBoard) window.updateRankingBoard(top5);
+      }, (error) => {
+        console.error("랭킹 불러오기 오류", error);
+      });
+    }
   });
+
 </script>
 
 </body>
