@@ -105,6 +105,15 @@ canvas {
   margin: 2px 0;
 }
 
+/* 하트 스타일 */
+.lives-val {
+  font-size: 1.8rem;
+  color: var(--chalk-red);
+  letter-spacing: 4px;
+  text-shadow: 0 0 8px rgba(252, 165, 165, 0.6);
+  margin-bottom: 4px;
+}
+
 .combo-text { 
   font-size: 1.4rem; 
   color: var(--chalk-yellow); 
@@ -278,12 +287,62 @@ canvas {
   font-size: 10px; z-index: 9999;
   text-align: center; pointer-events: none;
 }
+
+/* === Game Over Overlay === */
+#game-over-layer {
+  position: absolute; top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,0.85);
+  z-index: 200;
+  display: none; /* JS에서 block으로 변경 */
+  justify-content: center; align-items: center;
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+}
+.game-over-box {
+  background: rgba(30, 41, 59, 0.95);
+  border: 4px solid var(--chalk-red);
+  padding: 50px 80px;
+  border-radius: 24px;
+  text-align: center;
+  box-shadow: 0 0 50px rgba(252, 165, 165, 0.3);
+  animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes popIn { 0%{transform:scale(0.8);opacity:0;} 100%{transform:scale(1);opacity:1;} }
+
+.go-title {
+  font-size: 4rem; color: var(--chalk-red); font-weight: bold; margin-bottom: 20px;
+  font-family: 'Gamja Flower', cursive;
+  text-shadow: 4px 4px 0px rgba(0,0,0,0.5);
+}
+.go-score {
+  font-size: 2.5rem; color: #fff; margin-bottom: 40px;
+  font-family: 'Gamja Flower', cursive;
+}
+.restart-btn {
+  background: var(--chalk-white); color: #1e293b;
+  border: none; padding: 12px 32px; font-size: 1.5rem;
+  border-radius: 50px; cursor: pointer; font-weight: bold;
+  font-family: 'Gamja Flower', cursive;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+.restart-btn:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(255,255,255,0.4); }
+
 </style>
 </head>
 <body>
 
 <!-- 디버그용 로그 표시 (최고점수 로드 상태 확인) -->
 <div id="debug-log">DB 상태: 대기중...</div>
+
+<!-- 게임 오버 레이어 -->
+<div id="game-over-layer">
+  <div class="game-over-box">
+    <div class="go-title">GAME OVER</div>
+    <div class="go-score">최종 점수: <span id="final-score">0</span></div>
+    <button class="restart-btn" onclick="location.reload()">다시 도전하기</button>
+  </div>
+</div>
 
 <div id="ui-layer">
   
@@ -293,6 +352,12 @@ canvas {
       <div class="score-section">
         <div class="score-label">현재 점수</div>
         <div class="score-val" id="score">0</div>
+      </div>
+      
+      <!-- 하트(생명) 표시 -->
+      <div class="score-section" style="margin-bottom:4px;">
+        <div class="score-label small">남은 기회</div>
+        <div class="lives-val" id="lives-val">❤❤❤</div>
       </div>
       
       <div class="score-divider"></div>
@@ -393,6 +458,9 @@ let shieldCount = 0;
 let speedMultiplier = 1.0;
 let spawnRate = 2000;
 
+let lives = 3;
+let isGameOver = false;
+
 // 전역 변수로 할당 (module script에서 접근 가능하도록 window 객체 사용 권장)
 window.myBestScore = 0; 
 
@@ -423,6 +491,8 @@ function setup(){
     d.textContent = f.answer;
     ansCon.appendChild(d);
   });
+
+  updateLivesUI();
 }
 
 function windowResized(){
@@ -432,6 +502,14 @@ function windowResized(){
 function draw(){
   drawBlackboard();
   
+  // Game Over 상태면 그리기 중단은 아니지만, 게임 로직은 멈춤
+  if(isGameOver) {
+    // 배경이나 기존 요소들은 그대로 두고 멈춘 상태로 보이게 하려면 return
+    // 파티클 등 잔상은 남기고 싶다면 로직만 감싸기
+    // 여기서는 간단히 return하여 멈춤 효과 (파티클도 멈춤)
+    return;
+  }
+
   if(shakeTime > 0){
     const mag = map(shakeTime, 0, 15, 0, 6);
     translate(random(-mag, mag), random(-mag, mag));
@@ -462,20 +540,31 @@ function draw(){
     
     drawDrop(d);
     
+    // 바닥 닿음 처리
     if(d.y > deadZone){
       if(d.isItem){
         uiMsg("bad", "아이템을 놓쳤어요 ㅠㅠ");
       } else {
+        // 공식 놓침
         if(shieldCount > 0 && now < effectUntil.shield){
           shieldCount--;
           uiMsg("good", "🛡️ 보호막이 방어했습니다!");
           spawnParticles(d.x, deadZone, 10, "#86efac"); 
         } else {
+          // 생명 감소 로직
+          lives--;
+          updateLivesUI();
+          
           score = Math.max(0, score - 20);
           combo = 0;
           shakeTime = 15;
-          uiMsg("bad", `놓쳤습니다! 정답: ${d.answer}`);
           spawnParticles(d.x, deadZone, 20, "#fca5a5");
+
+          if(lives <= 0){
+            gameOver();
+          } else {
+            uiMsg("bad", `놓쳤습니다! 정답: ${d.answer}`);
+          }
         }
       }
       drops.splice(i, 1);
@@ -498,6 +587,33 @@ function draw(){
   }
 
   updateBadgeUI(now);
+}
+
+function gameOver(){
+  isGameOver = true;
+  // 최종 점수 저장 시도
+  if(score > window.myBestScore){
+    window.myBestScore = score;
+    if(window.saveBestScore) window.saveBestScore(window.myBestScore);
+  }
+  
+  // Game Over UI 표시
+  document.getElementById("final-score").textContent = score;
+  document.getElementById("game-over-layer").style.display = "flex";
+  document.getElementById("ans").blur(); // 입력창 포커스 해제
+}
+
+function updateLivesUI(){
+  const el = document.getElementById("lives-val");
+  // 하트 그리기
+  let str = "";
+  for(let i=0; i<lives; i++) str += "❤";
+  // 빈 하트도 표시하려면 아래 주석 해제
+  // for(let i=lives; i<3; i++) str += "♡"; 
+  
+  el.textContent = str;
+  if(lives <= 1) el.style.color = "#ef4444"; // 위험색
+  else el.style.color = "var(--chalk-red)";
 }
 
 function drawBlackboard(){
@@ -594,6 +710,8 @@ function spawnParticles(x, y, count, colorHex){
    ========================================= */
 
 function checkAnswer(){
+  if(isGameOver) return; // 게임 오버시 입력 불가
+
   const inp = document.getElementById("ans");
   const rawVal = inp.value.trim();
   if(!rawVal) return;
