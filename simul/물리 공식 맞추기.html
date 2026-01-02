@@ -69,8 +69,25 @@ canvas {
   border-radius: 12px;
   box-shadow: var(--shadow);
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
+.score-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.score-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.15);
+  width: 80%;
+  margin: 4px auto;
+}
+
 .score-label { font-size: 1.2rem; color: #cbd5e1; opacity: 0.8; }
+.score-label.small { font-size: 1rem; opacity: 0.7; }
+
 .score-val { 
   font-size: 3.5rem; 
   font-weight: bold; 
@@ -79,7 +96,22 @@ canvas {
   line-height: 1;
   margin: 4px 0;
 }
-.combo-text { font-size: 1.4rem; color: var(--chalk-yellow); animation: pulse 1s infinite; }
+.best-score-val {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--chalk-yellow);
+  text-shadow: 1px 1px 0px rgba(0,0,0,0.3);
+  line-height: 1;
+  margin: 2px 0;
+}
+
+.combo-text { 
+  font-size: 1.4rem; 
+  color: var(--chalk-yellow); 
+  animation: pulse 1s infinite; 
+  margin-top: 4px;
+  min-height: 1.5em; /* 공간 확보 */
+}
 
 /* 랭킹 보드 */
 .rank-board {
@@ -238,14 +270,6 @@ canvas {
 }
 .shake { animation: shake 0.3s ease-in-out; }
 
-/* 최고점수 강조 */
-.best-score-display {
-  margin-top: 8px;
-  font-size: 1rem;
-  color: var(--chalk-yellow);
-  font-weight: bold;
-}
-
 </style>
 </head>
 <body>
@@ -255,9 +279,18 @@ canvas {
   <!-- 좌측 패널: 점수 & 랭킹 -->
   <div class="left-panel">
     <div class="score-card">
-      <div class="score-label">현재 점수</div>
-      <div class="score-val" id="score">0</div>
-      <div class="best-score-display" id="best-score-ui">최고기록: 불러오는 중...</div>
+      <div class="score-section">
+        <div class="score-label">현재 점수</div>
+        <div class="score-val" id="score">0</div>
+      </div>
+      
+      <div class="score-divider"></div>
+
+      <div class="score-section">
+        <div class="score-label small">내 최고 기록</div>
+        <div class="best-score-val" id="best-score-val">0</div>
+      </div>
+
       <div class="combo-text" id="combo-ui">0 COMBO</div>
     </div>
     
@@ -624,7 +657,8 @@ function updateUI(){
 }
 
 function updateBestScoreUI(){
-  document.getElementById("best-score-ui").textContent = `최고기록: ${myBestScore}`;
+  const el = document.getElementById("best-score-val");
+  if(el) el.textContent = myBestScore;
 }
 
 function updateBadgeUI(now){
