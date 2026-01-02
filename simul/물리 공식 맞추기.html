@@ -270,9 +270,20 @@ canvas {
 }
 .shake { animation: shake 0.3s ease-in-out; }
 
+/* 디버그 로그 (임시) */
+#debug-log {
+  position: absolute; top: 0; left: 0; 
+  width: 100%; padding: 4px;
+  background: rgba(0,0,0,0.7); color: #fff;
+  font-size: 10px; z-index: 9999;
+  text-align: center; pointer-events: none;
+}
 </style>
 </head>
 <body>
+
+<!-- 디버그용 로그 표시 (최고점수 로드 상태 확인) -->
+<div id="debug-log">DB 상태: 대기중...</div>
 
 <div id="ui-layer">
   
@@ -682,6 +693,13 @@ function uiMsg(type, text){
   setTimeout(()=> box.style.transform = "scale(1)", 200);
 }
 
+// 로그 표시 함수
+window.logDebug = function(msg) {
+  const el = document.getElementById("debug-log");
+  if(el) el.textContent = msg;
+  console.log("[DEBUG]", msg);
+};
+
 /* =========================================
    UI 핸들링 (닉네임 등)
    ========================================= */
@@ -726,6 +744,7 @@ window.updateRankingBoard = function(rankData) {
 window.setInitialBestScore = function(val) {
   window.myBestScore = val || 0;
   updateBestScoreUI();
+  window.logDebug(`최고점수 로드됨: ${window.myBestScore}`);
 };
 
 </script>
@@ -759,10 +778,12 @@ window.setInitialBestScore = function(val) {
 
   // 1. 인증 (Soft Auth: 실패해도 게임 진행 가능)
   async function initAuth() {
+    if(window.logDebug) window.logDebug("인증 시도 중...");
     try {
       // 익명 로그인 시도 (설정에 따라 실패할 수 있음 - 실패 시 조용히 넘어감)
       await signInAnonymously(auth);
     } catch (e) {
+      if(window.logDebug) window.logDebug("인증 실패 (오프라인 모드): " + e.code);
       console.warn("Firebase Auth Warning: 인증이 제한되었거나 설정되지 않았습니다. 오프라인 모드로 실행됩니다.", e.code);
       // 게임은 계속 진행됨
     }
@@ -780,11 +801,13 @@ window.setInitialBestScore = function(val) {
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         const data = snap.data();
-        if(window.setInitialBestScore) window.setInitialBestScore(data.score || 0);
+        const score = data.score || 0;
+        if(window.setInitialBestScore) window.setInitialBestScore(score);
       } else {
         if(window.setInitialBestScore) window.setInitialBestScore(0);
       }
     } catch (err) {
+      if(window.logDebug) window.logDebug("점수 로드 실패: " + err.code);
       console.error("Load Best Score Error:", err);
     }
   }
@@ -820,6 +843,7 @@ window.setInitialBestScore = function(val) {
   onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     if(user){
+      if(window.logDebug) window.logDebug("로그인 성공! ID: " + user.uid.substring(0,5));
       // 로그인 성공 시 데이터 로드
       await loadMyBestScore();
 
@@ -837,6 +861,8 @@ window.setInitialBestScore = function(val) {
         // 권한 오류 등으로 읽기 실패 시 조용히 넘어감
         console.warn("Ranking Load Warning:", error.code);
       });
+    } else {
+      if(window.logDebug) window.logDebug("로그아웃 상태");
     }
   });
 
