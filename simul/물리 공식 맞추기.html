@@ -279,11 +279,11 @@ canvas {
 }
 .shake { animation: shake 0.3s ease-in-out; }
 
-/* 디버그 로그 (임시) */
+/* 디버그 로그 (작게 표시) */
 #debug-log {
   position: absolute; top: 0; left: 0; 
   width: 100%; padding: 4px;
-  background: rgba(0,0,0,0.7); color: #fff;
+  background: rgba(0,0,0,0.5); color: #fff;
   font-size: 10px; z-index: 9999;
   text-align: center; pointer-events: none;
 }
@@ -293,7 +293,7 @@ canvas {
   position: absolute; top:0; left:0; right:0; bottom:0;
   background: rgba(0,0,0,0.85);
   z-index: 200;
-  display: none; /* JS에서 block으로 변경 */
+  display: none; /* JS에서 flex로 변경 */
   justify-content: center; align-items: center;
   backdrop-filter: blur(8px);
   pointer-events: auto;
@@ -332,8 +332,8 @@ canvas {
 </head>
 <body>
 
-<!-- 디버그용 로그 표시 (최고점수 로드 상태 확인) -->
-<div id="debug-log">DB 상태: 대기중...</div>
+<!-- 디버그 로그 -->
+<div id="debug-log">시스템 준비중...</div>
 
 <!-- 게임 오버 레이어 -->
 <div id="game-over-layer">
@@ -345,28 +345,23 @@ canvas {
 </div>
 
 <div id="ui-layer">
-  
-  <!-- 좌측 패널: 점수 & 랭킹 -->
+  <!-- 좌측 패널 -->
   <div class="left-panel">
     <div class="score-card">
       <div class="score-section">
         <div class="score-label">현재 점수</div>
         <div class="score-val" id="score">0</div>
       </div>
-      
-      <!-- 하트(생명) 표시 -->
+      <!-- 하트 -->
       <div class="score-section" style="margin-bottom:4px;">
         <div class="score-label small">남은 기회</div>
         <div class="lives-val" id="lives-val">❤❤❤</div>
       </div>
-      
       <div class="score-divider"></div>
-
       <div class="score-section">
         <div class="score-label small">내 최고 기록</div>
         <div class="best-score-val" id="best-score-val">0</div>
       </div>
-
       <div class="combo-text" id="combo-ui">0 COMBO</div>
     </div>
     
@@ -378,7 +373,6 @@ canvas {
       <ul class="rank-list" id="rank-list">
         <li style="text-align:center; padding:20px; opacity:0.5">로딩중...</li>
       </ul>
-      
       <div class="nick-input-box">
         <input id="nickname" maxlength="6" placeholder="닉네임 (최대 6자)" />
         <button id="btn-save-nick">변경</button>
@@ -386,13 +380,13 @@ canvas {
     </div>
   </div>
 
-  <!-- 우측 패널: 커닝 페이퍼 -->
+  <!-- 우측 패널 -->
   <div class="right-panel">
     <div class="panel-head">📘 족보 (정답 목록)</div>
     <div id="answers-container"></div>
   </div>
 
-  <!-- 하단: 입력 영역 -->
+  <!-- 하단 입력창 -->
   <div class="bottom-area">
     <div class="badges">
       <div class="badge bd-x2" id="bd-x2">⚡ 점수 2배</div>
@@ -404,7 +398,6 @@ canvas {
       <input id="ans" type="text" placeholder="여기에 입력하세요..." autocomplete="off" />
     </div>
   </div>
-
 </div>
 
 <script>
@@ -443,7 +436,7 @@ const ITEMS = [
 ];
 
 /* =========================================
-   게임 변수 & 상태
+   게임 변수
    ========================================= */
 let drops = [];
 let particles = [];
@@ -461,13 +454,11 @@ let spawnRate = 2000;
 let lives = 3;
 let isGameOver = false;
 
-// 전역 변수로 할당 (module script에서 접근 가능하도록 window 객체 사용 권장)
 window.myBestScore = 0; 
 
 /* =========================================
-   P5.js 시각화
+   P5.js
    ========================================= */
-
 function setup(){
   createCanvas(windowWidth, windowHeight);
   
@@ -502,13 +493,7 @@ function windowResized(){
 function draw(){
   drawBlackboard();
   
-  // Game Over 상태면 그리기 중단은 아니지만, 게임 로직은 멈춤
-  if(isGameOver) {
-    // 배경이나 기존 요소들은 그대로 두고 멈춘 상태로 보이게 하려면 return
-    // 파티클 등 잔상은 남기고 싶다면 로직만 감싸기
-    // 여기서는 간단히 return하여 멈춤 효과 (파티클도 멈춤)
-    return;
-  }
+  if(isGameOver) return;
 
   if(shakeTime > 0){
     const mag = map(shakeTime, 0, 15, 0, 6);
@@ -518,7 +503,7 @@ function draw(){
 
   const now = millis();
   
-  // 속도 상한 제거: 점수에 비례해 계속 빨라짐
+  // 속도 상한 제거
   speedMultiplier = 0.5 + (score / 2000); 
   spawnRate = Math.max(500, 2500 - (score / 2));
 
@@ -540,18 +525,16 @@ function draw(){
     
     drawDrop(d);
     
-    // 바닥 닿음 처리
     if(d.y > deadZone){
       if(d.isItem){
         uiMsg("bad", "아이템을 놓쳤어요 ㅠㅠ");
       } else {
-        // 공식 놓침
         if(shieldCount > 0 && now < effectUntil.shield){
           shieldCount--;
           uiMsg("good", "🛡️ 보호막이 방어했습니다!");
           spawnParticles(d.x, deadZone, 10, "#86efac"); 
         } else {
-          // 생명 감소 로직
+          // 생명 감소
           lives--;
           updateLivesUI();
           
@@ -591,28 +574,21 @@ function draw(){
 
 function gameOver(){
   isGameOver = true;
-  // 최종 점수 저장 시도
   if(score > window.myBestScore){
     window.myBestScore = score;
     if(window.saveBestScore) window.saveBestScore(window.myBestScore);
   }
-  
-  // Game Over UI 표시
   document.getElementById("final-score").textContent = score;
   document.getElementById("game-over-layer").style.display = "flex";
-  document.getElementById("ans").blur(); // 입력창 포커스 해제
+  document.getElementById("ans").blur();
 }
 
 function updateLivesUI(){
   const el = document.getElementById("lives-val");
-  // 하트 그리기
   let str = "";
   for(let i=0; i<lives; i++) str += "❤";
-  // 빈 하트도 표시하려면 아래 주석 해제
-  // for(let i=lives; i<3; i++) str += "♡"; 
-  
   el.textContent = str;
-  if(lives <= 1) el.style.color = "#ef4444"; // 위험색
+  if(lives <= 1) el.style.color = "#ef4444"; 
   else el.style.color = "var(--chalk-red)";
 }
 
@@ -622,7 +598,6 @@ function drawBlackboard(){
   fill(255, 255, 255, 15);
   ellipse(width*0.2, height*0.3, 400, 200);
   ellipse(width*0.7, height*0.6, 500, 300);
-  
   strokeWeight(60);
   stroke(20, 30, 25, 100);
   noFill();
@@ -644,7 +619,6 @@ function drawDrop(d){
     strokeWeight(1);
     fill(d.color);
     rect(0, 0, d.w, d.h, 6);
-    
     fill(50);
     textAlign(CENTER, CENTER);
     textSize(20);
@@ -654,7 +628,6 @@ function drawDrop(d){
     strokeWeight(2);
     noFill();
     rect(0, 0, d.w, d.h, 6);
-    
     noStroke();
     fill(255);
     textAlign(CENTER, CENTER);
@@ -708,9 +681,8 @@ function spawnParticles(x, y, count, colorHex){
 /* =========================================
    게임 로직
    ========================================= */
-
 function checkAnswer(){
-  if(isGameOver) return; // 게임 오버시 입력 불가
+  if(isGameOver) return; 
 
   const inp = document.getElementById("ans");
   const rawVal = inp.value.trim();
@@ -747,7 +719,6 @@ function checkAnswer(){
       uiMsg("good", `정답! +${add}`);
       spawnParticles(d.x, d.y, 25, "#f3f4f6");
       
-      // 최고점수 실시간 체크 및 저장
       if(score > window.myBestScore) {
         window.myBestScore = score;
         updateBestScoreUI();
@@ -759,13 +730,11 @@ function checkAnswer(){
     score = Math.max(0, score - 10);
     shakeTime = 10;
     uiMsg("bad", "틀렸습니다!");
-    
     const el = document.querySelector(".input-container");
     el.classList.remove("shake");
     void el.offsetWidth;
     el.classList.add("shake");
   }
-  
   inp.value = "";
   updateUI();
 }
@@ -811,7 +780,6 @@ function uiMsg(type, text){
   setTimeout(()=> box.style.transform = "scale(1)", 200);
 }
 
-// 로그 표시 함수
 window.logDebug = function(msg) {
   const el = document.getElementById("debug-log");
   if(el) el.textContent = msg;
@@ -821,7 +789,6 @@ window.logDebug = function(msg) {
 /* =========================================
    UI 핸들링 (닉네임 등)
    ========================================= */
-// 전역 변수로 명시적 선언
 window.myNickname = "학생" + Math.floor(Math.random()*1000);
 
 document.getElementById("btn-save-nick").addEventListener("click", ()=>{
@@ -829,14 +796,12 @@ document.getElementById("btn-save-nick").addEventListener("click", ()=>{
   if(val) {
     window.myNickname = val;
     uiMsg("good", `닉네임 변경: ${val}`);
-    // 랭킹보드에 닉네임 반영 (내 기록이 있다면)
     if(window.saveScoreToLeaderboard && window.myBestScore > 0) {
       window.saveScoreToLeaderboard(window.myNickname, window.myBestScore);
     }
   }
 });
 
-// 외부에서 호출해줄 UI 업데이트 함수들
 window.updateRankingBoard = function(rankData) {
   const list = document.getElementById("rank-list");
   list.innerHTML = "";
@@ -848,9 +813,7 @@ window.updateRankingBoard = function(rankData) {
     const li = document.createElement("li");
     li.className = "rank-item";
     if(index === 0) li.classList.add("top1");
-    // uid 비교가 가장 정확하지만, 여기서는 이름이나 로직으로 처리
     if(item.name === window.myNickname) li.classList.add("me");
-    
     li.innerHTML = `
       <span class="rank-name">${index+1}. ${item.name}</span>
       <span>${item.score}</span>
@@ -864,16 +827,15 @@ window.setInitialBestScore = function(val) {
   updateBestScoreUI();
   window.logDebug(`최고점수 로드됨: ${window.myBestScore}`);
 };
-
 </script>
 
-<!-- ===== Firebase Integration (수정됨: 12.4.0 & 예외 처리) ===== -->
+<!-- ===== Firebase (v11.0.2 & Robust Logic) ===== -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-  import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+  import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-  // 보내주신 파일의 설정값 사용
+  // 사용자가 제공한 Config
   const firebaseConfig = {
     apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
     authDomain: "simulation-67cd3.firebaseapp.com",
@@ -885,6 +847,8 @@ window.setInitialBestScore = function(val) {
   };
   
   // App ID 안전하게 가져오기 (Canvas 환경 변수 또는 Fallback)
+  // *주의: 사용자의 '토크와 평형.html'이 작동하는 이유는 올바른 AppID를 사용하기 때문일 수 있음.
+  // 여기서는 안전한 'default-app-id'를 사용하되, Canvas 밖이면 로컬 스토리지처럼 작동할 수 있음.
   const appId = typeof __app_id !== 'undefined' ? __app_id : "default-app-id";
 
   const app = initializeApp(firebaseConfig);
@@ -893,9 +857,9 @@ window.setInitialBestScore = function(val) {
 
   let currentUser = null;
   const SIM_ID = "공식_타이핑";
-  let isRankingListening = false; // 랭킹 중복 구독 방지
+  let isRankingListening = false; 
 
-  // 1. 인증 (Soft Auth: 실패해도 게임 진행 가능)
+  // 1. 인증 (토큰 우선 -> 익명)
   async function initAuth() {
     if(window.logDebug) window.logDebug("인증 시도 중...");
     try {
@@ -907,17 +871,16 @@ window.setInitialBestScore = function(val) {
         await signInAnonymously(auth);
       }
     } catch (e) {
-      if(window.logDebug) window.logDebug("인증 실패: " + e.code);
+      if(window.logDebug) window.logDebug("인증 오류(오프라인): " + e.code);
       console.warn("Auth Failed", e);
     }
   }
   
-  // 인증 시작
   initAuth();
 
-  // 2. 랭킹 불러오기 (로그인 여부와 상관없이 시도)
+  // 2. 랭킹 불러오기 (로그인 상관없이 시도)
   function loadRanking() {
-    if (isRankingListening) return; // 이미 구독 중이면 패스
+    if (isRankingListening) return; 
     isRankingListening = true;
 
     try {
@@ -925,14 +888,12 @@ window.setInitialBestScore = function(val) {
       onSnapshot(lbCol, (snapshot) => {
         let allScores = [];
         snapshot.forEach(doc => allScores.push(doc.data()));
-        // 내림차순 정렬
         allScores.sort((a,b) => b.score - a.score);
-        // Top 5
         const top5 = allScores.slice(0, 5);
         if(window.updateRankingBoard) window.updateRankingBoard(top5);
       }, (error) => {
         console.warn("Ranking Load Warning:", error.code);
-        isRankingListening = false; // 에러 시 다시 시도할 수 있게 해제
+        isRankingListening = false;
       });
     } catch (err) {
       console.error("Ranking Init Error:", err);
@@ -940,11 +901,9 @@ window.setInitialBestScore = function(val) {
     }
   }
 
-  // 3. 개인 최고 점수 불러오기 (Private - 로그인 필수)
+  // 3. 개인 최고 점수 불러오기
   async function loadMyBestScore() {
     if(!currentUser) return;
-    
-    // Canvas 환경에서는 artifacts 경로 사용 (안전)
     const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'simulations', SIM_ID);
     
     try {
@@ -962,16 +921,15 @@ window.setInitialBestScore = function(val) {
     }
   }
 
-  // 4. 점수 저장 (Private & Public)
+  // 4. 점수 저장
   window.saveBestScore = async function(score) {
-    // 로그인이 안 되어 있으면 저장하지 않음 (오류 방지)
     if(!currentUser) return;
     
     // A. 개인 저장소
     const privateRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'simulations', SIM_ID);
     setDoc(privateRef, { score: score, updatedAt: Date.now() }, { merge: true }).catch(e=>console.error(e));
 
-    // B. 공개 랭킹 (닉네임 포함)
+    // B. 공개 랭킹
     if(window.saveScoreToLeaderboard) window.saveScoreToLeaderboard(window.myNickname || "익명", score);
   };
 
@@ -990,18 +948,14 @@ window.setInitialBestScore = function(val) {
   };
 
   // 6. 리스너 설정
-  // 앱 시작 시 바로 랭킹 로드 시도 (로그인 대기 안 함)
-  loadRanking();
+  loadRanking(); // 앱 시작 시 바로 시도
 
   onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     if(user){
       if(window.logDebug) window.logDebug("로그인 성공! ID: " + user.uid.substring(0,5));
-      // 로그인 성공 시 내 점수 로드
       await loadMyBestScore();
-      
-      // 혹시 랭킹 로드가 안 되어 있다면 다시 시도
-      loadRanking();
+      loadRanking(); // 혹시 안 됐으면 재시도
     } else {
       if(window.logDebug) window.logDebug("로그아웃 상태 (랭킹만 표시 시도)");
     }
