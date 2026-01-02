@@ -238,6 +238,14 @@ canvas {
 }
 .shake { animation: shake 0.3s ease-in-out; }
 
+/* 최고점수 강조 */
+.best-score-display {
+  margin-top: 8px;
+  font-size: 1rem;
+  color: var(--chalk-yellow);
+  font-weight: bold;
+}
+
 </style>
 </head>
 <body>
@@ -249,6 +257,7 @@ canvas {
     <div class="score-card">
       <div class="score-label">현재 점수</div>
       <div class="score-val" id="score">0</div>
+      <div class="best-score-display" id="best-score-ui">최고기록: 불러오는 중...</div>
       <div class="combo-text" id="combo-ui">0 COMBO</div>
     </div>
     
@@ -318,7 +327,6 @@ const FORMULAS = [
   {formula:"Q = It",                  answer:"전하량",        diff:1}
 ];
 
-// ✅ 수정: 아이템에 'answer' 속성 추가 (텍스트만)
 const ITEMS = [
   { type:"x2", title:"점수 2배", answer:"점수 2배", color:"#fde047", duration:10000 },
   { type:"freeze", title:"시간 정지", answer:"시간 정지", color:"#67e8f9", duration:5000 },
@@ -333,33 +341,29 @@ let particles = [];
 let score = 0;
 let combo = 0;
 let lastSpawnTime = 0;
-let shakeTime = 0; // 화면 흔들림 타이머
+let shakeTime = 0; 
 
-// 효과 상태 (만료 시간 millis)
 let effectUntil = { x2:0, freeze:0, shield:0 };
 let shieldCount = 0;
 
-// 난이도 조절
 let speedMultiplier = 1.0;
 let spawnRate = 2000;
 
+let myBestScore = 0; // 개인 최고 점수
+
 /* =========================================
-   P5.js 시각화 (칠판 & 이펙트)
+   P5.js 시각화
    ========================================= */
 
 function setup(){
   createCanvas(windowWidth, windowHeight);
-  // 노이즈 질감을 미리 생성할 수도 있지만, draw에서 간단히 처리
   
-  // 입력창 이벤트 연결
   const inp = document.getElementById("ans");
   inp.addEventListener("keydown", (e)=>{
     if(e.key === "Enter") checkAnswer();
   });
   
-  // ✅ 화면 클릭 시 입력창으로 포커스 복귀 (사용자 편의)
   document.body.addEventListener("click", (e)=>{
-    // 버튼, 입력창 등을 클릭한게 아니라면 포커스
     if(e.target.tagName !== "BUTTON" && e.target.tagName !== "INPUT"){
       inp.focus();
     }
@@ -367,7 +371,6 @@ function setup(){
   
   inp.focus();
   
-  // 정답표 채우기
   const ansCon = document.getElementById("answers-container");
   FORMULAS.sort((a,b)=>a.answer.localeCompare(b.answer)).forEach(f=>{
     const d = document.createElement("div");
@@ -382,10 +385,8 @@ function windowResized(){
 }
 
 function draw(){
-  // 1. 배경 그리기 (리얼 칠판)
   drawBlackboard();
   
-  // 2. 화면 흔들림 적용
   if(shakeTime > 0){
     const mag = map(shakeTime, 0, 15, 0, 6);
     translate(random(-mag, mag), random(-mag, mag));
@@ -394,11 +395,8 @@ function draw(){
 
   const now = millis();
   
-  // 3. 스폰 로직 & 난이도 조절 수정
-  // [수정] 속도 상한 제거: 점수가 오를수록 계속 빨라짐 (Math.min 제거)
+  // 속도 상한 제거: 점수에 비례해 계속 빨라짐
   speedMultiplier = 0.5 + (score / 2000); 
-  
-  // 스폰 주기: 점수에 따라 빨라짐 (최소 0.5초까지)
   spawnRate = Math.max(500, 2500 - (score / 2));
 
   if(now > effectUntil.freeze){
@@ -408,37 +406,31 @@ function draw(){
     }
   }
 
-  // 4. 드롭(공식) 업데이트 & 그리기
-  const deadZone = height - 100; // 바닥 기준
+  const deadZone = height - 100;
   
   for(let i=drops.length-1; i>=0; i--){
     let d = drops[i];
     
-    // 이동 (Freeze 상태면 멈춤)
     if(now > effectUntil.freeze){
       d.y += d.speed * speedMultiplier * (deltaTime/16);
     }
     
     drawDrop(d);
     
-    // 바닥 닿음 처리
     if(d.y > deadZone){
       if(d.isItem){
-        // 아이템은 그냥 사라짐
         uiMsg("bad", "아이템을 놓쳤어요 ㅠㅠ");
       } else {
-        // 공식 놓침
         if(shieldCount > 0 && now < effectUntil.shield){
           shieldCount--;
           uiMsg("good", "🛡️ 보호막이 방어했습니다!");
-          spawnParticles(d.x, deadZone, 10, "#86efac"); // 초록 파티클
+          spawnParticles(d.x, deadZone, 10, "#86efac"); 
         } else {
-          // 데미지
           score = Math.max(0, score - 20);
           combo = 0;
-          shakeTime = 15; // 화면 흔들림
+          shakeTime = 15;
           uiMsg("bad", `놓쳤습니다! 정답: ${d.answer}`);
-          spawnParticles(d.x, deadZone, 20, "#fca5a5"); // 빨강 파티클
+          spawnParticles(d.x, deadZone, 20, "#fca5a5");
         }
       }
       drops.splice(i, 1);
@@ -446,13 +438,12 @@ function draw(){
     }
   }
 
-  // 5. 파티클 이펙트
   for(let i=particles.length-1; i>=0; i--){
     let p = particles[i];
     p.life -= 2;
     p.x += p.vx;
     p.y += p.vy;
-    p.vy += 0.1; // 중력
+    p.vy += 0.1; 
     
     noStroke();
     fill(p.r, p.g, p.b, p.life * 2.5);
@@ -461,32 +452,18 @@ function draw(){
     if(p.life <= 0) particles.splice(i,1);
   }
 
-  // 6. UI 상태 업데이트 (시간제한 아이템 등)
   updateBadgeUI(now);
 }
 
-// === 그리기 헬퍼 함수 ===
-
 function drawBlackboard(){
-  // 기본 녹색 배경
   background(43, 66, 56);
-  
-  // 노이즈 텍스처 (분필 가루 느낌)
-  loadPixels();
-  // 성능 최적화를 위해 매 프레임 전체 픽셀 조작은 무거움.
-  // 대신 반투명한 노이즈 이미지를 덮거나, 간단한 그라데이션 사용.
-  // 여기서는 p5 그리기 함수로 '지우개 자국' 느낌만 냄.
-  
   noStroke();
-  fill(255, 255, 255, 15); // 희미한 하얀색
-  
-  // 거친 지우개 자국 몇 개
+  fill(255, 255, 255, 15);
   ellipse(width*0.2, height*0.3, 400, 200);
   ellipse(width*0.7, height*0.6, 500, 300);
   
-  // 비네팅 (가장자리 어둡게)
   strokeWeight(60);
-  stroke(20, 30, 25, 100); // 반투명 검정 테두리
+  stroke(20, 30, 25, 100);
   noFill();
   rect(0,0,width,height);
   noStroke();
@@ -495,18 +472,13 @@ function drawBlackboard(){
 function drawDrop(d){
   push();
   translate(d.x, d.y);
-  
-  // 중앙 기준 드로잉 설정 (아이템 텍스트 정렬 해결)
   rectMode(CENTER);
 
-  // 그림자
   fill(0,0,0,50);
   noStroke();
   rect(3, 3, d.w, d.h, 6);
   
-  // 본체
   if(d.isItem){
-    // 아이템: 색상있는 카드
     stroke(255);
     strokeWeight(1);
     fill(d.color);
@@ -515,26 +487,18 @@ function drawDrop(d){
     fill(50);
     textAlign(CENTER, CENTER);
     textSize(20);
-    // 화면 표시에는 이모지 포함 (시각적 재미), 답안 인식은 answer 속성(텍스트) 사용
     text(`🎁 ${d.title}`, 0, 0);
-    
   } else {
-    // 공식: 떨림 제거하고 안정적인 사각형 사용
     stroke(255, 255, 255, 200);
     strokeWeight(2);
     noFill();
-    
-    // 기존의 random vertex 코드를 제거하고 사각형으로 변경
     rect(0, 0, d.w, d.h, 6);
     
-    // 내용
     noStroke();
     fill(255);
     textAlign(CENTER, CENTER);
     textSize(24);
-    // 공식
     text(d.formula, 0, -5);
-    // 난이도 표시 (아래 점)
     fill(255, 255, 255, 150);
     let dots = "•".repeat(d.diff);
     textSize(14);
@@ -544,41 +508,26 @@ function drawDrop(d){
 }
 
 function spawnDrop(){
-  const isItem = random() < 0.1; // 10% 확률
-  
-  // [수정] 좌측 패널(240px + 20px 패딩)과 우측 패널(220px + 20px 패딩)을 확실히 피하기 위해 안전 구역 설정
+  const isItem = random() < 0.1;
   let safeLeft = 320;
   let safeRight = width - 300;
-
-  // 만약 화면이 너무 좁아서(모바일 등) 안전 구역이 꼬이면 중앙으로 강제
-  if(safeLeft >= safeRight){
-    safeLeft = width/2 - 20;
-    safeRight = width/2 + 20;
-  }
+  if(safeLeft >= safeRight){ safeLeft = width/2 - 20; safeRight = width/2 + 20; }
   
   const spawnX = random(safeLeft, safeRight);
   
   if(isItem){
     const item = random(ITEMS);
     drops.push({
-      isItem: true,
-      ...item,
-      x: spawnX,
-      y: -50,
-      w: 160, h: 50,
-      speed: 1.5,
-      color: item.color
+      isItem: true, ...item,
+      x: spawnX, y: -50, w: 160, h: 50, speed: 1.5, color: item.color
     });
   } else {
     const f = random(FORMULAS);
     drops.push({
-      isItem: false,
-      ...f,
-      x: spawnX,
-      y: -50,
-      w: textWidth(f.formula)*1.2 + 60, 
-      h: 60,
-      speed: 1.0 + (f.diff * 0.2) // 기본 속도 계수
+      isItem: false, ...f,
+      x: spawnX, y: -50,
+      w: textWidth(f.formula)*1.2 + 60, h: 60,
+      speed: 1.0 + (f.diff * 0.2)
     });
   }
 }
@@ -588,10 +537,8 @@ function spawnParticles(x, y, count, colorHex){
   for(let i=0; i<count; i++){
     particles.push({
       x: x, y: y,
-      vx: random(-3, 3),
-      vy: random(-4, 1),
-      life: 100, // frame
-      size: random(3, 8),
+      vx: random(-3, 3), vy: random(-4, 1),
+      life: 100, size: random(3, 8),
       r: red(c), g: green(c), b: blue(c)
     });
   }
@@ -605,19 +552,14 @@ function checkAnswer(){
   const inp = document.getElementById("ans");
   const rawVal = inp.value.trim();
   if(!rawVal) return;
-  
-  // 띄어쓰기 무시를 위해 공백 제거 후 비교
   const val = rawVal.replace(/\s+/g, "");
 
-  // 가장 아래(y가 큰) 녀석부터 매칭
   let hitIdx = -1;
   let maxY = -9999;
   
   for(let i=0; i<drops.length; i++){
-    // ✅ 안전 장치: 정답 속성이 없는 경우 건너뛰기 (에러 방지)
     if(!drops[i].answer) continue;
-
-    const dropAns = drops[i].answer.replace(/\s+/g, ""); // 정답도 공백 제거하고 비교
+    const dropAns = drops[i].answer.replace(/\s+/g, "");
     if(dropAns === val && drops[i].y > maxY){
       maxY = drops[i].y;
       hitIdx = i;
@@ -625,7 +567,6 @@ function checkAnswer(){
   }
   
   if(hitIdx !== -1){
-    // 정답!
     const d = drops[hitIdx];
     drops.splice(hitIdx, 1);
     
@@ -641,20 +582,21 @@ function checkAnswer(){
       
       score += add;
       uiMsg("good", `정답! +${add}`);
-      spawnParticles(d.x, d.y, 25, "#f3f4f6"); // 하얀 분필가루
+      spawnParticles(d.x, d.y, 25, "#f3f4f6");
       
-      // 최고점수 체크
-      checkBestScore();
+      // 최고점수 실시간 체크 및 저장
+      if(score > myBestScore) {
+        myBestScore = score;
+        updateBestScoreUI();
+        if(window.saveBestScore) window.saveBestScore(myBestScore);
+      }
     }
-    
   } else {
-    // 오답
     combo = 0;
     score = Math.max(0, score - 10);
     shakeTime = 10;
     uiMsg("bad", "틀렸습니다!");
     
-    // 입력창 흔들림 CSS
     const el = document.querySelector(".input-container");
     el.classList.remove("shake");
     void el.offsetWidth;
@@ -681,6 +623,10 @@ function updateUI(){
   document.getElementById("combo-ui").style.opacity = combo > 1 ? 1 : 0;
 }
 
+function updateBestScoreUI(){
+  document.getElementById("best-score-ui").textContent = `최고기록: ${myBestScore}`;
+}
+
 function updateBadgeUI(now){
   document.getElementById("bd-x2").style.display = (now < effectUntil.x2) ? "flex" : "none";
   document.getElementById("bd-fr").style.display = (now < effectUntil.freeze) ? "flex" : "none";
@@ -702,48 +648,33 @@ function uiMsg(type, text){
 }
 
 /* =========================================
-   Firebase 랭킹 시스템
+   UI 핸들링 (닉네임 등)
    ========================================= */
-let myBestScore = 0;
 let myNickname = "학생" + Math.floor(Math.random()*1000);
 
-// 로컬 최고점수 체크 & 서버 저장 시도
-function checkBestScore(){
-  if(score > myBestScore){
-    myBestScore = score;
-    // Firebase 저장
-    if(window.saveScoreToFirestore) window.saveScoreToFirestore(myNickname, myBestScore);
-  }
-}
-
-// 닉네임 변경
 document.getElementById("btn-save-nick").addEventListener("click", ()=>{
   const val = document.getElementById("nickname").value.trim();
   if(val) {
     myNickname = val;
     uiMsg("good", `닉네임 변경: ${val}`);
-    // 닉네임 바꾸면 현재 최고기록으로 다시 업데이트 (이름 갱신용)
-    if(myBestScore > 0 && window.saveScoreToFirestore) {
-      window.saveScoreToFirestore(myNickname, myBestScore);
-    }
+    // 랭킹보드에 닉네임 반영
+    if(window.saveScoreToLeaderboard) window.saveScoreToLeaderboard(myNickname, myBestScore);
   }
 });
 
-// 외부에서 랭킹 리스트 UI 업데이트
+// 외부에서 호출해줄 UI 업데이트 함수들
 window.updateRankingBoard = function(rankData) {
   const list = document.getElementById("rank-list");
   list.innerHTML = "";
-  
   if(!rankData || rankData.length === 0){
     list.innerHTML = "<li style='padding:10px; opacity:0.6'>기록 없음</li>";
     return;
   }
-  
   rankData.forEach((item, index) => {
     const li = document.createElement("li");
     li.className = "rank-item";
     if(index === 0) li.classList.add("top1");
-    // 내 기록인지 확인 (간단히 이름으로 비교하거나, uid 비교가 정확하지만 여기선 시각적 처리만)
+    // uid 비교가 가장 정확하지만, 여기서는 이름이나 로직으로 처리
     if(item.name === myNickname) li.classList.add("me");
     
     li.innerHTML = `
@@ -752,32 +683,43 @@ window.updateRankingBoard = function(rankData) {
     `;
     list.appendChild(li);
   });
-  
-  // 내 최고점수 항목 추가 (랭킹에 없으면 하단에 표기)
-  // (생략: 위 리스트가 Top 5이므로, 공간 부족시 생략하거나 별도 표기)
+};
+
+window.setInitialBestScore = function(val) {
+  myBestScore = val || 0;
+  updateBestScoreUI();
 };
 
 </script>
 
-<!-- ===== Firebase Module: 랭킹 시스템 ===== -->
+<!-- ===== Firebase Integration ===== -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
   import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-  import { getFirestore, doc, setDoc, collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-  // 1. 설정
-  const firebaseConfig = JSON.parse(
-    '{"apiKey":"AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w","authDomain":"simulation-67cd3.firebaseapp.com","projectId":"simulation-67cd3","storageBucket":"simulation-67cd3.appspot.com","messagingSenderId":"615983461615","appId":"1:615983461615:web:002e07bcea878eb6d5571a"}'
-  );
-  const appId = "default-app-id"; // 전역 변수 __app_id가 없는 경우 대비
+  // Canvas 환경에 맞는 설정 사용 (사용자가 제공한 config 대신 환경 변수 사용 권장)
+  const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+    // Fallback: 사용자가 제공한 Config (환경에 따라 작동하지 않을 수 있음)
+    apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
+    authDomain: "simulation-67cd3.firebaseapp.com",
+    projectId: "simulation-67cd3",
+    storageBucket: "simulation-67cd3.appspot.com",
+    messagingSenderId: "615983461615",
+    appId: "1:615983461615:web:002e07bcea878eb6d5571a",
+    measurementId: "G-9RGN7LYE5W"
+  };
+  
+  const appId = typeof __app_id !== 'undefined' ? __app_id : "default-app-id";
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
 
   let currentUser = null;
+  const SIM_ID = "공식_타이핑";
 
-  // 2. 인증
+  // 1. 인증
   async function initAuth() {
     try {
       if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -786,20 +728,51 @@ window.updateRankingBoard = function(rankData) {
         await signInAnonymously(auth);
       }
     } catch (e) {
-      console.error("인증 실패:", e);
+      console.error("Auth Failed:", e);
     }
   }
   initAuth();
 
-  // 3. 점수 저장 함수 (전역 노출)
-  window.saveScoreToFirestore = async function(nickname, score) {
+  // 2. 개인 최고 점수 불러오기 (Private)
+  async function loadMyBestScore() {
+    if(!currentUser) return;
+    // 경로 규칙 준수: artifacts/{appId}/users/{uid}/simulations/{SIM_ID}
+    const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'simulations', SIM_ID);
+    try {
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        if(window.setInitialBestScore) window.setInitialBestScore(data.score || 0);
+      } else {
+        if(window.setInitialBestScore) window.setInitialBestScore(0);
+      }
+    } catch (err) {
+      console.error("Load Best Score Error:", err);
+    }
+  }
+
+  // 3. 개인 최고 점수 저장 (Private) & 랭킹 등록 (Public)
+  window.saveBestScore = async function(score) {
     if(!currentUser) return;
     
-    // Public Leaderboard에 저장
-    // Path: artifacts/{appId}/public/data/leaderboard/{uid}
-    // Rule 1 준수
+    // A. 개인 저장소에 저장 (영구 보관용)
+    const privateRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'simulations', SIM_ID);
+    setDoc(privateRef, { score: score, updatedAt: Date.now() }, { merge: true }).catch(e=>console.error(e));
+
+    // B. 공개 랭킹 보드에 저장 (경쟁용)
     const leaderboardRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', currentUser.uid);
+    // 닉네임은 전역 변수 myNickname 참조 (게임 로직에서 넘어와야 함)
+    // 여기서는 편의상 UI에서 가져오거나 게임 로직에서 호출 시 전달받는 구조가 좋음
+    // 여기서는 saveScoreToLeaderboard 함수를 통해 분리 처리 권장
     
+    // 일단 여기서는 랭킹 업데이트 호출
+    if(window.saveScoreToLeaderboard) window.saveScoreToLeaderboard(window.myNickname || "Unknown", score);
+  };
+
+  // 4. 랭킹 보드 업데이트용 함수
+  window.saveScoreToLeaderboard = async function(nickname, score) {
+    if(!currentUser) return;
+    const leaderboardRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', currentUser.uid);
     try {
       await setDoc(leaderboardRef, {
         name: nickname,
@@ -807,39 +780,26 @@ window.updateRankingBoard = function(rankData) {
         uid: currentUser.uid,
         updatedAt: Date.now()
       });
-      console.log("랭킹 저장 완료");
-    } catch(e) {
-      console.error("랭킹 저장 실패", e);
-    }
+    } catch(e) { console.error(e); }
   };
 
-  // 4. 랭킹 리스너 (실시간 업데이트)
-  onAuthStateChanged(auth, (user) => {
+  // 5. 리스너 설정
+  onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     if(user){
-      // 랭킹 불러오기
-      // Rule 2: No complex queries. Just fetch collection or simple orderBy if possible.
-      // 여기서는 'leaderboard' 컬렉션을 구독. (데이터가 아주 많으면 limit 필수지만, Rule 2 제약 안에서 해결)
-      // *주의: artifacts 경로 사용
+      // 로그인 직후 내 최고 점수 로드
+      await loadMyBestScore();
+
+      // 랭킹 보드 실시간 구독 (Public Data)
       const lbCol = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
-      
-      // onSnapshot으로 실시간 수신
       onSnapshot(lbCol, (snapshot) => {
         let allScores = [];
-        snapshot.forEach(doc => {
-          allScores.push(doc.data());
-        });
-        
-        // JS에서 정렬 (Rule 2: Fetch all -> Sort in memory)
+        snapshot.forEach(doc => allScores.push(doc.data()));
+        // 내림차순 정렬
         allScores.sort((a,b) => b.score - a.score);
-        
-        // Top 5 자르기
+        // Top 5
         const top5 = allScores.slice(0, 5);
-        
-        // UI 업데이트
         if(window.updateRankingBoard) window.updateRankingBoard(top5);
-      }, (error) => {
-        console.error("랭킹 불러오기 오류", error);
       });
     }
   });
