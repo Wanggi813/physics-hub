@@ -833,7 +833,10 @@ window.setInitialBestScore = function(val) {
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
   import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import { 
+  getFirestore, doc, setDoc, getDoc, collection, onSnapshot,
+  query, orderBy, limit
+} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
   // 사용자가 제공한 Config
   const firebaseConfig = {
@@ -879,32 +882,27 @@ window.setInitialBestScore = function(val) {
   initAuth();
 
   // 2. 랭킹 불러오기 (로그인 상관없이 시도)
-  function loadRanking() {
-    if (isRankingListening) return; 
-    isRankingListening = true;
+function loadRanking() {
+  if (isRankingListening) return;
+  isRankingListening = true;
 
-    try {
-      const lbCol = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
-      onSnapshot(lbCol, (snapshot) => {
-        let allScores = [];
-        snapshot.forEach(doc => allScores.push(doc.data()));
-        allScores.sort((a,b) => b.score - a.score);
-        const top5 = allScores.slice(0, 5);
-        if(window.updateRankingBoard) window.updateRankingBoard(top5);
-      }, (error) => {
-        console.warn("Ranking Load Warning:", error.code);
-        isRankingListening = false;
-      });
-    } catch (err) {
-      console.error("Ranking Init Error:", err);
-      isRankingListening = false;
-    }
-  }
+  const lbCol = collection(db, "leaderboard");
+  const q = query(lbCol, orderBy("score", "desc"), limit(5));
+
+  onSnapshot(q, (snapshot) => {
+    const top5 = [];
+    snapshot.forEach((d) => top5.push(d.data()));
+    if (window.updateRankingBoard) window.updateRankingBoard(top5);
+  }, (error) => {
+    console.warn("Ranking Load Warning:", error.code, error.message);
+    isRankingListening = false;
+  });
+}
 
   // 3. 개인 최고 점수 불러오기
   async function loadMyBestScore() {
     if(!currentUser) return;
-    const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'simulations', SIM_ID);
+const docRef = doc(db, "users", currentUser.uid, "simulations", SIM_ID);
     
     try {
       const snap = await getDoc(docRef);
@@ -926,7 +924,7 @@ window.setInitialBestScore = function(val) {
     if(!currentUser) return;
     
     // A. 개인 저장소
-    const privateRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'simulations', SIM_ID);
+const privateRef = doc(db, "users", currentUser.uid, "simulations", SIM_ID);
     setDoc(privateRef, { score: score, updatedAt: Date.now() }, { merge: true }).catch(e=>console.error(e));
 
     // B. 공개 랭킹
@@ -936,7 +934,7 @@ window.setInitialBestScore = function(val) {
   // 5. 랭킹 보드 업데이트
   window.saveScoreToLeaderboard = async function(nickname, score) {
     if(!currentUser) return;
-    const leaderboardRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', currentUser.uid);
+const leaderboardRef = doc(db, "leaderboard", currentUser.uid);
     try {
       await setDoc(leaderboardRef, {
         name: nickname,
