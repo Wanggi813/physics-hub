@@ -791,14 +791,17 @@ window.logDebug = function(msg) {
    ========================================= */
 window.myNickname = "학생" + Math.floor(Math.random()*1000);
 
-document.getElementById("btn-save-nick").addEventListener("click", ()=>{
+document.getElementById("btn-save-nick").addEventListener("click", async ()=>{
   const val = document.getElementById("nickname").value.trim();
-  if(val) {
-    window.myNickname = val;
-    uiMsg("good", `닉네임 변경: ${val}`);
-    if(window.saveScoreToLeaderboard && window.myBestScore > 0) {
-      window.saveScoreToLeaderboard(window.myNickname, window.myBestScore);
-    }
+  if(!val) return;
+
+  window.myNickname = val;
+  uiMsg("good", `닉네임 변경: ${val}`);
+
+  // ✅ 로그인(익명 제외)이고, 최고점수가 있을 때만 DB에 닉네임 반영
+  if (currentUser && !currentUser.isAnonymous && window.myBestScore > 0) {
+    const ref = doc(db, "users", currentUser.uid, "simulations", SIM_ID);
+    await setDoc(ref, { nickname: val, updatedAt: Date.now() }, { merge: true });
   }
 });
 
@@ -834,8 +837,8 @@ window.setInitialBestScore = function(val) {
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
   import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import { 
-  getFirestore, doc, setDoc, getDoc, collection, onSnapshot,
-  query, orderBy, limit
+  getFirestore, doc, setDoc, getDoc, collectionGroup, onSnapshot,
+  query, orderBy, limit, where, documentId
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
   // 사용자가 제공한 Config
@@ -886,13 +889,27 @@ function loadRanking() {
   if (isRankingListening) return;
   isRankingListening = true;
 
-  const lbCol = collection(db, "leaderboard");
-  const q = query(lbCol, orderBy("score", "desc"), limit(5));
+  const sims = collectionGroup(db, "simulations");
+
+  const q = query(
+    sims,
+    where("simId", "==", SIM_ID),   // ✅ documentId() 말고 simId 필드로 필터
+    orderBy("score", "desc"),
+    limit(5)
+  );
 
   onSnapshot(q, (snapshot) => {
     const top5 = [];
-    snapshot.forEach((d) => top5.push(d.data()));
-    if (window.updateRankingBoard) window.updateRankingBoard(top5);
+    snapshot.forEach((snap) => {
+      const data = snap.data() || {};
+      const uid = snap.ref.parent?.parent?.id || "";
+      top5.push({
+        uid,
+        name: data.nickname || ("UID-" + uid.slice(0, 5)),
+        score: data.score || 0
+      });
+    });
+    window.updateRankingBoard?.(top5);
   }, (error) => {
     console.warn("Ranking Load Warning:", error.code, error.message);
     isRankingListening = false;
@@ -902,6 +919,12 @@ function loadRanking() {
   // 3. 개인 최고 점수 불러오기
   async function loadMyBestScore() {
     if(!currentUser) return;
+ // ✅ 익명은 내 최고점수 표시 안 함(0 또는 “로그인 필요” 처리)
+  if (currentUser.isAnonymous) {
+    if(window.setInitialBestScore) window.setInitialBestScore(0);
+    if(window.logDebug) window.logDebug("익명: 내 최고점수는 로그인 후 확인 가능");
+    return;
+  }
 const docRef = doc(db, "users", currentUser.uid, "simulations", SIM_ID);
     
     try {
@@ -920,16 +943,24 @@ const docRef = doc(db, "users", currentUser.uid, "simulations", SIM_ID);
   }
 
   // 4. 점수 저장
-  window.saveBestScore = async function(score) {
-    if(!currentUser) return;
-    
-    // A. 개인 저장소
-const privateRef = doc(db, "users", currentUser.uid, "simulations", SIM_ID);
-    setDoc(privateRef, { score: score, updatedAt: Date.now() }, { merge: true }).catch(e=>console.error(e));
+window.saveBestScore = async function(score) {
+  if(!currentUser) return;
 
-    // B. 공개 랭킹
-    if(window.saveScoreToLeaderboard) window.saveScoreToLeaderboard(window.myNickname || "익명", score);
-  };
+  if (currentUser.isAnonymous) {
+    uiMsg("bad", "로그인 후에만 기록이 저장돼요!");
+    return;
+  }
+
+  const nickname = (window.myNickname || "학생").trim();
+  const privateRef = doc(db, "users", currentUser.uid, "simulations", SIM_ID);
+
+  await setDoc(privateRef, {
+    simId: SIM_ID,          // ✅ 추가
+    score,
+    nickname,
+    updatedAt: Date.now()
+  }, { merge: true });
+};
 
   // 5. 랭킹 보드 업데이트
   window.saveScoreToLeaderboard = async function(nickname, score) {
