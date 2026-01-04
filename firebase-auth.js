@@ -332,23 +332,25 @@ async function changePassword() {
 // ====================== 로그인 상태 감지 ======================
 
 onAuthStateChanged(auth, async (user) => {
- if (user && user.isAnonymous) {
+  // ✅ 이 페이지는 익명 로그인 금지 (익명이면 즉시 로그아웃)
+  if (user && user.isAnonymous) {
     alert("이 페이지는 로그인 후에만 이용할 수 있어요.");
     await signOut(auth);
-
-    // 여기서 return 해야 아래의 '로그인된 사용자 UI' 로직이 실행되지 않음
     return;
-}
+  }
+
   const statusEl = document.getElementById("status");
-  const scoreEl = document.getElementById("score");
+  const scoreEl  = document.getElementById("score");
   const logoutBtn = document.getElementById("logout-btn");
-  const openBtn = document.getElementById("open-auth");
-  const suggBtn = document.getElementById("btn-sugg");
+  const openBtn   = document.getElementById("open-auth");
+  const suggBtn   = document.getElementById("btn-sugg");
 
   if (user) {
     currentUser = user;
     let displayId = "";
+
     if (suggBtn) suggBtn.style.display = "inline-flex";
+
     try {
       const userRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userRef);
@@ -358,15 +360,15 @@ onAuthStateChanged(auth, async (user) => {
         if (data.ID) {
           displayId = data.ID;
         } else {
-          const fallbackId = user.email.split("@")[0];
+          const fallbackId = user.email ? user.email.split("@")[0] : user.uid.slice(0, 6);
           await setDoc(userRef, { ID: fallbackId }, { merge: true });
           displayId = fallbackId;
         }
       } else {
-        const fallbackId = user.email.split("@")[0];
+        const fallbackId = user.email ? user.email.split("@")[0] : user.uid.slice(0, 6);
         await setDoc(userRef, { ID: fallbackId });
         displayId = fallbackId;
-         if (suggBtn) suggBtn.style.display = "none";
+        if (suggBtn) suggBtn.style.display = "none";
       }
     } catch (err) {
       console.error("ID 불러오기 오류:", err);
