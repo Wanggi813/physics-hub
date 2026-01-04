@@ -865,24 +865,19 @@ import {
   const SIM_ID = "공식_타이핑";
   let isRankingListening = false; 
 
-  // 1. 인증 (토큰 우선 -> 익명)
-  async function initAuth() {
-    if(window.logDebug) window.logDebug("인증 시도 중...");
-    try {
-      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-        if(window.logDebug) window.logDebug("토큰으로 로그인 시도...");
-        await signInWithCustomToken(auth, __initial_auth_token);
-      } else {
-        if(window.logDebug) window.logDebug("익명 로그인 시도...");
-        await signInAnonymously(auth);
-      }
-    } catch (e) {
-      if(window.logDebug) window.logDebug("인증 오류(오프라인): " + e.code);
-      console.warn("Auth Failed", e);
-    }
+// ✅ 이미 로그인된 사용자가 있으면 유지.
+// ✅ 아무도 로그인 안 된 상태일 때만(Top5 조회 목적) 익명 로그인
+async function ensureAuthIfNeeded(user) {
+  if (user) return; // 이미 로그인 상태면 절대 건드리지 않음
+
+  try {
+    if (window.logDebug) window.logDebug("로그인 없음 → Top5용 익명 로그인 시도...");
+    await signInAnonymously(auth);
+  } catch (e) {
+    if (window.logDebug) window.logDebug("익명 로그인 실패(규칙/환경): " + e.code);
+    console.warn("Anonymous sign-in failed:", e);
   }
-  
-  initAuth();
+}
 
   // 2. 랭킹 불러오기 (로그인 상관없이 시도)
 function loadRanking() {
@@ -979,16 +974,22 @@ const leaderboardRef = doc(db, "leaderboard", currentUser.uid);
   // 6. 리스너 설정
   loadRanking(); // 앱 시작 시 바로 시도
 
-  onAuthStateChanged(auth, async (user) => {
-    currentUser = user;
-    if(user){
-      if(window.logDebug) window.logDebug("로그인 성공! ID: " + user.uid.substring(0,5));
-      await loadMyBestScore();
-      loadRanking(); // 혹시 안 됐으면 재시도
-    } else {
-      if(window.logDebug) window.logDebug("로그아웃 상태 (랭킹만 표시 시도)");
-    }
-  });
+onAuthStateChanged(auth, async (user) => {
+  // 1) 로그인 유지 or (없으면) 익명 시도
+  await ensureAuthIfNeeded(user);
+
+  // 2) ensureAuthIfNeeded가 익명 로그인을 성공시키면, auth.currentUser가 생김
+  currentUser = auth.currentUser;
+
+  if (currentUser) {
+    if (window.logDebug) window.logDebug("AUTH: " + (currentUser.isAnonymous ? "익명" : "로그인") + " / " + currentUser.uid.slice(0,5));
+    await loadMyBestScore();   // 익명은 내부에서 0 처리되도록 이미 만들어둠
+  } else {
+    if (window.logDebug) window.logDebug("AUTH: 없음 (랭킹만 시도)");
+  }
+
+  loadRanking(); // Top5는 로그인/익명/무로그인 정책에 따라 읽힘
+});
 
 </script>
 
