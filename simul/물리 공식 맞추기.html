@@ -837,42 +837,27 @@ function loadRanking() {
 
   const sims = collectionGroup(db, "simulations");
 
-  // ✅ simId 필드 없이도 동작: 점수 상위 일부를 가져온 뒤,
-  // ✅ 문서 ID가 "공식_타이핑"인 것만 골라 Top5 구성
   const q = query(
     sims,
+    where("simId", "==", SIM_ID),   // ✅ documentId() 말고 simId 필드로 필터
     orderBy("score", "desc"),
-    limit(50) // 상위 50개만 가져와서 그 중에서 "공식_타이핑"만 필터
+    limit(5)
   );
 
   onSnapshot(q, (snapshot) => {
-    const top = [];
+    const top5 = [];
     snapshot.forEach((snap) => {
-      // users/{uid}/simulations/{SIM_ID} 에서 {SIM_ID}가 문서 id
-      if (snap.id !== SIM_ID) return;
-
       const data = snap.data() || {};
       const uid = snap.ref.parent?.parent?.id || "";
-      top.push({
-        uid,
-        name: data.nickname || ("UID-" + uid.slice(0, 5)),
-        score: Number(data.score || 0)
-      });
+top5.push({
+  uid,
+  score: Number(data.score || 0)
+});
     });
-
-    // 정렬/Top5 자르기 (혹시 같은 점수/중복 대비)
-    top.sort((a,b)=>b.score-a.score);
-    window.updateRankingBoard?.(top.slice(0,5));
-
-    if (window.logDebug) window.logDebug(`TOP5 로드됨: ${top.length}개 후보 → ${Math.min(5, top.length)}개 표시`);
+    window.updateRankingBoard?.(top5);
   }, (error) => {
-    console.warn("Ranking Load Error:", error.code, error.message);
+    console.warn("Ranking Load Warning:", error.code, error.message);
     isRankingListening = false;
-
-    // ✅ 에러라도 UI에 표시되게
-    const list = document.getElementById("rank-list");
-    if (list) list.innerHTML = `<li style="padding:10px; opacity:0.8">랭킹 불러오기 실패: ${error.code}</li>`;
-    if (window.logDebug) window.logDebug("랭킹 오류: " + error.code);
   });
 }
 
