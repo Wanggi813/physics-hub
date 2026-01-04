@@ -851,36 +851,46 @@ function loadRanking() {
 
   const sims = collectionGroup(db, "simulations");
 
-  // ✅ (권장) 이 게임 문서만 랭킹에 포함되도록 필터
-  //    simId 필드가 있는 문서만 대상으로 함 (너 saveBestScore에서 simId 저장 중)
+  // ✅ simId 필터 제거 → 기존 데이터도 잡힘
   const q = query(
     sims,
-    where("simId", "==", SIM_ID),
     orderBy("score", "desc"),
-    limit(5)
+    limit(300) // 유저 수에 맞춰 200~1000 정도
   );
 
   onSnapshot(q, async (snapshot) => {
     const rows = [];
 
-    snapshot.forEach((snap) => {
-      const data = snap.data() || {};
-      const uid = snap.ref.parent?.parent?.id || "";
-      rows.push({
-        uid,
-        score: Number(data.score || 0),
-        // 문서 자체에 playerId가 이미 있으면 우선 사용
-        localName: data.playerId || data.ID || data.userId || data.nickname || ""
-      });
-    });
+snapshot.forEach((snap) => {
+  const data = snap.data() || {};
 
-    // ✅ publicProfiles에서 ID를 가져와 name으로 확정
-    const ids = await Promise.all(rows.map(r => fetchPublicId(r.uid)));
+  // ✅ 한글 docId 비교는 정규화해서 비교 (NFC)
+  const docId = (snap.id || "").normalize("NFC");
+  const target = (SIM_ID || "").normalize("NFC");
 
-    const finalTop5 = rows.map((r, i) => ({
-      uid: r.uid,
-      score: r.score,
-      name: (ids[i] || r.localName || ("UID-" + r.uid.slice(0,5)))
+  // ✅ 기존 문서(=simId 없음)는 docId로, 새 문서(=simId 있음)는 simId로도 통과
+  const simIdField = (data.simId || "").normalize("NFC");
+  if (docId !== target && simIdField !== target) return;
+
+  const uid = snap.ref.parent?.parent?.id || "";
+
+  rows.push({
+    uid,
+    score: Number(data.score || 0),
+    localName: data.playerId || data.ID || data.userId || data.nickname || ""
+  });
+});
+
+    // Top5만 뽑기
+    rows.sort((a,b)=>b.score-a.score);
+    const top5 = rows.slice(0,5);
+
+    // publicProfiles에서 ID 가져오기 (있으면)
+    const ids = await Promise.all(top5.map(x => fetchPublicId(x.uid)));
+    const finalTop5 = top5.map((x,i)=>({
+      uid: x.uid,
+      score: x.score,
+      name: ids[i] || x.localName || ("UID-" + x.uid.slice(0,5))
     }));
 
     updateRankingBoard(finalTop5);
