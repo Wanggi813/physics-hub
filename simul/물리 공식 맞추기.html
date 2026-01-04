@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"/>
 <title>물리 공식 칠판 배틀</title>
 
-<!-- p5.js CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 
 <style>
@@ -151,32 +150,8 @@ canvas {
 .rank-item.me { color: var(--chalk-green); }
 .rank-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* 닉네임 입력 */
-.nick-input-box {
-  margin-top: 10px;
-  display: flex; gap: 6px;
-}
-#nickname {
-  width: 100%;
-  background: rgba(0,0,0,0.3);
-  border: 1px solid rgba(255,255,255,0.2);
-  color: white;
-  padding: 6px;
-  border-radius: 4px;
-  font-family: 'Gamja Flower', cursive;
-  font-size: 1.1rem;
-  outline: none;
-}
-#btn-save-nick {
-  background: var(--chalk-blue);
-  color: #1e293b;
-  border: none;
-  border-radius: 4px;
-  padding: 0 10px;
-  cursor: pointer;
-  font-family: 'Gamja Flower', cursive;
-  font-weight: bold;
-}
+/* [삭제됨] 닉네임 입력 CSS 제거
+*/
 
 /* === 우측: 정답표 === */
 .right-panel {
@@ -332,10 +307,8 @@ canvas {
 </head>
 <body>
 
-<!-- 디버그 로그 -->
 <div id="debug-log">시스템 준비중...</div>
 
-<!-- 게임 오버 레이어 -->
 <div id="game-over-layer">
   <div class="game-over-box">
     <div class="go-title">GAME OVER</div>
@@ -345,14 +318,12 @@ canvas {
 </div>
 
 <div id="ui-layer">
-  <!-- 좌측 패널 -->
   <div class="left-panel">
     <div class="score-card">
       <div class="score-section">
         <div class="score-label">현재 점수</div>
         <div class="score-val" id="score">0</div>
       </div>
-      <!-- 하트 -->
       <div class="score-section" style="margin-bottom:4px;">
         <div class="score-label small">남은 기회</div>
         <div class="lives-val" id="lives-val">❤❤❤</div>
@@ -373,20 +344,14 @@ canvas {
       <ul class="rank-list" id="rank-list">
         <li style="text-align:center; padding:20px; opacity:0.5">로딩중...</li>
       </ul>
-      <div class="nick-input-box">
-        <input id="nickname" maxlength="6" placeholder="닉네임 (최대 6자)" />
-        <button id="btn-save-nick">변경</button>
       </div>
-    </div>
   </div>
 
-  <!-- 우측 패널 -->
   <div class="right-panel">
     <div class="panel-head">📘 족보 (정답 목록)</div>
     <div id="answers-container"></div>
   </div>
 
-  <!-- 하단 입력창 -->
   <div class="bottom-area">
     <div class="badges">
       <div class="badge bd-x2" id="bd-x2">⚡ 점수 2배</div>
@@ -789,21 +754,8 @@ window.logDebug = function(msg) {
 /* =========================================
    UI 핸들링 (닉네임 등)
    ========================================= */
+// 닉네임 자동 생성 (수정 기능 삭제됨)
 window.myNickname = "학생" + Math.floor(Math.random()*1000);
-
-document.getElementById("btn-save-nick").addEventListener("click", async ()=>{
-  const val = document.getElementById("nickname").value.trim();
-  if(!val) return;
-
-  window.myNickname = val;
-  uiMsg("good", `닉네임 변경: ${val}`);
-
-  // ✅ 로그인(익명 제외)이고, 최고점수가 있을 때만 DB에 닉네임 반영
-  if (currentUser && !currentUser.isAnonymous && window.myBestScore > 0) {
-    const ref = doc(db, "users", currentUser.uid, "simulations", SIM_ID);
-    await setDoc(ref, { nickname: val, updatedAt: Date.now() }, { merge: true });
-  }
-});
 
 window.updateRankingBoard = function(rankData) {
   const list = document.getElementById("rank-list");
@@ -832,7 +784,6 @@ window.setInitialBestScore = function(val) {
 };
 </script>
 
-<!-- ===== Firebase (v11.0.2 & Robust Logic) ===== -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
   import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
@@ -886,28 +837,42 @@ function loadRanking() {
 
   const sims = collectionGroup(db, "simulations");
 
+  // ✅ simId 필드 없이도 동작: 점수 상위 일부를 가져온 뒤,
+  // ✅ 문서 ID가 "공식_타이핑"인 것만 골라 Top5 구성
   const q = query(
     sims,
-    where("simId", "==", SIM_ID),   // ✅ documentId() 말고 simId 필드로 필터
     orderBy("score", "desc"),
-    limit(5)
+    limit(50) // 상위 50개만 가져와서 그 중에서 "공식_타이핑"만 필터
   );
 
   onSnapshot(q, (snapshot) => {
-    const top5 = [];
+    const top = [];
     snapshot.forEach((snap) => {
+      // users/{uid}/simulations/{SIM_ID} 에서 {SIM_ID}가 문서 id
+      if (snap.id !== SIM_ID) return;
+
       const data = snap.data() || {};
       const uid = snap.ref.parent?.parent?.id || "";
-      top5.push({
+      top.push({
         uid,
         name: data.nickname || ("UID-" + uid.slice(0, 5)),
-        score: data.score || 0
+        score: Number(data.score || 0)
       });
     });
-    window.updateRankingBoard?.(top5);
+
+    // 정렬/Top5 자르기 (혹시 같은 점수/중복 대비)
+    top.sort((a,b)=>b.score-a.score);
+    window.updateRankingBoard?.(top.slice(0,5));
+
+    if (window.logDebug) window.logDebug(`TOP5 로드됨: ${top.length}개 후보 → ${Math.min(5, top.length)}개 표시`);
   }, (error) => {
-    console.warn("Ranking Load Warning:", error.code, error.message);
+    console.warn("Ranking Load Error:", error.code, error.message);
     isRankingListening = false;
+
+    // ✅ 에러라도 UI에 표시되게
+    const list = document.getElementById("rank-list");
+    if (list) list.innerHTML = `<li style="padding:10px; opacity:0.8">랭킹 불러오기 실패: ${error.code}</li>`;
+    if (window.logDebug) window.logDebug("랭킹 오류: " + error.code);
   });
 }
 
