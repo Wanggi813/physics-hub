@@ -757,6 +757,8 @@ window.logDebug = function(msg) {
 // 닉네임 자동 생성 (수정 기능 삭제됨)
 window.myNickname = "학생" + Math.floor(Math.random()*1000);
 
+
+
 window.updateRankingBoard = function(rankData) {
   const list = document.getElementById("rank-list");
   list.innerHTML = "";
@@ -848,8 +850,12 @@ function loadRanking() {
   isRankingListening = true;
 
   const sims = collectionGroup(db, "simulations");
+
+  // ✅ (권장) 이 게임 문서만 랭킹에 포함되도록 필터
+  //    simId 필드가 있는 문서만 대상으로 함 (너 saveBestScore에서 simId 저장 중)
   const q = query(
     sims,
+    where("simId", "==", SIM_ID),
     orderBy("score", "desc"),
     limit(5)
   );
@@ -858,27 +864,23 @@ function loadRanking() {
     const rows = [];
 
     snapshot.forEach((snap) => {
-      // users/{uid}/simulations/공식_타이핑
-      if (snap.id !== SIM_ID) return;
-
       const data = snap.data() || {};
-      const uid = snap.ref.parent.parent.id;
-
+      const uid = snap.ref.parent?.parent?.id || "";
       rows.push({
         uid,
-        score: Number(data.score || 0)
+        score: Number(data.score || 0),
+        // 문서 자체에 playerId가 이미 있으면 우선 사용
+        localName: data.playerId || data.ID || data.userId || data.nickname || ""
       });
     });
 
-    // ✅ uid → ID 매핑
-    const ids = await Promise.all(
-      rows.map(r => fetchUserId(r.uid))
-    );
+    // ✅ publicProfiles에서 ID를 가져와 name으로 확정
+    const ids = await Promise.all(rows.map(r => fetchPublicId(r.uid)));
 
     const finalTop5 = rows.map((r, i) => ({
       uid: r.uid,
       score: r.score,
-      name: ids[i] || ("UID-" + r.uid.slice(0,5))
+      name: (ids[i] || r.localName || ("UID-" + r.uid.slice(0,5)))
     }));
 
     updateRankingBoard(finalTop5);
@@ -887,7 +889,6 @@ function loadRanking() {
     isRankingListening = false;
   });
 }
-
   // 3. 개인 최고 점수 불러오기
   async function loadMyBestScore() {
     if(!currentUser) return;
@@ -926,14 +927,31 @@ window.saveBestScore = async function(score) {
   const nickname = (window.myNickname || "학생").trim();
   const privateRef = doc(db, "users", currentUser.uid, "simulations", SIM_ID);
 
-  await setDoc(privateRef, {
-    simId: SIM_ID,          // ✅ 추가
-    score,
-    nickname,
+ let playerId = "";
+try {
+  const usnap = await getDoc(doc(db, "users", currentUser.uid));
+  if (usnap.exists()) {
+    const u = usnap.data() || {};
+    playerId = u.ID || u.userId || "";
+  }
+} catch (e) {}
+
+await setDoc(privateRef, {
+  simId: SIM_ID,
+  score,
+  nickname,
+  playerId,
+  updatedAt: Date.now()
+}, { merge: true });
+
+// ✅ 추가: 점수 저장할 때 공개 프로필도 같이 갱신 (Top5에 즉시 ID 표시)
+if (playerId) {
+  await setDoc(doc(db, "publicProfiles", currentUser.uid), {
+    ID: playerId,
     updatedAt: Date.now()
   }, { merge: true });
+}
 };
-
   // 5. 랭킹 보드 업데이트
   window.saveScoreToLeaderboard = async function(nickname, score) {
     if(!currentUser) return;
@@ -948,6 +966,40 @@ const leaderboardRef = doc(db, "leaderboard", currentUser.uid);
     } catch(e) { console.error(e); }
   };
 
+async function upsertPublicProfile() {
+  if (!currentUser || currentUser.isAnonymous) return;
+
+  try {
+    // 1) 내 users/{uid} 문서에서 ID 읽기
+    const usnap = await getDoc(doc(db, "users", currentUser.uid));
+    if (!usnap.exists()) return;
+
+    const u = usnap.data() || {};
+    const playerId = u.ID || u.userId || "";
+    if (!playerId) return;
+
+    // 2) 공개 프로필 publicProfiles/{uid}에 ID 저장
+    await setDoc(doc(db, "publicProfiles", currentUser.uid), {
+      ID: playerId,
+      updatedAt: Date.now()
+    }, { merge: true });
+
+    if (window.logDebug) window.logDebug("publicProfiles 갱신: " + playerId);
+  } catch (e) {
+    console.warn("upsertPublicProfile error:", e);
+  }
+}
+async function fetchPublicId(uid) {
+  try {
+    const psnap = await getDoc(doc(db, "publicProfiles", uid));
+    if (psnap.exists()) {
+      const p = psnap.data() || {};
+      return p.ID || "";
+    }
+  } catch (e) {}
+  return "";
+}
+
   // 6. 리스너 설정
   loadRanking(); // 앱 시작 시 바로 시도
 
@@ -959,8 +1011,12 @@ onAuthStateChanged(auth, async (user) => {
   currentUser = auth.currentUser;
 
   if (currentUser) {
-    if (window.logDebug) window.logDebug("AUTH: " + (currentUser.isAnonymous ? "익명" : "로그인") + " / " + currentUser.uid.slice(0,5));
+if (window.logDebug) window.logDebug(
+  "AUTH: " + (currentUser.isAnonymous ? "익명" : "로그인") + " / " + currentUser.uid.slice(0,5)
+);
     await loadMyBestScore();   // 익명은 내부에서 0 처리되도록 이미 만들어둠
+    await upsertPublicProfile(); 
+
   } else {
     if (window.logDebug) window.logDebug("AUTH: 없음 (랭킹만 시도)");
   }
