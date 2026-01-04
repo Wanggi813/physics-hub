@@ -338,6 +338,7 @@ onAuthStateChanged(auth, async (user) => {
 
     // 여기서 return 해야 아래의 '로그인된 사용자 UI' 로직이 실행되지 않음
     return;
+}
   const statusEl = document.getElementById("status");
   const scoreEl = document.getElementById("score");
   const logoutBtn = document.getElementById("logout-btn");
