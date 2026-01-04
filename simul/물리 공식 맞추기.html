@@ -785,12 +785,12 @@ window.setInitialBestScore = function(val) {
 </script>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-  import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-import { 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+import {
   getFirestore, doc, setDoc, getDoc, collectionGroup, onSnapshot,
-  query, orderBy, limit, where, documentId
-} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+  query, orderBy, limit, where
+} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
   // 사용자가 제공한 Config
   const firebaseConfig = {
@@ -831,32 +831,59 @@ async function ensureAuthIfNeeded(user) {
 }
 
   // 2. 랭킹 불러오기 (로그인 상관없이 시도)
+async function fetchUserId(uid){
+  try{
+    const uref = doc(db, "users", uid);
+    const usnap = await getDoc(uref);
+    if(usnap.exists()){
+      const u = usnap.data() || {};
+      return u.ID || u.userId || "";
+    }
+  }catch(e){}
+  return "";
+}
+
 function loadRanking() {
   if (isRankingListening) return;
   isRankingListening = true;
 
   const sims = collectionGroup(db, "simulations");
-
   const q = query(
     sims,
-    where("simId", "==", SIM_ID),   // ✅ documentId() 말고 simId 필드로 필터
     orderBy("score", "desc"),
     limit(5)
   );
 
-  onSnapshot(q, (snapshot) => {
-    const top5 = [];
+  onSnapshot(q, async (snapshot) => {
+    const rows = [];
+
     snapshot.forEach((snap) => {
+      // users/{uid}/simulations/공식_타이핑
+      if (snap.id !== SIM_ID) return;
+
       const data = snap.data() || {};
-      const uid = snap.ref.parent?.parent?.id || "";
-top5.push({
-  uid,
-  score: Number(data.score || 0)
-});
+      const uid = snap.ref.parent.parent.id;
+
+      rows.push({
+        uid,
+        score: Number(data.score || 0)
+      });
     });
-    window.updateRankingBoard?.(top5);
-  }, (error) => {
-    console.warn("Ranking Load Warning:", error.code, error.message);
+
+    // ✅ uid → ID 매핑
+    const ids = await Promise.all(
+      rows.map(r => fetchUserId(r.uid))
+    );
+
+    const finalTop5 = rows.map((r, i) => ({
+      uid: r.uid,
+      score: r.score,
+      name: ids[i] || ("UID-" + r.uid.slice(0,5))
+    }));
+
+    updateRankingBoard(finalTop5);
+  }, (err) => {
+    console.warn("Ranking Load Error:", err.code, err.message);
     isRankingListening = false;
   });
 }
