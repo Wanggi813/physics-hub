@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>전기장 시뮬레이션</title>
+    <title>전기장과 등전위면</title>
     <style>
         body {
             margin: 0;
@@ -12,35 +12,39 @@
             font-family: 'Pretendard', sans-serif;
             color: white;
             user-select: none;
-            touch-action: none; /* 브라우저 기본 제스처 차단 */
+            /* body 전체의 touch-action: none을 제거하여 UI 터치 허용 */
         }
 
-        canvas { display: block; touch-action: none; }
+        canvas { 
+            display: block; 
+            /* 캔버스에서만 브라우저 기본 제스처(스크롤 등) 차단 */
+            touch-action: none; 
+        }
 
         /* 하단 전하 배치 패널 */
         #ui-layer {
             position: absolute;
-            bottom: 20px;
+            bottom: 30px; /* 모바일 하단 바 고려하여 조금 올림 */
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 15px;
+            gap: 20px; /* 간격 넓힘 */
             background: rgba(30, 30, 30, 0.85);
-            padding: 15px 25px;
+            padding: 15px 30px;
             border-radius: 50px;
             border: 1px solid #555;
             backdrop-filter: blur(8px);
             box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-            z-index: 10;
+            z-index: 100; /* Z-index 높임 */
         }
 
         .charge-btn {
-            width: 50px;
-            height: 50px;
+            width: 55px; /* 버튼 크기 확대 */
+            height: 55px;
             border-radius: 50%;
             border: none;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 18px;
             cursor: grab;
             display: flex;
             justify-content: center;
@@ -48,23 +52,21 @@
             color: white;
             transition: transform 0.1s;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            /* 모바일 드래그를 위해 상대 위치 설정 */
             position: relative; 
-            touch-action: none;
+            /* 버튼 드래그 시 브라우저 스크롤 방지 */
+            touch-action: none; 
         }
         .charge-btn:active { transform: scale(0.9); cursor: grabbing; }
         
-        /* 전하 스타일 */
         .pos-1 { background: radial-gradient(circleAt 30% 30%, #ff6b6b, #c0392b); border: 2px solid #ff9999; }
         .neg-1 { background: radial-gradient(circleAt 30% 30%, #4facfe, #00f2fe); border: 2px solid #aaddff; }
         .pos-2 { background: radial-gradient(circleAt 30% 30%, #ff0000, #8b0000); border: 2px solid #ff4444; box-shadow: 0 0 15px #ff0000; }
         .neg-2 { background: radial-gradient(circleAt 30% 30%, #0000ff, #00008b); border: 2px solid #4444ff; box-shadow: 0 0 15px #0000ff; }
 
-        /* 드래그 중인 고스트 엘리먼트 */
         .ghost-charge {
             position: absolute;
             pointer-events: none;
-            z-index: 100;
+            z-index: 999;
             opacity: 0.8;
             transform: translate(-50%, -50%);
         }
@@ -72,35 +74,51 @@
         /* 상단 컨트롤 패널 */
         #top-controls {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 15px;
+            right: 15px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
             align-items: flex-end;
-            z-index: 10;
+            z-index: 100; /* Z-index 높임 */
         }
 
         .control-group {
-            background: rgba(30, 30, 30, 0.8);
+            background: rgba(30, 30, 30, 0.9);
             padding: 15px;
             border-radius: 12px;
             border: 1px solid #555;
             color: #ddd;
             font-size: 14px;
+            /* 패널 내부 터치가 캔버스로 전파되지 않도록 */
         }
         
         .group-title {
             font-weight: bold;
             color: #fff;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             border-bottom: 1px solid #555;
             padding-bottom: 5px;
             display: block;
         }
 
-        .control-item { margin-bottom: 5px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        input[type="checkbox"], input[type="radio"] { accent-color: #00ffcc; cursor: pointer; transform: scale(1.1); }
+        .control-item { 
+            margin-bottom: 8px; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            cursor: pointer;
+            /* 터치 영역 확보를 위해 패딩 추가 */
+            padding: 5px 0; 
+        }
+        
+        /* 모바일 체크박스 크기 확대 */
+        input[type="checkbox"], input[type="radio"] { 
+            accent-color: #00ffcc; 
+            cursor: pointer; 
+            width: 20px; 
+            height: 20px; 
+        }
 
         #tooltip {
             position: absolute;
@@ -113,7 +131,7 @@
             font-family: monospace;
             font-size: 13px;
             display: none;
-            z-index: 20;
+            z-index: 200;
             white-space: nowrap;
         }
         #instruction {
@@ -121,40 +139,49 @@
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            color: rgba(255,255,255,0.5);
+            color: rgba(255,255,255,0.7);
             pointer-events: none;
-            font-size: 15px;
+            font-size: 16px;
+            font-weight: bold;
             text-shadow: 0 0 5px black;
-            z-index: 5;
-            width: 80%;
+            z-index: 50;
+            width: 90%;
             text-align: center;
+            background-color: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 5px;
         }
 
         #graph-overlay {
             position: absolute;
-            bottom: 100px;
+            bottom: 120px;
             right: 20px;
             width: 480px; 
             height: 300px;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.9);
             border: 1px solid #888;
             border-radius: 8px;
             display: none;
             padding: 10px;
-            z-index: 15;
+            z-index: 90;
             pointer-events: none; 
         }
         #graph-title { font-size: 14px; color: #aaa; margin-bottom: 5px; text-align: center; }
         
-        /* 모바일 대응 미디어 쿼리 */
         @media (max-width: 768px) {
             #graph-overlay {
                 width: 90%;
                 left: 5%;
-                bottom: 100px;
+                bottom: 110px;
             }
-            #top-controls { transform: scale(0.9); transform-origin: top right; }
-            .charge-btn { width: 40px; height: 40px; font-size: 14px; }
+            #top-controls { 
+                /* 모바일에서 컨트롤 패널 크기 살짝 조정 */
+                transform: scale(1); 
+                right: 10px;
+                top: 10px;
+            }
+            .charge-btn { width: 50px; height: 50px; font-size: 16px; }
+            .control-group { padding: 12px; }
         }
     </style>
 </head>
@@ -163,7 +190,7 @@
     <div id="instruction">터치하여 실험해보세요 (두 번 탭하면 삭제)</div>
     <div id="tooltip"></div>
     
-    <div id="top-controls">
+    <div id="top-controls" onpointerdown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
         <div class="control-group">
             <span class="group-title">👁️ 보기 설정</span>
             <label class="control-item"><input type="checkbox" id="chk-potential" checked> 등전위면 (Heatmap)</label>
@@ -211,7 +238,7 @@ let isDragging = false, draggedObj = null;
 let dragOffsetX = 0, dragOffsetY = 0;
 let needsRedraw = true; 
 let cachedBackground = null;
-let lastTapTime = 0; // 더블 탭 감지용
+let lastTapTime = 0; 
 
 let showPotential = true;
 let showField = true;
@@ -241,19 +268,22 @@ function init() {
     resize();
     window.addEventListener('resize', () => { resize(); needsRedraw = true; });
 
-    charges.push({x: window.innerWidth/2 - 150, y: window.innerHeight/2, q: 1, r: 20});
-    charges.push({x: window.innerWidth/2 + 150, y: window.innerHeight/2, q: -1, r: 20});
+    charges.push({x: window.innerWidth/2 - 100, y: window.innerHeight/2, q: 1, r: 20});
+    charges.push({x: window.innerWidth/2 + 100, y: window.innerHeight/2, q: -1, r: 20});
 
     setupUI();
-    setupEvents(); // 터치/마우스 통합 이벤트 설정
+    setupEvents(); 
     loop();
 }
 
 function resize() {
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
-    voltmeter.probeA.x = width / 2 - 50; voltmeter.probeA.y = height - 150;
-    voltmeter.probeB.x = width / 2 + 50; voltmeter.probeB.y = height - 150;
+    // 전위차계 위치 재조정 (화면 밖으로 나가지 않게)
+    voltmeter.probeA.x = Math.min(width - 50, Math.max(50, width / 2 - 50));
+    voltmeter.probeA.y = Math.min(height - 100, height - 150);
+    voltmeter.probeB.x = Math.min(width - 50, Math.max(50, width / 2 + 50));
+    voltmeter.probeB.y = Math.min(height - 100, height - 150);
 }
 
 /** 물리 엔진 */
@@ -289,12 +319,11 @@ function loop() {
     if (currentTool === 'voltmeter') drawVoltmeter();
     if (currentTool === 'graph') drawGraphToolOnCanvas();
     
-    // 모바일에서는 손가락이 가리므로 툴팁 위치 조정 필요할 수 있음
     updateTooltip();
     requestAnimationFrame(loop);
 }
 
-/** 그리기 함수들 (V3와 동일) */
+/** 그리기 함수들 */
 function drawBackground() {
     if (!showPotential) {
         ctx.fillStyle = "#050505"; ctx.fillRect(0, 0, width, height);
@@ -389,12 +418,12 @@ function drawVoltmeter() {
     ctx.save(); ctx.setLineDash([5, 5]); ctx.strokeStyle = "rgba(255,255,255,0.3)";
     ctx.beginPath(); ctx.moveTo(probes[0].x, probes[0].y); ctx.lineTo(probes[1].x, probes[1].y); ctx.stroke(); ctx.restore();
     probes.forEach(p => {
-        ctx.beginPath(); ctx.arc(p.x, p.y, 10, 0, Math.PI*2); ctx.fillStyle = p.color; ctx.fill();
+        ctx.beginPath(); ctx.arc(p.x, p.y, 15, 0, Math.PI*2); ctx.fillStyle = p.color; ctx.fill(); // 터치 쉽게 크기 증가
         ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.stroke();
         ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y + 20); ctx.stroke();
         const { V } = getFieldAndPotential(p.x, p.y);
         values.push(V);
-        ctx.fillStyle = "white"; ctx.font = "12px monospace"; ctx.fillText(`${V.toFixed(1)}V`, p.x, p.y - 15);
+        ctx.fillStyle = "white"; ctx.font = "12px monospace"; ctx.fillText(`${V.toFixed(1)}V`, p.x, p.y - 20);
     });
     const centerX = (probes[0].x + probes[1].x) / 2; const centerY = (probes[0].y + probes[1].y) / 2;
     const diff = values[1] - values[0]; 
@@ -408,8 +437,8 @@ function drawGraphToolOnCanvas() {
     if (graphTool.isDrawing) {
         ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
         ctx.beginPath(); ctx.moveTo(graphTool.startX, graphTool.startY); ctx.lineTo(graphTool.endX, graphTool.endY); ctx.stroke(); ctx.setLineDash([]);
-        ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(graphTool.startX, graphTool.startY, 3, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(graphTool.endX, graphTool.endY, 3, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(graphTool.startX, graphTool.startY, 5, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(graphTool.endX, graphTool.endY, 5, 0, Math.PI*2); ctx.fill();
     }
 }
 
@@ -469,8 +498,7 @@ function calculateAndDrawGraph() {
     gCtx.fillStyle = "#ffff00"; gCtx.fillText(`Electric Field E (Max: ±${maxE.toFixed(1)})`, 50, 38);
 }
 
-/** * 📱 UI & 이벤트 처리 (통합)
- */
+/** 📱 UI & 이벤트 처리 */
 function setupUI() {
     const radios = document.getElementsByName('tool');
     radios.forEach(r => {
@@ -495,31 +523,27 @@ function setupUI() {
     document.getElementById('chk-potential').addEventListener('change', (e) => { showPotential = e.target.checked; needsRedraw = true; });
     document.getElementById('chk-field').addEventListener('change', (e) => { showField = e.target.checked; });
     
-    // 버튼 드래그 (모바일 + PC 통합 커스텀 드래그)
+    // 버튼 드래그 (Pointer Events 사용)
     const buttons = document.querySelectorAll('.charge-btn');
     buttons.forEach(btn => {
-        // Pointer 이벤트 사용 (마우스/터치 통합)
         btn.addEventListener('pointerdown', (e) => {
             if(currentTool !== 'cursor') return;
-            e.preventDefault(); // 텍스트 선택 등 방지
+            e.preventDefault(); 
             
             const q = btn.getAttribute('data-q');
             
-            // 고스트 엘리먼트 생성
             const ghost = btn.cloneNode(true);
             ghost.classList.add('ghost-charge');
             document.body.appendChild(ghost);
             
-            // 초기 위치 설정
             moveGhost(ghost, e.clientX, e.clientY);
 
-            // 드래그 핸들러
             function onPointerMove(moveEvent) {
+                moveEvent.preventDefault(); // 중요: 모바일 스크롤 방지
                 moveGhost(ghost, moveEvent.clientX, moveEvent.clientY);
             }
 
             function onPointerUp(upEvent) {
-                // 캔버스 위인지 확인
                 const rect = canvas.getBoundingClientRect();
                 const x = upEvent.clientX;
                 const y = upEvent.clientY;
@@ -531,13 +555,12 @@ function setupUI() {
                     needsRedraw = true;
                 }
 
-                // 정리
                 document.body.removeChild(ghost);
                 window.removeEventListener('pointermove', onPointerMove);
                 window.removeEventListener('pointerup', onPointerUp);
             }
 
-            window.addEventListener('pointermove', onPointerMove);
+            window.addEventListener('pointermove', onPointerMove, {passive: false});
             window.addEventListener('pointerup', onPointerUp);
         });
     });
@@ -549,15 +572,12 @@ function moveGhost(el, x, y) {
 }
 
 function setupEvents() {
-    // Canvas 이벤트 리스너 통합 (Pointer Events 사용 권장)
-    // 하지만, 기존 로직 호환성을 위해 mouse/touch 리스너를 각각 매핑하는 헬퍼 사용
-    
     function handleStart(e) {
-        e.preventDefault(); // 스크롤 방지
+        if(e.cancelable) e.preventDefault();
         const {x, y} = getEventPos(e);
         const currentTime = new Date().getTime();
 
-        // 0. 더블 탭 감지 (300ms 이내)
+        // 더블 탭 삭제
         if (currentTime - lastTapTime < 300 && currentTool === 'cursor') {
             for (let i = 0; i < charges.length; i++) {
                 if (Math.hypot(x - charges[i].x, y - charges[i].y) < charges[i].r * 2) {
@@ -569,17 +589,17 @@ function setupEvents() {
         }
         lastTapTime = currentTime;
 
-        // 1. 전위차계
+        // 전위차계
         if (currentTool === 'voltmeter') {
-            if (Math.hypot(x - voltmeter.probeA.x, y - voltmeter.probeA.y) < 30) { // 터치 영역 여유있게
+            if (Math.hypot(x - voltmeter.probeA.x, y - voltmeter.probeA.y) < 40) {
                 isDragging = true; draggedObj = voltmeter.probeA;
-            } else if (Math.hypot(x - voltmeter.probeB.x, y - voltmeter.probeB.y) < 30) {
+            } else if (Math.hypot(x - voltmeter.probeB.x, y - voltmeter.probeB.y) < 40) {
                 isDragging = true; draggedObj = voltmeter.probeB;
             }
             return;
         }
 
-        // 2. 그래프
+        // 그래프
         if (currentTool === 'graph') {
             graphTool.isDrawing = true;
             graphTool.startX = x; graphTool.startY = y;
@@ -587,20 +607,19 @@ function setupEvents() {
             return;
         }
 
-        // 3. 기본 모드
+        // 전하 드래그
         for (let c of charges) {
-            if (Math.hypot(x - c.x, y - c.y) < c.r * 2) { // 터치 인식 범위 확대
+            if (Math.hypot(x - c.x, y - c.y) < c.r * 2.5) { 
                 isDragging = true; draggedObj = c;
                 dragOffsetX = x - c.x; dragOffsetY = y - c.y;
                 return;
             }
         }
-        // 빈 공간 터치 시 시험전하
         if (!isDragging) testCharges.push({x, y, vx: 0, vy: 0, life: 400});
     }
 
     function handleMove(e) {
-        e.preventDefault();
+        e.preventDefault(); // 캔버스 내 스크롤 방지
         const {x, y} = getEventPos(e);
         mouseX = x; mouseY = y;
 
@@ -629,7 +648,6 @@ function setupEvents() {
         isDragging = false; draggedObj = null;
     }
 
-    // 마우스 & 터치 리스너 등록
     canvas.addEventListener('mousedown', handleStart);
     canvas.addEventListener('touchstart', handleStart, {passive: false});
 
@@ -637,18 +655,16 @@ function setupEvents() {
     canvas.addEventListener('touchmove', handleMove, {passive: false});
 
     window.addEventListener('mouseup', handleEnd);
-    window.addEventListener('touchend', handleEnd);
+    window.addEventListener('touchend', handleEnd, {passive: false});
 }
 
-// 좌표 정규화 헬퍼
 function getEventPos(e) {
     const rect = canvas.getBoundingClientRect();
     let clientX, clientY;
-    
-    if (e.changedTouches) { // 터치 이벤트
+    if (e.changedTouches) {
         clientX = e.changedTouches[0].clientX;
         clientY = e.changedTouches[0].clientY;
-    } else { // 마우스 이벤트
+    } else {
         clientX = e.clientX;
         clientY = e.clientY;
     }
@@ -656,20 +672,30 @@ function getEventPos(e) {
 }
 
 function updateTooltip() {
-    // 터치 디바이스에서는 툴팁이 손가락에 가려지므로 약간 위로 띄움
     if (currentTool !== 'cursor') {
         document.getElementById('tooltip').style.display = 'none';
         return;
     }
     if(!mouseX) return;
+    
+    // 모바일 감지 (터치 지원 여부)
+    const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+    // 모바일에서는 드래그 중이 아니면 툴팁을 굳이 보여주지 않거나, 터치 위치 위로 띄움
+    if (isMobile && !isDragging) {
+        document.getElementById('tooltip').style.display = 'none';
+        return;
+    }
+
     let { Ex, Ey, V } = getFieldAndPotential(mouseX, mouseY);
     let E_mag = Math.hypot(Ex, Ey).toFixed(2);
     let tooltip = document.getElementById('tooltip');
     
     if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
         tooltip.style.display = 'block';
-        tooltip.style.left = (mouseX + 20) + 'px'; // 손가락 오른쪽
-        tooltip.style.top = (mouseY - 40) + 'px'; // 손가락 위
+        // 손가락에 가리지 않게 위로 충분히 띄움
+        tooltip.style.left = (mouseX + 10) + 'px'; 
+        tooltip.style.top = (mouseY - 60) + 'px'; 
         tooltip.innerHTML = `전위(V): ${V.toFixed(2)}<br>전기장(E): ${E_mag}`;
     } else {
         tooltip.style.display = 'none';
