@@ -1,6 +1,6 @@
 /**
  * [스타일 주입]
- * 글래스모피즘 + 진동(Vibration) 효과 + 순차 등장 애니메이션
+ * 글래스모피즘 + 진동(Vibration) 효과 + 순차 등장 애니메이션 + [NEW] 로그인 모달 스타일
  */
 (function injectStyles() {
     const style = document.createElement('style');
@@ -18,7 +18,6 @@
         position: relative;
       }
   
-      /* [진동 애니메이션 키프레임] */
       @keyframes vibrate {
         0% { transform: rotate(0deg); }
         25% { transform: rotate(-1deg); }
@@ -27,28 +26,59 @@
         100% { transform: rotate(0deg); }
       }
   
-      /* 호버 시: 진동 + 살짝 떠오름 + 그림자 진하게 */
       .card:hover {
-        animation: vibrate 0.3s linear; /* 0.3초 동안 '징-' */
+        animation: vibrate 0.3s linear;
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4), 0 0 10px rgba(255,255,255,0.1);
         border-color: rgba(255, 255, 255, 0.3);
       }
       
-      /* 1. 등장 애니메이션 초기 상태 클래스 */
-      .card-entry {
-        opacity: 0;
-        transform: translateY(30px);
-      }
+      .card-entry { opacity: 0; transform: translateY(30px); }
       .card-entry-active {
-        opacity: 1;
-        transform: translateY(0);
+        opacity: 1; transform: translateY(0);
         transition: opacity 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+  
+      /* [NEW] 로그인 모달 & 백드롭 스타일 */
+      /* 백드롭 (배경 어둡게) */
+      #auth-backdrop {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(3px);
+        z-index: 9998;
+        opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+      }
+      #auth-backdrop.visible { opacity: 1; pointer-events: auto; }
+  
+      /* 모달 패널 (중앙 정렬) */
+      #auth-panel {
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -40%) scale(0.95); /* 초기 상태: 약간 아래, 작게 */
+        width: 320px; /* 적절한 너비 고정 */
+        max-width: 90%;
+        background: rgba(30, 30, 35, 0.85); /* 진한 반투명 배경 */
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 20px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        padding: 25px;
+        z-index: 9999;
+        
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* 탄성 효과 */
+      }
+  
+      /* 모달 열렸을 때 */
+      #auth-panel.open {
+        transform: translate(-50%, -50%) scale(1); /* 정중앙 */
+        opacity: 1;
+        pointer-events: auto;
       }
     `;
     document.head.appendChild(style);
   })();
   
-  // ===== 프로젝트 카드 렌더링 =====
+  // ===== 프로젝트 카드 렌더링 (기존 유지) =====
   const projects = [
     {title:"물리 공식 맞추기", category:"게임", desc:"떨어지는 물리 공식을 맞추자!", tags:["물리","공식"], emoji:"❤️", demo:"./simul/물리 공식 맞추기.html", curriculumId:"ALL", thumb:"./thumb_nail/물리 공식 맞추기.png"},
     {title:"토크와 평형", category:"역학", desc:"여러 물체를 이용해 토크평형 만들기", tags:["토크","평형"], emoji:"🧗‍♀️", demo:"./simul/토크와 평형.html", curriculumId:"[12물리01-01]", thumb:"./thumb_nail/토크와_평형.png"},
@@ -115,9 +145,7 @@
     });
     node.querySelector('.demo').href = p.demo || '#';
   
-    // [수정됨] 마우스 이벤트 리스너 제거 및 CSS 클래스 적용
     node.classList.add('card'); 
-    // 이제 hover 시 진동 효과는 CSS의 .card:hover { animation: vibrate ... } 가 담당합니다.
   
     return node;
   }
@@ -141,20 +169,13 @@
     count.textContent = list.length;
     empty.style.display = list.length? 'none':'block';
   
-    // [1. 순차 등장 애니메이션 (Staggering)]
     list.forEach((p, index) => {
       const card = makeCard(p);
-      
-      // 초기 상태 클래스 추가
       card.classList.add('card-entry');
       grid.append(card);
-  
-      // 시차를 두고 클래스 변경
       setTimeout(() => {
         requestAnimationFrame(() => {
           card.classList.add('card-entry-active');
-          
-          // 애니메이션 종료 후 클래스 정리
           setTimeout(() => {
               card.classList.remove('card-entry', 'card-entry-active');
               card.style.opacity = '1';
@@ -170,7 +191,7 @@
   sortSel.addEventListener('change', render);
   render();
   
-  // ===== 오늘의 물리 =====
+  // ===== 오늘의 물리 (기존 유지) =====
   (function(){
     const FACTS = [
         "태양빛이 태양에서 지구까지 도달하는 데 약 8분 20초가 걸립니다(≈ 499초).",
@@ -251,7 +272,7 @@
     next();
   })();
   
-  // ===== 인터랙티브 중력 배경 =====
+  // ===== 인터랙티브 중력 배경 (기존 유지) =====
   (function(){
     const canvas=document.getElementById('gravity-bg');
     const ctx=canvas.getContext('2d');
@@ -354,54 +375,52 @@
     new ResizeObserver(()=>{ resetParticles(); }).observe(canvas);
   })();
   
-  // ===== 로그인 패널 UI 동작 (mouseover + click) =====
+  // ===== [REVISED] 로그인 모달 UI 동작 (클릭 기반) =====
   (function(){
     const panel = document.getElementById('auth-panel');
     const openBtn = document.getElementById('open-auth');
-    const authBar = document.getElementById('auth-bar');
     const closeBtn = panel ? panel.querySelector('.auth-close') : null;
-    let hideTimer = null;
   
     if(!panel || !openBtn) return;
   
-    function openPanel(){
-      clearTimeout(hideTimer);
-      panel.classList.add('open');
-      panel.setAttribute('aria-hidden','false');
-    }
-    function closePanel(){
-      panel.classList.remove('open');
-      panel.setAttribute('aria-hidden','true');
-    }
-    function scheduleClose(){
-      clearTimeout(hideTimer);
-      hideTimer = setTimeout(closePanel, 250);
+    // 백드롭(배경) 요소 동적 생성
+    let backdrop = document.getElementById('auth-backdrop');
+    if(!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.id = 'auth-backdrop';
+      document.body.appendChild(backdrop);
     }
   
-    // 클릭으로 토글
-    openBtn.addEventListener('click', (e)=>{
+    function openModal() {
+      panel.classList.add('open');
+      backdrop.classList.add('visible');
+      panel.setAttribute('aria-hidden', 'false');
+    }
+  
+    function closeModal() {
+      panel.classList.remove('open');
+      backdrop.classList.remove('visible');
+      panel.setAttribute('aria-hidden', 'true');
+    }
+  
+    // 1. 기존의 Hover 이벤트 모두 제거 -> Click으로 통일
+    openBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if(panel.classList.contains('open')) closePanel();
-      else openPanel();
+      // 열려있으면 닫고, 닫혀있으면 염
+      if(panel.classList.contains('open')) closeModal();
+      else openModal();
     });
   
-    // 마우스 올리면 자동으로 열림
-    openBtn.addEventListener('mouseenter', openPanel);
-    authBar.addEventListener('mouseenter', openPanel);
+    // 2. 닫기 버튼
+    if(closeBtn) closeBtn.addEventListener('click', closeModal);
   
-    // 마우스가 버튼/패널 밖으로 나가면 닫힘
-    openBtn.addEventListener('mouseleave', scheduleClose);
-    authBar.addEventListener('mouseleave', scheduleClose);
-    panel.addEventListener('mouseenter', ()=>{ clearTimeout(hideTimer); });
-    panel.addEventListener('mouseleave', scheduleClose);
+    // 3. 배경(백드롭) 클릭 시 닫기
+    backdrop.addEventListener('click', closeModal);
   
-    if(closeBtn) closeBtn.addEventListener('click', closePanel);
-  
-    // 바깥 클릭 시 닫기
-    document.addEventListener('click', (e)=>{
-      if(!panel.contains(e.target) && e.target !== openBtn){
-        closePanel();
+    // 4. ESC 키 누르면 닫기
+    document.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape' && panel.classList.contains('open')) {
+        closeModal();
       }
     });
-  
   })();
