@@ -39,7 +39,6 @@
       }
   
       /* [NEW] 로그인 모달 & 백드롭 스타일 */
-      /* 백드롭 (배경 어둡게) */
       #auth-backdrop {
         position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
         background: rgba(0, 0, 0, 0.6);
@@ -49,28 +48,25 @@
       }
       #auth-backdrop.visible { opacity: 1; pointer-events: auto; }
   
-      /* 모달 패널 (중앙 정렬) */
       #auth-panel {
         position: fixed;
         top: 50%; left: 50%;
-        transform: translate(-50%, -40%) scale(0.95); /* 초기 상태: 약간 아래, 작게 */
-        width: 320px; /* 적절한 너비 고정 */
+        transform: translate(-50%, -40%) scale(0.95);
+        width: 320px;
         max-width: 90%;
-        background: rgba(30, 30, 35, 0.85); /* 진한 반투명 배경 */
+        background: rgba(30, 30, 35, 0.85);
         border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 20px;
         box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         padding: 25px;
         z-index: 9999;
-        
         opacity: 0;
         pointer-events: none;
-        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* 탄성 효과 */
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       }
   
-      /* 모달 열렸을 때 */
       #auth-panel.open {
-        transform: translate(-50%, -50%) scale(1); /* 정중앙 */
+        transform: translate(-50%, -50%) scale(1);
         opacity: 1;
         pointer-events: auto;
       }
@@ -191,7 +187,7 @@
   sortSel.addEventListener('change', render);
   render();
   
-  // ===== 오늘의 물리 (기존 유지) =====
+  // ===== [수정됨] 오늘의 물리 (타자기 효과 유지) =====
   (function(){
     const FACTS = [
         "태양빛이 태양에서 지구까지 도달하는 데 약 8분 20초가 걸립니다(≈ 499초).",
@@ -231,39 +227,76 @@
         "전자레인지에 금속 숟가락을 넣으면 불꽃이 튀는 건, 날카로운 끝에서 전하가 집중되어 방전이 일어나기 때문입니다.",
         "별빛은 수천 년, 수백만 년을 날아와 지금 우리 눈에 들어옵니다. 우리가 보는 건 ‘별의 현재’가 아니라 과거 모습입니다.",
         "밤하늘 은하수가 희미한 구름처럼 보이는 건, 사실 수천억 개의 별빛이 한데 모여 보이는 것입니다.",
-      "태양은 매초 약 400만 톤의 질량을 에너지로 전환하며, 이 과정에서 실제로 가벼워지고 있습니다.",
-  "금성에서는 하루(자전 주기)가 1년(공전 주기)보다 더 길어, 해가 한 번 뜨고 지는 데 1년 이상이 걸립니다.",
-  "우주 공간에서도 완전한 ‘0’의 에너지는 존재하지 않으며, 이를 영점에너지라고 부릅니다.",
-  "중성미자는 물질과 거의 상호작용하지 않아, 태양에서 나온 중성미자가 지금도 우리의 몸을 통과하고 있습니다.",
-  "우주에 존재하는 모든 전자는 서로 완전히 동일하여, 어떤 전자도 다른 전자와 구별할 수 없습니다.",
-  "유리는 아주 느리게 흐르는 액체가 아니라, 무질서한 구조를 가진 비정질 고체입니다.",
-  "금속이 차갑게 느껴지는 이유는 온도가 낮아서가 아니라, 열을 빠르게 빼앗아 가는 높은 열전도율 때문입니다.",
-  "얼음이 미끄러운 이유는 단순히 녹아서가 아니라, 압력과 마찰로 인해 표면 구조가 순간적으로 변하기 때문입니다.",
-  "다이아몬드는 매우 단단하지만 고온에서는 흑연보다 안정하지 않아 쉽게 손상될 수 있습니다.",
-  "빛은 유리 속에서 느려지지만 멈추지는 않으며, 이는 빛이 물질과 상호작용하기 때문입니다.",
-  "우리는 실제 세계를 연속적으로 인식하지 못하고, 뇌가 초당 수십 장의 ‘프레임’으로 재구성해 인식합니다.",
-  "무지개는 실제로 완전한 원 모양이지만, 지면에 가려져 보통 반원으로만 관측됩니다.",
-  "샤워할 때 커튼이 몸 쪽으로 달라붙는 현상은 베르누이 효과와 온도 차에 의한 공기 흐름 때문입니다.",
-  "회전하는 의자에서 팔을 벌리면 각운동량 보존 법칙에 따라 회전 속도가 느려집니다.",
-  "레이저 포인터의 빛은 아주 멀리까지 퍼지지만, 우리가 보는 점은 극히 일부의 산란광에 불과합니다.",
-  "트랜지스터는 단순한 스위치가 아니라, 전기장을 이용해 전류를 정밀하게 조절하는 장치입니다.",
-  "MRI는 X선을 사용하는 장치가 아니라, 원자핵의 스핀과 자기 공명을 이용해 몸속을 영상화합니다.",
-  "Wi-Fi 신호는 벽을 통과할 수 있지만, 인체의 물 분자에 의해 일부 흡수되어 약해집니다.",
-  "우주에서는 중력이 거의 없어도 물체가 멈추는 것이 아니라, 계속 같은 속도로 움직입니다.",
-  "자전거가 넘어지지 않고 달릴 수 있는 이유는 바퀴의 회전 안정성과 조향 반응이 결합된 결과입니다."
+        "태양은 매초 약 400만 톤의 질량을 에너지로 전환하며, 이 과정에서 실제로 가벼워지고 있습니다.",
+        "금성에서는 하루(자전 주기)가 1년(공전 주기)보다 더 길어, 해가 한 번 뜨고 지는 데 1년 이상이 걸립니다.",
+        "우주 공간에서도 완전한 ‘0’의 에너지는 존재하지 않으며, 이를 영점에너지라고 부릅니다.",
+        "중성미자는 물질과 거의 상호작용하지 않아, 태양에서 나온 중성미자가 지금도 우리의 몸을 통과하고 있습니다.",
+        "우주에 존재하는 모든 전자는 서로 완전히 동일하여, 어떤 전자도 다른 전자와 구별할 수 없습니다.",
+        "유리는 아주 느리게 흐르는 액체가 아니라, 무질서한 구조를 가진 비정질 고체입니다.",
+        "금속이 차갑게 느껴지는 이유는 온도가 낮아서가 아니라, 열을 빠르게 빼앗아 가는 높은 열전도율 때문입니다.",
+        "얼음이 미끄러운 이유는 단순히 녹아서가 아니라, 압력과 마찰로 인해 표면 구조가 순간적으로 변하기 때문입니다.",
+        "다이아몬드는 매우 단단하지만 고온에서는 흑연보다 안정하지 않아 쉽게 손상될 수 있습니다.",
+        "빛은 유리 속에서 느려지지만 멈추지는 않으며, 이는 빛이 물질과 상호작용하기 때문입니다.",
+        "우리는 실제 세계를 연속적으로 인식하지 못하고, 뇌가 초당 수십 장의 ‘프레임’으로 재구성해 인식합니다.",
+        "무지개는 실제로 완전한 원 모양이지만, 지면에 가려져 보통 반원으로만 관측됩니다.",
+        "샤워할 때 커튼이 몸 쪽으로 달라붙는 현상은 베르누이 효과와 온도 차에 의한 공기 흐름 때문입니다.",
+        "회전하는 의자에서 팔을 벌리면 각운동량 보존 법칙에 따라 회전 속도가 느려집니다.",
+        "레이저 포인터의 빛은 아주 멀리까지 퍼지지만, 우리가 보는 점은 극히 일부의 산란광에 불과합니다.",
+        "트랜지스터는 단순한 스위치가 아니라, 전기장을 이용해 전류를 정밀하게 조절하는 장치입니다.",
+        "MRI는 X선을 사용하는 장치가 아니라, 원자핵의 스핀과 자기 공명을 이용해 몸속을 영상화합니다.",
+        "Wi-Fi 신호는 벽을 통과할 수 있지만, 인체의 물 분자에 의해 일부 흡수되어 약해집니다.",
+        "우주에서는 중력이 거의 없어도 물체가 멈추는 것이 아니라, 계속 같은 속도로 움직입니다.",
+        "자전거가 넘어지지 않고 달릴 수 있는 이유는 바퀴의 회전 안정성과 조향 반응이 결합된 결과입니다."
     ];
     const factEl  = document.getElementById('fact-text');
     const nextBtn = document.getElementById('next-fact');
     const copyBtn = document.getElementById('copy-fact');
+    
     let last = -1;
-    function pick(){ let i=Math.floor(Math.random()*FACTS.length); if(i===last) i=(i+1)%FACTS.length; last=i; return FACTS[i]; }
-    function next(){ factEl.textContent=pick(); }
+    let typingTimer = null; // 타이머 참조 변수
+    let currentFactText = ""; // 현재 표시 중인 전체 텍스트 저장용
+  
+    function pick(){ 
+        let i=Math.floor(Math.random()*FACTS.length); 
+        if(i===last) i=(i+1)%FACTS.length; 
+        last=i; 
+        return FACTS[i]; 
+    }
+  
+    // 타자기 효과 함수
+    function typeWriter(text, element) {
+        // 기존 타이머가 돌고 있다면 취소 (빠르게 넘길 때 겹침 방지)
+        if(typingTimer) clearTimeout(typingTimer);
+        
+        element.textContent = '';
+        let i = 0;
+        const speed = 25; // 글자당 25ms
+        
+        function type() {
+            if (i < text.length) {
+                element.textContent += text.charAt(i);
+                i++;
+                typingTimer = setTimeout(type, speed);
+            } else {
+                typingTimer = null; // 완료됨
+            }
+        }
+        type();
+    }
+  
+    function next(){ 
+        currentFactText = pick();
+        typeWriter(currentFactText, factEl);
+    }
+  
     nextBtn.addEventListener('click', next);
     copyBtn.addEventListener('click', async ()=>{
       try{
-        await navigator.clipboard.writeText(factEl.textContent.trim());
+        // 화면에 다 안 써졌어도 전체 문구를 복사하도록 currentFactText 사용
+        await navigator.clipboard.writeText(currentFactText || factEl.textContent);
+        const originalText = copyBtn.textContent;
         copyBtn.textContent='복사됨!'; 
-        setTimeout(()=>copyBtn.textContent='복사',900);
+        setTimeout(()=>copyBtn.textContent=originalText, 900);
       }catch(e){
         alert('복사 실패: '+e.message);
       }
@@ -375,7 +408,7 @@
     new ResizeObserver(()=>{ resetParticles(); }).observe(canvas);
   })();
   
-  // ===== [REVISED] 로그인 모달 UI 동작 (클릭 기반) =====
+  // ===== 로그인 모달 UI 동작 (기존 유지) =====
   (function(){
     const panel = document.getElementById('auth-panel');
     const openBtn = document.getElementById('open-auth');
@@ -383,7 +416,6 @@
   
     if(!panel || !openBtn) return;
   
-    // 백드롭(배경) 요소 동적 생성
     let backdrop = document.getElementById('auth-backdrop');
     if(!backdrop) {
       backdrop = document.createElement('div');
@@ -403,21 +435,15 @@
       panel.setAttribute('aria-hidden', 'true');
     }
   
-    // 1. 기존의 Hover 이벤트 모두 제거 -> Click으로 통일
     openBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      // 열려있으면 닫고, 닫혀있으면 염
       if(panel.classList.contains('open')) closeModal();
       else openModal();
     });
   
-    // 2. 닫기 버튼
     if(closeBtn) closeBtn.addEventListener('click', closeModal);
-  
-    // 3. 배경(백드롭) 클릭 시 닫기
     backdrop.addEventListener('click', closeModal);
   
-    // 4. ESC 키 누르면 닫기
     document.addEventListener('keydown', (e) => {
       if(e.key === 'Escape' && panel.classList.contains('open')) {
         closeModal();
