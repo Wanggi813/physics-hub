@@ -67,11 +67,11 @@ function getRankImageFile(score) {
   if (s < 500)   return "아이언.png";
   if (s < 1000)  return "브론즈.png";
   if (s < 2000)  return "실버.png";
-  if (s < 3500)  return "골드.png";
-  if (s < 5000)  return "에메랄드.png";
-  if (s < 7000)  return "다이아.png";
-  if (s < 9000)  return "마스터.png";
-  if (s < 10000) return "그랜드마스터.png";
+  if (s < 5000)  return "골드.png";
+  if (s < 7000)  return "에메랄드.png";
+  if (s < 9000)  return "다이아.png";
+  if (s < 11000)  return "마스터.png";
+  if (s < 15000) return "그랜드마스터.png";
   return "챌린저.png";
 }
 
