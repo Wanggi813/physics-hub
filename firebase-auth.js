@@ -21,14 +21,15 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 // ====================== Firebase 기본 설정 ======================
+// ✅ 환경 변수 사용 (보안 개선)
 const firebaseConfig = {
-  apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
-  authDomain: "simulation-67cd3.firebaseapp.com",
-  projectId: "simulation-67cd3",
-  storageBucket: "simulation-67cd3.appspot.com",
-  messagingSenderId: "615983461615",
-  appId: "1:615983461615:web:002e07bcea878eb6d5571a",
-  measurementId: "G-9RGN7LYE5W"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);
@@ -43,11 +44,10 @@ const db = getFirestore(app);
 
 let currentUser = null;
 let currentScore = 0;
-let currentUserIdText = ""; // Firestore에 저장된 ID (혹은 email 앞부분)
+let currentUserIdText = "";
 
 // ====================== 랭크 메타 / 이미지 / 이름 ======================
 
-// 파일명 → 영어 이름 / 대표 색상
 const rankMeta = {
   "아이언.png":         { en: "IRON",        color: "#594946" },
   "브론즈.png":         { en: "BRONZE",      color: "#593C39" },
@@ -60,10 +60,8 @@ const rankMeta = {
   "챌린저.png":         { en: "CHALLENGER",  color: "#6CA6D9" }
 };
 
-// 점수 → 랭크 이미지 파일명
 function getRankImageFile(score) {
   const s = Number(score) || 0;
-
   if (s < 500)   return "아이언.png";
   if (s < 1000)  return "브론즈.png";
   if (s < 2000)  return "실버.png";
@@ -75,7 +73,6 @@ function getRankImageFile(score) {
   return "챌린저.png";
 }
 
-// 이미지와 아래 영어 이름/색상 적용
 function applyRankImage(score) {
   const imgEl  = document.getElementById("rank-img");
   const nameEl = document.getElementById("rank-name");
@@ -93,7 +90,6 @@ function applyRankImage(score) {
   }
 }
 
-// 점수/아이디 표시 + 랭크 이미지 업데이트
 function updateInfoPanel() {
   const infoSec   = document.getElementById("info-section");
   const idLabel   = document.getElementById("info-id-label");
@@ -112,7 +108,7 @@ function updateInfoPanel() {
   } else {
     if (idLabel)  idLabel.textContent  = "아이디: -";
     if (scoreBig) scoreBig.textContent = "0점";
-    applyRankImage(0); // 로그아웃 상태에서는 기본 랭크(0점 기준)
+    applyRankImage(0);
   }
 }
 
@@ -131,7 +127,6 @@ async function login() {
     return;
   }
 
-  // 현재 구조: 아이디 + 고정 도메인
   const email = userId + "@myapp.local";
   console.log("[login] 시도 이메일:", email);
 
@@ -151,7 +146,6 @@ async function logout() {
 
 // ====================== 점수 불러오기 / 저장 ======================
 
-// (새) 시뮬레이션 점수 합산 불러오기
 async function loadScore(user) {
   const scoreEl = document.getElementById("score");
   try {
@@ -172,7 +166,6 @@ async function loadScore(user) {
   } catch (err) {
     console.error("시뮬레이션 점수 합산 오류:", err);
 
-    // 합산 실패 시 예전 scores 컬렉션에서 불러오기
     try {
       const ref = doc(db, "scores", user.uid);
       const snap = await getDoc(ref);
@@ -188,7 +181,6 @@ async function loadScore(user) {
   }
 }
 
-// 점수 저장 (총점 기준)
 async function saveScore(user, score) {
   try {
     const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -203,7 +195,6 @@ async function saveScore(user, score) {
   }
 }
 
-// 필요시 호출용 포인트 추가 함수
 async function addPoint() {
   if (!currentUser) {
     alert("로그인 후 사용하세요!");
@@ -259,7 +250,6 @@ function closeChangeMode() {
   }
 }
 
-// 비밀번호 변경
 async function changePassword() {
   const statusEl = document.getElementById("pw-status");
   const changeId = document.getElementById("changeId").value.trim();
@@ -332,7 +322,6 @@ async function changePassword() {
 // ====================== 로그인 상태 감지 ======================
 
 onAuthStateChanged(auth, async (user) => {
-  // ✅ 이 페이지는 익명 로그인 금지 (익명이면 즉시 로그아웃)
   if (user && user.isAnonymous) {
     alert("이 페이지는 로그인 후에만 이용할 수 있어요.");
     await signOut(auth);
@@ -411,7 +400,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// ====================== 전역 함수 등록 (onclick에서 사용) ======================
+// ====================== 전역 함수 등록 ======================
 window.login = login;
 window.logout = logout;
 window.addPoint = addPoint;
@@ -419,11 +408,13 @@ window.changePassword = changePassword;
 window.openChangeMode = openChangeMode;
 window.closeChangeMode = closeChangeMode;
 
-// 1. 모달 열기/닫기
+// ====================== 건의사항 기능 ======================
+
 function openSugg() {
   const m = document.getElementById("modal-sugg");
   if(m) m.style.display = "flex";
 }
+
 function closeSugg() {
   const m = document.getElementById("modal-sugg");
   if(m) m.style.display = "none";
@@ -431,7 +422,6 @@ function closeSugg() {
   document.getElementById("s-content").value = "";
 }
 
-// 2. 파이어베이스로 전송
 async function sendSugg() {
   if (!currentUser) { alert("로그인이 필요합니다."); return; }
   
@@ -441,10 +431,9 @@ async function sendSugg() {
   if (!title || !content) { alert("제목과 내용을 모두 적어주세요."); return; }
 
   try {
-    // Firestore 'suggestions' 컬렉션에 저장
     await addDoc(collection(db, "suggestions"), {
       uid: currentUser.uid,
-      writerID: currentUserIdText, // 학생 ID (예: s1A_01)
+      writerID: currentUserIdText,
       title: title,
       content: content,
       date: serverTimestamp()
@@ -457,8 +446,6 @@ async function sendSugg() {
   }
 }
 
-// 3. HTML에서 쓸 수 있게 등록
 window.openSugg = openSugg;
 window.closeSugg = closeSugg;
 window.sendSugg = sendSugg;
-
