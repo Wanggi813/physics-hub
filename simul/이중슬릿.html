@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
-<title>이중슬릿 </title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+<title>이중슬릿 실험</title>
 <script src="https://unpkg.com/p5@1.9.0/lib/p5.min.js"></script>
 <style>
   :root{
@@ -25,14 +25,18 @@
     background:radial-gradient(circle at top,#0b1120 0%,#020617 55%,#000 100%);
     color:#e5e7eb;
   }
+  
+  /* 캔버스 컨테이너 */
   #sim{
     position:fixed;
     inset:0;
     width:100vw;
     height:100vh;
     touch-action:none;
+    z-index: 0;
   }
 
+  /* UI 컨테이너 (기본 데스크탑) */
   .ui{
     position:fixed;
     top:14px;
@@ -42,7 +46,15 @@
     flex-direction:column;
     gap:10px;
     max-width:360px;
+    max-height: 90vh; /* 데스크탑에서도 너무 길면 스크롤 */
+    overflow-y: auto;
   }
+  
+  /* 스크롤바 커스텀 */
+  .ui::-webkit-scrollbar, .mobile-ui-scroll::-webkit-scrollbar { width: 6px; }
+  .ui::-webkit-scrollbar-track, .mobile-ui-scroll::-webkit-scrollbar-track { background: transparent; }
+  .ui::-webkit-scrollbar-thumb, .mobile-ui-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
   .panel{
     background:var(--panel);
     border-radius:var(--radius);
@@ -233,20 +245,58 @@
     text-shadow:0 0 6px rgba(255,190,0,.8);
   }
 
-  @media (max-width:640px){
-    .ui{
-      top:8px;
-      left:8px;
-      max-width:280px;
+  /* =========================================
+     ★ 모바일 반응형 (Split View) 스타일 적용 ★
+     ========================================= */
+  @media (max-width: 768px) {
+    /* 시뮬레이션 캔버스: 상단 45% 고정 */
+    #sim {
+      position: fixed !important;
+      top: 0; left: 0;
+      width: 100vw !important;
+      height: 45vh !important;
+      border-bottom: 1px solid #1e293b;
+      z-index: 0;
     }
-    .row{grid-template-columns:120px 1fr 64px;}
+    
+    /* UI 패널: 하단 55% 스크롤 영역 */
+    .ui {
+      position: fixed !important;
+      top: 45vh !important;
+      left: 0 !important;
+      width: 100% !important;
+      max-width: none !important;
+      height: 55vh !important;
+      max-height: none !important;
+      margin: 0 !important;
+      padding: 16px !important;
+      background: #020617; /* 패널 배경색 */
+      overflow-y: auto;
+      border-top: 1px solid #334155;
+      gap: 0; /* 패널 내부 간격 제거 */
+      display: block; /* Flex 해제 */
+    }
+
+    /* 패널 내부 스타일 정리 */
+    .panel {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      backdrop-filter: none !important;
+    }
+    
+    /* 모바일에서 글씨 크기 약간 조정 */
+    .row label { font-size: 13px; }
+    .challenge h3 { font-size: 14px; }
+    .mode-btn { padding: 10px; font-size: 14px; }
   }
 </style>
 </head>
 <body>
 <div id="sim"></div>
 
-<div class="ui">
+<div class="ui mobile-ui-scroll">
   <div class="panel">
     <div class="modes">
       <button class="mode-btn wave active" data-mode="wave">
@@ -638,11 +688,13 @@ let sketch = p => {
   let stripeBuffer;
 
   p.setup = () => {
-    const holder = document.getElementById('sim');
-    const rect = holder.getBoundingClientRect();
-    W = rect.width;
-    H = rect.height;
-    gHeight = H;
+    // 초기 로드 시 윈도우 크기 확인 (모바일 대응)
+    W = window.innerWidth;
+    H = window.innerHeight;
+    if(W <= 768) {
+        H = window.innerHeight * 0.45; // 모바일에서는 45%만 사용
+    }
+
     let c = p.createCanvas(W,H);
     c.parent('sim');
     p.pixelDensity(Math.max(1, window.devicePixelRatio || 1));
@@ -653,10 +705,14 @@ let sketch = p => {
   };
 
   p.windowResized = () => {
-    const holder = document.getElementById('sim');
-    const rect = holder.getBoundingClientRect();
-    W = rect.width;
-    H = rect.height;
+    W = window.innerWidth;
+    H = window.innerHeight;
+    
+    // ★ 반응형 리사이즈 로직 추가 ★
+    if(W <= 768) {
+        H = window.innerHeight * 0.45;
+    }
+
     gHeight = H;
     p.resizeCanvas(W,H);
     stripeBuffer = p.createGraphics(W,H);
@@ -874,7 +930,6 @@ window.setBestScoreFromFirebase = function(score){
 };
 </script>
 
-<!-- Firebase 연동 -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
@@ -936,4 +991,3 @@ window.setBestScoreFromFirebase = function(score){
 </script>
 </body>
 </html>
-
