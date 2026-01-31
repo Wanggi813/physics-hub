@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
-  <title>나만의 위성 쏘아 올리기 — 중심행성/북극발사</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>나만의 위성 쏘아 올리기</title>
   <style>
     :root{
       --ink:#eaf2ff;
@@ -26,14 +26,18 @@
     html, body{ width:100%; height:100%; overflow:hidden; background:#060812; color:var(--ink); }
     body{ font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,"Noto Sans KR",sans-serif; }
 
+    /* === 시뮬레이션 영역 (.stage) === */
     .stage{
-      position:fixed; inset:0;
+      position:fixed; 
+      top: 0; left: 0; width: 100%; height: 100%; /* 데스크탑 기본: 전체 화면 */
       display:block;
       background:
         radial-gradient(1200px 900px at 70% 20%, rgba(90,155,255,0.16), transparent 60%),
         radial-gradient(900px 700px at 15% 70%, rgba(180,80,255,0.12), transparent 60%),
         radial-gradient(900px 700px at 85% 85%, rgba(60,255,210,0.08), transparent 62%),
         linear-gradient(180deg, #040512 0%, #070a18 50%, #050713 100%);
+      overflow: hidden;
+      z-index: 0;
     }
 
     .stars, .stars2, .vignette{
@@ -77,12 +81,11 @@
     /* 행성: 화면 정가운데 */
     #planet{
       position:absolute;
-      left: 50vw;
-      top: 50vh;
+      left: 50%; top: 50%; /* %로 변경하여 부모(.stage) 기준 중앙 정렬 */
       width: 240px;
       height: 240px;
       transform: translate(-50%, -50%);
-      background-image: url('./image/earth.png');
+      background-image: url('./image/earth.png'); /* 이미지 유지 */
       background-size: cover;
       background-repeat:no-repeat;
       background-position:center;
@@ -101,8 +104,7 @@
       width: 76px;
       height: 44px;
       z-index: 10;
-      left: 50vw; /* 초기 위치는 JS에서 북극으로 이동 */
-      top: 50vh;
+      left: 50%; top: 50%; /* %로 변경 */
       transform: translate(-50%, -50%);
       will-change: transform, opacity;
       opacity:1;
@@ -135,14 +137,14 @@
       100%{ opacity:1; transform: translateY(-50%) rotate(180deg) scaleX(1.15) scaleY(1.05); }
     }
 
-    /* Panel */
+    /* Panel (기본 데스크탑) */
     .panel{
       position:fixed;
       left: 14px;
       top: 14px;
       width: min(460px, calc(100vw - 28px));
       max-height: calc(100vh - 28px);
-      overflow:hidden;
+      overflow-y: auto;
       padding: 16px 16px 14px;
       background: linear-gradient(180deg, var(--panel), var(--panel2));
       border: 1px solid var(--stroke);
@@ -161,44 +163,23 @@
       color: var(--ink);
     }
     .badge{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding: 3px 10px;
-      border-radius: 999px;
-      background: rgba(98,166,255,0.14);
-      border: 1px solid rgba(98,166,255,0.22);
-      color: rgba(210,230,255,0.95);
-      font-weight: 700;
-      font-size: 12px;
-      white-space:nowrap;
+      display:inline-flex; align-items:center; justify-content:center;
+      padding: 3px 10px; border-radius: 999px;
+      background: rgba(98,166,255,0.14); border: 1px solid rgba(98,166,255,0.22);
+      color: rgba(210,230,255,0.95); font-weight: 700; font-size: 12px; white-space:nowrap;
     }
     label{ font-size: 12px; color: var(--muted); }
     .val{ font-size: 13px; color: var(--ink); font-weight: 800; white-space:nowrap; }
     input[type="range"]{ width:100%; cursor:pointer; }
 
     .group{ margin-bottom: 10px; }
-    .control{
-      display:grid;
-      grid-template-columns: 92px 1fr auto;
-      gap: 10px;
-      align-items:center;
-    }
+    .control{ display:grid; grid-template-columns: 92px 1fr auto; gap: 10px; align-items:center; }
 
-    .planetBtns{
-      display:flex; gap:8px; flex-wrap:wrap;
-      margin-top: 6px;
-    }
+    .planetBtns{ display:flex; gap:8px; flex-wrap:wrap; margin-top: 6px; }
     .pbtn{
-      padding: 8px 10px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.06);
-      color: var(--ink);
-      font-weight: 900;
-      cursor:pointer;
-      transition: transform .08s ease, background .15s ease, border-color .15s ease;
-      user-select:none;
+      padding: 8px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06); color: var(--ink); font-weight: 900; cursor:pointer;
+      transition: transform .08s ease, background .15s ease, border-color .15s ease; user-select:none;
     }
     .pbtn:hover{ background: rgba(98,166,255,0.12); border-color: rgba(98,166,255,0.22); }
     .pbtn:active{ transform: translateY(1px); }
@@ -206,60 +187,73 @@
 
     .chips{ display:flex; gap:8px; flex-wrap:wrap; margin-top: 8px; }
     .chip{
-      padding: 7px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.06);
-      font-weight: 900;
-      font-size: 12px;
-      cursor:pointer;
-      color: var(--ink);
-      user-select:none;
+      padding: 7px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06); font-weight: 900; font-size: 12px; cursor:pointer;
+      color: var(--ink); user-select:none;
     }
     .chip.on{ background: rgba(98,166,255,0.18); border-color: rgba(98,166,255,0.35); }
 
     .actions{ display:flex; gap:10px; margin-top: 10px; flex-wrap:wrap; }
     button.action{
-      flex:1;
-      padding: 11px 12px;
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 12px;
-      background: rgba(98,166,255,0.16);
-      color: var(--ink);
-      font-weight: 900;
-      cursor: pointer;
-      transition: transform .08s ease, background .15s ease, border-color .15s ease;
-      min-width: 130px;
+      flex:1; padding: 11px 12px; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+      background: rgba(98,166,255,0.16); color: var(--ink); font-weight: 900; cursor: pointer;
+      transition: transform .08s ease, background .15s ease, border-color .15s ease; min-width: 100px;
     }
     button.action:hover:not(:disabled){ background: rgba(98,166,255,0.24); border-color: rgba(98,166,255,0.32); }
     button.action:active:not(:disabled){ transform: translateY(1px); }
     button.action:disabled{ opacity:.55; cursor:not-allowed; }
 
     .out{
-      margin-top: 12px;
-      padding: 12px;
-      background: rgba(0,0,0,0.18);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 14px;
+      margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;
     }
     .out .line{ display:flex; justify-content:space-between; gap:12px; font-size: 13px; padding: 6px 0; }
     .out .k{ color: var(--muted); }
     .result{
-      margin-top: 10px;
-      font-weight: 950;
-      font-size: 14px;
-      text-align:center;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.10);
-      background: rgba(255,255,255,0.06);
-      line-height:1.35;
+      margin-top: 10px; font-weight: 950; font-size: 14px; text-align:center;
+      padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.06); line-height:1.35;
     }
     .result.good{ background: rgba(46,204,113,0.16); border-color: rgba(46,204,113,0.25); }
     .result.bad{ background: rgba(255,93,93,0.16); border-color: rgba(255,93,93,0.25); }
     .result.warn{ background: rgba(255,204,102,0.14); border-color: rgba(255,204,102,0.22); }
 
     .hint{ margin-top: 10px; font-size: 11px; color: rgba(180,196,224,0.75); line-height: 1.35; }
+
+    /* =================================================
+       ★ 모바일 최적화 (Split View) CSS 추가 ★
+       ================================================= */
+    @media (max-width: 768px) {
+      /* 1. 상단: 시뮬레이션 영역 (45%) */
+      .stage {
+        height: 45vh; /* 화면의 45% */
+        bottom: auto; /* 전체 덮기 해제 */
+        border-bottom: 1px solid rgba(255,255,255,0.15);
+        z-index: 10;
+      }
+      /* 행성 크기 살짝 조정 */
+      #planet { width: 180px; height: 180px; }
+
+      /* 2. 하단: 컨트롤 패널 영역 (55%) */
+      .panel {
+        position: fixed;
+        top: 45vh; /* 시뮬레이션 바로 아래 */
+        left: 0;
+        width: 100%;
+        height: 55vh;
+        max-height: none;
+        border-radius: 0;
+        border: none;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 40px; /* 하단 여백 */
+        z-index: 20;
+        background: rgba(10, 14, 28, 0.98); /* 배경 불투명하게 */
+      }
+      
+      /* 모바일 패널 내부 간격 조정 */
+      .control { grid-template-columns: 80px 1fr auto; }
+      .actions button.action { padding: 12px 8px; font-size: 13px; }
+    }
   </style>
 </head>
 <body>
@@ -271,9 +265,7 @@
     <div class="sim">
       <div id="world">
         <canvas id="overlay"></canvas>
-
         <div id="planet"></div>
-
         <div id="rocket-container" aria-hidden="true">
           <svg id="rocket-body" viewBox="0 0 320 200" preserveAspectRatio="xMidYMid meet">
             <defs>
@@ -305,7 +297,6 @@
         </div>
       </div>
     </div>
-
     <div class="vignette"></div>
   </div>
 
@@ -336,6 +327,7 @@
         <div class="val"><span id="launchAngleValue">0</span>°</div>
       </div>
       <div class="hint">θ는 <b>지표면 접선(수평)</b> 기준입니다. (0°=수평 발사, 90°=수직 발사)</div>
+    </div>
     
     <div class="group">
       <div class="control">
@@ -395,13 +387,11 @@
     const thSlider = document.getElementById('launchAngle');
 
     const altVal = document.getElementById('launchAltValue');
-
     const vVal = document.getElementById('initialVelocityValue');
     const thVal = document.getElementById('launchAngleValue');
 
     const v1El = document.getElementById('v1');
     const veEl = document.getElementById('ve');
-
     const statusEl = document.getElementById('status');
     const resultEl = document.getElementById('result');
     const maxAltEl = document.getElementById('maxAltitude');
@@ -418,6 +408,7 @@
     const chipEnergy  = document.getElementById('chipEnergy');
     const chipTrails  = document.getElementById('chipTrails');
 
+    // ★ 1. 이미지 파일 경로가 있는 원본 데이터 복구 ★
     const PLANETS = {
       earth: { name:'지구', M:5.972e24,  R:6371e3,   img:'./image/earth.png', glow:[90,155,255] },
       moon:  { name:'달',  M:7.342e22,  R:1737.4e3, img:'./image/moon.png',  glow:[210,210,230] },
@@ -440,20 +431,31 @@
 
     function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 
-    // ---- Center anchors ----
-    // 행성은 화면 정중앙에 고정(50vw,50vh). 따라서 중심은 화면 중심으로 고정.
+    // ★ 2. 모바일/데스크탑 중심점 계산 로직 수정 ★
     let planetCenter = {x:0,y:0};
 
     function updatePlanetCenter(){
-      planetCenter = { x: window.innerWidth/2, y: window.innerHeight/2 };
+      const w = window.innerWidth;
+      let h = window.innerHeight;
+      // 모바일(폭 768px 이하)이면 상단 45%가 시뮬레이션 영역임
+      if(w <= 768) {
+        h = h * 0.45;
+      }
+      planetCenter = { x: w/2, y: h/2 };
     }
 
     function resizeOverlay(){
-      overlay.width = Math.floor(window.innerWidth * devicePixelRatio);
-      overlay.height = Math.floor(window.innerHeight * devicePixelRatio);
-      overlay.style.width = window.innerWidth + 'px';
-      overlay.style.height = window.innerHeight + 'px';
+      const w = window.innerWidth;
+      // 모바일이면 캔버스 높이도 45%로 제한
+      let h = window.innerHeight;
+      if(w <= 768) h = h * 0.45;
+
+      overlay.width = Math.floor(w * devicePixelRatio);
+      overlay.height = Math.floor(h * devicePixelRatio);
+      overlay.style.width = w + 'px';
+      overlay.style.height = h + 'px';
       octx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+      
       updatePlanetCenter();
     }
 
@@ -466,44 +468,42 @@
     let raf = null;
     let lastT = null;
 
-    // state in meters (origin at planet center, y up)
     let r = {x:0,y:0};
     let v = {x:0,y:0};
     let maxAlt = 0;
-
-    // scale: meters -> pixels
     let pxPerM = 0;
-
-    // 자동 스케일링: 멀어질수록(중력 영향권/한계까지) 자연스럽게 줌 아웃
     let worldScale = 1;
+
     function setWorldScale(s){
       worldScale = s;
       worldEl.style.transform = `scale(${worldScale})`;
-      worldEl.style.transformOrigin = '50% 50%';
+      // 줌인/아웃의 중심점도 모바일 환경에 맞춰 변경
+      worldEl.style.transformOrigin = `${planetCenter.x}px ${planetCenter.y}px`;
     }
-const trails = [];
-    const MAX_PTS = 120000; // 멈출 때까지 충분히 길게 저장
-const minStep = 0; 
-    // Fixed sim speed: 안정적이면서 체감 잘 보이게
-    const TIME_SCALE = 1800; // 고정 배속(작게=느리게, '움직임'이 보이게)
-    const GRAVITY_LIMIT_MULT = 20; // '중력 한계'(표시/스케일 기준)
-    const MAX_STEPS = 20; // 프레임당 최대 물리 스텝(많을수록 부드러움)
+
+    const trails = [];
+    const MAX_PTS = 120000; 
+    const minStep = 0; 
+    const TIME_SCALE = 1800; 
+    const GRAVITY_LIMIT_MULT = 20; 
+    const MAX_STEPS = 20; 
 
     function computeScale(){
+      // 현재 행성 엘리먼트의 크기를 기준으로 스케일 계산
       const pr = planetEl.getBoundingClientRect();
-      const radiusPx = pr.width/2;
+      // scale() 트랜스폼 영향 받을 수 있으므로 초기값(CSS width) 사용 권장하나, 여기선 rect 사용
+      // 모바일/데스크탑 width가 다르므로 getBoundingClientRect()가 안전
+      const radiusPx = pr.width/2; 
       pxPerM = radiusPx / planet.R;
     }
 
-    
-
     function launchOffsetM(){
-      // 우주선이 행성 안으로 '박히는' 느낌을 없애기 위한 시각적 오프셋(표면에서 약간 띄움)
       const rr = rocketContainer.getBoundingClientRect();
-      const offsetPx = rr.height * 0.45;     // 우주선 절반 정도를 바깥으로
-      return offsetPx / pxPerM;
+      const offsetPx = rr.height * 0.45;     
+      return offsetPx / (pxPerM * worldScale); // 현재 스케일 반영
     }
-function worldToScreen(w){
+    
+    function worldToScreen(w){
       return {
         x: planetCenter.x + w.x * pxPerM,
         y: planetCenter.y - w.y * pxPerM
@@ -518,7 +518,6 @@ function worldToScreen(w){
       return { x: -mu * pos.x * inv, y: -mu * pos.y * inv };
     }
 
-    // velocity Verlet
     function step(dt){
       const a0 = accel(r);
       r.x += v.x*dt + 0.5*a0.x*dt*dt;
@@ -532,7 +531,6 @@ function worldToScreen(w){
       const alt = Math.max(0, rmag - planet.R);
       if(alt > maxAlt) maxAlt = alt;
 
-      // trail
       const tr = trails[trails.length-1];
       if(tr && tr.pts.length < MAX_PTS){
         const last = tr.pts[tr.pts.length-1];
@@ -540,13 +538,11 @@ function worldToScreen(w){
         if(dx*dx + dy*dy > (minStep*minStep)) tr.pts.push({x:r.x,y:r.y});
       }
 
-      // collision
       if(rmag <= planet.R){
         finish('행성에 재충돌 (낙하)', 'bad');
         return;
       }
 
-      // escape
       const mu = G*planet.M;
       const vmag = Math.hypot(v.x,v.y);
       const eps = 0.5*vmag*vmag - mu/rmag;
@@ -590,7 +586,6 @@ function worldToScreen(w){
       const v1 = Math.sqrt(mu / planet.R);
       const ve = Math.sqrt(2 * mu / planet.R);
       const vv = parseFloat(vSlider.value) * 1000;
-
       if(vv < v1*0.98) stageBadge.textContent = '단계 1';
       else if(vv < ve*0.999) stageBadge.textContent = '단계 2';
       else stageBadge.textContent = '단계 3';
@@ -600,17 +595,17 @@ function worldToScreen(w){
       computeScale();
       const h0 = parseFloat(altSlider.value) * 1000;
       const np = worldToScreen({x:0, y: planet.R + h0});
-      // 발사 전 프리뷰: 선택한 각도 θ(수평=0°)에 맞춰 우주선 방향도 표시
       const v0 = parseFloat(vSlider.value) * 1000;
       const th = parseFloat(thSlider.value) * Math.PI/180;
       const vel = { x: v0 * Math.cos(th), y: v0 * Math.sin(th) };
       const ang = Math.atan2(-vel.y, vel.x);
+      
       rocketContainer.style.left = np.x + 'px';
       rocketContainer.style.top  = np.y + 'px';
       rocketContainer.style.transform = `translate(-50%, -50%) rotate(${ang}rad)`;
     }
 
-function placeRocketAtNorthPolePreview(){
+    function placeRocketAtNorthPolePreview(){
       updatePreviewPose();
     }
 
@@ -644,6 +639,12 @@ function placeRocketAtNorthPolePreview(){
 
       setWorldScale(1);
       updatePlanetCenter();
+      
+      // 행성 위치 초기화 (모바일에서 중앙 정렬을 위해)
+      planetEl.style.left = '50%';
+      planetEl.style.top = '50%';
+      planetEl.style.transform = 'translate(-50%, -50%)';
+
       updatePreviewPose();
       drawOverlay();
       updateStageBadgeByV0();
@@ -657,6 +658,7 @@ function placeRocketAtNorthPolePreview(){
       btnMoon.classList.toggle('on', key==='moon');
       btnMars.classList.toggle('on', key==='mars');
 
+      // ★ 3. 이미지 파일 로딩 복구 ★
       planetEl.style.backgroundImage = `url('${planet.img}')`;
 
       const [R,G,B] = planet.glow;
@@ -670,19 +672,16 @@ function placeRocketAtNorthPolePreview(){
       hardReset(true);
     }
 
-    // ---- Launch ----
     function start(){
       if(running) return;
 
       rocketContainer.classList.remove('vanish');
       rocketContainer.style.display = 'block';
 
-      // 북극점(고도 h)에서 시작
       const h0 = parseFloat(altSlider.value) * 1000;
-      r = { x: 0, y: planet.R + h0 + Math.max(1, launchOffsetM()*0.15) };const v0 = parseFloat(vSlider.value) * 1000;
+      r = { x: 0, y: planet.R + h0 + Math.max(1, launchOffsetM()*0.15) };
+      const v0 = parseFloat(vSlider.value) * 1000;
       const th = parseFloat(thSlider.value) * Math.PI/180;
-
-      // θ: 접선(+x) 기준, 바깥쪽(방사)으로 0->90
       v = { x: v0 * Math.cos(th), y: v0 * Math.sin(th) };
 
       maxAlt = 0;
@@ -722,7 +721,6 @@ function placeRocketAtNorthPolePreview(){
       }
     }
 
-    // ---- Drawing ----
     function drawArrow(x0,y0,x1,y1,color,width){
       octx.save();
       octx.strokeStyle = color;
@@ -747,8 +745,11 @@ function placeRocketAtNorthPolePreview(){
     }
 
     function drawEnergyBars(Ek, Ep, E){
+      // 에너지바 위치: 모바일인지 체크해서 위치/크기 조정
+      const isMobile = window.innerWidth <= 768;
       const pad = 14;
-      const w = 230, h = 128;
+      const w = isMobile ? 180 : 230;
+      const h = isMobile ? 110 : 128;
       const x = window.innerWidth - w - pad;
       const y = pad;
 
@@ -762,7 +763,7 @@ function placeRocketAtNorthPolePreview(){
       octx.stroke();
 
       octx.fillStyle = 'rgba(225,235,255,0.9)';
-      octx.font = '12px system-ui, -apple-system, Segoe UI, Roboto';
+      octx.font = isMobile ? '11px sans-serif' : '12px system-ui, -apple-system, Segoe UI, Roboto';
       octx.fillText('에너지(단위질량)', x+12, y+18);
 
       const bx = x+16, by = y+28;
@@ -810,9 +811,13 @@ function placeRocketAtNorthPolePreview(){
     }
 
     function drawOverlay(){
-      octx.clearRect(0,0,window.innerWidth, window.innerHeight);
+      // 캔버스 크기 맞춤 (resizeOverlay에서 이미 처리됨)
+      // w, h는 resizeOverlay에서 설정된 값을 사용
+      const w = overlay.width / devicePixelRatio;
+      const h = overlay.height / devicePixelRatio;
+      
+      octx.clearRect(0,0,w, h);
 
-      // trails
       for(const tr of trails){
         if(tr.pts.length < 2) continue;
         octx.save();
@@ -829,7 +834,6 @@ function placeRocketAtNorthPolePreview(){
         octx.restore();
       }
 
-      // vectors + energy (running or preview)
       const pos = running ? r : {x:0, y:planet.R + launchOffsetM()};
       const vel = running ? v : (() => {
         const v0 = parseFloat(vSlider.value)*1000;
@@ -867,7 +871,6 @@ function placeRocketAtNorthPolePreview(){
       }
     }
 
-    // ---- Loop ----
     function tick(t, first=false){
       if(!running || paused){
         drawOverlay();
@@ -879,14 +882,10 @@ function placeRocketAtNorthPolePreview(){
       const dtReal = (t - lastT)/1000;
       lastT = t;
 
-      // ✅ 순간이동 방지: 렉으로 프레임이 길어져도 물리시간을 캡(=점프 방지)
-      const dtRealClamped = Math.min(dtReal, 0.04); // 40ms cap
+      const dtRealClamped = Math.min(dtReal, 0.04); 
+      const simDt = dtRealClamped * TIME_SCALE;    
 
-      // ✅ '천천히' 보이도록: TIME_SCALE을 낮추고, 고정 스텝으로 쪼개서 많이 적분
-      const simDt = dtRealClamped * TIME_SCALE;     // (시뮬 시간)
-
-      // 고정 물리 스텝(작을수록 더 부드럽고 더 많은 스텝)
-      const h = 0.01; // 0.008~0.02 추천
+      const h = 0.01; 
       let n = Math.ceil(simDt / h);
       n = clamp(n, 1, MAX_STEPS);
 
@@ -895,19 +894,18 @@ function placeRocketAtNorthPolePreview(){
         step(dt);
         if(!running) break;
       }
-// rocket visual (좌표를 직접 left/top으로 설정: '중앙으로 들어감' / 점프 현상 방지)
+
       const sp = worldToScreen(r);
       const ang = Math.atan2(-v.y, v.x);
       rocketContainer.style.left = sp.x + 'px';
       rocketContainer.style.top  = sp.y + 'px';
       rocketContainer.style.transform = `translate(-50%, -50%) rotate(${ang}rad)`;
 
-
-      // ✅ 자동 스케일링(줌 아웃): 우주선이 멀어질수록 화면에 들어오도록 스케일을 줄임
-      // - 행성 중심은 화면 중앙 고정
-      // - '중력 한계'(R*GRAVITY_LIMIT_MULT)까지는 계속 줌 아웃, 그 밖은 최소 스케일 유지
+      // 자동 줌아웃 (모바일 화면 크기 고려)
       const distPx = Math.hypot(sp.x - planetCenter.x, sp.y - planetCenter.y);
-      const maxPx  = Math.min(window.innerWidth, window.innerHeight) * 0.42; // 화면 안쪽 목표 반경
+      const isMobile = window.innerWidth <= 768;
+      const viewSize = isMobile ? window.innerHeight * 0.45 : Math.min(window.innerWidth, window.innerHeight);
+      const maxPx  = viewSize * 0.42;
       let desiredScale = 1;
 
       if (distPx > maxPx){
@@ -919,25 +917,29 @@ function placeRocketAtNorthPolePreview(){
         desiredScale = Math.min(desiredScale, 0.16);
       }
 
-      // 부드러운 스케일 변화
       setWorldScale(worldScale + (desiredScale - worldScale) * 0.08);
-// auto zoom-out only (keep planet centered and visible)
+
+      // auto zoom-out (margin check)
       const margin = 80;
       const rx = sp.x, ry = sp.y;
-      desiredScale = 1;
-      if(rx > window.innerWidth - margin || rx < margin || ry < margin || ry > window.innerHeight - margin){
-        const distPx = Math.hypot(rx - planetCenter.x, ry - planetCenter.y);
-        const maxPx = Math.min(window.innerWidth, window.innerHeight) * 0.44;
-        desiredScale = clamp(maxPx / (distPx + 1e-6), 0.18, 1);
+      
+      // 화면 밖으로 나가면 줌아웃
+      const screenW = overlay.width / devicePixelRatio;
+      const screenH = overlay.height / devicePixelRatio;
+      
+      if(rx > screenW - margin || rx < margin || ry < margin || ry > screenH - margin){
+         const d = Math.hypot(rx - planetCenter.x, ry - planetCenter.y);
+         const limit = Math.min(screenW, screenH) * 0.44;
+         const scale2 = clamp(limit / (d + 1e-6), 0.18, 1);
+         if(scale2 < desiredScale) desiredScale = scale2;
       }
-      setWorldScale(worldScale + (desiredScale - worldScale) * 0.10);
+       setWorldScale(worldScale + (desiredScale - worldScale) * 0.10);
 
-      // info
+
       const vmag = Math.hypot(v.x,v.y);
       curVEl.textContent = (vmag/1000).toFixed(1);
       maxAltEl.textContent = (maxAlt/1000).toFixed(0);
 
-      // stage by current speed (simple)
       const mu = G*planet.M;
       const v1 = Math.sqrt(mu / planet.R);
       const ve = Math.sqrt(2 * mu / planet.R);
@@ -958,15 +960,10 @@ function placeRocketAtNorthPolePreview(){
       altVal.textContent = parseInt(altSlider.value,10);
       if(!running) { updatePreviewPose(); drawOverlay(); }
     });
-
     thSlider.addEventListener('input', ()=>{
       thVal.textContent = parseInt(thSlider.value,10);
-
       altVal.textContent = parseInt(altSlider.value, 10);
-      if(!running) {
-        updatePreviewPose();
-        drawOverlay();
-      }
+      if(!running) { updatePreviewPose(); drawOverlay(); }
     });
 
     launchButton.addEventListener('click', ()=>{
@@ -999,11 +996,10 @@ function placeRocketAtNorthPolePreview(){
       resizeOverlay();
       updatePlanetCenter();
       computeScale();
-      // keep rocket preview at north pole
       hardReset(false);
     });
 
-    // ---- init ----
+    // ★ 4. preload 함수 복구 ★
     function ensureRoundRect(){
       if(!CanvasRenderingContext2D.prototype.roundRect){
         CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){
@@ -1039,7 +1035,6 @@ function placeRocketAtNorthPolePreview(){
       computeScale();
       setPlanet('earth');
 
-      // place rocket preview on north pole
       requestAnimationFrame(()=>{
         updatePlanetCenter();
         updatePreviewPose();
