@@ -100,8 +100,8 @@
     {title:"전자기유도", category:"전자/반도체", desc:"전자기 유도현상과 정류자의 역할 알아보기", tags:["전자기유도","정류자"], emoji:"⚡", demo:"./simul/전자기유도.html", curriculumId:"[12물리02-05], [12전자01-05]", thumb:"./thumb_nail/전자기유도.png"},
     {title:"전기장과 등전위면", category:"전자/반도체", desc:"전하가 만드는 전기장과 등전위면을 알아보기", tags:["전기장","등전위면"], emoji:"⚡", demo:"./simul/전기장과 등전위면.html", curriculumId:"[12물리02-01], [12전자01-01]", thumb:"./thumb_nail/전기장과_등전위면.png"},
     {title:"편광과 LCD", category:"광학", desc:"편광의 원리와 LCD의 원리 알아보기", tags:["편광","LCD"], emoji:"🔭", demo:"./simul/편광과 LCD.html", curriculumId:"[12전자02-03]", thumb:"./thumb_nail/편광과 LCD.png"},
-     {title: "양자 터널링", category:"현대물리", desc:"입자가 벽을 뚫고 지나간다? 양자 터널 효과와 확률 파동",tags: ["양자역학", "터널링", "파동함수"], emoji: "👻",demo: "./simul/양자 터널링.html",curriculumId: "[12전자03-03]",thumb: "./thumb_nail/양자_터널링.png"
-}
+     {title: "양자 터널링", category:"현대물리", desc:"입자가 벽을 뚫고 지나간다? 양자 터널 효과와 확률 파동",tags: ["양자역학", "터널링", "파동함수"], emoji: "👻",demo: "./simul/양자 터널링.html",curriculumId: "[12전자03-03]",thumb: "./thumb_nail/양자_터널링.png"},
+      {title: "맥스웰의 도깨비",  category: "열",  desc: "엔트로피를 거슬러라! 뜨거운 공과 차가운 공을 분류하는 미니 게임",  tags: ["엔트로피", "열역학", "게임"],  emoji: "😈",  demo: "./simul/멕스웰 도깨비.html", curriculumId: "[12역학02-05]",   thumb: "./thumb_nail/멕스웰 도깨비.png"}
 
   ];
   
