@@ -2,25 +2,41 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>편광 필름 실험 - 편안한 색감 (Comfortable Tone)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>편광과 LCD</title>
     <style>
         /* Pretendard 폰트 적용 */
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         
         body { margin: 0; overflow: hidden; background-color: #ffffff; font-family: 'Pretendard', sans-serif; }
         
-        /* UI 패널 */
+        /* 3D 캔버스 스타일 (기본) */
+        canvas#three-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+
+        /* UI 패널 (PC 기본 스타일) */
         #ui-container {
             position: absolute;
             top: 20px; left: 20px;
             width: 320px;
             padding: 25px;
-            background: rgba(255, 255, 255, 0.95); /* 불투명도 약간 높임 */
+            background: rgba(255, 255, 255, 0.95);
             border: 1px solid #e2e8f0;
             border-radius: 16px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
             z-index: 100;
+            max-height: 90vh; /* PC에서도 너무 길면 스크롤 */
+            overflow-y: auto;
         }
+
+        /* 스크롤바 커스텀 */
+        #ui-container::-webkit-scrollbar { width: 6px; }
+        #ui-container::-webkit-scrollbar-track { background: transparent; }
+        #ui-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 
         h1 { margin: 0 0 5px 0; font-size: 1.3rem; color: #1e293b; text-align: center; font-weight: 800; letter-spacing: -0.5px;}
         p.sub { margin: 0 0 20px 0; font-size: 0.9rem; color: #64748b; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; text-align: center;}
@@ -58,7 +74,6 @@
         }
         .checkbox-wrapper:hover { background: #f1f5f9; }
 
-        /* 제3 편광판 강조 스타일 (차분한 블루) */
         .special-wrapper {
             background-color: #eff6ff; 
             border: 1px solid #bfdbfe;
@@ -72,11 +87,64 @@
             border-radius: 12px;
             padding: 10px;
             margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        /* 그래프 캔버스 반응형 처리 */
+        #graphCanvas {
+            width: 100%;
+            height: auto;
+            max-width: 290px; 
         }
 
         #instruction {
             position: absolute; bottom: 30px; width: 100%; text-align: center;
             color: #94a3b8; font-size: 0.85rem; pointer-events: none; font-weight: 500;
+        }
+
+        /* =========================================
+           ★ 모바일 반응형 (Split View) 스타일 ★
+           ========================================= */
+        @media (max-width: 768px) {
+            /* 3D Scene: 화면 상단 45% 고정 */
+            canvas#three-canvas {
+                position: fixed !important;
+                top: 0; left: 0;
+                width: 100% !important;
+                height: 45vh !important; /* JS resize 로직과 일치해야 함 */
+                z-index: 0;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            /* UI 패널: 화면 하단 55% 스크롤 영역 */
+            #ui-container {
+                position: fixed !important;
+                top: 45vh !important; /* Scene 바로 아래 시작 */
+                left: 0 !important;
+                width: 100% !important;
+                height: 55vh !important; /* 나머지 높이 */
+                max-height: none !important;
+                
+                box-sizing: border-box; /* 패딩 포함 크기 계산 */
+                border-radius: 20px 20px 0 0; /* 상단 모서리 둥글게 */
+                border: none;
+                border-top: 1px solid #cbd5e1;
+                box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+                
+                padding: 20px;
+                overflow-y: auto;
+                background: #ffffff;
+            }
+
+            /* 모바일에서 불필요한 요소 숨김 */
+            #instruction { display: none; }
+            
+            h1 { font-size: 1.1rem; margin-top: 5px; }
+            p.sub { margin-bottom: 15px; padding-bottom: 10px; }
+            
+            /* 그래프 꽉 차게 */
+            #graphCanvas { max-width: 100%; }
         }
     </style>
     
@@ -90,6 +158,8 @@
     </script>
 </head>
 <body>
+
+<canvas id="three-canvas"></canvas>
 
 <div id="ui-container">
     <h1>편광 필름 실험실</h1>
@@ -107,7 +177,7 @@
         <label>실생활 응용 (LCD)</label>
         <div class="checkbox-wrapper">
             <input type="checkbox" id="lcdCheck" style="width:18px; height:18px; accent-color:#334155; cursor:pointer;">
-            <span style="font-size:0.9rem; color:#475569;" onclick="document.getElementById('lcdCheck').click()">액정 분자층 보기</span>
+            <span style="font-size:0.9rem; color:#475569; margin-left: 8px;" onclick="document.getElementById('lcdCheck').click()">액정 분자층 보기</span>
         </div>
         <button id="voltageBtn" class="btn" disabled>
             ⚡ 전압 스위치 (꺼짐)
@@ -118,7 +188,7 @@
         <label style="color:#2563eb;">심화 실험 (Vector)</label>
         <div class="checkbox-wrapper special-wrapper">
             <input type="checkbox" id="thirdPolCheck" style="width:18px; height:18px; accent-color:#2563eb; cursor:pointer;">
-            <span style="font-size:0.9rem; color:#2563eb; font-weight:bold;" onclick="document.getElementById('thirdPolCheck').click()">제3의 편광판 (45°) 끼우기</span>
+            <span style="font-size:0.9rem; color:#2563eb; font-weight:bold; margin-left: 8px;" onclick="document.getElementById('thirdPolCheck').click()">제3의 편광판 (45°) 끼우기</span>
         </div>
         <div class="special-text">
             * 90°로 어두워진 상태에서 끼워보세요.<br>
@@ -129,6 +199,10 @@
     <div id="graph-wrapper">
         <canvas id="graphCanvas" width="290" height="120"></canvas>
     </div>
+    
+    <div style="margin-top:20px; text-align:center; color:#94a3b8; font-size:0.8rem; display:none;" class="mobile-hint">
+        화면 상단을 드래그하여 회전해보세요.
+    </div>
 </div>
 
 <div id="instruction">마우스 드래그: 화면 회전 • 휠: 확대/축소</div>
@@ -138,35 +212,36 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
     // --- 1. 기본 설정 ---
+    const canvasElement = document.querySelector('#three-canvas');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xffffff); // 깔끔한 흰색
 
     const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 3000);
     camera.position.set(180, 80, 250); 
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ 
+        canvas: canvasElement, // HTML에 있는 캔버스 사용
+        antialias: true, 
+        alpha: true 
+    });
+    // 초기 사이즈 설정 (아래 handleResize에서 덮어씌워짐)
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 성능 최적화
     renderer.outputColorSpace = THREE.SRGBColorSpace; 
-    // 톤 매핑으로 밝은 빛을 부드럽게 처리
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
-    document.body.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
     // --- 2. 조명 (편안한 스튜디오 조명 세팅) ---
-    // 전체 베이스 조명: 0.7 정도로 적당히 밝게
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); 
     scene.add(ambientLight);
     
-    // 방향성 조명: 그림자를 부드럽게
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
     dirLight.position.set(50, 200, 100);
     scene.add(dirLight);
 
-    // 하이라이트용: 강도를 낮춰서 눈부심 방지
     const spotLight = new THREE.SpotLight(0xffffff, 500);
     spotLight.position.set(0, 150, 50);
     spotLight.angle = Math.PI / 3;
@@ -178,25 +253,22 @@
     const X_START = -180, X_POL1 = -60, X_LCD_S = -40, X_LCD_E = 40, X_POL2 = 60, X_END = 180;
     const WAVE_RES = 0.8, AMP = 18, FREQ = 0.15;
     
-    // [컬러 팔레트 정의 - 눈이 편안한 파스텔/딥 톤]
-    const COLOR_SRC = 0xf59e0b; // 차분한 앰버 (Amber)
-    const COLOR_MID = 0x0ea5e9; // 편안한 스카이 블루 (Sky)
-    const COLOR_END = 0x8b5cf6; // 부드러운 바이올렛 (Violet)
-    const COLOR_FILM = 0xcfe8fc; // 아주 연한 하늘색 필름
-    const COLOR_MOL = 0xa78bfa;  // 연한 보라색 (액정)
+    const COLOR_SRC = 0xf59e0b; 
+    const COLOR_MID = 0x0ea5e9; 
+    const COLOR_END = 0x8b5cf6; 
+    const COLOR_FILM = 0xcfe8fc; 
+    const COLOR_MOL = 0xa78bfa; 
 
-    // 액정 분자 재질 (고급스러운 유리 느낌)
     const matMol = new THREE.MeshPhysicalMaterial({ 
         color: COLOR_MOL,       
         metalness: 0.1,        
         roughness: 0.2,        
         clearcoat: 1.0,        
         clearcoatRoughness: 0.1,
-        transmission: 0.0, // 투명도 제거하여 더 잘보이게
+        transmission: 0.0,
         opacity: 1.0,
     });
 
-    // 2D 필름 생성 함수
     function createPure2DFilm(xPos, colorHex = COLOR_FILM) {
         const group = new THREE.Group();
         group.position.x = xPos;
@@ -205,7 +277,7 @@
         const filmMat = new THREE.MeshPhysicalMaterial({ 
             color: colorHex, 
             transparent: true, 
-            opacity: 0.4, // 적당한 투명도
+            opacity: 0.4,
             side: THREE.DoubleSide, 
             depthWrite: false,
             roughness: 0.2,
@@ -216,7 +288,6 @@
         film.name = "filmMesh";
         group.add(film);
 
-        // 테두리 프레임 (가시성 향상)
         const frameGeo = new THREE.EdgesGeometry(filmGeo);
         const frameMat = new THREE.LineBasicMaterial({ color: 0x94a3b8, transparent:true, opacity:0.5 });
         const frame = new THREE.LineSegments(frameGeo, frameMat);
@@ -240,17 +311,16 @@
         return group;
     }
 
-    // 전구 (눈이 안 아픈 따뜻한 빛)
     const bulbGroup = new THREE.Group();
     bulbGroup.position.x = X_START;
-    const bulbLight = new THREE.PointLight(0xffb700, 1.5, 400, 1); // 강도 조절
+    const bulbLight = new THREE.PointLight(0xffb700, 1.5, 400, 1); 
     bulbGroup.add(bulbLight);
 
     const bulbGeo = new THREE.SphereGeometry(12, 32, 32);
     const bulbMat = new THREE.MeshStandardMaterial({
         color: 0xffeebb,
         emissive: 0xffb700, 
-        emissiveIntensity: 1.0, // 너무 눈부시지 않게
+        emissiveIntensity: 1.0,
         transparent: true,
         opacity: 0.9,
         roughness: 0.3
@@ -266,16 +336,13 @@
     bulbGroup.add(socketMesh);
     scene.add(bulbGroup);
 
-    // 편광판들
     const pol1 = createPure2DFilm(X_POL1);
     const pol2 = createPure2DFilm(X_POL2);
     const polMid = createPure2DFilm(0);
     polMid.rotation.x = Math.PI / 4; 
     polMid.visible = false;
-    polMid.children[0].material.color.setHex(0xa7f3d0); // 부드러운 민트색
+    polMid.children[0].material.color.setHex(0xa7f3d0); 
 
-    // --- 4. 파동 (Waves) - 차분한 색상 적용 ---
-    // 1) 소스 파동
     const srcWaves = [];
     const srcGroup = new THREE.Group();
     scene.add(srcGroup);
@@ -291,7 +358,6 @@
         srcWaves.push(line);
     }
 
-    // 2) 중간 파동
     const midPts = [];
     for(let x=X_POL1; x<=X_POL2; x+=0.5) {
         midPts.push(new THREE.Vector3(x,0,0));
@@ -302,7 +368,6 @@
     );
     scene.add(midWave);
 
-    // 3) 결과 파동
     const endPts = [];
     for(let x=X_POL2; x<=X_END; x+=WAVE_RES) endPts.push(new THREE.Vector3(x,0,0));
     const endWave = new THREE.Line(
@@ -355,7 +420,6 @@
             if(state.lcd) { if(x >= X_LCD_S && x <= X_LCD_E) { const t = (x - X_LCD_S)/(X_LCD_E - X_LCD_S); currentAng = t * twistRad; } else if(x > X_LCD_E) currentAng = twistRad; }
             if(state.thirdPol && !state.lcd) { if (x > 0) { currentAng = Math.PI / 4; currentAmp = AMP * Math.cos(Math.PI/4); } }
             
-            // 미세 틈 (0.3)
             if(state.thirdPol && !state.lcd && Math.abs(x) < 0.3) { 
                 midPos[i*3+1] = NaN; midPos[i*3+2] = NaN; 
             } else {
@@ -386,7 +450,9 @@
 
         bulbMat.emissiveIntensity = 1.0 + Math.sin(simTime * 2) * 0.2; 
 
-        updateGraph(intensity, state.angle); controls.update(); renderer.render(scene, camera);
+        updateGraph(intensity, state.angle); 
+        controls.update(); 
+        renderer.render(scene, camera);
     }
 
     // --- UI 이벤트 ---
@@ -413,10 +479,9 @@
         
         const clampDeg = Math.min(deg, 90); const px = 40 + (clampDeg/90)*(w-50); const py = (h-20) - int*(h-30); 
         
-        // 막대 색상: 라벤더/보라 계열
         const r = 139 + Math.floor(int * 50);
         const g = 92  + Math.floor(int * 50);
-        const b = 246; // 고정된 밝은 보라색 베이스
+        const b = 246; 
         let barColor = `rgb(${r}, ${g}, ${b})`; 
         
         ctx.fillStyle = barColor; ctx.fillRect(40, py, px-40, (h-20)-py); 
@@ -425,7 +490,29 @@
         ctx.fillStyle = "#64748b"; ctx.font = "12px Pretendard"; ctx.fillText("최대", 10, 22); ctx.fillText("0°", 35, h-5); ctx.fillText("90°", w-25, h-5); 
         ctx.fillStyle = "#334155"; ctx.font = "bold 13px monospace"; ctx.fillText(`밝기: ${(int*100).toFixed(0)}%`, w-90, 20);
     }
-    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+    
+    // --- ★ 모바일 반응형 리사이즈 로직 ★ ---
+    function handleResize() {
+        const w = window.innerWidth;
+        let h = window.innerHeight;
+        
+        // 768px 이하 모바일 환경: 캔버스 높이 45% 고정
+        if(w <= 768) {
+            h = window.innerHeight * 0.45;
+            document.querySelector('.mobile-hint').style.display = 'block';
+        } else {
+             document.querySelector('.mobile-hint').style.display = 'none';
+        }
+
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+    }
+    
+    window.addEventListener('resize', handleResize);
+    // 초기 로드 시 실행
+    handleResize();
+
     animate();
 </script>
 </body>

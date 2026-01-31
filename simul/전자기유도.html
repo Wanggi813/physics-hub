@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>직류 전동기 (최종: 둥근 코일 보정)</title>
+  <title>전자기유도</title>
   <style>
     :root{ 
       --ink:#334155; 
@@ -31,6 +31,7 @@
       display: flex; justify-content: space-between; align-items: center;
       z-index: 5;
       pointer-events: none; 
+      box-sizing: border-box;
     }
     .brand { pointer-events: auto; font-weight: 700; font-size: 18px; color: #1e293b; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
     .small { font-size: 12px; color: #64748b; }
@@ -38,22 +39,29 @@
     #scene { position: fixed; inset: 0; z-index: 0; }
     #scene canvas { display: block; width: 100vw; height: 100vh; outline: none; }
 
+    /* UI 레이어 (PC에서는 투명 컨테이너, 모바일에서는 하단 패널) */
+    #ui-layer {
+      position: absolute; inset: 0; pointer-events: none; z-index: 10;
+      display: flex; flex-direction: column; /* PC 배치용 */
+    }
+
     /* HUD 패널 */
     .hud {
       position: fixed; left: 14px; top: 50px; width: 320px;
       background: rgba(255, 255, 255, 0.90);
       backdrop-filter: blur(8px);
       border: 1px solid rgba(200,200,200,0.5);
-      border-radius: 12px; padding: 16px; z-index: 10;
+      border-radius: 12px; padding: 16px; 
       box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
       max-height: 80vh; overflow-y: auto;
+      pointer-events: auto;
       -webkit-overflow-scrolling: touch; 
     }
     .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin: 12px 0; }
     .row label { font-size: 14px; font-weight: 600; color: #475569; }
     
     input[type=range] { width: 100%; accent-color: var(--primary); cursor: pointer; height: 24px; }
-    select { padding: 8px; border-radius: 4px; border: 1px solid #cbd5e1; color: #475569; font-size: 14px; }
+    select { padding: 8px; border-radius: 4px; border: 1px solid #cbd5e1; color: #475569; font-size: 14px; width: 100%; }
     
     .status-box {
       margin-top: 12px; padding-top: 12px; 
@@ -87,17 +95,66 @@
     .graphbox {
       position: fixed; right: 14px; top: 50px; width: 280px;
       background: rgba(255, 255, 255, 0.9);
-      border-radius: 12px; padding: 10px; z-index: 11;
+      border-radius: 12px; padding: 10px; 
       box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
-      pointer-events: none; 
+      pointer-events: auto; /* PC에서도 클릭 등 가능하게 */
     }
+    .graphbox canvas { display: block; width: 100%; height: auto; }
     
-    @media (max-width: 600px) {
-      .hud { width: calc(100% - 40px); left: 20px; top: auto; bottom: 20px; max-height: 40vh; }
-      .graphbox { top: 60px; right: 10px; width: 120px; opacity: 0.8; }
-      .graphbox canvas { width: 100%; height: 60px; }
-      header { justify-content: center; }
-      .small { display: none; }
+    /* =========================================
+       ★ 모바일 반응형 (Split View) 스타일 적용 ★
+       ========================================= */
+    @media (max-width: 768px) {
+      /* 헤더 간소화 */
+      header .small { display: none; }
+      header { height: 40px; font-size: 14px; }
+      .brand { font-size: 16px; }
+
+      /* 3D Scene: 화면 상단 45% 고정 */
+      #scene {
+        position: fixed !important;
+        top: 0; left: 0;
+        width: 100% !important;
+        height: 45vh !important; /* JS 리사이즈 로직과 일치 */
+        border-bottom: 2px solid #cbd5e1;
+        z-index: 0;
+      }
+      #scene canvas { width: 100% !important; height: 100% !important; }
+
+      /* UI 레이어 컨테이너: 화면 하단 55% 스크롤 영역 */
+      #ui-layer {
+        position: fixed;
+        top: 45vh; /* Scene 바로 아래 시작 */
+        left: 0;
+        width: 100%;
+        height: 55vh; /* 나머지 높이 */
+        overflow-y: auto; /* 세로 스크롤 허용 */
+        background: #f8fafc;
+        pointer-events: auto;
+        display: block; /* 블록 요소로 변경 */
+        padding-top: 10px;
+        padding-bottom: 40px;
+      }
+
+      /* UI 내부 요소들의 고정(fixed) 속성 해제하고 흐름에 따르게 변경 */
+      .hud, .graphbox {
+        position: relative !important;
+        top: auto !important; left: auto !important; right: auto !important; bottom: auto !important;
+        width: 92% !important;
+        max-width: none !important;
+        margin: 0 auto 12px auto !important;
+        transform: none !important;
+        background: #ffffff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      }
+      
+      .hud { max-height: none !important; order: 2; } /* 컨트롤 패널 순서 */
+      .graphbox { order: 1; } /* 그래프를 위로 올리거나 내릴 수 있음 (여기선 HTML 순서 따름) */
+
+      /* 스크롤바 스타일링 */
+      #ui-layer::-webkit-scrollbar { width: 6px; }
+      #ui-layer::-webkit-scrollbar-track { background: transparent; }
+      #ui-layer::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     }
   </style>
   
@@ -114,47 +171,51 @@
 
   <div id="scene"></div>
 
-  <div class="hud">
-    <div class="row">
-      <label for="I_curr">전류 크기 (Current)</label>
-      <span style="font-family:monospace; font-weight:bold;"><span id="Ival">0.16</span> A</span>
-    </div>
-    <input id="I_curr" type="range" min="0" max="0.32" step="0.01" value="0.16" />
-
-    <div class="row">
-      <label for="B_field">자기장 세기 (B)</label>
-      <span style="font-family:monospace; font-weight:bold;"><span id="Bval">0.08</span> T</span>
-    </div>
-    <input id="B_field" type="range" min="0" max="0.16" step="0.01" value="0.08" />
-
-    <div class="row">
-      <label>코일 개수</label>
-      <select id="coilCount">
-        <option value="1">1개 (기본)</option>
-        <option value="2">2개 (십자)</option>
-        <option value="4">4개 (원형)</option>
-      </select>
+  <div id="ui-layer">
+    
+    <div class="graphbox">
+      <canvas id="graph" width="300" height="120"></canvas>
+      <div style="text-align:right; font-size:11px; color:#64748b; margin-top:4px;">Time →</div>
     </div>
 
-    <div class="control-grid">
-      <button id="btnSlowToggle" class="btn btn-slow">🐢 0.1배속 느리게 보기 (OFF)</button>
-      <button id="btnMagnetSwap" class="btn btn-magnet">🧲 자석 위치 변경<br>(N ↔ S)</button>
-      <button id="btnCurrentRev" class="btn btn-current">⚡ 전류 방향 변경<br>(정방향)</button>
-      <button id="toggleForce" class="btn active">힘 화살표 보기</button>
-      <button id="btnPause" class="btn btn-pause">⏸ 일시정지</button>
-      <button id="resetCam" class="btn" style="grid-column: span 2;">📷 카메라 리셋</button>
+    <div class="hud">
+      <div class="row">
+        <label for="I_curr">전류 크기 (Current)</label>
+        <span style="font-family:monospace; font-weight:bold;"><span id="Ival">0.16</span> A</span>
+      </div>
+      <input id="I_curr" type="range" min="0" max="0.32" step="0.01" value="0.16" />
+
+      <div class="row">
+        <label for="B_field">자기장 세기 (B)</label>
+        <span style="font-family:monospace; font-weight:bold;"><span id="Bval">0.08</span> T</span>
+      </div>
+      <input id="B_field" type="range" min="0" max="0.16" step="0.01" value="0.08" />
+
+      <div class="row">
+        <label>코일 개수</label>
+        <select id="coilCount">
+          <option value="1">1개 (기본)</option>
+          <option value="2">2개 (십자)</option>
+          <option value="4">4개 (원형)</option>
+        </select>
+      </div>
+
+      <div class="control-grid">
+        <button id="btnSlowToggle" class="btn btn-slow">🐢 0.1배속 느리게 보기 (OFF)</button>
+        <button id="btnMagnetSwap" class="btn btn-magnet">🧲 자석 위치 변경<br>(N ↔ S)</button>
+        <button id="btnCurrentRev" class="btn btn-current">⚡ 전류 방향 변경<br>(정방향)</button>
+        <button id="toggleForce" class="btn active">힘 화살표 보기</button>
+        <button id="btnPause" class="btn btn-pause">⏸ 일시정지</button>
+        <button id="resetCam" class="btn" style="grid-column: span 2;">📷 카메라 리셋</button>
+      </div>
+
+      <div class="status-box">
+        <div>실제 입력 전류 = <span class="val-highlight" id="dispI">0.16</span> A</div>
+        <div>자기력 F = <span class="val-highlight" id="Fval">0.00</span> N</div>
+        <div>회전 속도 = <span class="val-highlight" id="RPMval">0</span> RPM</div>
+      </div>
     </div>
 
-    <div class="status-box">
-      <div>실제 입력 전류 = <span class="val-highlight" id="dispI">0.16</span> A</div>
-      <div>자기력 F = <span class="val-highlight" id="Fval">0.00</span> N</div>
-      <div>회전 속도 = <span class="val-highlight" id="RPMval">0</span> RPM</div>
-    </div>
-  </div>
-
-  <div class="graphbox">
-    <canvas id="graph" width="300" height="120"></canvas>
-    <div style="text-align:right; font-size:11px; color:#64748b; margin-top:4px;">Time →</div>
   </div>
 
   <script>
@@ -202,6 +263,8 @@
     // 2. 3D 씬 설정
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(window.devicePixelRatio);
+    
+    // 초기 사이즈 (resize 핸들러에서 덮어씌움)
     renderer.setSize(window.innerWidth, window.innerHeight);
     elScene.appendChild(renderer.domElement);
 
@@ -210,7 +273,7 @@
     camera.position.set(20, 15, 30);
     camera.lookAt(0, 0, 0);
 
-    // OrbircControls (터치/마우스 지원 공식 컨트롤러)
+    // OrbircControls
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true; 
     controls.dampingFactor = 0.05;
@@ -225,15 +288,13 @@
     dirLight.position.set(10, 20, 10);
     scene.add(dirLight);
 
-    // --- [색상 톤 다운] ---
-    // StandardMaterial을 사용하여 차분하고 고급스러운 질감 표현
+    // 재질 정의
     const matCopper = new THREE.MeshStandardMaterial({ color: 0xa65d29, roughness: 0.3, metalness: 0.6 });
     const matSteel = new THREE.MeshStandardMaterial({ color: 0xbdc3c7, roughness: 0.4, metalness: 0.5 });
     const matBrass = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3, metalness: 0.7 });
     
     const colRed = 0xc0392b; 
     const colBlue = 0x2980b9; 
-
     const matRed = new THREE.MeshStandardMaterial({ color: colRed, roughness: 0.4, metalness: 0.1 });
     const matBlue = new THREE.MeshStandardMaterial({ color: colBlue, roughness: 0.4, metalness: 0.1 });
     const matDark = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.9 });
@@ -282,11 +343,11 @@
       labelMesh.material.map = new THREE.CanvasTexture(cvs);
     }
 
-    // --- [위치 통합 설정] ---
+    // 위치 설정
     const MAIN_Z = 7.0; 
     const BRUSH_Z = 7.4; 
     const COMM_CENTER_Z = MAIN_Z;
-    const COIL_END_Z = MAIN_Z - 1.0; // 코일이 정류자와 겹치도록 설정
+    const COIL_END_Z = MAIN_Z - 1.0; 
 
     function createCurvedBrushGeo() {
       const shape = new THREE.Shape();
@@ -319,7 +380,7 @@
     wireR.rotation.z = Math.PI/2; wireR.position.set(5.8, 0, BRUSH_Z);
     brushGroup.add(wireL, wireR);
 
-    // --- 4. 로터 생성 (코일 둥근 관절 적용) ---
+    // 4. 로터 생성
     let rotorGroup = new THREE.Group();
     let arrows = []; 
 
@@ -363,9 +424,8 @@
 
       for(let i=0; i<n; i++) {
         const cGroup = new THREE.Group();
-        const w=5, l=12, t=0.25; // t: 전선 굵기
+        const w=5, l=12, t=0.25; 
         
-        // 1) 코일 주요 뼈대 (실린더)
         const sideL = new THREE.Mesh(new THREE.CylinderGeometry(t,t,l,8), matCopper); 
         sideL.rotation.x=Math.PI/2; sideL.position.x = -w/2;
         const sideR = new THREE.Mesh(new THREE.CylinderGeometry(t,t,l,8), matCopper); 
@@ -385,31 +445,14 @@
 
         cGroup.add(sideL, sideR, sideB, connL, connR);
 
-        // ★ [최종 수정 핵심] 2) 둥근 관절 부분 (Sphere) 추가 ★
-        // 전선 실린더들이 만나는 모서리에 구를 배치하여 끊어진 부분 차단 및 부드럽게 연결
-        const jointGeo = new THREE.SphereGeometry(t, 12, 8); // 반지름 t (굵기 동일)
+        const jointGeo = new THREE.SphereGeometry(t, 12, 8); 
 
-        // 관절 1: 왼쪽 앞 모서리 (sideL-connL)
-        const jointLFront = new THREE.Mesh(jointGeo, matCopper);
-        jointLFront.position.set(-w/2, 0, COIL_END_Z);
-        cGroup.add(jointLFront);
+        const jointLFront = new THREE.Mesh(jointGeo, matCopper); jointLFront.position.set(-w/2, 0, COIL_END_Z);
+        const jointLBack = new THREE.Mesh(jointGeo, matCopper); jointLBack.position.set(-w/2, 0, -l/2);
+        const jointRBack = new THREE.Mesh(jointGeo, matCopper); jointRBack.position.set(w/2, 0, -l/2);
+        const jointRFront = new THREE.Mesh(jointGeo, matCopper); jointRFront.position.set(w/2, 0, COIL_END_Z);
+        cGroup.add(jointLFront, jointLBack, jointRBack, jointRFront);
 
-        // 관절 2: 왼쪽 뒤 모서리 (sideL-sideB)
-        const jointLBack = new THREE.Mesh(jointGeo, matCopper);
-        jointLBack.position.set(-w/2, 0, -l/2);
-        cGroup.add(jointLBack);
-
-        // 관절 3: 오른쪽 뒤 모서리 (sideR-sideB)
-        const jointRBack = new THREE.Mesh(jointGeo, matCopper);
-        jointRBack.position.set(w/2, 0, -l/2);
-        cGroup.add(jointRBack);
-
-        // 관절 4: 오른쪽 앞 모서리 (sideR-connR)
-        const jointRFront = new THREE.Mesh(jointGeo, matCopper);
-        jointRFront.position.set(w/2, 0, COIL_END_Z);
-        cGroup.add(jointRFront);
-
-        // 힘 화살표
         const arrL = createArrow(); arrL.position.x = -w/2;
         const arrR = createArrow(); arrR.position.x = w/2;
         cGroup.add(arrL, arrR);
@@ -420,7 +463,7 @@
       }
     }
 
-    // --- 5. 물리 업데이트 ---
+    // 5. 물리 업데이트
     function update() {
       rawInputCurrent = parseFloat(inputI.value);
       rawInputB = parseFloat(inputB.value);
@@ -475,7 +518,11 @@
     }
 
     function drawGraph() {
-      ctxG.clearRect(0,0,300,120); ctxG.strokeStyle = 'rgba(200,200,200,0.5)'; ctxG.lineWidth=1;
+      // 캔버스의 실제 표시 크기에 맞춰 버퍼 크기 조정 (해상도 유지)
+      // 현재 graphbox css가 모바일에서 92% width이므로 고정 300px보다 유동적으로 그리는 게 좋음
+      // 여기선 간단히 비율 유지
+      ctxG.clearRect(0,0,300,120); 
+      ctxG.strokeStyle = 'rgba(200,200,200,0.5)'; ctxG.lineWidth=1;
       ctxG.beginPath(); ctxG.moveTo(0, 120); ctxG.lineTo(300, 120); ctxG.stroke();
       ctxG.strokeStyle = '#0284c7'; ctxG.lineWidth = 2; ctxG.beginPath();
       let curMax = 5; for(let i=0; i<300; i++) { const v = Math.abs(gBuf[i]); if(v > curMax) curMax = v; }
@@ -491,7 +538,7 @@
     function animate() {
       requestAnimationFrame(animate);
       update(); drawGraph();
-      controls.update(); // OrbitControls 관성 업데이트
+      controls.update(); 
       renderer.render(scene, camera);
     }
     
@@ -517,10 +564,22 @@
       btnPause.innerHTML = isPaused ? "▶ 재생" : "⏸ 일시정지"; btnPause.classList.toggle("paused");
     };
     
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+    // ★ 반응형 리사이즈 로직 (PC/Mobile 분기) ★
+    function onWindowResize() {
+      const w = window.innerWidth;
+      let h = window.innerHeight;
+      
+      // 모바일(768px 이하)이면 45% 높이만 캔버스로 사용
+      if(w <= 768){
+        h = window.innerHeight * 0.45;
+      }
+      
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+    window.addEventListener('resize', onWindowResize);
+    onWindowResize(); // 초기 실행
 
     createRotor(1);
     animate();
