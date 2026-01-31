@@ -158,6 +158,46 @@
   .challenge-box .best-bump{
     animation:bestPop .6s ease-out;
   }
+
+/* ===== 모바일 최적화 (Split View) ===== */
+  @media (max-width: 768px) {
+    /* 1. 상단 시뮬레이션 영역 (45%) */
+    #scene { 
+      height: 45vh !important; 
+      bottom: auto !important; 
+      border-bottom: 1px solid #24335b;
+    }
+    /* 우주선(관측자) 위치 조정 */
+    .rocket { 
+      top: 22.5vh !important; /* 시뮬레이션 영역의 수직 중앙 */
+      width: 120px !important; 
+      left: 10px !important;
+    }
+
+    /* 2. 하단 UI 스크롤 영역 (55%) */
+    #mobile-ui-scroll {
+      position: fixed; 
+      top: 45vh; left: 0; 
+      width: 100%; height: 55vh;
+      overflow-y: auto; 
+      background: #050a14; 
+      padding: 10px; 
+      box-sizing: border-box;
+      display: flex; flex-direction: column; gap: 10px;
+      z-index: 20;
+    }
+
+    /* 3. 패널 고정 해제 및 스타일 조정 */
+    .ui, .challenge-box {
+      position: relative !important; 
+      top: auto !important; left: auto !important; right: auto !important;
+      width: 100% !important; 
+      min-width: 0 !important;
+      margin: 0 !important;
+    }
+    .panel { width: 100% !important; min-width: 0 !important; }
+  }
+
 </style>
 </head>
 <body>
@@ -197,6 +237,8 @@
       <circle cx="168" cy="92" r="9" fill="#eaf6ff" opacity="0.9"/>
     </g>
   </svg>
+
+<div id="ui-layer">
 
   <!-- 왼쪽 상단 UI -->
   <div class="ui">
@@ -263,6 +305,7 @@
       <small>※ 정답일 때만 제출! / 라운드당 +50점, 총 10라운드</small>
     </div>
   </div>
+</div>
 
 <script src="./libs/three.min.js"></script>
 <script>
@@ -843,14 +886,44 @@ function setupRound(){
     updateAll();
     resetGameUI();
 
-    addEventListener('resize',()=>{
-      renderer.setSize(innerWidth,innerHeight);
-      camera.aspect=innerWidth/innerHeight;
+   function setupMobileLayout(){
+      if(window.innerWidth > 768) return;
+      
+      // 하단 스크롤 컨테이너 생성
+      let container = document.getElementById('mobile-ui-scroll');
+      if(!container){
+        container = document.createElement('div');
+        container.id = 'mobile-ui-scroll';
+        document.body.appendChild(container);
+        
+        // 기존 UI 요소들을 컨테이너로 이동 (순서: 도전박스 -> 조작패널)
+        const box = document.querySelector('.challenge-box');
+        const ui = document.querySelector('.ui');
+        if(box) container.appendChild(box);
+        if(ui) container.appendChild(ui);
+      }
+    }
+
+    function onWindowResize(){
+      // 모바일이면 45%, 데스크탑이면 100% 높이 사용
+      const isMobile = window.innerWidth <= 768;
+      const w = window.innerWidth;
+      const h = isMobile ? window.innerHeight * 0.45 : window.innerHeight;
+
+      renderer.setSize(w, h);
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
+
+      // 내부 객체들 크기/위치 업데이트
       fitShipToObserver();
       updateBars();
       updateVHud();
-    });
+    }
+
+    // 초기 실행
+    setupMobileLayout();
+    onWindowResize();
+    window.addEventListener('resize', onWindowResize);
 
     /* ================= 렌더 루프 ================= */
     let last=performance.now();
