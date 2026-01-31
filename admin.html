@@ -56,6 +56,9 @@
       margin:0 0 20px;
       font-size:13px;
       color:var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     .card{
       background:rgba(15,23,42,.9);
@@ -235,6 +238,8 @@
     .mono{
       font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
+    /* 숨김 처리용 유틸리티 */
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -242,37 +247,39 @@
     <h1>
       <span class="logo">⚛️</span>
       시(물리)에이션 관리자
-      <span class="pill">관리자 전용</span>
+      <span class="pill">Admin Mode</span>
     </h1>
-    <p class="subtitle">
-      Firebase Authentication / Firestore를 이용해 학생 계정을 등록·관리하는 페이지입니다.
-    </p>
+    <div class="subtitle">
+      <span>Firebase Firestore 데이터베이스 관리 페이지</span>
+      <button id="btn-logout" class="secondary small hidden">로그아웃</button>
+    </div>
 
     <div class="card lock-card" id="lock-card">
-      <p class="lock-title">관리자 비밀번호 확인</p>
+      <p class="lock-title">관리자 로그인</p>
       <p class="lock-sub">
-        선생님만 접속하는 관리자 페이지입니다. 사전에 정해 둔 관리자 비밀번호를 입력해 주세요.
+        관리자 계정으로 로그인하세요.<br>
+        (UID: <span class="mono">fwlMPfvz...</span> 계정만 접속 가능)
       </p>
-      <label for="admin-pass">관리자 비밀번호</label>
-      <input type="password" id="admin-pass" placeholder="예: physics-2025-!@#" />
+      
+      <label for="admin-email">관리자 아이디 (또는 이메일)</label>
+      <input type="text" id="admin-email" placeholder="예: admin" />
+
+      <label for="admin-pass">비밀번호</label>
+      <input type="password" id="admin-pass" placeholder="비밀번호 입력" />
+      
       <div class="flex-between mt-8">
-        <button id="btn-admin-enter">관리자 모드 입장</button>
-        <button type="button" class="secondary small" id="btn-toggle-pass">표시</button>
+        <button id="btn-admin-login">로그인</button>
       </div>
-      <p class="hint mt-4">
-        ⚠ 이 비밀번호는 단순 프론트엔드 잠금입니다. 학생에게 공유하지 말고, GitHub에 올릴 경우에는
-        나중에 환경변수/서버 등으로 숨겨주는 것이 좋습니다.
-      </p>
       <p class="status-line" id="admin-lock-status"></p>
     </div>
 
-    <div id="admin-main" style="display:none;">
+    <div id="admin-main" class="hidden">
 
       <div class="card">
-        <h2>🧑‍🎓 단일 학생 계정 생성 <span class="badge">ID / 비밀번호 배포용</span></h2>
+        <h2>🧑‍🎓 단일 학생 계정 생성 <span class="badge">1명 추가</span></h2>
         <p class="hint">
-          여기서 만든 계정은 <span class="tag">index.html</span>의 로그인 창에서 아이디만 입력해 사용할 수 있습니다.
-          (내부적으로 <code class="mono">아이디@myapp.local</code> 이메일 형식으로 저장됩니다.)
+          <strong>주의:</strong> 계정을 생성하면 관리자 로그인이 풀리고 새 학생 계정으로 로그인됩니다. 
+          생성 후 관리자 계정으로 다시 로그인해야 목록을 볼 수 있습니다.
         </p>
         <div class="row mt-8">
           <div>
@@ -306,7 +313,7 @@
         <div class="flex-between mt-4">
           <div style="display:flex;gap:8px;align-items:center;">
             <button type="button" class="secondary small" id="btn-auto-id">ID 자동 생성</button>
-            <span class="small">예: prefix = <span class="mono">s1A_</span>, 시작번호=1, 자리수=2 → <span class="mono">s1A_01</span></span>
+            <span class="small">예: s1A_01</span>
           </div>
           <button id="btn-create">계정 생성</button>
         </div>
@@ -314,12 +321,10 @@
       </div>
 
       <div class="card">
-        <h2>📥 CSV 일괄 계정 생성 <span class="badge">여러 학생 한 번에 등록</span></h2>
+        <h2>📥 CSV 일괄 계정 생성 <span class="badge">대량 추가</span></h2>
         <p class="hint">
-          CSV 형식 예시:<br>
-          <span class="mono">id,password</span><br>
-          <span class="mono">s1A_01,111111</span><br>
-          <span class="mono">s1A_02,</span>  ← 비밀번호 빈칸이면 자동으로 8자리 랜덤 비밀번호가 생성됩니다.
+          CSV 형식: <span class="mono">id,password</span> (비번 없으면 자동)<br>
+          계정 생성 진행 중에는 관리자 권한이 임시로 해제될 수 있습니다.
         </p>
         <div class="row mt-8">
           <div>
@@ -342,7 +347,7 @@
               </tr>
             </thead>
             <tbody id="csv-tbody">
-              <tr><td colspan="4" class="small">CSV 파일을 선택하면 여기에서 계정 목록을 확인할 수 있습니다.</td></tr>
+              <tr><td colspan="4" class="small">CSV 파일을 선택해주세요.</td></tr>
             </tbody>
           </table>
         </div>
@@ -354,10 +359,10 @@
       </div>
 
       <div class="card">
-        <h2>📊 점수 / 사용자 목록</h2>
+        <h2>📊 점수 및 사용자 목록</h2>
         <div class="flex-between">
           <p class="hint">
-            Firestore <span class="tag">scores</span> 컬렉션 기준으로 ID·점수를 확인합니다.
+            Firestore <span class="tag">scores</span> 컬렉션 데이터
           </p>
           <button class="secondary" id="btn-refresh">목록 새로고침</button>
         </div>
@@ -372,7 +377,7 @@
               </tr>
             </thead>
             <tbody id="score-tbody">
-              <tr><td colspan="4" class="small">아직 데이터를 불러오지 않았습니다. [목록 새로고침] 버튼을 눌러 주세요.</td></tr>
+              <tr><td colspan="4" class="small">데이터를 불러오려면 [목록 새로고침]을 누르세요.</td></tr>
             </tbody>
           </table>
         </div>
@@ -383,7 +388,7 @@
         <h2>📢 건의함 수신 목록</h2>
         <div class="flex-between">
           <p class="hint">
-            학생들이 보낸 의견입니다. 확인 후 [삭제] 버튼을 눌러 목록에서 지울 수 있습니다.
+            학생 의견 확인 및 삭제
           </p>
           <button class="secondary" id="btn-refresh-sugg">건의함 새로고침</button>
         </div>
@@ -423,6 +428,8 @@
     import {
       getAuth,
       createUserWithEmailAndPassword,
+      signInWithEmailAndPassword, // 로그인용
+      onAuthStateChanged,         // 상태감지용
       signOut
     } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
     import {
@@ -435,10 +442,10 @@
       query,
       orderBy,
       limit,
-      deleteDoc // <--- [추가됨] 삭제 기능용
+      deleteDoc 
     } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
-    // ===== 2. Firebase 설정 (index와 동일 프로젝트) =====
+    // ===== 2. Firebase 설정 =====
     const firebaseConfig = {
       apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
       authDomain: "simulation-67cd3.firebaseapp.com",
@@ -454,55 +461,95 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // ===== 3. 간단 관리자 잠금 (프론트엔드 비밀번호) =====
-    // ⚠ 실제 비밀값은 나중에 꼭 바꾸세요!
-    const ADMIN_PASSWORD = "dhkdrl@960813";
+    // ===== 3. 관리자 UID 및 DOM 요소 =====
+    // 🔥 아래 UID와 일치하는 계정으로 로그인해야만 데이터 접근이 가능합니다.
+    const ADMIN_UID = "fwlMPfvz8ITNN5ajAuhnwoplqGB3";
 
     const lockCard = document.getElementById("lock-card");
     const adminMain = document.getElementById("admin-main");
+    const btnLogout = document.getElementById("btn-logout");
+
+    const adminEmailInput = document.getElementById("admin-email");
     const adminPassInput = document.getElementById("admin-pass");
     const adminLockStatus = document.getElementById("admin-lock-status");
-    const btnAdminEnter = document.getElementById("btn-admin-enter");
-    const btnTogglePass = document.getElementById("btn-toggle-pass");
+    const btnAdminLogin = document.getElementById("btn-admin-login");
 
-    btnAdminEnter.addEventListener("click", () => {
-      const val = adminPassInput.value.trim();
-      if (!val) {
-        adminLockStatus.textContent = "비밀번호를 입력해 주세요.";
+    // ===== 4. 로그인 및 권한 체크 로직 =====
+
+    // (1) 로그인 버튼 클릭
+    btnAdminLogin.addEventListener("click", async () => {
+      let emailInput = adminEmailInput.value.trim();
+      const pw = adminPassInput.value.trim();
+
+      if (!emailInput || !pw) {
+        adminLockStatus.textContent = "아이디와 비밀번호를 모두 입력하세요.";
         adminLockStatus.className = "status-line status-err";
         return;
       }
-      if (val === ADMIN_PASSWORD) {
-        lockCard.style.display = "none";
-        adminMain.style.display = "block";
-        adminLockStatus.textContent = "";
-      } else {
-        adminLockStatus.textContent = "비밀번호가 올바르지 않습니다.";
+
+      // ✨ [핵심] 아이디만 입력 시 자동으로 도메인 추가
+      let finalEmail = emailInput;
+      if (!finalEmail.includes("@")) {
+        finalEmail += "@myapp.local"; 
+      }
+
+      adminLockStatus.textContent = "로그인 중...";
+      adminLockStatus.className = "status-line";
+
+      try {
+        const cred = await signInWithEmailAndPassword(auth, finalEmail, pw);
+        if (cred.user.uid !== ADMIN_UID) {
+          throw new Error("관리자 계정이 아닙니다. (UID 불일치)");
+        }
+        // 성공 시 onAuthStateChanged에서 화면 전환됨
+      } catch (err) {
+        console.error(err);
+        adminLockStatus.textContent = `로그인 실패 (${emailInput}): ` + err.message;
         adminLockStatus.className = "status-line status-err";
+        await signOut(auth);
       }
     });
 
-    btnTogglePass.addEventListener("click", () => {
-      if (adminPassInput.type === "password") {
-        adminPassInput.type = "text";
-        btnTogglePass.textContent = "숨기기";
-      } else {
-        adminPassInput.type = "password";
-        btnTogglePass.textContent = "표시";
-      }
-    });
-
+    // (2) 엔터키 처리
     adminPassInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") btnAdminEnter.click();
+      if (e.key === "Enter") btnAdminLogin.click();
     });
 
-    // ===== 4. 단일 계정 생성 + ID 자동 생성 =====
+    // (3) 로그아웃 버튼
+    btnLogout.addEventListener("click", async () => {
+      await signOut(auth);
+      window.location.reload(); // 깔끔하게 새로고침
+    });
+
+    // (4) 인증 상태 변화 감지 (화면 전환 핵심)
+    onAuthStateChanged(auth, (user) => {
+      if (user && user.uid === ADMIN_UID) {
+        // 관리자 인증 성공
+        lockCard.classList.add("hidden");
+        adminMain.classList.remove("hidden");
+        btnLogout.classList.remove("hidden");
+        adminLockStatus.textContent = "";
+        console.log("관리자 모드 활성화: ", user.email);
+      } else {
+        // 비로그인 또는 일반 유저(학생 생성 직후 등)
+        lockCard.classList.remove("hidden");
+        adminMain.classList.add("hidden");
+        btnLogout.classList.add("hidden");
+        
+        // 로그인 되어있는데 관리자가 아니면?
+        if (user) {
+          adminLockStatus.textContent = `현재 로그인된 계정(${user.email || user.uid})은 관리자가 아닙니다.`;
+          adminLockStatus.className = "status-line status-err";
+        }
+      }
+    });
+
+    // ===== 5. 기능: ID 자동 생성 =====
     const newIdInput = document.getElementById("new-id");
     const newPassInput = document.getElementById("new-pass");
     const newPass2Input = document.getElementById("new-pass2");
     const btnCreate = document.getElementById("btn-create");
     const createStatus = document.getElementById("create-status");
-
     const autoPrefixInput = document.getElementById("auto-prefix");
     const autoStartInput = document.getElementById("auto-start");
     const autoDigitsInput = document.getElementById("auto-digits");
@@ -521,71 +568,54 @@
       let startNum = parseInt(autoStartInput.value, 10);
       const digits = Math.max(1, parseInt(autoDigitsInput.value, 10) || 1);
 
-      if (!autoCounter) {
-        autoCounter = isNaN(startNum) ? 1 : startNum;
-      } else {
-        autoCounter++;
-      }
+      if (!autoCounter) autoCounter = isNaN(startNum) ? 1 : startNum;
+      else autoCounter++;
 
       const id = prefix + padNumber(autoCounter, digits);
       newIdInput.value = id;
-
-      createStatus.textContent = `자동 생성된 ID: ${id}`;
+      createStatus.textContent = `자동 ID: ${id}`;
       createStatus.className = "status-line";
     });
 
+    // ===== 6. 기능: 단일 계정 생성 =====
     btnCreate.addEventListener("click", async () => {
       const id = newIdInput.value.trim();
       const pw1 = newPassInput.value;
       const pw2 = newPass2Input.value;
 
       createStatus.textContent = "";
-      createStatus.className = "status-line";
-
-      if (!id) {
-        createStatus.textContent = "학생 아이디를 입력해 주세요.";
-        createStatus.className = "status-line status-err";
-        return;
-      }
-      if (pw1.length < 6) {
-        createStatus.textContent = "비밀번호는 최소 6자리 이상이어야 합니다.";
-        createStatus.className = "status-line status-err";
-        return;
-      }
-      if (pw1 !== pw2) {
-        createStatus.textContent = "비밀번호와 비밀번호 확인이 일치하지 않습니다.";
-        createStatus.className = "status-line status-err";
-        return;
-      }
+      if (!id) return alert("ID를 입력하세요.");
+      if (pw1.length < 6) return alert("비밀번호 6자리 이상 필수");
+      if (pw1 !== pw2) return alert("비밀번호 불일치");
 
       const email = id + "@myapp.local";
-
       btnCreate.disabled = true;
-      createStatus.textContent = "계정을 생성하는 중입니다…";
+      createStatus.textContent = "생성 중...";
 
       try {
         const cred = await createUserWithEmailAndPassword(auth, email, pw1);
-
+        
         await setDoc(doc(db, "users", cred.user.uid), { ID: id });
         await setDoc(doc(db, "scores", cred.user.uid), { ID: id, score: 0 });
 
-        createStatus.textContent = `계정 생성 완료: ${id}`;
+        createStatus.textContent = `생성 완료: ${id} (관리자 재로그인 필요)`;
         createStatus.className = "status-line status-ok";
-
+        newIdInput.value = "";
         newPassInput.value = "";
         newPass2Input.value = "";
-
-        await signOut(auth);
+        
+        alert("계정이 생성되었습니다.\n보안상 관리자 로그인이 해제되었으니 다시 로그인해주세요.");
+        await signOut(auth); 
       } catch (err) {
-        console.error("계정 생성 오류:", err);
-        createStatus.textContent = "계정 생성 오류: " + err.message;
+        console.error(err);
+        createStatus.textContent = "오류: " + err.message;
         createStatus.className = "status-line status-err";
       } finally {
         btnCreate.disabled = false;
       }
     });
 
-    // ===== 5. CSV 일괄 계정 생성 =====
+    // ===== 7. 기능: CSV 일괄 생성 =====
     const csvFileInput = document.getElementById("csv-file");
     const csvTbody = document.getElementById("csv-tbody");
     const btnBulkCreate = document.getElementById("btn-bulk-create");
@@ -594,320 +624,218 @@
     const bulkStatus = document.getElementById("bulk-status");
 
     let csvRows = [];
-
+    
     function resetCsvTable(){
       csvRows = [];
-      csvTbody.innerHTML = `
-        <tr><td colspan="4" class="small">CSV 파일을 선택하면 여기에서 계정 목록을 확인할 수 있습니다.</td></tr>
-      `;
+      csvTbody.innerHTML = `<tr><td colspan="4" class="small">CSV 파일을 선택해주세요.</td></tr>`;
       bulkSummary.textContent = "읽어온 행: 0";
       bulkStatus.textContent = "";
-      bulkStatus.className = "status-line";
     }
-
     btnClearCsv.addEventListener("click", resetCsvTable);
 
-    function parseCsv(text){
-      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-      if (!lines.length) return [];
-
-      let startIndex = 0;
-      const first = lines[0].toLowerCase();
-      const hasHeader = first.includes("id") && (first.includes("password") || first.includes("pw"));
-      if (hasHeader) startIndex = 1;
-
-      const arr = [];
-      for (let i = startIndex; i < lines.length; i++){
-        const line = lines[i];
-        const parts = line.split(","); 
-        const id = (parts[0] || "").trim();
-        const pw = (parts[1] || "").trim();
-        if (!id) continue;
-        arr.push({ id, password: pw });
-      }
-      return arr;
-    }
-
-    function randomPassword(len = 8){
-      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-      let out = "";
-      for(let i=0;i<len;i++){
-        out += chars.charAt(Math.floor(Math.random()*chars.length));
-      }
-      return out;
+    function randomPassword(len=8){
+      const c = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+      let o=""; for(let i=0;i<len;i++) o+=c.charAt(Math.floor(Math.random()*c.length));
+      return o;
     }
 
     csvFileInput.addEventListener("change", () => {
       const file = csvFileInput.files?.[0];
-      if (!file) {
-        resetCsvTable();
-        return;
-      }
+      if (!file) return resetCsvTable();
 
       const reader = new FileReader();
       reader.onload = (e) => {
         const text = String(e.target.result || "");
-        const arr = parseCsv(text);
+        const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
+        if(!lines.length) return resetCsvTable();
 
-        if (!arr.length) {
-          resetCsvTable();
-          bulkStatus.textContent = "CSV에서 유효한 행을 찾지 못했습니다.";
-          bulkStatus.className = "status-line status-err";
-          return;
-        }
+        let start = 0;
+        if(lines[0].toLowerCase().includes("id")) start = 1;
 
         csvRows = [];
         csvTbody.innerHTML = "";
+        
+        for(let i=start; i<lines.length; i++){
+          const parts = lines[i].split(",");
+          const id = (parts[0]||"").trim();
+          let pw = (parts[1]||"").trim();
+          if(!id) continue;
+          
+          if(!pw || pw.length<6) pw = randomPassword(8);
 
-        arr.forEach((row, idx) => {
           const tr = document.createElement("tr");
-
-          const tdIdx = document.createElement("td");
-          tdIdx.textContent = String(idx+1);
-
-          const tdId = document.createElement("td");
-          tdId.textContent = row.id;
-
-          const tdPw = document.createElement("td");
-          const pwText = row.password || "(자동 생성)";
-          tdPw.textContent = pwText;
-
-          const tdStatus = document.createElement("td");
-          tdStatus.textContent = "대기";
-          tdStatus.className = "small";
-
-          tr.append(tdIdx, tdId, tdPw, tdStatus);
+          tr.innerHTML = `
+            <td>${csvRows.length+1}</td>
+            <td>${id}</td>
+            <td>${pw}</td>
+            <td class="small">대기</td>
+          `;
           csvTbody.appendChild(tr);
-
-          csvRows.push({
-            id: row.id,
-            password: row.password, 
-            statusEl: tdStatus
-          });
-        });
-
+          
+          csvRows.push({ id, pw, statusEl: tr.querySelector("td:last-child") });
+        }
         bulkSummary.textContent = `읽어온 행: ${csvRows.length}`;
-        bulkStatus.textContent = "";
-        bulkStatus.className = "status-line";
       };
-      reader.readAsText(file, "utf-8");
+      reader.readAsText(file);
     });
 
     btnBulkCreate.addEventListener("click", async () => {
-      if (!csvRows.length) {
-        bulkStatus.textContent = "먼저 CSV 파일을 선택해 주세요.";
-        bulkStatus.className = "status-line status-err";
-        return;
-      }
-
-      let success = 0;
-      let fail = 0;
+      if(!csvRows.length) return alert("데이터가 없습니다.");
+      if(!confirm("일괄 생성을 시작합니까?\n중간에 관리자 로그인이 해제될 수 있으니 완료될 때까지 기다려주세요.")) return;
 
       btnBulkCreate.disabled = true;
-      bulkStatus.textContent = "계정을 순서대로 생성하는 중입니다…";
-      bulkStatus.className = "status-line";
+      let s=0, f=0;
 
-      for (let i = 0; i < csvRows.length; i++){
+      for(let i=0; i<csvRows.length; i++){
         const row = csvRows[i];
-        const id = row.id.trim();
-        let pw = row.password?.trim();
-
-        if (!id) {
-          row.statusEl.textContent = "ID 없음 (건너뜀)";
-          row.statusEl.className = "small";
-          continue;
-        }
-        if (!pw || pw.length < 6) {
-          pw = randomPassword(8);
-          row.password = pw;
-          const pwCell = row.statusEl.previousElementSibling;
-          if (pwCell) pwCell.textContent = pw + " (자동)";
-        }
-
-        const email = id + "@myapp.local";
-        row.statusEl.textContent = "생성 중…";
-        row.statusEl.className = "small";
-
+        const email = row.id + "@myapp.local";
+        
+        row.statusEl.textContent = "생성 중...";
         try {
-          const cred = await createUserWithEmailAndPassword(auth, email, pw);
-
-          await setDoc(doc(db, "users", cred.user.uid), { ID: id });
-          await setDoc(doc(db, "scores", cred.user.uid), { ID: id, score: 0 });
-
+          await signOut(auth); 
+          const cred = await createUserWithEmailAndPassword(auth, email, row.pw);
+          await setDoc(doc(db, "users", cred.user.uid), { ID: row.id });
+          await setDoc(doc(db, "scores", cred.user.uid), { ID: row.id, score: 0 });
+          
           row.statusEl.textContent = "성공";
-          row.statusEl.className = "small";
-          row.statusEl.style.color = "#22c55e";
-          success++;
-
-          await signOut(auth);
-        } catch (err) {
-          console.error("CSV 계정 생성 오류:", err);
-          row.statusEl.textContent = "실패: " + (err.code || err.message);
-          row.statusEl.className = "small";
-          row.statusEl.style.color = "#ef4444";
-          fail++;
+          row.statusEl.className = "status-ok small";
+          s++;
+        } catch(e) {
+          console.error(e);
+          row.statusEl.textContent = "실패: " + e.code;
+          row.statusEl.className = "status-err small";
+          f++;
         }
-
-        bulkSummary.textContent = `진행: ${i+1}/${csvRows.length} (성공 ${success} / 실패 ${fail})`;
       }
-
-      bulkStatus.textContent = `일괄 생성 완료 — 성공 ${success}건, 실패 ${fail}건`;
-      bulkStatus.className = "status-line " + (fail ? "status-err" : "status-ok");
+      
+      bulkStatus.textContent = `완료: 성공 ${s}, 실패 ${f}. (관리자 재로그인 필요)`;
+      alert("일괄 생성이 완료되었습니다.\n관리자 계정으로 다시 로그인해주세요.");
+      await signOut(auth);
       btnBulkCreate.disabled = false;
     });
 
-    // ===== 6. 점수 / 사용자 목록 조회 =====
+    // ===== 8. 기능: 점수 목록 조회 =====
     const btnRefresh = document.getElementById("btn-refresh");
     const tbody = document.getElementById("score-tbody");
     const listStatus = document.getElementById("list-status");
 
     btnRefresh.addEventListener("click", async () => {
-      tbody.innerHTML = `
-        <tr><td colspan="4" class="small">데이터를 불러오는 중입니다…</td></tr>
-      `;
+      if (!auth.currentUser || auth.currentUser.uid !== ADMIN_UID) {
+         return alert("관리자 로그인이 필요합니다.");
+      }
+
+      tbody.innerHTML = `<tr><td colspan="4" class="small">로딩 중...</td></tr>`;
       listStatus.textContent = "";
-      listStatus.className = "status-line";
 
       try {
-        const q = query(
-          collection(db, "scores"),
-          orderBy("score", "desc"),
-          limit(200)
-        );
+        const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(200));
         const snap = await getDocs(q);
 
         if (snap.empty) {
-          tbody.innerHTML = `
-            <tr><td colspan="4" class="small">아직 등록된 점수/사용자가 없습니다.</td></tr>
-          `;
-          listStatus.textContent = "불러올 데이터가 없습니다.";
-          listStatus.className = "status-line";
+          tbody.innerHTML = `<tr><td colspan="4" class="small">데이터 없음</td></tr>`;
           return;
         }
 
+        let html = "";
         let i = 0;
-        const rows = [];
-        snap.forEach(docSnap => {
+        snap.forEach(d => {
           i++;
-          const data = docSnap.data();
-          const id = data.ID || "(ID 없음)";
-          const score = data.score ?? 0;
-          const uid = docSnap.id || "";
-          const shortUid = uid.length > 10 ? uid.slice(0, 10) + "…" : uid;
-
-          rows.push(`
+          const val = d.data();
+          html += `
             <tr>
               <td>${i}</td>
-              <td>${id}</td>
-              <td>${score}</td>
-              <td class="small">${shortUid}</td>
+              <td>${val.ID || "-"}</td>
+              <td>${val.score ?? 0}</td>
+              <td class="small">${d.id.substring(0,10)}...</td>
             </tr>
-          `);
+          `;
         });
-        tbody.innerHTML = rows.join("");
-        listStatus.textContent = `총 ${i}명의 기록을 불러왔습니다.`;
+        tbody.innerHTML = html;
+        listStatus.textContent = `총 ${i}명 조회됨`;
         listStatus.className = "status-line status-ok";
       } catch (err) {
-        console.error("목록 불러오기 오류:", err);
-        tbody.innerHTML = `
-          <tr><td colspan="4" class="small">목록을 불러오지 못했습니다.</td></tr>
-        `;
-        listStatus.textContent = "목록 불러오기 오류: " + err.message;
+        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="4" class="small">로드 실패</td></tr>`;
+        listStatus.textContent = "권한 오류: " + err.message;
         listStatus.className = "status-line status-err";
       }
     });
 
-    // ===== 7. 건의함 불러오기 및 삭제 [새로 추가된 기능] =====
+    // ===== 9. 기능: 건의함 조회 및 삭제 =====
     const btnRefreshSugg = document.getElementById("btn-refresh-sugg");
     const suggTbody = document.getElementById("sugg-tbody");
     const suggStatus = document.getElementById("sugg-status");
 
-    // 날짜 포맷 함수
-    function formatTime(timestamp) {
-      if (!timestamp) return "-";
-      const d = timestamp.toDate();
-      return d.getFullYear() + "-" +
-             String(d.getMonth()+1).padStart(2,"0") + "-" +
-             String(d.getDate()).padStart(2,"0") + " " +
-             String(d.getHours()).padStart(2,"0") + ":" +
-             String(d.getMinutes()).padStart(2,"0");
+    function formatTime(ts) {
+      if(!ts) return "-";
+      const d = ts.toDate();
+      return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${d.getMinutes()}`;
     }
 
     async function loadSuggestions() {
-      suggTbody.innerHTML = `<tr><td colspan="5" class="small">불러오는 중...</td></tr>`;
-      suggStatus.textContent = "";
-
+      if (!auth.currentUser || auth.currentUser.uid !== ADMIN_UID) {
+         return alert("관리자 로그인이 필요합니다.");
+      }
+      suggTbody.innerHTML = `<tr><td colspan="5" class="small">로딩 중...</td></tr>`;
+      
       try {
         const q = query(collection(db, "suggestions"), orderBy("date", "desc"));
         const snap = await getDocs(q);
 
         if (snap.empty) {
-          suggTbody.innerHTML = `<tr><td colspan="5" class="small">도착한 의견이 없습니다.</td></tr>`;
+          suggTbody.innerHTML = `<tr><td colspan="5" class="small">건의 사항 없음</td></tr>`;
           suggStatus.textContent = "데이터 없음";
           return;
         }
 
         let html = "";
-        let idx = 0;
-        snap.forEach((docSnap) => {
-          idx++;
-          const data = docSnap.data();
-          const docId = docSnap.id;
-          
-          const dateStr = formatTime(data.date);
-          const writer = data.writerID || data.userId || "(알수없음)";
-          const title = data.title || "(제목 없음)";
-          const content = data.content || "";
-
+        let i = 0;
+        snap.forEach(d => {
+          i++;
+          const data = d.data();
           html += `
             <tr>
-              <td>${idx}</td>
-              <td class="small" style="color:#9ca3af;">${dateStr}</td>
-              <td style="font-weight:bold; color:#a5b4fc;">${writer}</td>
+              <td>${i}</td>
+              <td class="small">${formatTime(data.date)}</td>
+              <td style="font-weight:bold;color:#a5b4fc">${data.writerID || "익명"}</td>
               <td>
-                <div style="font-weight:bold; margin-bottom:4px;">${title}</div>
-                <div class="small" style="white-space:pre-wrap;">${content}</div>
+                <div style="font-weight:bold">${data.title || "(무제)"}</div>
+                <div class="small">${data.content || ""}</div>
               </td>
               <td>
-                <button class="danger small btn-del-sugg" data-id="${docId}">삭제</button>
+                <button class="danger small btn-del-sugg" data-id="${d.id}">삭제</button>
               </td>
             </tr>
           `;
         });
-
         suggTbody.innerHTML = html;
-        suggStatus.textContent = `총 ${idx}건의 의견을 불러왔습니다.`;
+        suggStatus.textContent = `총 ${i}건`;
         suggStatus.className = "status-line status-ok";
 
-        // 삭제 버튼 이벤트 연결
         document.querySelectorAll(".btn-del-sugg").forEach(btn => {
           btn.addEventListener("click", async (e) => {
-            const idToDelete = e.target.getAttribute("data-id");
-            if(confirm("정말 이 의견을 삭제하시겠습니까?")) {
-              await deleteSuggestion(idToDelete);
+            if(!confirm("삭제하시겠습니까?")) return;
+            const docId = e.target.dataset.id;
+            try {
+              await deleteDoc(doc(db, "suggestions", docId));
+              alert("삭제되었습니다.");
+              loadSuggestions();
+            } catch(err) {
+              alert("삭제 실패: " + err.message);
             }
           });
         });
 
       } catch (err) {
         console.error(err);
-        suggTbody.innerHTML = `<tr><td colspan="5" class="small">오류 발생</td></tr>`;
-        suggStatus.textContent = "불러오기 실패: " + err.message;
+        suggTbody.innerHTML = `<tr><td colspan="5" class="small">로드 실패</td></tr>`;
+        suggStatus.textContent = "권한 오류: " + err.message;
         suggStatus.className = "status-line status-err";
       }
     }
 
-    async function deleteSuggestion(docId) {
-      try {
-        await deleteDoc(doc(db, "suggestions", docId));
-        alert("삭제되었습니다.");
-        loadSuggestions();
-      } catch (err) {
-        alert("삭제 실패: " + err.message);
-      }
-    }
-
     btnRefreshSugg.addEventListener("click", loadSuggestions);
+
   </script>
 </body>
 </html>
