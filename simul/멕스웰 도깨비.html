@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>맥스웰의 도깨비 (Mobile Edition)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap');
+
+        /* [모바일 기본 설정] 스크롤 및 터치 제스처 방지 */
+        body {
+            margin: 0; padding: 0;
+            background-color: #0f150f;
+            overflow: hidden; /* 스크롤바 제거 */
+            font-family: 'Noto Sans KR', sans-serif;
+            user-select: none; /* 텍스트 선택 방지 */
+            touch-action: none; /* 모바일에서 핀치줌/스크롤 방지 */
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        canvas { display: block; width: 100vw; height: 100vh; }
+
+        /* --- [회전 유도 오버레이] 세로 모드일 때만 표시 --- */
+        #rotate-overlay {
+            display: none; /* 기본 숨김 */
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #1a1a1a; z-index: 9999;
+            flex-direction: column; justify-content: center; align-items: center;
+            color: white; text-align: center;
+        }
+        
+        #rotate-icon {
+            font-size: 4rem; margin-bottom: 20px;
+            animation: rotate-ani 2s infinite ease-in-out;
+        }
+        
+        @keyframes rotate-ani {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(-90deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        /* 미디어 쿼리: 화면이 세로(Portrait)일 때 게임 숨기고 오버레이 표시 */
+        @media screen and (orientation: portrait) {
+            #rotate-overlay { display: flex; }
+            #hud, canvas { display: none; }
+        }
+
+        /* --- HUD UI --- */
+        #hud {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; flex-direction: column; justify-content: space-between;
+        }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: flex-start; padding: 2vh 4vw; }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.6); padding: 10px 15px; border-radius: 12px;
+            text-align: center; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1);
+            min-width: 100px;
+        }
+
+        .label { font-size: 0.8rem; color: #ccc; margin-bottom: 5px; }
+        .value { font-family: 'Orbitron', monospace; font-size: 1.5rem; font-weight: bold; }
+        .red-text { color: #ff4d4d; } .blue-text { color: #4d4dff; }
+
+        .center-stats { display: flex; flex-direction: column; align-items: center; margin-top: 5px; }
+        
+        /* 반응형 크기 조절 (vmin 사용) */
+        #entropy-bar-container {
+            width: 30vw; max-width: 300px; height: 10px; background: rgba(255,255,255,0.1);
+            border-radius: 7px; overflow: hidden; margin-bottom: 5px; border: 1px solid rgba(255,255,255,0.2);
+        }
+        #entropy-bar { height: 100%; width: 100%; background: linear-gradient(90deg, #4dff4d, #ffff4d, #ff4d4d); transition: width 0.3s; }
+
+        #battery-panel {
+            margin-top: 10px; display: flex; align-items: center; gap: 8px;
+            background: rgba(0,0,0,0.5); padding: 5px 12px; border-radius: 20px; border: 1px solid #555;
+        }
+        #battery-bar-container { width: 100px; height: 8px; background: #333; border-radius: 5px; overflow: hidden; }
+        #battery-bar { height: 100%; width: 100%; background: #00ff00; transition: width 0.1s, background 0.3s; }
+        .blinking { animation: blink 0.5s infinite; color: red; }
+        @keyframes blink { 50% { opacity: 0.2; } }
+
+        /* --- 분포표 (모바일 화면 작을 때 위치 및 크기 조정) --- */
+        #microstate-table {
+            position: absolute; bottom: 85px; right: 20px;
+            background: rgba(0, 0, 0, 0.7); padding: 10px; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2); font-size: 0.75rem; color: #eee;
+            transform-origin: bottom right;
+        }
+        /* 화면 높이가 작으면(모바일 가로) 표를 축소 */
+        @media screen and (max-height: 500px) {
+            #microstate-table { transform: scale(0.8); bottom: 70px; right: 10px; }
+            .top-bar { padding: 10px 20px; }
+            .stat-box { padding: 5px 10px; }
+            .value { font-size: 1.2rem; }
+        }
+
+        table { border-collapse: collapse; width: 100%; }
+        th, td { padding: 4px 8px; text-align: center; border: 1px solid #444; }
+        th { background: #333; font-weight: normal; }
+        .count-val { font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.9rem;}
+
+        /* --- 하단 컨트롤 --- */
+        .bottom-bar {
+            padding: 15px; text-align: center; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            pointer-events: auto; position: relative; z-index: 100;
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+        }
+
+        .instruction { 
+            font-size: 0.8rem; color: #bbb; margin-right: 15px; 
+            display: inline-block; /* 모바일 좁은 화면 대응 */
+        }
+        /* 화면 좁으면 설명 숨기기 */
+        @media screen and (max-width: 700px) {
+            .instruction { display: none; } 
+        }
+
+        button {
+            background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 16px; border-radius: 30px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif;
+            font-size: 0.9rem; transition: all 0.2s; white-space: nowrap;
+        }
+        button:hover { background: rgba(255,255,255,0.2); }
+        button:active { transform: scale(0.95); }
+        button.active { background: #d9534f; border-color: #d9534f; }
+        button#btn-auto.active { background: #00aaaa; border-color: #00aaaa; }
+        
+        button#btn-charge {
+            background: #e6b800; color: #000; font-weight: bold; border: none; box-shadow: 0 0 10px #e6b800;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="rotate-overlay">
+        <div id="rotate-icon">📱🔄</div>
+        <h2>가로 모드로 돌려주세요</h2>
+        <p>게임 실행을 위해 화면 회전이 필요합니다.</p>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="hud">
+        <div class="top-bar">
+            <div class="stat-box">
+                <div class="label">🧊 냉장고(좌)</div>
+                <div class="value blue-text" id="temp-left">0 K</div>
+            </div>
+
+            <div class="center-stats">
+                <div class="label" style="text-shadow: 0 1px 2px black; font-size:0.8rem;">ENTROPY</div>
+                <div id="entropy-bar-container"><div id="entropy-bar"></div></div>
+                <div class="label" id="separation-score" style="font-size:1rem; color:white; font-weight:bold;">0%</div>
+                
+                <div id="battery-panel">
+                    <div id="battery-icon">🔋</div>
+                    <div id="battery-bar-container"><div id="battery-bar"></div></div>
+                </div>
+            </div>
+
+            <div class="stat-box">
+                <div class="label">🔥 실외기(우)</div>
+                <div class="value red-text" id="temp-right">0 K</div>
+            </div>
+        </div>
+
+        <div id="microstate-table">
+            <h3 style="margin:0 0 5px 0; font-size:0.8rem; text-align:center; color:#ccc;">입자 분포</h3>
+            <table>
+                <tr><th></th><th>LEFT</th><th>RIGHT</th></tr>
+                <tr>
+                    <td class="blue-text">파랑</td>
+                    <td class="count-val blue-text" id="cnt-blue-left">0</td>
+                    <td class="count-val blue-text" id="cnt-blue-right">0</td>
+                </tr>
+                <tr>
+                    <td class="red-text">빨강</td>
+                    <td class="count-val red-text" id="cnt-red-left">0</td>
+                    <td class="count-val red-text" id="cnt-red-right">0</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="bottom-bar">
+            <div class="instruction">Space: 문열기 | R: 충전</div>
+            <button id="btn-charge">⚡ 충전</button>
+            <button id="btn-auto">🤖 AI (A)</button>
+            <button id="btn-nature">🔄 초기화</button>
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 변수 설정
+    let width, height;
+    let particleCount = 50; 
+    let particleRadius, wallThickness, gateHeight, baseSpeed;
+    let particles = [];
+    let isGateOpen = false, isNatureMode = false, isAutoMode = false, timeScale = 1.0;
+    
+    // 배터리
+    let battery = 100;
+    const BATTERY_DRAIN_RATE = 0.8;
+    const BATTERY_RECHARGE_AMOUNT = 15;
+
+    // UI Elements
+    const elTempLeft = document.getElementById('temp-left');
+    const elTempRight = document.getElementById('temp-right');
+    const elEntropyBar = document.getElementById('entropy-bar');
+    const elScore = document.getElementById('separation-score');
+    const elBatteryBar = document.getElementById('battery-bar');
+    const elBatteryIcon = document.getElementById('battery-icon');
+    
+    const btnNature = document.getElementById('btn-nature');
+    const btnAuto = document.getElementById('btn-auto');
+    const btnCharge = document.getElementById('btn-charge');
+    
+    const elCntBlueLeft = document.getElementById('cnt-blue-left');
+    const elCntBlueRight = document.getElementById('cnt-blue-right');
+    const elCntRedLeft = document.getElementById('cnt-red-left');
+    const elCntRedRight = document.getElementById('cnt-red-right');
+
+    function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        const minDim = Math.min(width, height);
+        particleRadius = minDim * 0.02;
+        wallThickness = Math.max(3, minDim * 0.005);
+        gateHeight = height * 0.4;
+        baseSpeed = width * 0.003; 
+        
+        init();
+    }
+
+    class Particle {
+        constructor(type) {
+            this.type = type;
+            this.radius = particleRadius;
+            this.x = Math.random() * (width - 2 * this.radius) + this.radius;
+            this.y = Math.random() * (height - 2 * this.radius) + this.radius;
+            if (Math.abs(this.x - width/2) < wallThickness * 10) {
+                this.x = this.x < width/2 ? width/4 : width*0.75;
+            }
+            const speedMultiplier = type === 'hot' ? (Math.random()*0.4+1.0) : (Math.random()*0.3+0.3);
+            const speed = baseSpeed * speedMultiplier;
+            const angle = Math.random() * Math.PI * 2;
+            this.vx = Math.cos(angle) * speed;
+            this.vy = Math.sin(angle) * speed;
+            this.color = type === 'hot' ? '#ff4d4d' : '#4d4dff';
+        }
+        update() {
+            this.x += this.vx * timeScale;
+            this.y += this.vy * timeScale;
+            
+            if (this.x < this.radius) { this.x = this.radius; this.vx *= -1; }
+            if (this.x > width - this.radius) { this.x = width - this.radius; this.vx *= -1; }
+            if (this.y < this.radius) { this.y = this.radius; this.vy *= -1; }
+            if (this.y > height - this.radius) { this.y = height - this.radius; this.vy *= -1; }
+
+            const wallX = width / 2;
+            const gateTop = (height - gateHeight) / 2;
+            const gateBottom = (height + gateHeight) / 2;
+
+            if (Math.abs(this.x - wallX) <= this.radius + wallThickness/2) {
+                const inGateY = this.y > gateTop && this.y < gateBottom;
+                if (isGateOpen && inGateY) { /* pass */ } 
+                else {
+                    if (this.x < wallX) { this.x = wallX - this.radius - wallThickness/2; this.vx *= -1; } 
+                    else { this.x = wallX + this.radius + wallThickness/2; this.vx *= -1; }
+                }
+            }
+        }
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.shadowBlur = this.radius; 
+            ctx.shadowColor = this.color;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.closePath();
+        }
+    }
+
+    function init() {
+        particles = [];
+        for (let i = 0; i < particleCount / 2; i++) {
+            particles.push(new Particle('hot'));
+            particles.push(new Particle('cold'));
+        }
+        battery = 100;
+        updateBatteryUI();
+    }
+
+    function resolveCollisions() {
+        for (let i = 0; i < particles.length; i++) {
+            for (let j = i + 1; j < particles.length; j++) {
+                const p1 = particles[i];
+                const p2 = particles[j];
+                const dx = p2.x - p1.x; const dy = p2.y - p1.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                const minDist = p1.radius + p2.radius;
+                if (dist < minDist) {
+                    const angle = Math.atan2(dy, dx);
+                    const overlap = (minDist - dist) / 2;
+                    p1.x -= Math.cos(angle)*overlap; p1.y -= Math.sin(angle)*overlap;
+                    p2.x += Math.cos(angle)*overlap; p2.y += Math.sin(angle)*overlap;
+                    const nx = dx/dist; const ny = dy/dist;
+                    const k = p1.vx*nx + p1.vy*ny - p2.vx*nx - p2.vy*ny;
+                    p1.vx -= k*nx; p1.vy -= k*ny;
+                    p2.vx += k*nx; p2.vy += k*ny;
+                }
+            }
+        }
+    }
+
+    function runAutoDemon() {
+        if (!isAutoMode) return;
+        if (battery <= 0) { isGateOpen = false; return; }
+        const wallX = width/2;
+        const gateTop = (height-gateHeight)/2;
+        const gateBottom = (height+gateHeight)/2;
+        const scanRange = width*0.12;
+
+        let shouldOpen = false;
+        for (let p of particles) {
+            if (p.y > gateTop && p.y < gateBottom && Math.abs(p.x - wallX) < scanRange) {
+                if ((p.x < wallX && p.vx > 0 && p.type === 'hot') ||
+                    (p.x > wallX && p.vx < 0 && p.type === 'cold')) {
+                    shouldOpen = true;
+                }
+            }
+        }
+        isGateOpen = shouldOpen;
+    }
+
+    function updateBatteryUI() {
+        elBatteryBar.style.width = `${battery}%`;
+        if (battery > 60) { elBatteryBar.style.background = '#00ff00'; elBatteryIcon.innerText='🔋'; elBatteryIcon.classList.remove('blinking'); }
+        else if (battery > 20) { elBatteryBar.style.background = '#ffff00'; elBatteryIcon.innerText='🔋'; elBatteryIcon.classList.remove('blinking'); }
+        else { elBatteryBar.style.background = '#ff0000'; elBatteryIcon.innerText='🪫'; elBatteryIcon.classList.add('blinking'); }
+    }
+
+    function rechargeBattery() {
+        battery = Math.min(100, battery + BATTERY_RECHARGE_AMOUNT);
+        updateBatteryUI();
+        btnCharge.style.transform = 'scale(0.9)';
+        setTimeout(()=>btnCharge.style.transform='scale(1)', 100);
+        btnCharge.blur(); // 충전 후 포커스 해제 (중요)
+    }
+
+    function updateStats() {
+        let leftSum=0, leftCnt=0, rightSum=0, rightCnt=0, correct=0;
+        let cBlueLeft=0, cBlueRight=0, cRedLeft=0, cRedRight=0;
+        const wallX = width/2;
+
+        particles.forEach(p => {
+            const v2 = p.vx*p.vx + p.vy*p.vy;
+            const normTemp = Math.sqrt(v2)/baseSpeed * 100;
+            if (p.x < wallX) {
+                leftSum += normTemp; leftCnt++;
+                if (p.type==='cold') { correct++; cBlueLeft++; } else { cRedLeft++; }
+            } else {
+                rightSum += normTemp; rightCnt++;
+                if (p.type==='hot') { correct++; cRedRight++; } else { cBlueRight++; }
+            }
+        });
+
+        elTempLeft.innerText = leftCnt ? Math.round(leftSum/leftCnt) + " K" : "0 K";
+        elTempRight.innerText = rightCnt ? Math.round(rightSum/rightCnt) + " K" : "0 K";
+
+        const ratio = correct / particles.length;
+        const percent = Math.max(0, Math.round((ratio - 0.5) * 200));
+        elScore.innerText = `${percent}%`; 
+        
+        const disorder = 100 - percent;
+        elEntropyBar.style.width = `${disorder}%`;
+        elEntropyBar.style.background = disorder > 60 ? '#ff4d4d' : disorder > 30 ? '#ffff4d' : '#4dff4d';
+
+        elCntBlueLeft.innerText = cBlueLeft; elCntBlueRight.innerText = cBlueRight;
+        elCntRedLeft.innerText = cRedLeft; elCntRedRight.innerText = cRedRight;
+
+        if (isGateOpen && !isNatureMode) {
+            battery = Math.max(0, battery - BATTERY_DRAIN_RATE);
+            if (battery <= 0) isGateOpen = false;
+            updateBatteryUI();
+        }
+    }
+
+    function loop() {
+        ctx.clearRect(0, 0, width, height);
+        runAutoDemon();
+        
+        const wallX = width/2;
+        const gateTop = (height-gateHeight)/2;
+        const gateBottom = (height+gateHeight)/2;
+
+        ctx.strokeStyle = '#666'; ctx.lineWidth = wallThickness;
+        ctx.beginPath();
+        ctx.moveTo(wallX, 0); ctx.lineTo(wallX, gateTop);
+        ctx.moveTo(wallX, gateBottom); ctx.lineTo(wallX, height);
+        ctx.stroke();
+
+        if (isGateOpen) {
+            ctx.strokeStyle = isAutoMode ? 'rgba(0,255,255,0.4)' : 'rgba(100,255,218,0.3)';
+            ctx.setLineDash([10, 10]);
+            ctx.beginPath(); ctx.moveTo(wallX, gateTop); ctx.lineTo(wallX, gateBottom); ctx.stroke();
+            ctx.setLineDash([]);
+        } else {
+            ctx.strokeStyle = (battery <= 0 && !isNatureMode) ? '#ff0000' : '#fff';
+            ctx.beginPath(); ctx.moveTo(wallX, gateTop); ctx.lineTo(wallX, gateBottom); ctx.stroke();
+        }
+
+        resolveCollisions();
+        particles.forEach(p => { p.update(); p.draw(); });
+        updateStats();
+        requestAnimationFrame(loop);
+    }
+
+    function toggleGate(open) {
+        if (!isNatureMode && !isAutoMode) {
+            if (open && battery > 0) isGateOpen = true;
+            else isGateOpen = false;
+        }
+    }
+
+    // --- 이벤트 핸들링 (수정된 부분) ---
+    window.addEventListener('resize', resizeCanvas);
+    
+    const startAction = (e) => {
+        if(e.target.tagName === 'BUTTON') return;
+        if(e.type !== 'mousedown') e.preventDefault(); // 터치 스크롤 방지
+        toggleGate(true);
+    };
+    const endAction = () => toggleGate(false);
+
+    document.addEventListener('mousedown', startAction);
+    document.addEventListener('mouseup', endAction);
+    document.addEventListener('touchstart', startAction, {passive: false});
+    document.addEventListener('touchend', endAction);
+
+    // [핵심 수정] 키보드 이벤트에서 preventDefault 추가
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            e.preventDefault(); // 브라우저 스크롤/버튼클릭 기본동작 차단
+            toggleGate(true);
+        }
+        if (e.key === 'Shift') timeScale = 0.2;
+        if (e.key === 'a' || e.key === 'A') toggleAuto();
+        if (e.key === 'r' || e.key === 'R') rechargeBattery();
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (e.code === 'Space') toggleGate(false);
+        if (e.key === 'Shift') timeScale = 1.0;
+    });
+
+    // [핵심 수정] 버튼 클릭 시 포커스 해제 (.blur)
+    function toggleAuto() {
+        if(isNatureMode) return;
+        isAutoMode = !isAutoMode;
+        if(isAutoMode) {
+            btnAuto.classList.add('active'); btnAuto.innerText="🤖 STOP";
+        } else {
+            btnAuto.classList.remove('active'); btnAuto.innerText="🤖 AI (A)"; isGateOpen=false;
+        }
+        btnAuto.blur(); // 포커스 해제
+    }
+
+    btnAuto.addEventListener('click', (e)=>{ e.stopPropagation(); toggleAuto(); });
+    btnCharge.addEventListener('click', (e)=>{ e.stopPropagation(); rechargeBattery(); });
+    
+    btnNature.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        isNatureMode = !isNatureMode; isAutoMode = false;
+        btnAuto.classList.remove('active');
+        if (isNatureMode) {
+            btnNature.innerText = "🛑 정지"; btnNature.classList.add('active'); isGateOpen = true; 
+        } else {
+            init(); btnNature.innerText = "🔄 초기화"; btnNature.classList.remove('active'); isGateOpen = false;
+        }
+        btnNature.blur(); // 포커스 해제 (이게 핵심!)
+    });
+
+    resizeCanvas();
+    loop();
+</script>
+</body>
+</html>
