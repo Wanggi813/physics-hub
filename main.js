@@ -76,32 +76,40 @@
   
   // ===== 프로젝트 카드 렌더링 (기존 유지) =====
   const projects = [
-    {title:"물리 공식 맞추기", category:"게임", desc:"떨어지는 물리 공식을 맞추자!", tags:["물리","공식"], emoji:"❤️", demo:"./simul/물리 공식 맞추기.html", curriculumId:"ALL", thumb:"./thumb_nail/물리 공식 맞추기.png"},
-    {title:"토크와 평형", category:"역학", desc:"여러 물체를 이용해 토크평형 만들기", tags:["토크","평형"], emoji:"🧗‍♀️", demo:"./simul/토크와 평형.html", curriculumId:"[12물리01-01]", thumb:"./thumb_nail/토크와_평형.png"},
-    {title:"힘의 합력", category:"역학", desc:"여러 힘의 합력 알아보기", tags:["힘","알짜힘"], emoji:"🧗‍♀️", demo:"./simul/힘의 평형.html", curriculumId:"[12역학01-01]", thumb:"./thumb_nail/힘의_평형.png"},
-    {title:"궤도 올리기", category:"역학", desc:"행성의 탈출속도와 위성의 궤도 알아보기", tags:["중력","탈출속도", "궤도"], emoji:"🧗‍♀️", demo:"./simul/궤도 올리기.html", curriculumId:"[12역학01-04], [12역학01-05]", thumb:"./thumb_nail/궤도 올리기.png"},
-    {title:"일과 운동에너지", category:"역학", desc:"용수철을 이용해 일과 운동에너지 비교하기", tags:["일","운동에너지"], emoji:"🧗‍♀️", demo:"./simul/일과 운동에너지.html", curriculumId:"[12물리01-04]", thumb:"./thumb_nail/일과_운동에너지.png"},
-    {title:"줄의 실험", category:"열", desc:"줄의 일의 열당량을 알아보기", tags:["줄","일의 열당량"], emoji:"🧗‍♀️", demo:"./simul/줄의 실험.html", curriculumId:"[12물리01-05]", thumb:"./thumb_nail/줄의_실험.png"},
-    {title:"RLC 공명", category:"전자/반도체", desc:"직렬 RLC 회로의 공명/위상·전류 변화 시각화하기", tags:["회로","공명"], emoji:"🔄", demo:"./simul/RLC 공명.html", curriculumId:"[12전자01-06]", thumb:"./thumb_nail/RLC회로.png"},
-    {title:"간섭무늬", category:"광학", desc:"파장과 파원의 간격 조절로 간섭 패턴 관찰.", tags:["파동","무늬"], emoji:"🎯", demo:"./simul/간섭무늬.html", curriculumId:"[12물리03-01]", thumb:"./thumb_nail/간섭무늬.png"},
-    {title:"광전효과", category:"전자/반도체", desc:"파장/세기에 따른 광전자 방출과 임계 주파수 확인하기", tags:["광자","금속"], emoji:"📸", demo:"./simul/광전효과.html", curriculumId:"[12전자02-04]", thumb:"./thumb_nail/광전효과.png"},
-    {title:"다이오드", category:"전자/반도체", desc:"PN 접합·공핍층·I–V 특성 직관", tags:["PN","I–V"], emoji:"🔌", demo:"./simul/다이오드.html", curriculumId:"[12물리03-05]", thumb:"./thumb_nail/다이오드.png"},
-    {title:"도플러효과", category:"광학", desc:"음원의 속도와 진동수에 따른 관측 음원의 변화 관찰하기", tags:["도플러","파동"], emoji:"🎵", demo:"./simul/도플러효과.html", curriculumId:"[12역학03-03]", thumb:"./thumb_nail/도플러효과.png"},
-    {title:"러더퍼드 알파입자 산란실험", category:"시뮬레이션", desc:"러더퍼드의 알파입자 산란실험 확인하기", tags:["산란","쿨롱"], emoji:"🧪", demo:"./simul/러더퍼드 알파입자 산란실험.html", curriculumId:"[12전자01-06]", thumb:"./thumb_nail/러더퍼드_산란실험.png"},
-    {title:"렌즈의 굴절", category:"광학", desc:"렌즈의 종류에 따라 어떤 상이 맺히는지 확인하기", tags:["렌즈","상"], emoji:"🔭", demo:"./simul/렌즈의 굴절.html", curriculumId:"[12물리03-02]", thumb:"./thumb_nail/렌즈의_법칙.png"},
-    {title:"발광 다이오드", category:"전자/반도체", desc:"파장별 전압·밴드갭과 발광.", tags:["LED","밴드갭"], emoji:"💡", demo:"./simul/발광 다이오드.html", curriculumId:"[12전자02-04]", thumb:"./thumb_nail/발광_다이오드.png"},
-    {title:"상대성이론", category:"상대성", desc:"우주선의 속력에 따라 행성의 변화 관찰하기", tags:["특수","일반"], emoji:"🚀", demo:"./simul/상대성이론.html", curriculumId:"[12물리03-06]", thumb:"./thumb_nail/상대성이론.png"},
-    {title:"스넬의 법칙", category:"광학", desc:"굴절률 변화에 따른 입사/굴절/임계각 확인하기", tags:["n1,n2","TIR"], emoji:"📐", demo:"./simul/스넬의 법칙.html", curriculumId:"[12물리03-02]", thumb:"./thumb_nail/스넬의_법칙.png"},
-    {title:"포물선 운동", category:"역학", desc:"대포를 쏴서 과녁을 맞추자.", tags:["포물선운동","게임"], emoji:"🌈", demo:"./simul/포물선 운동.html", curriculumId:"[12역학01-02]", thumb:"./thumb_nail/포물선_운동.png"},
-    {title:"열역학", category:"열", desc:"등압, 등적, 등온, 단열과정 확인하기", tags:["열기관","열과정"], emoji:"🐦‍🔥", demo:"./simul/열역학.html", curriculumId:"[12물리01-06], [12역학02-02]", thumb:"./thumb_nail/열역학.png"},
-    {title:"옴의 법칙", category:"전자/반도체", desc:"V=IR, 직렬/병렬 에 따른 옴의 법칙 확인하기", tags:["전압","전류"], emoji:"⚡", demo:"./simul/옴의 법칙.html", curriculumId:"[12물리02-02]", thumb:"./thumb_nail/옴의_법칙.png"},
-    {title:"원자모형", category:"시뮬레이션", desc:"보어/오비탈/전자구름 개념 확인하기", tags:["원자","준위"], emoji:"🧬", demo:"./simul/원자모형.html", curriculumId:"[12전자03-04]", thumb:"./thumb_nail/원자모형.png"},
-    {title:"이중슬릿", category:"광학", desc:"이중슬릿을 통과한 전자의 간섭무늬 확인하기", tags:["슬릿","간섭"], emoji:"〰️", demo:"./simul/이중슬릿.html", curriculumId:"[12전자03-01]", thumb:"./thumb_nail/이중슬릿.png"},
-    {title:"전자기유도", category:"전자/반도체", desc:"전자기 유도현상과 정류자의 역할 알아보기", tags:["전자기유도","정류자"], emoji:"⚡", demo:"./simul/전자기유도.html", curriculumId:"[12물리02-05], [12전자01-05]", thumb:"./thumb_nail/전자기유도.png"},
-    {title:"전기장과 등전위면", category:"전자/반도체", desc:"전하가 만드는 전기장과 등전위면을 알아보기", tags:["전기장","등전위면"], emoji:"⚡", demo:"./simul/전기장과 등전위면.html", curriculumId:"[12물리02-01], [12전자01-01]", thumb:"./thumb_nail/전기장과_등전위면.png"},
-    {title:"편광과 LCD", category:"광학", desc:"편광의 원리와 LCD의 원리 알아보기", tags:["편광","LCD"], emoji:"🔭", demo:"./simul/편광과 LCD.html", curriculumId:"[12전자02-03]", thumb:"./thumb_nail/편광과 LCD.png"},
-     {title: "양자 터널링", category:"현대물리", desc:"입자가 벽을 뚫고 지나간다? 양자 터널 효과와 확률 파동",tags: ["양자역학", "터널링", "파동함수"], emoji: "👻",demo: "./simul/양자 터널링.html",curriculumId: "[12전자03-03]",thumb: "./thumb_nail/양자_터널링.png"},
-      {title: "맥스웰의 도깨비",  category: "열",  desc: "엔트로피를 거슬러라! 뜨거운 공과 차가운 공을 분류하는 미니 게임",  tags: ["엔트로피", "열역학", "게임"],  emoji: "😈",  demo: "./simul/멕스웰 도깨비.html", curriculumId: "[12역학02-05]",   thumb: "./thumb_nail/멕스웰 도깨비.png"}
+// ===== ALL =====
+{title:"물리 공식 맞추기", category:"게임", desc:"떨어지는 물리 공식을 맞추자!", tags:["물리","공식"], emoji:"❤️", demo:"./simul/물리 공식 맞추기.html", curriculumId:"ALL", thumb:"./thumb_nail/물리 공식 맞추기.png"},
+
+// ===== 12물리 =====
+{title:"토크와 평형", category:"역학", desc:"여러 물체를 이용해 토크평형 만들기", tags:["토크","평형"], emoji:"🧗‍♀️", demo:"./simul/토크와 평형.html", curriculumId:"[12물리01-01]", thumb:"./thumb_nail/토크와_평형.png"},
+{title:"일과 운동에너지", category:"역학", desc:"용수철을 이용해 일과 운동에너지 비교하기", tags:["일","운동에너지"], emoji:"🧗‍♀️", demo:"./simul/일과 운동에너지.html", curriculumId:"[12물리01-04]", thumb:"./thumb_nail/일과_운동에너지.png"},
+{title:"줄의 실험", category:"열", desc:"줄의 일의 열당량을 알아보기", tags:["줄","일의 열당량"], emoji:"🧗‍♀️", demo:"./simul/줄의 실험.html", curriculumId:"[12물리01-05]", thumb:"./thumb_nail/줄의_실험.png"},
+{title:"열역학", category:"열", desc:"등압, 등적, 등온, 단열과정 확인하기", tags:["열기관","열과정"], emoji:"🐦‍🔥", demo:"./simul/열역학.html", curriculumId:"[12물리01-06], [12역학02-02]", thumb:"./thumb_nail/열역학.png"},
+{title:"전기장과 등전위면", category:"전자/반도체", desc:"전하가 만드는 전기장과 등전위면을 알아보기", tags:["전기장","등전위면"], emoji:"⚡", demo:"./simul/전기장과 등전위면.html", curriculumId:"[12물리02-01], [12전자01-01]", thumb:"./thumb_nail/전기장과_등전위면.png"},
+{title:"옴의 법칙", category:"전자/반도체", desc:"V=IR, 직렬/병렬 에 따른 옴의 법칙 확인하기", tags:["전압","전류"], emoji:"⚡", demo:"./simul/옴의 법칙.html", curriculumId:"[12물리02-02]", thumb:"./thumb_nail/옴의_법칙.png"},
+{title:"전자기유도", category:"전자/반도체", desc:"전자기 유도현상과 정류자의 역할 알아보기", tags:["전자기유도","정류자"], emoji:"⚡", demo:"./simul/전자기유도.html", curriculumId:"[12물리02-05], [12전자01-05]", thumb:"./thumb_nail/전자기유도.png"},
+{title:"간섭무늬", category:"광학", desc:"파장과 파원의 간격 조절로 간섭 패턴 관찰.", tags:["파동","무늬"], emoji:"🎯", demo:"./simul/간섭무늬.html", curriculumId:"[12물리03-01]", thumb:"./thumb_nail/간섭무늬.png"},
+{title:"렌즈의 굴절", category:"광학", desc:"렌즈의 종류에 따라 어떤 상이 맺히는지 확인하기", tags:["렌즈","상"], emoji:"🔭", demo:"./simul/렌즈의 굴절.html", curriculumId:"[12물리03-02]", thumb:"./thumb_nail/렌즈의_법칙.png"},
+{title:"스넬의 법칙", category:"광학", desc:"굴절률 변화에 따른 입사/굴절/임계각 확인하기", tags:["n1,n2","TIR"], emoji:"📐", demo:"./simul/스넬의 법칙.html", curriculumId:"[12물리03-02]", thumb:"./thumb_nail/스넬의_법칙.png"},
+{title:"다이오드", category:"전자/반도체", desc:"PN 접합·공핍층·I–V 특성 직관", tags:["PN","I–V"], emoji:"🔌", demo:"./simul/다이오드.html", curriculumId:"[12물리03-05]", thumb:"./thumb_nail/다이오드.png"},
+{title:"상대성이론", category:"상대성", desc:"우주선의 속력에 따라 행성의 변화 관찰하기", tags:["특수","일반"], emoji:"🚀", demo:"./simul/상대성이론.html", curriculumId:"[12물리03-06]", thumb:"./thumb_nail/상대성이론.png"},
+
+// ===== 12역학 =====
+{title:"힘의 합력", category:"역학", desc:"여러 힘의 합력 알아보기", tags:["힘","알짜힘"], emoji:"🧗‍♀️", demo:"./simul/힘의 평형.html", curriculumId:"[12역학01-01]", thumb:"./thumb_nail/힘의_평형.png"},
+{title:"포물선 운동", category:"역학", desc:"대포를 쏴서 과녁을 맞추자.", tags:["포물선운동","게임"], emoji:"🌈", demo:"./simul/포물선 운동.html", curriculumId:"[12역학01-02]", thumb:"./thumb_nail/포물선_운동.png"},
+{title:"궤도 올리기", category:"역학", desc:"행성의 탈출속도와 위성의 궤도 알아보기", tags:["중력","탈출속도", "궤도"], emoji:"🧗‍♀️", demo:"./simul/궤도 올리기.html", curriculumId:"[12역학01-04], [12역학01-05]", thumb:"./thumb_nail/궤도 올리기.png"},
+{title:"맥스웰의 도깨비", category:"열", desc:"엔트로피를 거슬러라! 뜨거운 공과 차가운 공을 분류하는 미니 게임", tags:["엔트로피", "열역학", "게임"], emoji:"😈", demo:"./simul/멕스웰 도깨비.html", curriculumId:"[12역학02-05]", thumb:"./thumb_nail/멕스웰 도깨비.png"},
+{title:"도플러효과", category:"광학", desc:"음원의 속도와 진동수에 따른 관측 음원의 변화 관찰하기", tags:["도플러","파동"], emoji:"🎵", demo:"./simul/도플러효과.html", curriculumId:"[12역학03-03]", thumb:"./thumb_nail/도플러효과.png"},
+
+// ===== 12전자 =====
+{title:"RLC 공명", category:"전자/반도체", desc:"직렬 RLC 회로의 공명/위상·전류 변화 시각화하기", tags:["회로","공명"], emoji:"🔄", demo:"./simul/RLC 공명.html", curriculumId:"[12전자01-06]", thumb:"./thumb_nail/RLC회로.png"},
+{title:"러더퍼드 알파입자 산란실험", category:"시뮬레이션", desc:"러더퍼드의 알파입자 산란실험 확인하기", tags:["산란","쿨롱"], emoji:"🧪", demo:"./simul/러더퍼드 알파입자 산란실험.html", curriculumId:"[12전자01-06]", thumb:"./thumb_nail/러더퍼드_산란실험.png"},
+{title:"편광과 LCD", category:"광학", desc:"편광의 원리와 LCD의 원리 알아보기", tags:["편광","LCD"], emoji:"🔭", demo:"./simul/편광과 LCD.html", curriculumId:"[12전자02-03]", thumb:"./thumb_nail/편광과 LCD.png"},
+{title:"광전효과", category:"전자/반도체", desc:"파장/세기에 따른 광전자 방출과 임계 주파수 확인하기", tags:["광자","금속"], emoji:"📸", demo:"./simul/광전효과.html", curriculumId:"[12전자02-04]", thumb:"./thumb_nail/광전효과.png"},
+{title:"발광 다이오드", category:"전자/반도체", desc:"파장별 전압·밴드갭과 발광.", tags:["LED","밴드갭"], emoji:"💡", demo:"./simul/발광 다이오드.html", curriculumId:"[12전자02-04]", thumb:"./thumb_nail/발광_다이오드.png"},
+{title:"LASER", category:"광학, 전자/반도체", desc:"빛의 복제 공장! 유도 방출과 반전 분포로 만드는 강력한 빛", tags:["레이저", "증폭", "유도방출"], emoji:"🔦", demo:"./simul/레이저.html", curriculumId:"[12전자02-05]", thumb:"./thumb_nail/레이저.png"},
+{title:"이중슬릿", category:"광학", desc:"이중슬릿을 통과한 전자의 간섭무늬 확인하기", tags:["슬릿","간섭"], emoji:"〰️", demo:"./simul/이중슬릿.html", curriculumId:"[12전자03-01]", thumb:"./thumb_nail/이중슬릿.png"},
+{title:"양자 터널링", category:"현대물리", desc:"입자가 벽을 뚫고 지나간다? 양자 터널 효과와 확률 파동", tags:["양자역학","터널링","파동함수"], emoji:"👻", demo:"./simul/양자 터널링.html", curriculumId:"[12전자03-03]", thumb:"./thumb_nail/양자_터널링.png"},
+{title:"원자모형", category:"시뮬레이션", desc:"보어/오비탈/전자구름 개념 확인하기", tags:["원자","준위"], emoji:"🧬", demo:"./simul/원자모형.html", curriculumId:"[12전자03-04]", thumb:"./thumb_nail/원자모형.png"}
 
   ];
   
