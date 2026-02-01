@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Smart Rockets - Touch & Drag</title>
+    <title>Smart Rockets - Mobile Responsive</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body {
@@ -16,11 +16,11 @@
             height: 100vh;
             overflow: hidden;
             user-select: none;
-            /* 모바일에서 길게 눌렀을 때 텍스트 선택/메뉴 방지 */
             -webkit-user-select: none;
             -webkit-touch-callout: none;
         }
 
+        /* --- 상단 패널 스타일 --- */
         #top-panel {
             margin-top: 10px;
             display: flex;
@@ -45,16 +45,6 @@
             margin-bottom: 5px;
         }
 
-        canvas {
-            background-color: #000;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
-            border: 2px solid #444;
-            cursor: pointer;
-            display: block;
-            /* 터치 시 스크롤/줌 방지 (중요) */
-            touch-action: none; 
-        }
-
         .btn {
             padding: 10px 20px;
             border: none;
@@ -66,75 +56,78 @@
             text-transform: uppercase;
         }
         .btn:active { transform: scale(0.95); }
-        
-        #btn-challenge { 
-            background-color: #e74c3c; 
-            color: white; 
-            padding: 10px 30px;
-            box-shadow: 0 4px 0 #c0392b;
-        }
-        #btn-challenge.running {
-            background-color: #f39c12;
-            box-shadow: 0 4px 0 #d35400;
-        }
-        
-        #btn-clear {
-            background-color: #444; 
-            color: #ccc;
-            font-size: 0.8em;
-            padding: 8px 12px;
-        }
 
-        /* 로딩 오버레이 */
-        #loading-overlay {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8);
-            color: #00ff7f;
-            padding: 20px 40px;
-            border-radius: 8px;
-            font-size: 1.5em;
-            display: none;
-            z-index: 100;
-            white-space: nowrap;
-        }
-
-        /* 가로 모드 유도 오버레이 */
-        #orientation-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #1a1a1a;
-            color: white;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            text-align: center;
-        }
-        #orientation-overlay h1 { font-size: 2rem; margin-bottom: 10px; }
-        #orientation-overlay p { font-size: 1.2rem; color: #aaa; }
-        .rotate-icon { font-size: 3rem; margin-bottom: 20px; animation: rotatePhone 2s infinite; }
-        
-        @keyframes rotatePhone {
-            0% { transform: rotate(0deg); }
-            50% { transform: rotate(-90deg); }
-            100% { transform: rotate(0deg); }
-        }
+        #btn-challenge { background-color: #e74c3c; color: white; box-shadow: 0 4px 0 #c0392b; }
+        #btn-challenge.running { background-color: #f39c12; box-shadow: 0 4px 0 #d35400; }
+        #btn-clear { background-color: #444; color: #ccc; font-size: 0.8em; padding: 8px 12px; }
 
         .stat-group { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
-        .stat-val { font-weight: bold; font-size: 1.1em; color: #fff; }
         .stat-label { font-size: 0.7em; color: #888; margin-bottom: 2px; }
-
         .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8em; }
         .mode-setup { background: #555; color: #ccc; }
         .mode-search { background: #ff4757; color: white; animation: pulse 1s infinite; }
         .mode-opt { background: #1e90ff; color: white; }
+        .divider { width: 1px; height: 35px; background: #555; margin: 0 5px; }
+        input[type=range] { width: 100px; cursor: pointer; }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-        input[type=range] { width: 100px; cursor: pointer; }
-        .divider { width: 1px; height: 35px; background: #555; margin: 0 5px; }
+
+        /* --- 모바일 대응 (화면 폭 768px 이하) --- */
+        @media (max-width: 768px) {
+            #top-panel {
+                padding: 8px 10px; /* 패딩 축소 */
+                gap: 8px; /* 간격 축소 */
+                width: 95%; /* 화면 꽉 차게 */
+                justify-content: space-around;
+                margin-top: 5px;
+            }
+            .btn {
+                padding: 6px 12px; /* 버튼 크기 축소 */
+                font-size: 0.8em;
+            }
+            #btn-challenge {
+                padding: 6px 15px;
+            }
+            .stat-group { min-width: 40px; }
+            .stat-label { font-size: 0.6em; }
+            input[type=range] { width: 60px; } /* 슬라이더 길이 축소 */
+            .divider { height: 25px; margin: 0 2px; }
+            
+            #info-panel {
+                font-size: 0.75em; /* 정보 텍스트 축소 */
+                gap: 10px;
+            }
+        }
+
+        canvas {
+            background-color: #000;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+            border: 2px solid #444;
+            cursor: pointer;
+            display: block;
+            touch-action: none; 
+        }
+
+        /* 로딩 & 가로모드 안내 */
+        #loading-overlay {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8); color: #00ff7f;
+            padding: 20px 40px; border-radius: 8px;
+            font-size: 1.5em; display: none; z-index: 100;
+            white-space: nowrap;
+        }
+        #orientation-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #1a1a1a; color: white; display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 9999; text-align: center;
+        }
+        #orientation-overlay h1 { font-size: 2rem; margin-bottom: 10px; }
+        .rotate-icon { font-size: 3rem; margin-bottom: 20px; animation: rotatePhone 2s infinite; }
+        @keyframes rotatePhone {
+            0% { transform: rotate(0deg); } 50% { transform: rotate(-90deg); } 100% { transform: rotate(0deg); }
+        }
     </style>
 </head>
 <body>
@@ -142,33 +135,26 @@
     <div id="orientation-overlay">
         <div class="rotate-icon">📱 ➡️ 🔄</div>
         <h1>화면을 가로로 돌려주세요</h1>
-        <p>원활한 시뮬레이션을 위해 가로 모드가 필요합니다.</p>
     </div>
 
-    <div id="loading-overlay">맵 분석 중... (Flow Field 생성)</div>
+    <div id="loading-overlay">맵 분석 중...</div>
 
     <div id="top-panel">
         <div class="stat-group">
             <span class="stat-label">MODE</span>
             <span id="mode-badge" class="badge mode-setup">SETUP</span>
         </div>
-
         <div class="divider"></div>
-
-        <button id="btn-challenge" class="btn" onclick="toggleChallenge()">🚀 도전 시작</button>
+        <button id="btn-challenge" class="btn" onclick="toggleChallenge()">🚀 시작</button>
         <button id="btn-clear" class="btn" onclick="clearObstacles()">🧹 벽 지우기</button>
-
         <div class="divider"></div>
-
         <div class="stat-group">
             <span class="stat-label">SPEED</span>
             <input type="range" id="speed-slider" min="1" max="100" value="1">
         </div>
-        
         <div class="divider"></div>
-
         <div class="stat-group">
-            <span class="stat-label">BRUSH SIZE</span>
+            <span class="stat-label">BRUSH</span>
             <input type="range" id="brush-slider" min="5" max="50" value="20">
         </div>
     </div>
@@ -178,9 +164,9 @@
         <span>|</span>
         <span>시간: <strong id="timer-display" style="color:#fff">0</strong></span>
         <span>|</span>
-        <span>변이율: <strong id="mut-rate" style="color:#ff4757">0%</strong></span>
+        <span>변이: <strong id="mut-rate" style="color:#ff4757">0%</strong></span>
         <span>|</span>
-        <span>최초 성공: <strong id="first-success" style="color:#2ecc71">-</strong></span>
+        <span>최초: <strong id="first-success" style="color:#2ecc71">-</strong></span>
     </div>
 
     <canvas id="canvas"></canvas>
@@ -203,14 +189,18 @@ class Vector {
     }
 }
 
-// --- 전역 설정 ---
+// --- 전역 변수 ---
 let width, height;
 const lifetime = 3000; 
-
 const popSize = 400; 
 const maxForce = 0.5; 
 const maxSpeed = 6;
 let brushSize = 20; 
+
+// [변경] 반응형 크기 변수
+let planetSize = 100;   // 행성 이미지 크기
+let planetRadius = 50;  // 행성 반지름 (판정용)
+let touchRadius = 60;   // 터치/드래그 감지 범위
 
 let isChallengeRunning = false;
 let cycles = 1;
@@ -244,15 +234,32 @@ let currentMutationForce = 0.05;
 const earthImg = new Image();
 const marsImg = new Image();
 let imagesLoaded = 0;
+let dragTarget = null; 
 
-// [추가] 드래그 상태 관리 변수
-let dragTarget = null; // 'earth', 'mars', 'wall', null
+// [추가] 반응형 수치 계산 함수
+function calculateResponsiveValues(winW) {
+    if (winW <= 768) {
+        // 모바일 모드
+        planetSize = 60;       // 행성 크기 줄임 (100 -> 60)
+        planetRadius = 30;     // 반지름 (50 -> 30)
+        touchRadius = 45;      // 터치 판정 범위 줄임
+        // 모바일에서는 브러시 기본값도 좀 작게
+        if(!isChallengeRunning && document.getElementById('brush-slider').value == 20) {
+             brushSize = 15;
+             document.getElementById('brush-slider').value = 15;
+        }
+    } else {
+        // 데스크톱 모드
+        planetSize = 100;
+        planetRadius = 50;
+        touchRadius = 60;
+    }
+}
 
 function initScreen() {
     const winW = window.innerWidth;
     const winH = window.innerHeight;
 
-    // 모바일 세로 모드 체크
     if (winW < 900 && winW < winH) {
         orientationOverlay.style.display = 'flex';
         return false; 
@@ -260,8 +267,13 @@ function initScreen() {
         orientationOverlay.style.display = 'none';
     }
 
+    calculateResponsiveValues(winW); // [호출] 크기 계산
+
+    // 상단 패널(약 60px~80px) + 정보패널(30px) 고려
+    let topMargin = (winW <= 768) ? 100 : 130;
+
     width = winW - 20;
-    height = winH - 130; 
+    height = winH - topMargin; 
     canvas.width = width;
     canvas.height = height;
     
@@ -272,11 +284,18 @@ function initScreen() {
         initObstacleGrid();
     }
 
-    if (!spawnPoint) spawnPoint = new Vector(width / 2, height - 80);
-    else { spawnPoint.x = width / 2; spawnPoint.y = height - 80; }
+    // 초기 위치 설정 (화면 비율에 맞춤)
+    if (!spawnPoint) spawnPoint = new Vector(width / 2, height - (planetRadius + 30));
+    else { 
+        spawnPoint.x = Math.min(width - planetRadius, Math.max(planetRadius, spawnPoint.x));
+        spawnPoint.y = Math.min(height - planetRadius, Math.max(planetRadius, spawnPoint.y));
+    }
     
-    if (!targetPoint) targetPoint = new Vector(width / 2, 80);
-    else { targetPoint.x = width / 2; targetPoint.y = 80; }
+    if (!targetPoint) targetPoint = new Vector(width / 2, planetRadius + 30);
+    else {
+        targetPoint.x = Math.min(width - planetRadius, Math.max(planetRadius, targetPoint.x));
+        targetPoint.y = Math.min(height - planetRadius, Math.max(planetRadius, targetPoint.y));
+    }
 
     return true;
 }
@@ -292,26 +311,18 @@ window.onload = () => {
         imagesLoaded++; 
         if(imagesLoaded===2) requestAnimationFrame(drawLoop); 
     };
-    
-    earthImg.onerror = () => { console.log("Earth image not found"); onImgLoad(); };
-    marsImg.onerror = () => { console.log("Mars image not found"); onImgLoad(); };
-    
     earthImg.onload = onImgLoad;
     marsImg.onload = onImgLoad;
-
     earthImg.src = './image/earth.png'; 
     marsImg.src = './image/mars.png';  
-    
     setTimeout(() => { if(imagesLoaded < 2) requestAnimationFrame(drawLoop); }, 500);
 };
 
 window.addEventListener('resize', () => {
     const ready = initScreen();
-    if (ready) {
-        if (isChallengeRunning) {
-            toggleChallenge(); 
-            alert("화면 크기가 변경되어 도전을 중지하고 초기화했습니다.");
-        }
+    if (ready && isChallengeRunning) {
+        toggleChallenge(); 
+        alert("화면 크기가 변경되어 초기화했습니다.");
     }
 });
 
@@ -325,7 +336,6 @@ function generateDistanceMap() {
 
     let queue = [[targetX, targetY]];
     distanceMap[targetX][targetY] = 0;
-
     let dx = [1, -1, 0, 0, 1, 1, -1, -1];
     let dy = [0, 0, 1, -1, 1, -1, 1, -1];
     let cost = [1, 1, 1, 1, 1.4, 1.4, 1.4, 1.4]; 
@@ -333,27 +343,21 @@ function generateDistanceMap() {
     while (queue.length > 0) {
         let [x, y] = queue.shift();
         let currentDist = distanceMap[x][y];
-
         for (let i = 0; i < 8; i++) {
             let nx = x + dx[i];
             let ny = y + dy[i];
-
-            if (nx >= 0 && nx < cols && ny >= 0 && ny < rows) {
-                if (!obstacleGrid[nx][ny]) {
-                    let newDist = currentDist + cost[i];
-                    if (newDist < distanceMap[nx][ny]) {
-                        distanceMap[nx][ny] = newDist;
-                        queue.push([nx, ny]);
-                    }
+            if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && !obstacleGrid[nx][ny]) {
+                let newDist = currentDist + cost[i];
+                if (newDist < distanceMap[nx][ny]) {
+                    distanceMap[nx][ny] = newDist;
+                    queue.push([nx, ny]);
                 }
             }
         }
     }
-    
     let startX = Math.floor(spawnPoint.x / gridRes);
     let startY = Math.floor(spawnPoint.y / gridRes);
     if (startX >= cols || startY >= rows || startX < 0 || startY < 0) return false;
-
     if (distanceMap[startX][startY] === Infinity) return false;
     return true;
 }
@@ -361,7 +365,7 @@ function generateDistanceMap() {
 function toggleChallenge() {
     if (isChallengeRunning) {
         isChallengeRunning = false;
-        btnChallenge.innerText = "🚀 도전 시작";
+        btnChallenge.innerText = "🚀 시작";
         btnChallenge.classList.remove('running');
         modeBadge.innerText = "SETUP";
         modeBadge.className = "badge mode-setup";
@@ -373,11 +377,9 @@ function toggleChallenge() {
             let success = generateDistanceMap();
             loadingOverlay.style.display = 'none';
             if (!success) { alert("목표 지점으로 가는 길이 막혀있습니다!"); return; }
-
             isChallengeRunning = true;
-            btnChallenge.innerText = "⏹ 중지 및 편집";
+            btnChallenge.innerText = "⏹ 중지";
             btnChallenge.classList.add('running');
-            
             population = new Population();
             lifeCounter = 0;
             firstSuccessGeneration = null;
@@ -391,7 +393,6 @@ function toggleChallenge() {
 function initObstacleGrid() {
     obstacleGrid = new Array(cols).fill(0).map(() => new Array(rows).fill(false));
 }
-
 function clearObstacles() {
     if (!isChallengeRunning) initObstacleGrid();
 }
@@ -409,31 +410,20 @@ class DNA {
         }
     }
     copy() { return new DNA(this.genes.map(v => v.copy())); }
-
     mutation(startFrame) {
         let cutoff = startFrame || 0;
         for (let i = 0; i < this.genes.length; i++) {
             if (i < cutoff) {
-                if (i > 0 && i < this.genes.length - 1) {
-                    if (Math.random() < 0.1) { 
-                        let smoothed = this.genes[i-1].copy().add(this.genes[i]).add(this.genes[i+1]);
-                        smoothed.div(3);
-                        smoothed.limit(maxForce);
-                        this.genes[i] = smoothed;
-                    }
+                if (i > 0 && i < this.genes.length - 1 && Math.random() < 0.1) { 
+                    let smoothed = this.genes[i-1].copy().add(this.genes[i]).add(this.genes[i+1]).div(3).limit(maxForce);
+                    this.genes[i] = smoothed;
                 }
                 if (Math.random() < 0.01) { 
-                    let nudge = Vector.random2D();
-                    nudge.mult(currentMutationForce * 0.5); 
-                    this.genes[i].add(nudge);
-                    this.genes[i].limit(maxForce);
+                    this.genes[i].add(Vector.random2D().mult(currentMutationForce * 0.5)).limit(maxForce);
                 }
             } else {
                 if (Math.random() < currentMutationRate) {
-                    let nudge = Vector.random2D();
-                    nudge.mult(currentMutationForce);
-                    this.genes[i].add(nudge);
-                    this.genes[i].limit(maxForce);
+                    this.genes[i].add(Vector.random2D().mult(currentMutationForce)).limit(maxForce);
                 }
             }
         }
@@ -451,22 +441,17 @@ class Rocket {
         this.crashed = false;
         this.finishTime = 0;
         this.isBest = isBest;
-        
         this.recordMapDist = Infinity; 
         this.frameAtBest = 0;
         this.finalMapDist = Infinity; 
-        this.stopTime = 0;
     }
-
     applyForce(force) { this.acc.add(force); }
-
     update() {
         if (this.completed || this.crashed) return;
 
-        this.stopTime = lifeCounter;
-
+        // [변경] 판정 범위 동적 적용 (행성 반지름 크기)
         let d = Vector.dist(this.pos, targetPoint);
-        if (d < 50) { 
+        if (d < planetRadius) { 
             this.completed = true;
             this.pos = targetPoint.copy();
             this.finishTime = lifeCounter;
@@ -489,32 +474,26 @@ class Rocket {
                     this.frameAtBest = lifeCounter; 
                 }
                 this.finalMapDist = currentMapDist;
-
+                
+                // Flow Field Guidance
                 let bestDir = new Vector(0,0);
                 let minDist = currentMapDist;
-                
                 let dx = [1, -1, 0, 0, 1, 1, -1, -1]; 
                 let dy = [0, 0, 1, -1, 1, -1, 1, -1];
-                
                 for(let k=0; k<8; k++) {
                     let nx = gx + dx[k];
                     let ny = gy + dy[k];
-                    if(nx >= 0 && nx < cols && ny >= 0 && ny < rows) {
-                        if(distanceMap[nx][ny] < minDist) {
-                            minDist = distanceMap[nx][ny];
-                            bestDir = new Vector(dx[k], dy[k]);
-                        }
+                    if(nx >= 0 && nx < cols && ny >= 0 && ny < rows && distanceMap[nx][ny] < minDist) {
+                        minDist = distanceMap[nx][ny];
+                        bestDir = new Vector(dx[k], dy[k]);
                     }
                 }
-                
                 if(bestDir.mag() > 0) {
-                    bestDir.normalize();
-                    bestDir.mult(maxForce * 0.3); 
+                    bestDir.normalize().mult(maxForce * 0.3); 
                     this.applyForce(bestDir);
                 }
             }
         }
-
         this.applyForce(this.dna.genes[lifeCounter]);
 
         if (!this.completed && !this.crashed) {
@@ -525,32 +504,24 @@ class Rocket {
             this.acc.mult(0);
         }
     }
-
     calcFitness() {
         if (this.recordMapDist === Infinity) { this.fitness = 0; return; }
-
         let peakScore = 1 / (this.recordMapDist + 1);
         this.fitness = Math.pow(peakScore, 4); 
-
         let drift = Math.max(0, this.finalMapDist - this.recordMapDist);
-        let penalty = 1 / (1 + drift * 0.1); 
-        this.fitness *= penalty;
-
+        this.fitness *= (1 / (1 + drift * 0.1)); 
         this.fitness *= Math.pow((1 + (lifetime - this.frameAtBest) / 500), 2);
-
         if (this.completed) {
             this.fitness *= 10; 
             this.fitness *= (1 + (lifetime - this.finishTime) / 20); 
         }
         if (this.crashed) this.fitness *= 0.5; 
     }
-
     show() {
         ctx.save();
         ctx.translate(this.pos.x, this.pos.y);
         let angle = Math.atan2(this.vel.y, this.vel.x);
         ctx.rotate(angle + Math.PI / 2);
-
         if (this.isBest) {
             ctx.fillStyle = "#ffff00"; ctx.globalAlpha = 1.0; ctx.scale(1.5, 1.5);
         } else if (this.completed) {
@@ -560,7 +531,6 @@ class Rocket {
         } else {
             ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
         }
-
         ctx.beginPath();
         ctx.moveTo(0, -10); ctx.lineTo(-5, 5); ctx.lineTo(5, 5);
         ctx.closePath();
@@ -578,7 +548,6 @@ class Population {
         this.mutationCutoff = 0; 
         for (let i = 0; i < this.popSize; i++) this.rockets[i] = new Rocket();
     }
-
     run() {
         let allStopped = true;
         for (let i = 0; i < this.popSize; i++) {
@@ -588,23 +557,16 @@ class Population {
         }
         return allStopped;
     }
-
     evaluate() {
         let maxFit = 0;
         let bestIdx = 0;
         let successCount = 0;
-
         for (let i = 0; i < this.popSize; i++) {
             this.rockets[i].calcFitness();
-            if (this.rockets[i].fitness > maxFit) {
-                maxFit = this.rockets[i].fitness;
-                bestIdx = i;
-            }
+            if (this.rockets[i].fitness > maxFit) { maxFit = this.rockets[i].fitness; bestIdx = i; }
             if (this.rockets[i].completed) successCount++;
         }
-        
         this.bestRocketDNA = this.rockets[bestIdx].dna.copy();
-
         let bestRocket = this.rockets[bestIdx];
         let usefulLife = bestRocket.completed ? bestRocket.finishTime : bestRocket.frameAtBest;
         this.mutationCutoff = Math.floor(usefulLife * 0.8);
@@ -616,25 +578,19 @@ class Population {
             }
             modeBadge.innerText = "OPTIMIZING";
             modeBadge.className = "badge mode-opt";
-            
             let successRatio = successCount / this.popSize; 
             currentMutationRate = 0.01 + (1 - successRatio) * 0.04; 
-            currentMutationForce = 0.05; 
         } else {
             modeBadge.innerText = "SEARCHING";
             modeBadge.className = "badge mode-search";
             if (Math.abs(maxFit - lastMaxFitness) < 0.00000001) stagnationCounter++;
             else stagnationCounter = 0; 
             lastMaxFitness = maxFit;
-
-            currentMutationRate = 0.05 + (stagnationCounter * 0.005);
-            currentMutationRate = Math.min(currentMutationRate, 0.3); 
-            currentMutationForce = 0.1 + (stagnationCounter * 0.01);
-            currentMutationForce = Math.min(currentMutationForce, 0.4);
+            currentMutationRate = Math.min(0.05 + (stagnationCounter * 0.005), 0.3);
+            currentMutationForce = Math.min(0.1 + (stagnationCounter * 0.01), 0.4);
         }
         mutRateDisplay.innerText = (currentMutationRate * 100).toFixed(1) + "%";
     }
-
     selection() {
         let newRockets = [];
         newRockets[0] = new Rocket(this.bestRocketDNA.copy(), true);
@@ -660,19 +616,20 @@ function drawMapElements() {
         }
     }
 
+    // [변경] 동적 크기 적용
     if (marsImg.complete && marsImg.naturalWidth !== 0) {
-        ctx.drawImage(marsImg, targetPoint.x - 50, targetPoint.y - 50, 100, 100);
+        ctx.drawImage(marsImg, targetPoint.x - planetRadius, targetPoint.y - planetRadius, planetSize, planetSize);
     } else {
         ctx.beginPath();
-        ctx.arc(targetPoint.x, targetPoint.y, 50, 0, Math.PI*2);
+        ctx.arc(targetPoint.x, targetPoint.y, planetRadius, 0, Math.PI*2);
         ctx.fillStyle = "#2ecc71"; ctx.fill();
     }
 
     if (earthImg.complete && earthImg.naturalWidth !== 0) {
-        ctx.drawImage(earthImg, spawnPoint.x - 50, spawnPoint.y - 50, 100, 100);
+        ctx.drawImage(earthImg, spawnPoint.x - planetRadius, spawnPoint.y - planetRadius, planetSize, planetSize);
     } else {
         ctx.beginPath();
-        ctx.rect(spawnPoint.x-25, spawnPoint.y-25, 50, 50);
+        ctx.rect(spawnPoint.x - planetRadius, spawnPoint.y - planetRadius, planetSize, planetSize);
         ctx.fillStyle = "#3498db"; ctx.fill();
     }
 }
@@ -682,7 +639,6 @@ function drawLoop() {
         requestAnimationFrame(drawLoop);
         return;
     }
-
     drawMapElements();
     if (isChallengeRunning && population) {
         for (let n = 0; n < cycles; n++) {
@@ -700,9 +656,8 @@ function drawLoop() {
     requestAnimationFrame(drawLoop);
 }
 
-// --- 입력 처리 (마우스 & 터치 통합) ---
+// --- 입력 처리 ---
 function setupInput() {
-    // Mouse Events
     canvas.addEventListener('mousedown', (e) => {
         const {x, y} = getPos(e);
         handleStart(x, y);
@@ -713,7 +668,6 @@ function setupInput() {
     });
     window.addEventListener('mouseup', handleEnd);
 
-    // Touch Events
     canvas.addEventListener('touchstart', (e) => { 
         e.preventDefault(); 
         const {x, y} = getPos(e.touches[0]);
@@ -729,60 +683,40 @@ function setupInput() {
     window.addEventListener('touchend', handleEnd);
 }
 
-// 좌표 계산 유틸리티
 function getPos(e) {
     const rect = canvas.getBoundingClientRect();
-    return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-    };
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
 }
 
-// 입력 시작 (클릭/터치 시)
 function handleStart(x, y) {
     if (isChallengeRunning) return;
-
-    // 지구(출발점) 근처 클릭 확인 (판정 범위 60px)
-    if (Vector.dist(new Vector(x, y), spawnPoint) < 60) {
+    // [변경] touchRadius를 사용하여 반응형 터치 범위 적용
+    if (Vector.dist(new Vector(x, y), spawnPoint) < touchRadius) {
         dragTarget = 'earth';
         return;
     }
-
-    // 화성(목표점) 근처 클릭 확인 (판정 범위 60px)
-    if (Vector.dist(new Vector(x, y), targetPoint) < 60) {
+    if (Vector.dist(new Vector(x, y), targetPoint) < touchRadius) {
         dragTarget = 'mars';
         return;
     }
-
-    // 아무것도 아니면 벽 그리기 모드
     dragTarget = 'wall';
     addObstacle(x, y);
 }
 
-// 입력 이동 (드래그 시)
 function handleMove(x, y) {
     if (!dragTarget) return;
-
     if (dragTarget === 'earth') {
-        spawnPoint.x = x;
-        spawnPoint.y = y;
-        // 화면 밖으로 나가지 않게 제한
-        spawnPoint.x = Math.max(25, Math.min(width - 25, spawnPoint.x));
-        spawnPoint.y = Math.max(25, Math.min(height - 25, spawnPoint.y));
+        spawnPoint.x = Math.max(planetRadius, Math.min(width - planetRadius, x));
+        spawnPoint.y = Math.max(planetRadius, Math.min(height - planetRadius, y));
     } else if (dragTarget === 'mars') {
-        targetPoint.x = x;
-        targetPoint.y = y;
-        targetPoint.x = Math.max(25, Math.min(width - 25, targetPoint.x));
-        targetPoint.y = Math.max(25, Math.min(height - 25, targetPoint.y));
+        targetPoint.x = Math.max(planetRadius, Math.min(width - planetRadius, x));
+        targetPoint.y = Math.max(planetRadius, Math.min(height - planetRadius, y));
     } else if (dragTarget === 'wall') {
         addObstacle(x, y);
     }
 }
 
-// 입력 종료
-function handleEnd() {
-    dragTarget = null;
-}
+function handleEnd() { dragTarget = null; }
 
 function addObstacle(x, y) {
     let radius = brushSize / 2; 
@@ -790,13 +724,11 @@ function addObstacle(x, y) {
     let maxGridX = Math.min(cols - 1, Math.floor((x + radius) / gridRes));
     let minGridY = Math.max(0, Math.floor((y - radius) / gridRes));
     let maxGridY = Math.min(rows - 1, Math.floor((y + radius) / gridRes));
-
     for (let i = minGridX; i <= maxGridX; i++) {
         for (let j = minGridY; j <= maxGridY; j++) {
-            let cellCenterX = i * gridRes + gridRes / 2;
-            let cellCenterY = j * gridRes + gridRes / 2;
-            let dist = Math.sqrt((cellCenterX - x) ** 2 + (cellCenterY - y) ** 2);
-            if (dist < radius) obstacleGrid[i][j] = true;
+            let cx = i * gridRes + gridRes / 2;
+            let cy = j * gridRes + gridRes / 2;
+            if (Math.sqrt((cx - x) ** 2 + (cy - y) ** 2) < radius) obstacleGrid[i][j] = true;
         }
     }
 }
