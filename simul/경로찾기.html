@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Smart Rockets - Mobile Responsive</title>
+    <title>Smart Rockets - Side Panel Layout</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body {
@@ -11,7 +11,7 @@
             color: #eee;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
-            flex-direction: column;
+            flex-direction: column; /* 기본 데스크탑: 세로 배치 */
             align-items: center;
             height: 100vh;
             overflow: hidden;
@@ -20,21 +20,21 @@
             -webkit-touch-callout: none;
         }
 
-        /* --- 상단 패널 스타일 --- */
+        /* --- 공통 UI 스타일 --- */
         #top-panel {
-            margin-top: 10px;
-            display: flex;
-            gap: 15px;
-            align-items: center;
             background: #2c3e50;
             padding: 10px 25px;
-            border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            z-index: 10;
+            z-index: 20;
             flex-shrink: 0;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
         }
 
+        /* 정보 패널 (기본) */
         #info-panel {
             margin-top: 5px;
             display: flex;
@@ -42,7 +42,8 @@
             font-size: 0.9em;
             color: #aaa;
             flex-shrink: 0;
-            margin-bottom: 5px;
+            z-index: 15;
+            pointer-events: none; /* 클릭 통과 */
         }
 
         .btn {
@@ -51,15 +52,14 @@
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 1em;
-            transition: transform 0.1s;
+            font-size: 0.9em;
             text-transform: uppercase;
+            white-space: nowrap;
         }
         .btn:active { transform: scale(0.95); }
-
         #btn-challenge { background-color: #e74c3c; color: white; box-shadow: 0 4px 0 #c0392b; }
         #btn-challenge.running { background-color: #f39c12; box-shadow: 0 4px 0 #d35400; }
-        #btn-clear { background-color: #444; color: #ccc; font-size: 0.8em; padding: 8px 12px; }
+        #btn-clear { background-color: #444; color: #ccc; font-size: 0.8em; padding: 10px; }
 
         .stat-group { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
         .stat-label { font-size: 0.7em; color: #888; margin-bottom: 2px; }
@@ -67,55 +67,87 @@
         .mode-setup { background: #555; color: #ccc; }
         .mode-search { background: #ff4757; color: white; animation: pulse 1s infinite; }
         .mode-opt { background: #1e90ff; color: white; }
+        
         .divider { width: 1px; height: 35px; background: #555; margin: 0 5px; }
         input[type=range] { width: 100px; cursor: pointer; }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 
-        /* --- 모바일 대응 (화면 폭 768px 이하) --- */
-        @media (max-width: 768px) {
+        /* --- [핵심 변경] 모바일/태블릿 (가로 1024px 이하) : 사이드바 레이아웃 --- */
+        @media (max-width: 1024px) {
+            body {
+                flex-direction: row; /* 가로 배치로 변경 (왼쪽 패널 + 오른쪽 캔버스) */
+                align-items: stretch; /* 높이 꽉 채우기 */
+            }
+
             #top-panel {
-                padding: 8px 10px; /* 패딩 축소 */
-                gap: 8px; /* 간격 축소 */
-                width: 95%; /* 화면 꽉 차게 */
-                justify-content: space-around;
-                margin-top: 5px;
+                width: 90px; /* 사이드바 너비 고정 */
+                height: 100vh; /* 전체 높이 */
+                flex-direction: column; /* 내부 아이템 세로 정렬 */
+                padding: 20px 5px;
+                margin: 0;
+                justify-content: flex-start; /* 위쪽부터 배치 */
+                gap: 15px;
+                border-radius: 0; /* 둥근 모서리 제거 */
+                overflow-y: auto; /* 내용 넘치면 스크롤 */
             }
+
+            /* 구분선 가로로 변경 */
+            .divider {
+                width: 80%;
+                height: 1px;
+                margin: 5px 0;
+            }
+
+            /* 버튼 스타일 조정 */
             .btn {
-                padding: 6px 12px; /* 버튼 크기 축소 */
-                font-size: 0.8em;
+                width: 90%;
+                font-size: 0.75em;
+                padding: 12px 5px;
+                text-align: center;
+                white-space: normal; /* 텍스트 줄바꿈 허용 */
+                line-height: 1.2;
             }
-            #btn-challenge {
-                padding: 6px 15px;
-            }
-            .stat-group { min-width: 40px; }
-            .stat-label { font-size: 0.6em; }
-            input[type=range] { width: 60px; } /* 슬라이더 길이 축소 */
-            .divider { height: 25px; margin: 0 2px; }
-            
+
+            .stat-group { width: 100%; margin: 5px 0; }
+            input[type=range] { width: 70px; }
+
+            /* 정보 패널을 캔버스 위에 오버레이로 띄움 */
             #info-panel {
-                font-size: 0.75em; /* 정보 텍스트 축소 */
-                gap: 10px;
+                position: absolute;
+                bottom: 10px;
+                right: 15px;
+                background: rgba(0, 0, 0, 0.6);
+                padding: 8px 15px;
+                border-radius: 20px;
+                flex-direction: column; /* 세로 나열 (공간 절약) */
+                gap: 2px;
+                align-items: flex-end;
+                text-align: right;
+                font-size: 0.75em;
+                margin: 0;
             }
+            #info-panel span { display: block; } /* 줄바꿈 */
+            #info-panel span:nth-child(2n) { display: none; } /* 구분자(|) 숨김 */
+        }
+
+        /* 데스크탑 모드일 때 상단 패널 마진 */
+        @media (min-width: 1025px) {
+            #top-panel { margin-top: 15px; border-radius: 12px; }
         }
 
         canvas {
             background-color: #000;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
-            border: 2px solid #444;
-            cursor: pointer;
             display: block;
             touch-action: none; 
+            flex-grow: 1; /* 남은 공간 모두 차지 */
         }
 
-        /* 로딩 & 가로모드 안내 */
+        /* 로딩 & 회전 안내 */
         #loading-overlay {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8); color: #00ff7f;
-            padding: 20px 40px; border-radius: 8px;
-            font-size: 1.5em; display: none; z-index: 100;
-            white-space: nowrap;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8); color: #00ff7f; padding: 20px 40px; border-radius: 8px;
+            font-size: 1.5em; display: none; z-index: 100; white-space: nowrap;
         }
         #orientation-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -123,18 +155,16 @@
             flex-direction: column; justify-content: center; align-items: center;
             z-index: 9999; text-align: center;
         }
-        #orientation-overlay h1 { font-size: 2rem; margin-bottom: 10px; }
+        #orientation-overlay h1 { font-size: 1.5rem; margin-bottom: 10px; }
         .rotate-icon { font-size: 3rem; margin-bottom: 20px; animation: rotatePhone 2s infinite; }
-        @keyframes rotatePhone {
-            0% { transform: rotate(0deg); } 50% { transform: rotate(-90deg); } 100% { transform: rotate(0deg); }
-        }
+        @keyframes rotatePhone { 0% { transform: rotate(0deg); } 50% { transform: rotate(-90deg); } 100% { transform: rotate(0deg); } }
     </style>
 </head>
 <body>
 
     <div id="orientation-overlay">
         <div class="rotate-icon">📱 ➡️ 🔄</div>
-        <h1>화면을 가로로 돌려주세요</h1>
+        <h1>가로 모드 권장</h1>
     </div>
 
     <div id="loading-overlay">맵 분석 중...</div>
@@ -144,15 +174,21 @@
             <span class="stat-label">MODE</span>
             <span id="mode-badge" class="badge mode-setup">SETUP</span>
         </div>
+        
         <div class="divider"></div>
+        
         <button id="btn-challenge" class="btn" onclick="toggleChallenge()">🚀 시작</button>
-        <button id="btn-clear" class="btn" onclick="clearObstacles()">🧹 벽 지우기</button>
+        <button id="btn-clear" class="btn" onclick="clearObstacles()">🧹 지우기</button>
+        
         <div class="divider"></div>
+        
         <div class="stat-group">
             <span class="stat-label">SPEED</span>
             <input type="range" id="speed-slider" min="1" max="100" value="1">
         </div>
+        
         <div class="divider"></div>
+        
         <div class="stat-group">
             <span class="stat-label">BRUSH</span>
             <input type="range" id="brush-slider" min="5" max="50" value="20">
@@ -189,7 +225,7 @@ class Vector {
     }
 }
 
-// --- 전역 변수 ---
+// --- 전역 설정 ---
 let width, height;
 const lifetime = 3000; 
 const popSize = 400; 
@@ -197,10 +233,10 @@ const maxForce = 0.5;
 const maxSpeed = 6;
 let brushSize = 20; 
 
-// [변경] 반응형 크기 변수
-let planetSize = 100;   // 행성 이미지 크기
-let planetRadius = 50;  // 행성 반지름 (판정용)
-let touchRadius = 60;   // 터치/드래그 감지 범위
+// 반응형 변수들
+let planetSize = 100;
+let planetRadius = 50;
+let touchRadius = 60;
 
 let isChallengeRunning = false;
 let cycles = 1;
@@ -236,20 +272,18 @@ const marsImg = new Image();
 let imagesLoaded = 0;
 let dragTarget = null; 
 
-// [추가] 반응형 수치 계산 함수
 function calculateResponsiveValues(winW) {
-    if (winW <= 768) {
-        // 모바일 모드
-        planetSize = 60;       // 행성 크기 줄임 (100 -> 60)
-        planetRadius = 30;     // 반지름 (50 -> 30)
-        touchRadius = 45;      // 터치 판정 범위 줄임
-        // 모바일에서는 브러시 기본값도 좀 작게
+    if (winW <= 1024) {
+        // 모바일 설정
+        planetSize = 60;       
+        planetRadius = 30;     
+        touchRadius = 45;      
         if(!isChallengeRunning && document.getElementById('brush-slider').value == 20) {
              brushSize = 15;
              document.getElementById('brush-slider').value = 15;
         }
     } else {
-        // 데스크톱 모드
+        // 데스크톱 설정
         planetSize = 100;
         planetRadius = 50;
         touchRadius = 60;
@@ -260,20 +294,29 @@ function initScreen() {
     const winW = window.innerWidth;
     const winH = window.innerHeight;
 
-    if (winW < 900 && winW < winH) {
+    // 모바일 가로모드 유도
+    if (winW < winH) {
         orientationOverlay.style.display = 'flex';
         return false; 
     } else {
         orientationOverlay.style.display = 'none';
     }
 
-    calculateResponsiveValues(winW); // [호출] 크기 계산
+    calculateResponsiveValues(winW);
 
-    // 상단 패널(약 60px~80px) + 정보패널(30px) 고려
-    let topMargin = (winW <= 768) ? 100 : 130;
-
-    width = winW - 20;
-    height = winH - topMargin; 
+    // [중요] 캔버스 크기 계산 (사이드바 고려)
+    if (winW <= 1024) {
+        // 모바일: 사이드바 너비(100px 정도 여유)를 뺀 나머지를 캔버스로 사용
+        // 사이드바 CSS width가 90px + padding = 약 100px
+        let sidebarWidth = 100; 
+        width = winW - sidebarWidth; 
+        height = winH; 
+    } else {
+        // 데스크탑: 상단 패널 높이 제외
+        width = winW;
+        height = winH - 130; 
+    }
+    
     canvas.width = width;
     canvas.height = height;
     
@@ -284,7 +327,7 @@ function initScreen() {
         initObstacleGrid();
     }
 
-    // 초기 위치 설정 (화면 비율에 맞춤)
+    // 위치 재조정
     if (!spawnPoint) spawnPoint = new Vector(width / 2, height - (planetRadius + 30));
     else { 
         spawnPoint.x = Math.min(width - planetRadius, Math.max(planetRadius, spawnPoint.x));
@@ -322,7 +365,6 @@ window.addEventListener('resize', () => {
     const ready = initScreen();
     if (ready && isChallengeRunning) {
         toggleChallenge(); 
-        alert("화면 크기가 변경되어 초기화했습니다.");
     }
 });
 
@@ -449,7 +491,6 @@ class Rocket {
     update() {
         if (this.completed || this.crashed) return;
 
-        // [변경] 판정 범위 동적 적용 (행성 반지름 크기)
         let d = Vector.dist(this.pos, targetPoint);
         if (d < planetRadius) { 
             this.completed = true;
@@ -475,7 +516,6 @@ class Rocket {
                 }
                 this.finalMapDist = currentMapDist;
                 
-                // Flow Field Guidance
                 let bestDir = new Vector(0,0);
                 let minDist = currentMapDist;
                 let dx = [1, -1, 0, 0, 1, 1, -1, -1]; 
@@ -616,7 +656,6 @@ function drawMapElements() {
         }
     }
 
-    // [변경] 동적 크기 적용
     if (marsImg.complete && marsImg.naturalWidth !== 0) {
         ctx.drawImage(marsImg, targetPoint.x - planetRadius, targetPoint.y - planetRadius, planetSize, planetSize);
     } else {
@@ -656,7 +695,6 @@ function drawLoop() {
     requestAnimationFrame(drawLoop);
 }
 
-// --- 입력 처리 ---
 function setupInput() {
     canvas.addEventListener('mousedown', (e) => {
         const {x, y} = getPos(e);
@@ -690,7 +728,6 @@ function getPos(e) {
 
 function handleStart(x, y) {
     if (isChallengeRunning) return;
-    // [변경] touchRadius를 사용하여 반응형 터치 범위 적용
     if (Vector.dist(new Vector(x, y), spawnPoint) < touchRadius) {
         dragTarget = 'earth';
         return;
