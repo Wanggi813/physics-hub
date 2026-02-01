@@ -65,68 +65,143 @@
     .input-row{ margin-top:4px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
     .input-row input[type="number"]{ border-radius:999px; border:1px solid #d4d4d8; padding:4px 8px; font-size:12px; width:90px; }
 
-    /* =========================================
-       ★ 모바일 최적화 (Split View) CSS ★
-       ========================================= */
-    @media (max-width: 768px) {
-      body { overflow: hidden; } /* 전체 스크롤 방지 */
+/* =========================================
+   ★ 모바일 최적화 (Split View) CSS ★
+   ========================================= */
+@media (max-width: 768px) {
+  body { overflow: hidden; } /* 전체 스크롤 방지 */
 
-      /* 1. 상단 고정 영역: 시뮬레이션 (45%) */
-      #fixed-sim-area {
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%;
-        height: 45vh; /* 화면의 45% */
-        background: #f0f9ff;
-        z-index: 5;
-        border-bottom: 1px solid #cbd5e1;
-      }
-      #sim-holder {
-        width: 100% !important;
-        height: 100% !important;
-        min-height: auto !important; /* 기존 min-height 무시 */
-        border-radius: 0;
-      }
-      /* P5 캔버스가 이 안에서 꽉 차게 렌더링됨 */
-      #sim-holder canvas {
-        width: 100% !important;
-        height: 100% !important;
-        display: block;
-      }
+  /* 1. 상단 고정 영역: 시뮬레이션 (45%) */
+  #fixed-sim-area {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 45vh;
+    background: #f0f9ff;
+    z-index: 5;
+    border-bottom: 1px solid #cbd5e1;
+  }
+  #sim-holder {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: auto !important;
+    border-radius: 0;
+  }
+  #sim-holder canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+  }
 
-      /* 2. 하단 스크롤 영역: UI (55%) */
-      #scroll-ui-area {
-        position: fixed;
-        top: 45vh;
-        left: 0;
-        width: 100%;
-        height: 55vh;
-        overflow-y: auto; /* 세로 스크롤 */
-        background: #f9fafb;
-        padding: 10px 0 60px 0; /* 하단 여백 확보 */
-        z-index: 10;
-      }
+  /* 2. 하단 스크롤 영역: UI (55%) */
+  #scroll-ui-area {
+    position: fixed;
+    top: 45vh;
+    left: 0;
+    width: 100%;
+    height: 55vh;
+    overflow-y: auto;
+    background: #f9fafb;
+    padding: 10px 0 60px 0;
+    z-index: 10;
+  }
 
-      /* 내부 요소 스타일 조정 */
-      .wrap { margin: 0; padding: 0; max-width: none; }
-      
-      /* 헤더 숨기거나 간소화 */
-      h1, .subtitle, .brand { display: none; } 
-      
-      /* 패널과 도전박스를 블록으로 배치 */
-      .grid { display: block; padding: 0 10px; }
-      .panel, .card, .challenge-group {
-        margin-bottom: 12px;
-        width: 100%;
-        border-radius: 12px;
-      }
-      .card { 
-        padding: 0; border: none; box-shadow: none; background: transparent; 
-      }
-      
-      /* 텍스트 크기 조절 */
-      .panel h2 { font-size: 15px; font-weight: 700; color: #334155; }
-    }
+  .wrap { margin: 0; padding: 0; max-width: none; }
+  h1, .subtitle, .brand { display: none; }
+
+  .grid { display: block; padding: 0 10px; }
+  .panel, .card, .challenge-group {
+    margin-bottom: 12px;
+    width: 100%;
+    border-radius: 12px;
+  }
+  .card {
+    padding: 0; border: none; box-shadow: none; background: transparent;
+  }
+  .panel h2 { font-size: 15px; font-weight: 700; color: #334155; }
+}
+
+/* =========================================
+   ★ 데스크탑 재배치 (모바일보다 클 때) ★
+   - 왼쪽: 패널
+   - 오른쪽: 시뮬레이션
+   ========================================= */
+@media (min-width: 769px) {
+
+  /* 화면을 2열로 쪼갬: (좌)패널 / (우)시뮬 */
+  body{
+    height: 100vh;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  /* 패널(좌) */
+  #scroll-ui-area{
+    position: static;
+    width: auto;
+    height: 100vh;
+    overflow-y: auto;
+    grid-column: 1;
+    z-index: 1;
+    grid-row: 1 !important;
+    min-width: 0;
+    display: block !important;
+  }
+
+  /* 데스크탑에서는 wrap을 “가로 중앙 1200 제한”에서 해제해야 옆 칼럼에 붙음 */
+  #scroll-ui-area .wrap{
+    max-width: none;
+    margin: 0;
+    padding: 0 0 24px 0;
+  }
+
+  /* 좌측 패널 안에서는 카드들을 세로로 쌓는 게 안정적 */
+  #scroll-ui-area .grid{
+    display: block;
+    padding: 0;
+  }
+
+  /* 시뮬(우) */
+  #fixed-sim-area{
+    position: static;
+    width: auto;
+    height: 100vh;
+    grid-column: 2;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    z-index: 1;
+  }
+
+  /* 시뮬: 4:3 유지 + 오른쪽 칼럼을 꽉 채우되 높이 넘치지 않게 */
+  #sim-holder{
+    width: 100%;
+    max-width: calc((100vh - 32px) * (4/3)); /* 4:3에서 높이에 맞춘 최대 가로 */
+    aspect-ratio: 4 / 3;
+    height: auto;
+    min-height: 700px;
+    max-height: calc(100vh - 32px);
+
+    border-radius: 16px;
+    overflow: hidden;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    box-shadow: 0 18px 40px rgba(15,23,42,0.08);
+  }
+
+  #sim-holder canvas{
+    width: 100% !important;
+    height: auto !important;
+    display: block;
+  }
+
+  /* 데스크탑에서는 헤더 표시 */
+  h1, .subtitle, .brand { display: block; }
+}
+   
   </style>
 </head>
 <body>
