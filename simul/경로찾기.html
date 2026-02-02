@@ -258,7 +258,6 @@ function initScreen() {
 
     if (winW < winH) {
         orientationOverlay.style.display = 'flex';
-        return false; 
     } else {
         orientationOverlay.style.display = 'none';
     }
@@ -818,10 +817,6 @@ function drawMapElements() {
 }
 
 function drawLoop() {
-    if (orientationOverlay.style.display === 'flex') {
-        requestAnimationFrame(drawLoop);
-        return;
-    }
     drawMapElements();
     if (isChallengeRunning && population) {
         for (let n = 0; n < cycles; n++) {
