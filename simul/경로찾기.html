@@ -428,42 +428,25 @@ class DNA {
         return new DNA(this.genes.map(v => v.copy())); 
     }
 
-    // ✨ 개선된 변이 전략
     mutation(startFrame, isElite = false) {
         let cutoff = startFrame || 0;
         
-        // 스무딩 강도: 성공 이후 세대가 진행될수록 급격히 증가
-        let smoothingStrength = 0;
-        let multiPassSmoothing = 1; // 다중 패스 스무딩 횟수
-        if (successExists && firstSuccessGeneration !== null) {
-            let generationsSinceSuccess = population.generation - firstSuccessGeneration;
-            // 더 빠르게 스무딩 강도 증가 (0.08로 2배 증가)
-            smoothingStrength = Math.min(0.98, generationsSinceSuccess * 0.08);
-            // 10세대 이후부터 다중 패스 스무딩 적용
-            if (generationsSinceSuccess > 10) {
-                multiPassSmoothing = Math.min(5, Math.floor(generationsSinceSuccess / 5));
-            }
-        }
-        
-        // 엘리트는 매우 보수적으로 변이하되, 스무딩은 강하게
+        // 1. 구간 정의
+        let halfLife = this.genes.length * 0.5; // 초반 보호 구간 (50%)
+        let endZone = this.genes.length * 0.8;  // 후반 탐색 구간 (80% 이후)
+
+        // 엘리트(상위 개체)는 기존 경로를 어느 정도 유지해야 하므로, 후반부 변이율을 낮게 설정
         if (isElite) {
-            // 엘리트에게 다중 패스 스무딩 적용
-            for (let pass = 0; pass < multiPassSmoothing; pass++) {
-                for (let i = 1; i < cutoff - 1; i++) {
-                    let smoothed = this.genes[i-1].copy()
-                        .add(this.genes[i])
-                        .add(this.genes[i+1]);
-                    smoothed.div(3);
-                    smoothed.limit(maxForce);
-                    
-                    let original = this.genes[i].copy();
-                    this.genes[i] = original.mult(1 - smoothingStrength).add(smoothed.mult(smoothingStrength));
-                }
-            }
-            
-            // 엘리트는 아주 약한 변이만
             for (let i = cutoff; i < this.genes.length; i++) {
-                if (Math.random() < 0.1) {
+                // 엘리트도 마지막 20% 구간에서는 약간의 탐색을 허용 (확률 5%)
+                if (i > endZone && Math.random() < 0.05) {
+                    let nudge = Vector.random2D();
+                    nudge.mult(currentMutationForce * 0.5);
+                    this.genes[i].add(nudge);
+                    this.genes[i].limit(maxForce);
+                } 
+                // 그 외 구간은 매우 보수적
+                else if (Math.random() < 0.01) {
                     let nudge = Vector.random2D();
                     nudge.mult(currentMutationForce * 0.2);
                     this.genes[i].add(nudge);
@@ -473,53 +456,48 @@ class DNA {
             return;
         }
 
-        // 일반 개체: 더 공격적인 탐색
+        // 일반 개체 변이
         for (let i = 0; i < this.genes.length; i++) {
-            if (i < cutoff) {
-                // 성공 구간: 강력한 스무딩 + 미세 조정
-                let shouldSmooth = Math.random() < (0.5 + smoothingStrength * 0.5); // 스무딩 확률 대폭 증가
-                if (i > 0 && i < this.genes.length - 1 && shouldSmooth) {
-                    // 다중 패스 스무딩: 여러 번 반복하여 더욱 부드럽게
-                    for (let pass = 0; pass < multiPassSmoothing; pass++) {
-                        let smoothed = this.genes[i-1].copy()
-                            .add(this.genes[i])
-                            .add(this.genes[i+1]);
-                        smoothed.div(3);
-                        smoothed.limit(maxForce);
-                        
-                        // 스무딩 강도에 따라 원본과 스무딩된 값 혼합
-                        let original = this.genes[i].copy();
-                        this.genes[i] = original.mult(1 - smoothingStrength).add(smoothed.mult(smoothingStrength));
-                    }
-                }
-                
-                // 미세 조정 확률도 세대가 지날수록 급격히 감소
-                if (Math.random() < (0.03 * (1 - smoothingStrength * 0.95))) {
+            
+            // ✨ [핵심] 후반부 20% 구간: 과격한 탐색 (High Exploration)
+            if (i > endZone) {
+                // 20%의 높은 확률로 돌연변이 발생 (기존 유전자를 무시하고 새로운 움직임 시도)
+                if (Math.random() < 0.2) { 
+                    // 기존 방향에 큰 힘을 더함 (부모 경로 이탈 유도)
                     let nudge = Vector.random2D();
-                    nudge.mult(currentMutationForce * 0.3 * (1 - smoothingStrength * 0.9));
+                    nudge.mult(maxForce); // 최대 힘으로 밀어버림
                     this.genes[i].add(nudge);
                     this.genes[i].limit(maxForce);
                 }
-            } else {
-                // 미탐색 구간: 높은 변이율
+                continue; // 후반부 처리를 했으므로 아래 로직 건너뜀
+            }
+
+            // --- 기존 로직 (초반 ~ 80% 구간) ---
+
+            // 안정성 계수: 초반 50% 구간은 변이 힘을 억제
+            let stabilityMult = (i < halfLife) ? 0.2 : 1.0; 
+
+            // A. 부모가 갔던 길 (Cutoff 이전)
+            if (i < cutoff) {
+                if (Math.random() < 0.05) { // 5% 확률
+                    let nudge = Vector.random2D();
+                    nudge.mult(currentMutationForce * stabilityMult);
+                    this.genes[i].add(nudge);
+                    this.genes[i].limit(maxForce);
+                }
+            } 
+            // B. 새로운 길 (Cutoff 이후 ~ 80% 이전)
+            else {
                 if (Math.random() < currentMutationRate) {
                     let nudge = Vector.random2D();
-                    nudge.mult(currentMutationForce);
+                    nudge.mult(currentMutationForce * stabilityMult);
                     this.genes[i].add(nudge);
                     this.genes[i].limit(maxForce);
-                }
-                
-                // 가끔 완전히 새로운 방향 시도
-                if (Math.random() < 0.01) {
-                    this.genes[i] = Vector.random2D();
-                    this.genes[i].mult(Math.random() * maxForce);
                 }
             }
         }
     }
-}
-
-// ========== 개선된 Rocket 클래스 ==========
+}// ========== 개선된 Rocket 클래스 ==========
 class Rocket {
     constructor(dna, isBest = false) {
         this.pos = spawnPoint.copy();
@@ -533,7 +511,10 @@ class Rocket {
         this.isBest = isBest;
         this.recordMapDist = Infinity; 
         this.frameAtBest = 0;
-        this.finalMapDist = Infinity; 
+        this.finalMapDist = Infinity;
+        
+        // ✨ [추가] 총 이동 거리를 기록할 변수
+        this.odometer = 0; 
     }
     
     applyForce(force) { 
@@ -568,7 +549,7 @@ class Rocket {
                 }
                 this.finalMapDist = currentMapDist;
                 
-                // 가이드 힘 (약하게)
+                // 가이드 힘
                 let bestDir = new Vector(0,0);
                 let minDist = currentMapDist;
                 let dx = [1, -1, 0, 0, 1, 1, -1, -1]; 
@@ -582,7 +563,7 @@ class Rocket {
                     }
                 }
                 if(bestDir.mag() > 0) {
-                    bestDir.normalize().mult(maxForce * 0.2);  // 더 약하게
+                    bestDir.normalize().mult(maxForce * 0.2);
                     this.applyForce(bestDir);
                 }
             }
@@ -595,25 +576,36 @@ class Rocket {
             this.vel.mult(0.98); 
             this.vel.limit(maxSpeed); 
             this.pos.add(this.vel);
+
+            // ✨ [추가] 이번 프레임에 이동한 거리만큼 누적
+            this.odometer += this.vel.mag();
+
             this.acc.mult(0);
         }
     }
 
-    // ✨ 개선된 fitness 함수
+    // ✨ 개선된 fitness 함수 (이동 거리 효율성 반영)
     calcFitness() {
         if (this.recordMapDist === Infinity) { 
             this.fitness = 0; 
             return; 
         }
 
-        // 1. 기본 거리 점수 (3제곱으로 완화)
+        // 1. 기본 거리 점수
         let distScore = 1 / (this.recordMapDist + 1);
-        this.fitness = Math.pow(distScore, 3);  // 6 -> 3으로 완화
+        this.fitness = Math.pow(distScore, 3);
 
         if (this.completed) {
             // 성공 시: 시간 보너스
             let timeBonus = (lifetime - this.finishTime) / lifetime;
-            this.fitness *= (1 + timeBonus * 10);  // 큰 보너스
+            this.fitness *= (1 + timeBonus * 10);
+            
+            // ✨ [추가] 효율성(이동 거리) 보너스
+            // 많이 움직였을수록(odometer가 클수록) 분모가 커져서 점수가 낮아짐
+            // 제곱(pow 2)을 해서 짧은 경로를 아주 강력하게 선호하도록 유도
+            let efficiency = 1 / (1 + this.odometer * 0.05); 
+            this.fitness *= Math.pow(efficiency, 2); 
+
         } else {
             // 실패 시: 진행도와 안정성 평가
             
@@ -622,14 +614,10 @@ class Rocket {
             let stayPenalty = 1 / (1 + stayTime / 100);
             this.fitness *= stayPenalty;
             
-            // 3. 후퇴 페널티 (덜 가혹하게)
+            // 3. 후퇴 페널티
             let drift = Math.max(0, this.finalMapDist - this.recordMapDist);
-            this.fitness *= (1 / (1 + drift * 0.05));  // 0.1 -> 0.05
+            this.fitness *= (1 / (1 + drift * 0.05));
             
-            // 4. 충돌 페널티 (더 완화)
-            if (this.crashed) {
-                this.fitness *= 0.3;  // 0.1 -> 0.3
-            }
         }
     }
 
@@ -660,7 +648,6 @@ class Rocket {
         ctx.restore();
     }
 }
-
 // ========== 개선된 Population 클래스 ==========
 class Population {
     constructor() {
