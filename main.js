@@ -101,6 +101,7 @@
 {title: "진화하는 로켓",category: "역학",  desc: "내가 그린 미로를 탈출하라! 유전 알고리즘으로 길을 찾는 AI 로켓",tags: ["유전알고리즘", "인공지능", "그리기"], emoji: "🧬", demo: "./simul/경로찾기.html", curriculumId: "[12역학01-02]", thumb: "./thumb_nail/경로찾기.png"},
 {title:"궤도 올리기", category:"역학", desc:"행성의 탈출속도와 위성의 궤도 알아보기", tags:["중력","탈출속도", "궤도"], emoji:"🧗‍♀️", demo:"./simul/궤도 올리기.html", curriculumId:"[12역학01-04], [12역학01-05]", thumb:"./thumb_nail/궤도 올리기.png"},
 {title:"맥스웰의 도깨비", category:"열", desc:"엔트로피를 거슬러라! 뜨거운 공과 차가운 공을 분류하는 미니 게임", tags:["엔트로피", "열역학", "게임"], emoji:"😈", demo:"./simul/멕스웰 도깨비.html", curriculumId:"[12역학02-05]", thumb:"./thumb_nail/멕스웰 도깨비.png"},
+{title: "극한의 번지점프", category: "역학", desc: "가속도와 변위의 관계! 바닥에 닿지도, 기절하지도 않게 k값을 조절하라",  tags: ["단진동", "용수철", "가속도", "G-Force"],  emoji: "🪂",  demo: "./simul/번지점프.html",  curriculumId: "[12역학03-01]", thumb: "./thumb_nail/번지점프.png"},
 {title:"도플러효과", category:"광학", desc:"음원의 속도와 진동수에 따른 관측 음원의 변화 관찰하기", tags:["도플러","파동"], emoji:"🎵", demo:"./simul/도플러효과.html", curriculumId:"[12역학03-03]", thumb:"./thumb_nail/도플러효과.png"},
 
 // ===== 12전자 =====
@@ -463,5 +464,4 @@
         closeModal();
       }
     });
-
   })();
