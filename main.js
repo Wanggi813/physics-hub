@@ -131,6 +131,19 @@
   
     const thumb = node.querySelector('.thumb');
     thumb.innerHTML = '';
+
+    // [수정됨] 카테고리별 시물이 매핑
+    const simulMap = {
+      '역학': './image/역학시물이.png',
+      '열': './image/열시물이.png',
+      '전자/반도체': './image/전기시물이.png',
+      '전자기': './image/전기시물이.png', 
+      '양자': './image/양자시물이.png',
+      '현대물리': './image/양자시물이.png',
+      '상대성': './image/양자시물이.png',
+      '광학': './image/양자시물이.png' // 광학은 빛의 성질이므로 양자와 매칭 (혹은 전기로 변경 가능)
+    };
+
     if (p.thumb) {
       const img = document.createElement('img');
       img.src = p.thumb;
@@ -138,6 +151,15 @@
       img.loading = 'lazy';
       img.decoding = 'async';
       img.className = 'thumb-img';
+      thumb.appendChild(img);
+    } else if (simulMap[p.category]) { 
+      // [추가됨] 썸네일은 없지만 시물이가 있는 경우
+      const img = document.createElement('img');
+      img.src = simulMap[p.category];
+      img.alt = p.category + ' 캐릭터';
+      img.className = 'thumb-img'; 
+      img.style.objectFit = 'contain'; 
+      img.style.padding = '18px';      
       thumb.appendChild(img);
     } else {
       const span = document.createElement('span');
@@ -178,7 +200,7 @@
       return (b.updated||'').localeCompare(a.updated||'');
     });
     count.textContent = list.length;
-    empty.style.display = list.length? 'none':'block';
+    empty.style.display = list.length? 'none':'flex'; // [수정] none or flex
   
     list.forEach((p, index) => {
       const card = makeCard(p);
@@ -202,7 +224,7 @@
   sortSel.addEventListener('change', render);
   render();
   
-  // ===== [수정됨] 오늘의 물리 (타자기 효과 유지) =====
+  // ===== [수정됨] 오늘의 물리 (타자기 효과 + 랜덤 시물이) =====
   (function(){
     const FACTS = [
         "태양빛이 태양에서 지구까지 도달하는 데 약 8분 20초가 걸립니다(≈ 499초).",
@@ -263,13 +285,23 @@
         "우주에서는 중력이 거의 없어도 물체가 멈추는 것이 아니라, 계속 같은 속도로 움직입니다.",
         "자전거가 넘어지지 않고 달릴 수 있는 이유는 바퀴의 회전 안정성과 조향 반응이 결합된 결과입니다."
     ];
+    
+    // [추가] 마스코트 배열
+    const MASCOTS = [
+      "./image/역학시물이.png", 
+      "./image/열시물이.png", 
+      "./image/전기시물이.png", 
+      "./image/양자시물이.png"
+    ];
+
     const factEl  = document.getElementById('fact-text');
     const nextBtn = document.getElementById('next-fact');
     const copyBtn = document.getElementById('copy-fact');
+    const mascotEl = document.getElementById('fact-mascot'); // 이미지 태그
     
     let last = -1;
-    let typingTimer = null; // 타이머 참조 변수
-    let currentFactText = ""; // 현재 표시 중인 전체 텍스트 저장용
+    let typingTimer = null; 
+    let currentFactText = ""; 
   
     function pick(){ 
         let i=Math.floor(Math.random()*FACTS.length); 
@@ -280,12 +312,11 @@
   
     // 타자기 효과 함수
     function typeWriter(text, element) {
-        // 기존 타이머가 돌고 있다면 취소 (빠르게 넘길 때 겹침 방지)
         if(typingTimer) clearTimeout(typingTimer);
         
         element.textContent = '';
         let i = 0;
-        const speed = 25; // 글자당 25ms
+        const speed = 25; 
         
         function type() {
             if (i < text.length) {
@@ -293,7 +324,7 @@
                 i++;
                 typingTimer = setTimeout(type, speed);
             } else {
-                typingTimer = null; // 완료됨
+                typingTimer = null;
             }
         }
         type();
@@ -302,12 +333,21 @@
     function next(){ 
         currentFactText = pick();
         typeWriter(currentFactText, factEl);
+
+        // [추가] 마스코트 랜덤 변경 + 애니메이션
+        if(mascotEl) {
+            const randomMascot = MASCOTS[Math.floor(Math.random() * MASCOTS.length)];
+            mascotEl.src = randomMascot;
+            
+            // 살짝 튀어오르는 애니메이션
+            mascotEl.style.transform = "scale(0.8)";
+            setTimeout(() => mascotEl.style.transform = "scale(1)", 150);
+        }
     }
   
     nextBtn.addEventListener('click', next);
     copyBtn.addEventListener('click', async ()=>{
       try{
-        // 화면에 다 안 써졌어도 전체 문구를 복사하도록 currentFactText 사용
         await navigator.clipboard.writeText(currentFactText || factEl.textContent);
         const originalText = copyBtn.textContent;
         copyBtn.textContent='복사됨!'; 
