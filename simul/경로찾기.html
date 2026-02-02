@@ -2,17 +2,18 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Smart Rockets - Side Panel Layout</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Rockets - Improved Evolution</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <style>
         body {
             margin: 0;
-            background-color: #1a1a1a;
+            background-color: #222;
             color: #eee;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
-            flex-direction: column; /* 기본 데스크탑: 세로 배치 */
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
             height: 100vh;
             overflow: hidden;
             user-select: none;
@@ -20,10 +21,9 @@
             -webkit-touch-callout: none;
         }
 
-        /* --- 공통 UI 스타일 --- */
         #top-panel {
             background: #2c3e50;
-            padding: 10px 25px;
+            padding: 10px 20px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             z-index: 20;
             flex-shrink: 0;
@@ -32,24 +32,34 @@
             align-items: center;
             justify-content: center;
             gap: 15px;
+            border-radius: 12px;
+            margin: 10px;
         }
 
-        /* 정보 패널 (기본) */
         #info-panel {
-            margin-top: 5px;
+            position: absolute; 
+            bottom: 20px; 
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7); 
+            padding: 10px 20px;
+            border-radius: 20px; 
             display: flex;
-            gap: 20px;
-            font-size: 0.9em;
+            flex-direction: column; 
+            gap: 4px;
+            align-items: flex-end; 
+            text-align: right; 
+            font-size: 0.8em; 
             color: #aaa;
-            flex-shrink: 0;
             z-index: 15;
-            pointer-events: none; /* 클릭 통과 */
+            pointer-events: none;
         }
+        #info-panel span { display: block; }
+        #info-panel span:nth-child(2n) { display: none; }
 
         .btn {
-            padding: 10px 20px;
+            padding: 10px 15px;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
             font-size: 0.9em;
@@ -59,91 +69,51 @@
         .btn:active { transform: scale(0.95); }
         #btn-challenge { background-color: #e74c3c; color: white; box-shadow: 0 4px 0 #c0392b; }
         #btn-challenge.running { background-color: #f39c12; box-shadow: 0 4px 0 #d35400; }
-        #btn-clear { background-color: #444; color: #ccc; font-size: 0.8em; padding: 10px; }
+        #btn-clear { background-color: #444; color: #ccc; font-size: 0.8em; }
 
-        .stat-group { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
+        .stat-group { display: flex; flex-direction: column; align-items: center; min-width: 50px; }
         .stat-label { font-size: 0.7em; color: #888; margin-bottom: 2px; }
         .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8em; }
         .mode-setup { background: #555; color: #ccc; }
         .mode-search { background: #ff4757; color: white; animation: pulse 1s infinite; }
         .mode-opt { background: #1e90ff; color: white; }
         
-        .divider { width: 1px; height: 35px; background: #555; margin: 0 5px; }
-        input[type=range] { width: 100px; cursor: pointer; }
+        .divider { width: 1px; height: 30px; background: #555; margin: 0 5px; }
+        input[type=range] { width: 80px; cursor: pointer; }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 
-        /* --- [핵심 변경] 모바일/태블릿 (가로 1024px 이하) : 사이드바 레이아웃 --- */
         @media (max-width: 1024px) {
             body {
-                flex-direction: row; /* 가로 배치로 변경 (왼쪽 패널 + 오른쪽 캔버스) */
-                align-items: stretch; /* 높이 꽉 채우기 */
+                flex-direction: row; 
+                align-items: center;
+                justify-content: center;
+                background-color: #111;
             }
-
             #top-panel {
-                width: 90px; /* 사이드바 너비 고정 */
-                height: 100vh; /* 전체 높이 */
-                flex-direction: column; /* 내부 아이템 세로 정렬 */
-                padding: 20px 5px;
-                margin: 0;
-                justify-content: flex-start; /* 위쪽부터 배치 */
+                width: 80px; 
+                height: 90vh;
+                flex-direction: column;
+                justify-content: flex-start;
                 gap: 15px;
-                border-radius: 0; /* 둥근 모서리 제거 */
-                overflow-y: auto; /* 내용 넘치면 스크롤 */
+                overflow-y: auto; 
+                margin: 0 10px 0 10px;
             }
-
-            /* 구분선 가로로 변경 */
-            .divider {
-                width: 80%;
-                height: 1px;
-                margin: 5px 0;
-            }
-
-            /* 버튼 스타일 조정 */
-            .btn {
-                width: 90%;
-                font-size: 0.75em;
-                padding: 12px 5px;
-                text-align: center;
-                white-space: normal; /* 텍스트 줄바꿈 허용 */
-                line-height: 1.2;
-            }
-
+            .divider { width: 80%; height: 1px; margin: 5px 0; }
+            .btn { width: 90%; font-size: 0.7em; padding: 12px 2px; white-space: normal; line-height: 1.2; }
             .stat-group { width: 100%; margin: 5px 0; }
-            input[type=range] { width: 70px; }
-
-            /* 정보 패널을 캔버스 위에 오버레이로 띄움 */
-            #info-panel {
-                position: absolute;
-                bottom: 10px;
-                right: 15px;
-                background: rgba(0, 0, 0, 0.6);
-                padding: 8px 15px;
-                border-radius: 20px;
-                flex-direction: column; /* 세로 나열 (공간 절약) */
-                gap: 2px;
-                align-items: flex-end;
-                text-align: right;
-                font-size: 0.75em;
-                margin: 0;
-            }
-            #info-panel span { display: block; } /* 줄바꿈 */
-            #info-panel span:nth-child(2n) { display: none; } /* 구분자(|) 숨김 */
-        }
-
-        /* 데스크탑 모드일 때 상단 패널 마진 */
-        @media (min-width: 1025px) {
-            #top-panel { margin-top: 15px; border-radius: 12px; }
+            input[type=range] { width: 60px; }
         }
 
         canvas {
             background-color: #000;
             display: block;
-            touch-action: none; 
-            flex-grow: 1; /* 남은 공간 모두 차지 */
+            touch-action: none;
+            border: 2px solid #555;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
         }
 
-        /* 로딩 & 회전 안내 */
         #loading-overlay {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(0,0,0,0.8); color: #00ff7f; padding: 20px 40px; border-radius: 8px;
@@ -174,21 +144,15 @@
             <span class="stat-label">MODE</span>
             <span id="mode-badge" class="badge mode-setup">SETUP</span>
         </div>
-        
         <div class="divider"></div>
-        
         <button id="btn-challenge" class="btn" onclick="toggleChallenge()">🚀 시작</button>
         <button id="btn-clear" class="btn" onclick="clearObstacles()">🧹 지우기</button>
-        
         <div class="divider"></div>
-        
         <div class="stat-group">
             <span class="stat-label">SPEED</span>
             <input type="range" id="speed-slider" min="1" max="100" value="1">
         </div>
-        
         <div class="divider"></div>
-        
         <div class="stat-group">
             <span class="stat-label">BRUSH</span>
             <input type="range" id="brush-slider" min="5" max="50" value="20">
@@ -225,7 +189,6 @@ class Vector {
     }
 }
 
-// --- 전역 설정 ---
 let width, height;
 const lifetime = 3000; 
 const popSize = 400; 
@@ -233,7 +196,6 @@ const maxForce = 0.5;
 const maxSpeed = 6;
 let brushSize = 20; 
 
-// 반응형 변수들
 let planetSize = 100;
 let planetRadius = 50;
 let touchRadius = 60;
@@ -247,6 +209,7 @@ let lastMaxFitness = 0;
 let spawnPoint, targetPoint;
 let population;
 let lifeCounter = 0;
+let successExists = false; 
 
 const gridRes = 4;
 let cols, rows;
@@ -264,17 +227,17 @@ const loadingOverlay = document.getElementById('loading-overlay');
 const timerDisplay = document.getElementById('timer-display');
 const orientationOverlay = document.getElementById('orientation-overlay');
 
-let currentMutationRate = 0.01;
-let currentMutationForce = 0.05;
+let currentMutationRate = 0.02;
+let currentMutationForce = 0.1;
 
 const earthImg = new Image();
 const marsImg = new Image();
-let imagesLoaded = 0;
+let earthLoaded = false;
+let marsLoaded = false;
 let dragTarget = null; 
 
 function calculateResponsiveValues(winW) {
     if (winW <= 1024) {
-        // 모바일 설정
         planetSize = 60;       
         planetRadius = 30;     
         touchRadius = 45;      
@@ -283,7 +246,6 @@ function calculateResponsiveValues(winW) {
              document.getElementById('brush-slider').value = 15;
         }
     } else {
-        // 데스크톱 설정
         planetSize = 100;
         planetRadius = 50;
         touchRadius = 60;
@@ -294,7 +256,6 @@ function initScreen() {
     const winW = window.innerWidth;
     const winH = window.innerHeight;
 
-    // 모바일 가로모드 유도
     if (winW < winH) {
         orientationOverlay.style.display = 'flex';
         return false; 
@@ -304,17 +265,16 @@ function initScreen() {
 
     calculateResponsiveValues(winW);
 
-    // [중요] 캔버스 크기 계산 (사이드바 고려)
+    let marginX = 20; 
+    let marginY = 20; 
+
     if (winW <= 1024) {
-        // 모바일: 사이드바 너비(100px 정도 여유)를 뺀 나머지를 캔버스로 사용
-        // 사이드바 CSS width가 90px + padding = 약 100px
         let sidebarWidth = 100; 
-        width = winW - sidebarWidth; 
-        height = winH; 
+        width = winW - sidebarWidth - marginX; 
+        height = winH - marginY; 
     } else {
-        // 데스크탑: 상단 패널 높이 제외
-        width = winW;
-        height = winH - 130; 
+        width = winW - (marginX * 2);
+        height = winH - 130 - marginY; 
     }
     
     canvas.width = width;
@@ -323,21 +283,19 @@ function initScreen() {
     cols = Math.ceil(width / gridRes);
     rows = Math.ceil(height / gridRes);
 
-    if (!obstacleGrid || obstacleGrid.length !== cols || obstacleGrid[0].length !== rows) {
-        initObstacleGrid();
-    }
+    initObstacleGrid();
 
-    // 위치 재조정
-    if (!spawnPoint) spawnPoint = new Vector(width / 2, height - (planetRadius + 30));
+    let safePadding = planetRadius + 40; 
+    if (!spawnPoint) spawnPoint = new Vector(width / 2, height - safePadding);
     else { 
-        spawnPoint.x = Math.min(width - planetRadius, Math.max(planetRadius, spawnPoint.x));
-        spawnPoint.y = Math.min(height - planetRadius, Math.max(planetRadius, spawnPoint.y));
+        spawnPoint.x = Math.min(width - safePadding, Math.max(safePadding, spawnPoint.x));
+        spawnPoint.y = Math.min(height - safePadding, Math.max(safePadding, spawnPoint.y));
     }
     
-    if (!targetPoint) targetPoint = new Vector(width / 2, planetRadius + 30);
+    if (!targetPoint) targetPoint = new Vector(width / 2, safePadding);
     else {
-        targetPoint.x = Math.min(width - planetRadius, Math.max(planetRadius, targetPoint.x));
-        targetPoint.y = Math.min(height - planetRadius, Math.max(planetRadius, targetPoint.y));
+        targetPoint.x = Math.min(width - safePadding, Math.max(safePadding, targetPoint.x));
+        targetPoint.y = Math.min(height - safePadding, Math.max(safePadding, targetPoint.y));
     }
 
     return true;
@@ -350,15 +308,15 @@ window.onload = () => {
     document.getElementById('speed-slider').addEventListener('input', e => cycles = parseInt(e.target.value));
     document.getElementById('brush-slider').addEventListener('input', e => brushSize = parseInt(e.target.value));
 
-    const onImgLoad = () => { 
-        imagesLoaded++; 
-        if(imagesLoaded===2) requestAnimationFrame(drawLoop); 
-    };
-    earthImg.onload = onImgLoad;
-    marsImg.onload = onImgLoad;
+    earthImg.onload = () => { earthLoaded = true; };
+    marsImg.onload = () => { marsLoaded = true; };
+    earthImg.onerror = () => { };
+    marsImg.onerror = () => { };
+
     earthImg.src = './image/earth.png'; 
     marsImg.src = './image/mars.png';  
-    setTimeout(() => { if(imagesLoaded < 2) requestAnimationFrame(drawLoop); }, 500);
+    
+    requestAnimationFrame(drawLoop);
 };
 
 window.addEventListener('resize', () => {
@@ -413,6 +371,7 @@ function toggleChallenge() {
         modeBadge.className = "badge mode-setup";
         population = null;
         lifeCounter = 0;
+        successExists = false;
     } else {
         loadingOverlay.style.display = 'block';
         setTimeout(() => {
@@ -428,21 +387,35 @@ function toggleChallenge() {
             firstSuccessDisplay.innerText = "-";
             stagnationCounter = 0;
             lastMaxFitness = 0;
+            successExists = false;
         }, 50);
     }
 }
 
 function initObstacleGrid() {
     obstacleGrid = new Array(cols).fill(0).map(() => new Array(rows).fill(false));
+    
+    let wallThick = 3; 
+
+    for (let x = 0; x < cols; x++) {
+        for (let y = 0; y < rows; y++) {
+            if (x < wallThick || x >= cols - wallThick || y < wallThick || y >= rows - wallThick) {
+                obstacleGrid[x][y] = true;
+            }
+        }
+    }
 }
+
 function clearObstacles() {
     if (!isChallengeRunning) initObstacleGrid();
 }
 
+// ========== 개선된 DNA 클래스 ==========
 class DNA {
     constructor(genes) {
-        if (genes) this.genes = genes;
-        else {
+        if (genes) {
+            this.genes = genes;
+        } else {
             this.genes = [];
             for (let i = 0; i < lifetime; i++) {
                 let v = Vector.random2D();
@@ -451,27 +424,103 @@ class DNA {
             }
         }
     }
-    copy() { return new DNA(this.genes.map(v => v.copy())); }
-    mutation(startFrame) {
+    
+    copy() { 
+        return new DNA(this.genes.map(v => v.copy())); 
+    }
+
+    // ✨ 개선된 변이 전략
+    mutation(startFrame, isElite = false) {
         let cutoff = startFrame || 0;
+        
+        // 스무딩 강도: 성공 이후 세대가 진행될수록 급격히 증가
+        let smoothingStrength = 0;
+        let multiPassSmoothing = 1; // 다중 패스 스무딩 횟수
+        if (successExists && firstSuccessGeneration !== null) {
+            let generationsSinceSuccess = population.generation - firstSuccessGeneration;
+            // 더 빠르게 스무딩 강도 증가 (0.08로 2배 증가)
+            smoothingStrength = Math.min(0.98, generationsSinceSuccess * 0.08);
+            // 10세대 이후부터 다중 패스 스무딩 적용
+            if (generationsSinceSuccess > 10) {
+                multiPassSmoothing = Math.min(5, Math.floor(generationsSinceSuccess / 5));
+            }
+        }
+        
+        // 엘리트는 매우 보수적으로 변이하되, 스무딩은 강하게
+        if (isElite) {
+            // 엘리트에게 다중 패스 스무딩 적용
+            for (let pass = 0; pass < multiPassSmoothing; pass++) {
+                for (let i = 1; i < cutoff - 1; i++) {
+                    let smoothed = this.genes[i-1].copy()
+                        .add(this.genes[i])
+                        .add(this.genes[i+1]);
+                    smoothed.div(3);
+                    smoothed.limit(maxForce);
+                    
+                    let original = this.genes[i].copy();
+                    this.genes[i] = original.mult(1 - smoothingStrength).add(smoothed.mult(smoothingStrength));
+                }
+            }
+            
+            // 엘리트는 아주 약한 변이만
+            for (let i = cutoff; i < this.genes.length; i++) {
+                if (Math.random() < 0.1) {
+                    let nudge = Vector.random2D();
+                    nudge.mult(currentMutationForce * 0.2);
+                    this.genes[i].add(nudge);
+                    this.genes[i].limit(maxForce);
+                }
+            }
+            return;
+        }
+
+        // 일반 개체: 더 공격적인 탐색
         for (let i = 0; i < this.genes.length; i++) {
             if (i < cutoff) {
-                if (i > 0 && i < this.genes.length - 1 && Math.random() < 0.1) { 
-                    let smoothed = this.genes[i-1].copy().add(this.genes[i]).add(this.genes[i+1]).div(3).limit(maxForce);
-                    this.genes[i] = smoothed;
+                // 성공 구간: 강력한 스무딩 + 미세 조정
+                let shouldSmooth = Math.random() < (0.5 + smoothingStrength * 0.5); // 스무딩 확률 대폭 증가
+                if (i > 0 && i < this.genes.length - 1 && shouldSmooth) {
+                    // 다중 패스 스무딩: 여러 번 반복하여 더욱 부드럽게
+                    for (let pass = 0; pass < multiPassSmoothing; pass++) {
+                        let smoothed = this.genes[i-1].copy()
+                            .add(this.genes[i])
+                            .add(this.genes[i+1]);
+                        smoothed.div(3);
+                        smoothed.limit(maxForce);
+                        
+                        // 스무딩 강도에 따라 원본과 스무딩된 값 혼합
+                        let original = this.genes[i].copy();
+                        this.genes[i] = original.mult(1 - smoothingStrength).add(smoothed.mult(smoothingStrength));
+                    }
                 }
-                if (Math.random() < 0.01) { 
-                    this.genes[i].add(Vector.random2D().mult(currentMutationForce * 0.5)).limit(maxForce);
+                
+                // 미세 조정 확률도 세대가 지날수록 급격히 감소
+                if (Math.random() < (0.03 * (1 - smoothingStrength * 0.95))) {
+                    let nudge = Vector.random2D();
+                    nudge.mult(currentMutationForce * 0.3 * (1 - smoothingStrength * 0.9));
+                    this.genes[i].add(nudge);
+                    this.genes[i].limit(maxForce);
                 }
             } else {
+                // 미탐색 구간: 높은 변이율
                 if (Math.random() < currentMutationRate) {
-                    this.genes[i].add(Vector.random2D().mult(currentMutationForce)).limit(maxForce);
+                    let nudge = Vector.random2D();
+                    nudge.mult(currentMutationForce);
+                    this.genes[i].add(nudge);
+                    this.genes[i].limit(maxForce);
+                }
+                
+                // 가끔 완전히 새로운 방향 시도
+                if (Math.random() < 0.01) {
+                    this.genes[i] = Vector.random2D();
+                    this.genes[i].mult(Math.random() * maxForce);
                 }
             }
         }
     }
 }
 
+// ========== 개선된 Rocket 클래스 ==========
 class Rocket {
     constructor(dna, isBest = false) {
         this.pos = spawnPoint.copy();
@@ -487,7 +536,11 @@ class Rocket {
         this.frameAtBest = 0;
         this.finalMapDist = Infinity; 
     }
-    applyForce(force) { this.acc.add(force); }
+    
+    applyForce(force) { 
+        this.acc.add(force); 
+    }
+    
     update() {
         if (this.completed || this.crashed) return;
 
@@ -516,6 +569,7 @@ class Rocket {
                 }
                 this.finalMapDist = currentMapDist;
                 
+                // 가이드 힘 (약하게)
                 let bestDir = new Vector(0,0);
                 let minDist = currentMapDist;
                 let dx = [1, -1, 0, 0, 1, 1, -1, -1]; 
@@ -529,11 +583,12 @@ class Rocket {
                     }
                 }
                 if(bestDir.mag() > 0) {
-                    bestDir.normalize().mult(maxForce * 0.3); 
+                    bestDir.normalize().mult(maxForce * 0.2);  // 더 약하게
                     this.applyForce(bestDir);
                 }
             }
         }
+        
         this.applyForce(this.dna.genes[lifeCounter]);
 
         if (!this.completed && !this.crashed) {
@@ -544,101 +599,190 @@ class Rocket {
             this.acc.mult(0);
         }
     }
+
+    // ✨ 개선된 fitness 함수
     calcFitness() {
-        if (this.recordMapDist === Infinity) { this.fitness = 0; return; }
-        let peakScore = 1 / (this.recordMapDist + 1);
-        this.fitness = Math.pow(peakScore, 4); 
-        let drift = Math.max(0, this.finalMapDist - this.recordMapDist);
-        this.fitness *= (1 / (1 + drift * 0.1)); 
-        this.fitness *= Math.pow((1 + (lifetime - this.frameAtBest) / 500), 2);
-        if (this.completed) {
-            this.fitness *= 10; 
-            this.fitness *= (1 + (lifetime - this.finishTime) / 20); 
+        if (this.recordMapDist === Infinity) { 
+            this.fitness = 0; 
+            return; 
         }
-        if (this.crashed) this.fitness *= 0.5; 
+
+        // 1. 기본 거리 점수 (3제곱으로 완화)
+        let distScore = 1 / (this.recordMapDist + 1);
+        this.fitness = Math.pow(distScore, 3);  // 6 -> 3으로 완화
+
+        if (this.completed) {
+            // 성공 시: 시간 보너스
+            let timeBonus = (lifetime - this.finishTime) / lifetime;
+            this.fitness *= (1 + timeBonus * 10);  // 큰 보너스
+        } else {
+            // 실패 시: 진행도와 안정성 평가
+            
+            // 2. 최고점에서 얼마나 버텼는지
+            let stayTime = lifetime - this.frameAtBest;
+            let stayPenalty = 1 / (1 + stayTime / 100);
+            this.fitness *= stayPenalty;
+            
+            // 3. 후퇴 페널티 (덜 가혹하게)
+            let drift = Math.max(0, this.finalMapDist - this.recordMapDist);
+            this.fitness *= (1 / (1 + drift * 0.05));  // 0.1 -> 0.05
+            
+            // 4. 충돌 페널티 (더 완화)
+            if (this.crashed) {
+                this.fitness *= 0.3;  // 0.1 -> 0.3
+            }
+        }
     }
+
     show() {
         ctx.save();
         ctx.translate(this.pos.x, this.pos.y);
         let angle = Math.atan2(this.vel.y, this.vel.x);
         ctx.rotate(angle + Math.PI / 2);
         if (this.isBest) {
-            ctx.fillStyle = "#ffff00"; ctx.globalAlpha = 1.0; ctx.scale(1.5, 1.5);
+            ctx.fillStyle = "#ffff00"; 
+            ctx.globalAlpha = 1.0; 
+            ctx.scale(1.5, 1.5);
         } else if (this.completed) {
-            ctx.fillStyle = "#00ff7f"; ctx.globalAlpha = 0.8;
+            ctx.fillStyle = "#00ff7f"; 
+            ctx.globalAlpha = 0.8;
         } else if (this.crashed) {
-            ctx.fillStyle = "#ff4757"; ctx.globalAlpha = 0.2;
+            ctx.fillStyle = "#ff4757"; 
+            ctx.globalAlpha = 0.2;
         } else {
             ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
         }
         ctx.beginPath();
-        ctx.moveTo(0, -10); ctx.lineTo(-5, 5); ctx.lineTo(5, 5);
+        ctx.moveTo(0, -10); 
+        ctx.lineTo(-5, 5); 
+        ctx.lineTo(5, 5);
         ctx.closePath();
         ctx.fill();
         ctx.restore();
     }
 }
 
+// ========== 개선된 Population 클래스 ==========
 class Population {
     constructor() {
         this.rockets = [];
         this.popSize = popSize;
         this.generation = 1;
-        this.bestRocketDNA = null;
+        this.topDNAs = [];  // 상위 DNA 여러 개 저장
         this.mutationCutoff = 0; 
-        for (let i = 0; i < this.popSize; i++) this.rockets[i] = new Rocket();
+        
+        for (let i = 0; i < this.popSize; i++) {
+            this.rockets[i] = new Rocket();
+        }
     }
+    
     run() {
         let allStopped = true;
         for (let i = 0; i < this.popSize; i++) {
             this.rockets[i].update();
             this.rockets[i].show();
-            if (!this.rockets[i].completed && !this.rockets[i].crashed) allStopped = false;
+            if (!this.rockets[i].completed && !this.rockets[i].crashed) {
+                allStopped = false;
+            }
         }
         return allStopped;
     }
+    
+    // ✨ 개선된 평가 및 selection 준비
     evaluate() {
-        let maxFit = 0;
-        let bestIdx = 0;
-        let successCount = 0;
+        // 1. fitness 계산
         for (let i = 0; i < this.popSize; i++) {
             this.rockets[i].calcFitness();
-            if (this.rockets[i].fitness > maxFit) { maxFit = this.rockets[i].fitness; bestIdx = i; }
-            if (this.rockets[i].completed) successCount++;
         }
-        this.bestRocketDNA = this.rockets[bestIdx].dna.copy();
-        let bestRocket = this.rockets[bestIdx];
-        let usefulLife = bestRocket.completed ? bestRocket.finishTime : bestRocket.frameAtBest;
-        this.mutationCutoff = Math.floor(usefulLife * 0.8);
+        
+        // 2. fitness 기준 정렬
+        let sorted = this.rockets.slice().sort((a, b) => b.fitness - a.fitness);
+        
+        // 3. 상위 10% 저장
+        let eliteCount = Math.floor(this.popSize * 0.1);
+        this.topDNAs = sorted.slice(0, eliteCount).map(r => ({
+            dna: r.dna.copy(),
+            cutoff: r.completed ? r.finishTime : r.frameAtBest
+        }));
+        
+        let maxFit = sorted[0].fitness;
+        let bestRocket = sorted[0];
+        let successCount = this.rockets.filter(r => r.completed).length;
+        
+        this.mutationCutoff = Math.floor(
+            bestRocket.completed ? bestRocket.finishTime : bestRocket.frameAtBest
+        );
 
+        // 4. 모드 및 mutation 파라미터 조정
         if (successCount > 0) {
+            successExists = true; 
             if (firstSuccessGeneration === null) {
                 firstSuccessGeneration = this.generation;
                 firstSuccessDisplay.innerText = `${this.generation} 세대`;
             }
             modeBadge.innerText = "OPTIMIZING";
             modeBadge.className = "badge mode-opt";
-            let successRatio = successCount / this.popSize; 
-            currentMutationRate = 0.01 + (1 - successRatio) * 0.04; 
+            currentMutationRate = 0.01; 
+            currentMutationForce = 0.05;
         } else {
+            successExists = false;
             modeBadge.innerText = "SEARCHING";
             modeBadge.className = "badge mode-search";
-            if (Math.abs(maxFit - lastMaxFitness) < 0.00000001) stagnationCounter++;
-            else stagnationCounter = 0; 
+            
+            // stagnation 감지
+            if (Math.abs(maxFit - lastMaxFitness) < 0.00001) {
+                stagnationCounter++;
+            } else {
+                stagnationCounter = 0; 
+            }
             lastMaxFitness = maxFit;
-            currentMutationRate = Math.min(0.05 + (stagnationCounter * 0.005), 0.3);
-            currentMutationForce = Math.min(0.1 + (stagnationCounter * 0.01), 0.4);
+            
+            // 정체 시 mutation 증가
+            currentMutationRate = Math.min(0.02 + (stagnationCounter * 0.01), 0.4);
+            currentMutationForce = Math.min(0.1 + (stagnationCounter * 0.02), 0.5);
         }
+        
         mutRateDisplay.innerText = (currentMutationRate * 100).toFixed(1) + "%";
     }
+    
+    // ✨ 개선된 selection: 룰렛 휠 + 엘리트 보존
     selection() {
         let newRockets = [];
-        newRockets[0] = new Rocket(this.bestRocketDNA.copy(), true);
-        for (let i = 1; i < this.popSize; i++) {
-            let childDNA = this.bestRocketDNA.copy();
-            childDNA.mutation(this.mutationCutoff);
-            newRockets[i] = new Rocket(childDNA);
+        let eliteCount = Math.floor(this.popSize * 0.05);  // 상위 5% 그대로 복제
+        
+        // 1. 엘리트 보존 (약간의 변이만)
+        for (let i = 0; i < eliteCount && i < this.topDNAs.length; i++) {
+            let dna = this.topDNAs[i].dna.copy();
+            dna.mutation(this.topDNAs[i].cutoff, true);  // 엘리트 변이
+            newRockets.push(new Rocket(dna, i === 0));
         }
+        
+        // 2. 룰렛 휠로 나머지 채우기
+        let totalFitness = this.rockets.reduce((sum, r) => sum + r.fitness, 0);
+        
+        for (let i = eliteCount; i < this.popSize; i++) {
+            let parentDNA;
+            
+            if (totalFitness === 0) {
+                // fitness가 모두 0이면 랜덤 선택
+                parentDNA = this.rockets[Math.floor(Math.random() * this.rockets.length)].dna.copy();
+            } else {
+                // 룰렛 휠 선택
+                let rand = Math.random() * totalFitness;
+                let sum = 0;
+                for (let j = 0; j < this.rockets.length; j++) {
+                    sum += this.rockets[j].fitness;
+                    if (sum >= rand) {
+                        parentDNA = this.rockets[j].dna.copy();
+                        break;
+                    }
+                }
+            }
+            
+            parentDNA.mutation(this.mutationCutoff, false);
+            newRockets.push(new Rocket(parentDNA));
+        }
+        
         this.rockets = newRockets;
         this.generation++;
         genDisplay.innerText = this.generation;
@@ -656,7 +800,7 @@ function drawMapElements() {
         }
     }
 
-    if (marsImg.complete && marsImg.naturalWidth !== 0) {
+    if (marsLoaded) {
         ctx.drawImage(marsImg, targetPoint.x - planetRadius, targetPoint.y - planetRadius, planetSize, planetSize);
     } else {
         ctx.beginPath();
@@ -664,7 +808,7 @@ function drawMapElements() {
         ctx.fillStyle = "#2ecc71"; ctx.fill();
     }
 
-    if (earthImg.complete && earthImg.naturalWidth !== 0) {
+    if (earthLoaded) {
         ctx.drawImage(earthImg, spawnPoint.x - planetRadius, spawnPoint.y - planetRadius, planetSize, planetSize);
     } else {
         ctx.beginPath();
