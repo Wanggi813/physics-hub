@@ -11,7 +11,6 @@
             background-color: #000; 
             color: #eee; 
             font-family: sans-serif;
-            /* 터치 시 스크롤/새로고침 방지 */
             touch-action: none; 
         }
         canvas { display: block; }
@@ -22,7 +21,6 @@
             font-size: 0.9rem;
             opacity: 0.8;
         }
-        /* 모바일 세로 모드 안내 */
         @media (orientation: portrait) {
             #info { top: 10%; }
         }
@@ -40,17 +38,22 @@
         const camera = new THREE.Camera();
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0)); // 모바일 성능 최적화 (최대 2배율 제한)
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0)); 
         document.body.appendChild(renderer.domElement);
 
         const loader = new THREE.TextureLoader();
         const earthTexture = loader.load('./image/세계전도.png');
         const sunTexture = loader.load('./image/태양전도.png');
+
+        // --- [핵심 수정] 텍스처 반복 방지 설정 ---
+        // 텍스처 좌표가 0~1 범위를 벗어나면 가장자리 색상을 사용하도록 설정합니다.
+        earthTexture.wrapS = earthTexture.wrapT = THREE.ClampToEdgeWrapping;
+        sunTexture.wrapS = sunTexture.wrapT = THREE.ClampToEdgeWrapping;
         
         // 좌표: 태양(뒤) - 블랙홀(중간) - 지구(앞)
         const bhPos = new THREE.Vector3(0.0, 0.0, 0.0);
-        const earthPos = new THREE.Vector3(0.0, 0.0, -5.0);
-        const sunPos = new THREE.Vector3(0.0, 0.0, 25.0);
+        const earthPos = new THREE.Vector3(0.0, 0.0, -10.0);
+        const sunPos = new THREE.Vector3(0.0, 0.0, 50.0);
 
         const fragmentShader = `
             precision highp float;
@@ -67,12 +70,10 @@
             uniform vec3 uSunPos;
 
             #define PI 3.14159265359
-            // 모바일 성능을 위해 반복 횟수 소폭 조정 (300 -> 200)
-            // PC에서도 충분히 고화질이며 모바일 발열을 줄입니다.
             #define MAX_STEPS 200       
-            #define MAX_DIST 100.0       
-            #define SURF_DIST 0.001     
-            #define EVENT_HORIZON 0.6   
+            #define MAX_DIST 200.0       
+            #define SURF_DIST 0.005     
+            #define EVENT_HORIZON 0.7 
 
             mat2 rot(float a) { float s = sin(a), c = cos(a); return mat2(c, -s, s, c); }
 
@@ -115,9 +116,9 @@
                 ro.yz *= rot(camRotX); rd.yz *= rot(camRotX);
                 ro.xz *= rot(camRotY); rd.xz *= rot(camRotY);
 
-                float bhMass = 0.8;
+                float bhMass = 1.2;  
                 float earthRad = 0.5; 
-                float sunRad = 4.0;   
+                float sunRad = 7.5;  
 
                 vec3 col = vec3(0.0);
                 vec3 p = ro;
@@ -154,17 +155,17 @@
 
                     // 코로나 글로우
                     float distToSunCenter = length(p - uSunPos);
-                    float glowIntensity = 1.0 / (distToSunCenter * distToSunCenter * 0.5 + 0.1);
-                    sunGlow += vec3(1.0, 0.6, 0.2) * glowIntensity * 0.015;
+                    float glowIntensity = 1.0 / (distToSunCenter * distToSunCenter * 0.2 + 0.1);
+                    sunGlow += vec3(1.0, 0.6, 0.2) * glowIntensity * 0.02;
 
                     // 렌즈 효과
                     vec3 gravDir = normalize(uBhPos - p);
-                    float force = bhMass / (dBH * dBH + 0.02);
-                    dir = normalize(dir + gravDir * force * 0.15);
+                    float force = bhMass / (dBH * dBH + 0.05); 
+                    dir = normalize(dir + gravDir * force * 0.2); 
 
-                    float stepSize = max(SURF_DIST, dBH * 0.02); 
-                    stepSize = min(stepSize, max(SURF_DIST, dEarth * 0.3)); 
-                    stepSize = min(stepSize, max(SURF_DIST, dSun * 0.3));
+                    float stepSize = max(SURF_DIST, dBH * 0.05); 
+                    stepSize = min(stepSize, max(SURF_DIST, dEarth * 0.5)); 
+                    stepSize = min(stepSize, max(SURF_DIST, dSun * 0.5)); 
 
                     p += dir * stepSize;
                     totDist += stepSize;
@@ -188,7 +189,7 @@
             iTime: { value: 0 },
             iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
             iMouse: { value: new THREE.Vector2(window.innerWidth/2, window.innerHeight/2) },
-            uZoom: { value: -12.0 },
+            uZoom: { value: -70.0 },
             uTexEarth: { value: earthTexture },
             uTexSun: { value: sunTexture },
             uBhPos: { value: bhPos },
@@ -205,9 +206,8 @@
 
         let isDragging = false;
         let previousMousePosition = { x: 0, y: 0 };
-        let initialPinchDistance = null; // 핀치 줌을 위한 변수
+        let initialPinchDistance = null; 
 
-        // 1. 마우스 이벤트 (PC)
         document.addEventListener('mousedown', (e) => {
             isDragging = true;
             previousMousePosition = { x: e.clientX, y: e.clientY };
@@ -226,14 +226,11 @@
             uniforms.uZoom.value = newZoom;
         });
 
-        // 2. 터치 이벤트 (모바일)
         document.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
-                // 한 손가락: 드래그 시작
                 isDragging = true;
                 previousMousePosition = { x: e.touches[0].pageX, y: e.touches[0].pageY };
             } else if (e.touches.length === 2) {
-                // 두 손가락: 핀치 줌 시작
                 const dx = e.touches[0].pageX - e.touches[1].pageX;
                 const dy = e.touches[0].pageY - e.touches[1].pageY;
                 initialPinchDistance = Math.hypot(dx, dy);
@@ -241,33 +238,23 @@
         }, { passive: false });
 
         document.addEventListener('touchmove', (e) => {
-            // 브라우저 기본 스크롤 동작 방지
             e.preventDefault(); 
-
             if (e.touches.length === 1 && isDragging) {
-                // 한 손가락 드래그 (회전)
                 const deltaX = e.touches[0].pageX - previousMousePosition.x;
                 const deltaY = e.touches[0].pageY - previousMousePosition.y;
-                
                 uniforms.iMouse.value.x += deltaX * 2.0;
                 uniforms.iMouse.value.y -= deltaY * 2.0;
-                
                 previousMousePosition = { x: e.touches[0].pageX, y: e.touches[0].pageY };
-
             } else if (e.touches.length === 2 && initialPinchDistance) {
-                // 두 손가락 핀치 (줌)
                 const dx = e.touches[0].pageX - e.touches[1].pageX;
                 const dy = e.touches[0].pageY - e.touches[1].pageY;
                 const currentDistance = Math.hypot(dx, dy);
-
                 const diff = currentDistance - initialPinchDistance;
-                const zoomSpeed = 0.05; // 터치는 휠보다 민감도 조절
-
+                const zoomSpeed = 0.05; 
                 let newZoom = uniforms.uZoom.value + diff * zoomSpeed;
                 newZoom = Math.max(-50.0, Math.min(-6.0, newZoom));
                 uniforms.uZoom.value = newZoom;
-
-                initialPinchDistance = currentDistance; // 연속적인 줌을 위해 업데이트
+                initialPinchDistance = currentDistance; 
             }
         }, { passive: false });
 
