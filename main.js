@@ -105,6 +105,7 @@
 {title:"도플러효과", category:"광학", desc:"음원의 속도와 진동수에 따른 관측 음원의 변화 관찰하기", tags:["도플러","파동"], emoji:"🎵", demo:"./simul/도플러효과.html", curriculumId:"[12역학03-03]", thumb:"./thumb_nail/도플러효과.png"},
 
 // ===== 12전자 =====
+{title: "로런츠 힘과 오로라", category: "전자/반도체", desc: "자기장 속 전하의 원운동(F=qvB) 실험부터 태양풍이 만드는 오로라의 원리까지!", tags: ["로런츠힘", "자기장", "오로라",], emoji: "🌌",  demo: "./simul/로런츠 힘.html", curriculumId: "[12전자01-04]", thumb: "./thumb_nail/로런츠 힘.png"},
 {title:"RLC 공명", category:"전자/반도체", desc:"직렬 RLC 회로의 공명/위상·전류 변화 시각화하기", tags:["회로","공명"], emoji:"🔄", demo:"./simul/RLC 공명.html", curriculumId:"[12전자01-06]", thumb:"./thumb_nail/RLC회로.png"},
 {title:"러더퍼드 알파입자 산란실험", category:"시뮬레이션", desc:"러더퍼드의 알파입자 산란실험 확인하기", tags:["산란","쿨롱"], emoji:"🧪", demo:"./simul/러더퍼드 알파입자 산란실험.html", curriculumId:"[12전자01-06]", thumb:"./thumb_nail/러더퍼드_산란실험.png"},
 {title:"편광과 LCD", category:"광학", desc:"편광의 원리와 LCD의 원리 알아보기", tags:["편광","LCD"], emoji:"🔭", demo:"./simul/편광과 LCD.html", curriculumId:"[12전자02-03]", thumb:"./thumb_nail/편광과 LCD.png"},
@@ -144,6 +145,13 @@
       '광학': './image/양자시물이.png' // 광학은 빛의 성질이므로 양자와 매칭 (혹은 전기로 변경 가능)
     };
 
+    const FALLBACK_MASCOTS = [
+      "./image/역학시물이.png",
+      "./image/열시물이.png",
+      "./image/전기시물이.png",
+      "./image/양자시물이.png"
+    ];
+
     if (p.thumb) {
       const img = document.createElement('img');
       img.src = p.thumb;
@@ -151,8 +159,23 @@
       img.loading = 'lazy';
       img.decoding = 'async';
       img.className = 'thumb-img';
+
+      // ★ [추가됨] 이미지 로드 실패 시 실행될 함수
+      img.onerror = function() {
+        // 1. 무한 루프 방지 (대체 이미지도 실패할 경우를 대비해 이벤트 제거)
+        this.onerror = null;
+        
+        // 2. 랜덤 마스코트 이미지 선택
+        const randomSrc = FALLBACK_MASCOTS[Math.floor(Math.random() * FALLBACK_MASCOTS.length)];
+        this.src = randomSrc;
+
+        // 3. 마스코트가 잘 보이도록 스타일 조정 (기존 꽉 찬 배경 스타일 -> 캐릭터 스타일)
+        this.style.objectFit = 'contain'; 
+        this.style.padding = '15px';      
+      };
+
       thumb.appendChild(img);
-    } else if (simulMap[p.category]) { 
+    } else if (simulMap[p.category]) {
       // [추가됨] 썸네일은 없지만 시물이가 있는 경우
       const img = document.createElement('img');
       img.src = simulMap[p.category];
