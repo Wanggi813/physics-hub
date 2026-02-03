@@ -2,20 +2,36 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>중력렌즈</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Mobile Cinematic Black Hole</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; color: #eee; font-family: sans-serif; }
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #000; 
+            color: #eee; 
+            font-family: sans-serif;
+            /* 터치 시 스크롤/새로고침 방지 */
+            touch-action: none; 
+        }
         canvas { display: block; }
         #info {
             position: absolute; top: 20px; width: 100%; text-align: center;
             pointer-events: none; z-index: 10;
-            text-shadow: 0 0 10px black;
+            text-shadow: 0 0 5px black;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        /* 모바일 세로 모드 안내 */
+        @media (orientation: portrait) {
+            #info { top: 10%; }
         }
     </style>
 </head>
 <body>
     <div id="info">
-        <h3>Black Hole</h3>
+        <h3>Cinematic Black Hole</h3>
+        <p>☝️ 한 손가락: 회전 | ✌️ 두 손가락: 줌</p>
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -25,13 +41,14 @@
         const camera = new THREE.Camera();
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0)); // 모바일 성능 최적화 (최대 2배율 제한)
         document.body.appendChild(renderer.domElement);
 
         const loader = new THREE.TextureLoader();
         const earthTexture = loader.load('./image/세계전도.png');
         const sunTexture = loader.load('./image/태양전도.png');
         
+        // 좌표: 태양(뒤) - 블랙홀(중간) - 지구(앞)
         const bhPos = new THREE.Vector3(0.0, 0.0, 0.0);
         const earthPos = new THREE.Vector3(0.0, 0.0, -5.0);
         const sunPos = new THREE.Vector3(0.0, 0.0, 25.0);
@@ -51,7 +68,9 @@
             uniform vec3 uSunPos;
 
             #define PI 3.14159265359
-            #define MAX_STEPS 300       
+            // 모바일 성능을 위해 반복 횟수 소폭 조정 (300 -> 200)
+            // PC에서도 충분히 고화질이며 모바일 발열을 줄입니다.
+            #define MAX_STEPS 200       
             #define MAX_DIST 100.0       
             #define SURF_DIST 0.001     
             #define EVENT_HORIZON 0.6   
@@ -71,25 +90,16 @@
                 return fract(p.x * p.y);
             }
 
-            // 깔끔한 우주 배경 (별 조금)
             vec3 getBackground(vec3 dir) {
-                vec3 bgCol = vec3(0.002, 0.003, 0.008); // 딥 다크 블루
-                
-                // 별 생성 (드문드문)
+                vec3 bgCol = vec3(0.002, 0.003, 0.008); 
                 float stars = pow(hash21(dir.xy * 200.0 + dir.z * 100.0), 300.0) * 0.8;
                 float bigStar = pow(hash21(dir.xy * 50.0 + dir.z * 10.0), 100.0);
                 if(bigStar > 0.99) stars += (bigStar - 0.99) * 200.0;
-
                 return bgCol + vec3(stars);
             }
 
-            // --- [신규] ACES Tone Mapping (영화 같은 색감) ---
             vec3 ACESFilm(vec3 x) {
-                float a = 2.51;
-                float b = 0.03;
-                float c = 2.43;
-                float d = 0.59;
-                float e = 0.14;
+                float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
                 return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
             }
 
@@ -115,56 +125,40 @@
                 vec3 dir = rd;
                 float totDist = 0.0;
                 bool hitBH = false, hitObj = false;
-
-                // --- [신규] 태양 글로우(Corona) 누적 변수 ---
                 vec3 sunGlow = vec3(0.0);
 
                 for(int i = 0; i < MAX_STEPS; i++) {
                     float dBH = length(p - uBhPos);
 
-                    // 1. 지구 렌더링 + [신규] 대기권(Atmosphere)
+                    // 지구 + 대기권
                     float dEarth = length(p - uEarthPos) - earthRad;
                     if(dEarth < SURF_DIST) {
                         vec3 normal = normalize(p - uEarthPos);
                         vec3 lightDir = normalize(uSunPos - uEarthPos);
-                        
-                        // 기본 텍스처
                         vec3 texCol = texture(uTexEarth, getSphereUV(p, uEarthPos)).rgb;
-                        
-                        // 라이팅 (태양빛)
                         float diff = max(dot(normal, lightDir), 0.05);
-                        
-                        // [핵심] 대기권 Fresnel 효과 (가장자리가 푸르게 빛남)
-                        // 시선(dir)과 법선(normal)이 수직일수록 강해짐
                         float fresnel = pow(1.0 + dot(dir, normal), 3.0);
-                        vec3 atmosphere = vec3(0.1, 0.4, 1.0) * fresnel * 1.5 * diff; // 빛 받는 쪽만
-
+                        vec3 atmosphere = vec3(0.1, 0.4, 1.0) * fresnel * 1.5 * diff;
                         col = texCol * diff + atmosphere; 
                         hitObj = true; break;
                     }
 
-                    // 2. 블랙홀 충돌
                     if(dBH < EVENT_HORIZON) { hitBH = true; break; }
 
-                    // 3. 태양 렌더링 (자체 발광)
+                    // 태양
                     float dSun = length(p - uSunPos) - sunRad;
                     if(dSun < SURF_DIST) {
                         col = texture(uTexSun, getSphereUV(p, uSunPos)).rgb;
-                        col *= 4.0; // 태양 밝기 증폭 (HDR 효과)
+                        col *= 4.0;
                         hitObj = true; break;
                     }
 
-                    // --- [신규] 태양 코로나 (Volumetric Glow) ---
-                    // 레이가 태양 근처를 지나갈 때 빛을 누적함
-                    // 블랙홀 뒤에 있어도 빛이 휘어져서 보임
+                    // 코로나 글로우
                     float distToSunCenter = length(p - uSunPos);
-                    // 태양 중심과의 거리가 가까울수록 빛남 (지수 함수 감쇠)
                     float glowIntensity = 1.0 / (distToSunCenter * distToSunCenter * 0.5 + 0.1);
-                    // 태양색(주황/노랑) 추가
                     sunGlow += vec3(1.0, 0.6, 0.2) * glowIntensity * 0.015;
 
-
-                    // 4. 중력 렌즈 & 이동
+                    // 렌즈 효과
                     vec3 gravDir = normalize(uBhPos - p);
                     float force = bhMass / (dBH * dBH + 0.02);
                     dir = normalize(dir + gravDir * force * 0.15);
@@ -178,19 +172,11 @@
                     if(totDist > MAX_DIST) break;
                 }
 
-                if(hitBH) {
-                    col = vec3(0.0);
-                } else if(!hitObj) {
-                    col = getBackground(dir);
-                }
+                if(hitBH) col = vec3(0.0);
+                else if(!hitObj) col = getBackground(dir);
 
-                // [신규] 누적된 태양 빛(Corona)을 최종 색상에 더함
                 col += sunGlow;
-
-                // [신규] ACES Tone Mapping (영화 같은 색감 보정)
                 col = ACESFilm(col);
-                
-                // 감마 보정
                 col = pow(col, vec3(0.4545));
                 
                 fragColor = vec4(col, 1.0);
@@ -216,8 +202,17 @@
         });
         scene.add(new THREE.Mesh(geometry, material));
 
+        // --- 입력 처리 (마우스 & 터치) ---
+
         let isDragging = false;
-        document.addEventListener('mousedown', () => isDragging = true);
+        let previousMousePosition = { x: 0, y: 0 };
+        let initialPinchDistance = null; // 핀치 줌을 위한 변수
+
+        // 1. 마우스 이벤트 (PC)
+        document.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
         document.addEventListener('mouseup', () => isDragging = false);
         document.addEventListener('mousemove', (e) => {
             if (isDragging) {
@@ -225,12 +220,61 @@
                 uniforms.iMouse.value.y -= e.movementY * 2.0;
             }
         });
-        
         document.addEventListener('wheel', (e) => {
             const zoomSpeed = 0.01;
             let newZoom = uniforms.uZoom.value - e.deltaY * zoomSpeed;
-            newZoom = Math.max(-50.0, Math.min(-6.0, newZoom)); 
+            newZoom = Math.max(-50.0, Math.min(-6.0, newZoom));
             uniforms.uZoom.value = newZoom;
+        });
+
+        // 2. 터치 이벤트 (모바일)
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                // 한 손가락: 드래그 시작
+                isDragging = true;
+                previousMousePosition = { x: e.touches[0].pageX, y: e.touches[0].pageY };
+            } else if (e.touches.length === 2) {
+                // 두 손가락: 핀치 줌 시작
+                const dx = e.touches[0].pageX - e.touches[1].pageX;
+                const dy = e.touches[0].pageY - e.touches[1].pageY;
+                initialPinchDistance = Math.hypot(dx, dy);
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchmove', (e) => {
+            // 브라우저 기본 스크롤 동작 방지
+            e.preventDefault(); 
+
+            if (e.touches.length === 1 && isDragging) {
+                // 한 손가락 드래그 (회전)
+                const deltaX = e.touches[0].pageX - previousMousePosition.x;
+                const deltaY = e.touches[0].pageY - previousMousePosition.y;
+                
+                uniforms.iMouse.value.x += deltaX * 2.0;
+                uniforms.iMouse.value.y -= deltaY * 2.0;
+                
+                previousMousePosition = { x: e.touches[0].pageX, y: e.touches[0].pageY };
+
+            } else if (e.touches.length === 2 && initialPinchDistance) {
+                // 두 손가락 핀치 (줌)
+                const dx = e.touches[0].pageX - e.touches[1].pageX;
+                const dy = e.touches[0].pageY - e.touches[1].pageY;
+                const currentDistance = Math.hypot(dx, dy);
+
+                const diff = currentDistance - initialPinchDistance;
+                const zoomSpeed = 0.05; // 터치는 휠보다 민감도 조절
+
+                let newZoom = uniforms.uZoom.value + diff * zoomSpeed;
+                newZoom = Math.max(-50.0, Math.min(-6.0, newZoom));
+                uniforms.uZoom.value = newZoom;
+
+                initialPinchDistance = currentDistance; // 연속적인 줌을 위해 업데이트
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+            initialPinchDistance = null;
         });
 
         window.addEventListener('resize', () => {
