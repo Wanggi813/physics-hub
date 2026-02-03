@@ -9,7 +9,7 @@
 
         :root {
             --bg-color: #050a14;
-            --panel-bg: rgba(15, 23, 42, 0.7);
+            --panel-bg: rgba(15, 23, 42, 0.85);
             --text-color: #e0e6ed;
             --accent-color: #00f2fe; /* Cyan */
             --danger-color: #ff4757; /* Electric */
@@ -21,25 +21,31 @@
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #000; /* 배경을 검게 처리 */
+            background-color: #000;
             color: var(--text-color);
-        }
-        /* [신규] 게임 컨테이너: 기준 해상도(1280x720)로 고정 */
-        #game-container {
-            position: relative; /* absolute에서 relative로 변경 */
-            width: 100vw;       /* 화면 전체 너비 */
-            height: 100vh;      /* 화면 전체 높이 */  
-            overflow: hidden;
+            font-family: 'Montserrat', sans-serif;
         }
 
-        /* [수정] 캔버스: 컨테이너에 꽉 차게 */
+        /* 게임 컨테이너: 전체 화면 */
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #0b1021 0%, #000000 100%);
+        }
+
+        /* 캔버스 */
         #simCanvas {
             display: block;
             width: 100%;
             height: 100%;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            cursor: crosshair;
         }
 
-        /* [신규] 가로 모드 유도 화면 (기본은 숨김) */
+        /* [가로 모드 유도 화면] */
         #rotate-warning {
             display: none;
             position: fixed;
@@ -60,32 +66,12 @@
             100% { transform: rotate(0deg); }
         }
 
-        /* [신규] 미디어 쿼리: 세로 모드일 때 경고창 표시 */
         @media screen and (orientation: portrait) {
             #rotate-warning { display: flex; }
-            #game-container { display: none; } /* 게임 숨김 */
+            #game-container { display: none; }
         }
 
-        /* [기존 UI 수정] 위치를 절대값이 아닌 퍼센트나 픽셀로 조금 조정 */
-        /* 컨트롤 패널이 너무 바닥에 붙지 않게 조정 */
-        #controls { 
-            width: 90%; 
-            max-width: 600px; /* 너무 넓어지지 않게 제한 */
-            bottom: 20px;
-        }
-        
-        /* 슬라이더 터치 편의성: 모바일에서 잘 눌리게 영역 확대 */
-        input[type=range] { height: 20px; margin: 15px 0; }
-        input[type=range]::-webkit-slider-thumb { width: 24px; height: 24px; margin-top: -10px; }
-
-        /* 캔버스 */
-        #simCanvas {
-            border-top: 1px solid rgba(255,255,255,0.1);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            background: transparent;
-            cursor: crosshair;
-            z-index: 1;
-        }
+        /* --- UI 요소 스타일 --- */
 
         /* 상단: 수식 대시보드 (HUD) */
         #hud {
@@ -145,7 +131,19 @@
             right: 20px;
             z-index: 20;
             text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
         }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* 레벨 배지 */
         .level-badge {
             display: none;
             background: var(--warning-color);
@@ -154,71 +152,115 @@
             border-radius: 4px;
             font-weight: bold;
             font-size: 0.8rem;
-            margin-bottom: 10px;
             box-shadow: 0 0 10px var(--warning-color);
         }
 
-        /* 하단 컨트롤 패널 */
-        #controls {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--panel-bg);
-            padding: 20px 40px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(15px);
-            display: flex;
-            gap: 30px;
-            align-items: center;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
-            z-index: 100;
-        }
-
-        .control-group { display: flex; flex-direction: column; align-items: center; min-width: 140px; }
-        .control-group label { font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; text-shadow: 0 0 5px currentColor; }
-        
-        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin: 10px 0; }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #fff; margin-top: -6px; cursor: pointer; transition: 0.2s; }
-        input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
-        
-        #eSlider::-webkit-slider-thumb { background: var(--danger-color); box-shadow: 0 0 10px var(--danger-color); }
-        #bSlider::-webkit-slider-thumb { background: var(--warning-color); box-shadow: 0 0 10px var(--warning-color); }
-        #vSlider::-webkit-slider-thumb { background: var(--accent-color); box-shadow: 0 0 10px var(--accent-color); }
-
-        .value-display { font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; margin-top: 5px; color: #ccc; }
-
-        /* 버튼 */
+        /* 버튼 공통 스타일 */
         .btn {
-            padding: 12px 30px;
+            padding: 12px 24px;
             border: none;
             border-radius: 30px;
             font-family: 'Montserrat', sans-serif;
             font-weight: 800;
-            font-size: 1rem;
+            font-size: 0.95rem;
             cursor: pointer;
             transition: all 0.3s;
             box-shadow: 0 0 15px rgba(0,0,0,0.3);
+            white-space: nowrap;
         }
-        #launchBtn { background: var(--accent-color); color: #000; }
-        #launchBtn:hover { transform: translateY(-2px); box-shadow: 0 0 20px var(--accent-color); }
         
         #challengeBtn { background: transparent; border: 2px solid var(--warning-color); color: var(--warning-color); }
         #challengeBtn:hover, #challengeBtn.active { background: var(--warning-color); color: #000; box-shadow: 0 0 20px var(--warning-color); }
-        /* [추가] 오로라 버튼 스타일 (신비로운 보라색/오로라 느낌) */
+
         #auroraBtn { 
             background: transparent; 
-            border: 2px solid #a29bfe; /* 연한 보라색 테두리 */
+            border: 2px solid #a29bfe;
             color: #a29bfe; 
         }
         #auroraBtn:hover { 
             background: #a29bfe; 
             color: #000; 
-            box-shadow: 0 0 20px #a29bfe; /* 보라색 네온 효과 */
+            box-shadow: 0 0 20px #a29bfe;
             transform: translateY(-2px);
         }
+
+        /* 하단 컨트롤 패널 (완전 복구됨) */
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 600px;
+            
+            /* 핵심 변경: 투명도를 0.2로 낮춰서 뒤가 훤히 비치게 함 */
+            background: rgba(15, 23, 42, 0.2); 
+            
+            /* 배경을 흐리게 처리해서 글씨 가독성 확보 (유리 같은 느낌) */
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px); /* 사파리 호환 */
+
+            padding: 20px 40px;
+            border-radius: 20px;
+            
+            /* 테두리도 더 연하게 */
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2); /* 그림자도 연하게 */
+            z-index: 100;
+        }
+
+        .control-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .control-group label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        /* 슬라이더 스타일 (중앙 정렬 완벽 해결) */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            margin: 10px 0;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            margin-top: -6px; /* (4px - 16px) / 2 = -6px (중앙 정렬) */
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        
+        .value-display { font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; color: #fff; margin-top: 5px; }
+
+        #launchBtn { 
+            background: var(--accent-color); 
+            color: #000; 
+            padding: 15px 30px;
+            font-size: 1.1rem;
+        }
+        #launchBtn:hover { transform: translateY(-2px); box-shadow: 0 0 20px var(--accent-color); }
+
         /* 메시지 */
         #message {
             position: absolute;
@@ -230,6 +272,35 @@
             transition: 0.3s;
             z-index: 200; text-shadow: 0 0 20px rgba(0,0,0,0.8);
         }
+
+        /* [모바일/작은 화면 전용 스타일] */
+        @media screen and (max-width: 900px), screen and (max-height: 600px) {
+            #hud { top: 5px; gap: 8px; }
+            .hud-box { padding: 4px 8px; min-width: 60px; border-radius: 5px; }
+            .hud-label { font-size: 0.55rem; margin-bottom: 2px; }
+            .hud-val { font-size: 0.8rem; }
+            .force-eq { font-size: 0.9rem; }
+
+            #particleSelector { top: 5px; left: 5px; padding: 6px; border-radius: 10px; }
+            .p-option { font-size: 0.65rem; margin-bottom: 3px; }
+            .p-dot { width: 6px; height: 6px; margin-right: 4px; }
+
+            #gameModePanel { top: 5px; right: 5px; gap: 5px; }
+            .button-container { gap: 5px; }
+            .btn { padding: 6px 12px; font-size: 0.7rem; border-radius: 15px; border-width: 1.5px; }
+            .level-badge { font-size: 0.65rem; padding: 2px 5px; }
+
+            #controls { 
+                bottom: 10px; 
+                padding: 10px 15px; 
+                gap: 10px; 
+                width: 95%; 
+                border-radius: 15px;
+            }
+            .control-group label { font-size: 0.65rem; margin-bottom: 2px; }
+            .value-display { font-size: 0.7rem; margin-top: 2px; }
+            #launchBtn { padding: 8px 16px; font-size: 0.8rem; }
+        }
     </style>
 </head>
 <body>
@@ -240,129 +311,122 @@
 
     <div id="game-container">
         
-        <div id="hud">...</div>
-        <div id="particleSelector">...</div>
-        <div id="gameModePanel">...</div>
-        <div id="message">...</div>
+        <div id="hud">
+            <div class="hud-box" style="border-color: var(--danger-color);">
+                <div class="hud-label">ELECTRIC FORCE (Fe = qE)</div>
+                <div class="hud-val" id="hudFe" style="color: var(--danger-color);">0.00</div>
+            </div>
+            <div class="force-eq" id="eqSign">≠</div>
+            <div class="hud-box" style="border-color: var(--warning-color);">
+                <div class="hud-label">MAGNETIC FORCE (Fb = qvB)</div>
+                <div class="hud-val" id="hudFb" style="color: var(--warning-color);">0.00</div>
+            </div>
+        </div>
+
+        <div id="particleSelector">
+            <div class="hud-label" style="margin-bottom:10px;">PARTICLE TYPE</div>
+            <div class="p-option active" onclick="setParticle('proton', this)">
+                <div class="p-dot" style="background: #ff4757;"></div> Proton (p+)
+            </div>
+            <div class="p-option" onclick="setParticle('electron', this)">
+                <div class="p-dot" style="background: #00f2fe;"></div> Electron (e-)
+            </div>
+            <div class="p-option" onclick="setParticle('alpha', this)">
+                <div class="p-dot" style="background: #2ed573;"></div> Alpha (He2+)
+            </div>
+        </div>
+
+        <div id="gameModePanel">
+            <div id="levelBadge" class="level-badge">LEVEL 1</div>
+            <div class="button-container">
+                <button id="challengeBtn" class="btn">CHALLENGE MODE</button>
+                <button id="auroraBtn" class="btn">PROJECT: AURORA</button>
+            </div>
+        </div>
+
+        <div id="message"></div>
+
         <canvas id="simCanvas"></canvas>
-        <div id="controls">...</div>
 
-    <div id="hud">
-        <div class="hud-box" style="border-color: var(--danger-color);">
-            <div class="hud-label">ELECTRIC FORCE (Fe = qE)</div>
-            <div class="hud-val" id="hudFe" style="color: var(--danger-color);">0.00</div>
+        <div id="controls">
+            <div class="control-group">
+                <label style="color:var(--danger-color)">E-FIELD</label>
+                <input type="range" id="eSlider" min="-5" max="5" step="0.1" value="0">
+                <div class="value-display" id="eVal">0.0</div>
+            </div>
+            <div class="control-group">
+                <label style="color:var(--warning-color)">B-FIELD</label>
+                <input type="range" id="bSlider" min="-2" max="2" step="0.1" value="0">
+                <div class="value-display" id="bVal">0.0</div>
+            </div>
+            <div class="control-group">
+                <label style="color:var(--accent-color)">VELOCITY</label>
+                <input type="range" id="vSlider" min="1" max="10" step="0.5" value="5">
+                <div class="value-display" id="vVal">5.0</div>
+            </div>
+            <button id="launchBtn" class="btn">LAUNCH</button>
         </div>
-        <div class="force-eq" id="eqSign">≠</div>
-        <div class="hud-box" style="border-color: var(--warning-color);">
-            <div class="hud-label">MAGNETIC FORCE (Fb = qvB)</div>
-            <div class="hud-val" id="hudFb" style="color: var(--warning-color);">0.00</div>
-        </div>
-    </div>
 
-    <div id="particleSelector">
-        <div class="hud-label" style="margin-bottom:10px;">PARTICLE TYPE</div>
-        <div class="p-option active" onclick="setParticle('proton', this)">
-            <div class="p-dot" style="background: #ff4757;"></div> Proton (p+)
-        </div>
-        <div class="p-option" onclick="setParticle('electron', this)">
-            <div class="p-dot" style="background: #00f2fe;"></div> Electron (e-)
-        </div>
-        <div class="p-option" onclick="setParticle('alpha', this)">
-            <div class="p-dot" style="background: #2ed573;"></div> Alpha (He2+)
-        </div>
-    </div>
-
-    <div id="gameModePanel">
-        <div id="levelBadge" class="level-badge">LEVEL 1</div>
-        <button id="auroraBtn" class="btn" style="margin-right: 15px;">PROJECT: AURORA</button>
-        <button id="challengeBtn" class="btn">CHALLENGE MODE</button>
-    </div>
-
-    <div id="message"></div>
-
-    <canvas id="simCanvas"></canvas>
-
-    <div id="controls">
-        <div class="control-group">
-            <label style="color:var(--danger-color)">E-FIELD</label>
-            <input type="range" id="eSlider" min="-5" max="5" step="0.1" value="0">
-            <div class="value-display" id="eVal">0.0</div>
-        </div>
-        <div class="control-group">
-            <label style="color:var(--warning-color)">B-FIELD</label>
-            <input type="range" id="bSlider" min="-2" max="2" step="0.1" value="0">
-            <div class="value-display" id="bVal">0.0</div>
-        </div>
-        <div class="control-group">
-            <label style="color:var(--accent-color)">VELOCITY</label>
-            <input type="range" id="vSlider" min="1" max="10" step="0.5" value="5">
-            <div class="value-display" id="vVal">5.0</div>
-        </div>
-        <button id="launchBtn" class="btn">LAUNCH</button>
     </div>
 
     <script>
         const canvas = document.getElementById('simCanvas');
         const ctx = canvas.getContext('2d');
-        let width, height;
+        
+        let width, height; // 전역 변수
         let animationId;
-        let time = 0;
         
         // --- 1. 상태 및 물리 설정 ---
         const physics = {
             proton: { m: 2.0, q: 1, color: '#ff4757', name: 'Proton' },
-            electron: { m: 0.5, q: -1, color: '#00f2fe', name: 'Electron' }, // 실제 비율보다 과장됨 (게임성)
+            electron: { m: 0.5, q: -1, color: '#00f2fe', name: 'Electron' }, 
             alpha: { m: 8.0, q: 2, color: '#2ed573', name: 'Alpha' }
         };
 
         const state = {
             E: 0, B: 0, v0: 5,
             running: false,
-            mode: 'free', // 'free' or 'challenge'
+            mode: 'free', 
             level: 1,
             particleType: 'proton'
         };
 
-        let particle = {
-            x: 0, y: 0, vx: 0, vy: 0,
-            trail: []
-        };
-
+        let particle = { x: 0, y: 0, vx: 0, vy: 0, trail: [] };
         let target = { x: 0, y: 0, radius: 30, active: false };
-        let obstacles = []; // {x, y, w, h}
+        let obstacles = [];
 
         // --- 2. 초기화 ---
         function init() {
-            resize();
             window.addEventListener('resize', resize);
             
-            // 컨트롤 이벤트
             document.getElementById('eSlider').addEventListener('input', updateUI);
             document.getElementById('bSlider').addEventListener('input', updateUI);
             document.getElementById('vSlider').addEventListener('input', updateUI);
             document.getElementById('launchBtn').addEventListener('click', launch);
             document.getElementById('challengeBtn').addEventListener('click', toggleChallenge);
-            document.getElementById('auroraBtn').addEventListener('click', function() {window.location.href = '오로라.html';});
+            document.getElementById('auroraBtn').addEventListener('click', function() {
+                window.location.href = '오로라.html';
+            });
 
             updateUI();
-            resetSystem();
-            loop();
+            
+            // 화면 크기 설정 및 최초 드로우 (중요: 까만 화면 방지)
+            resize(); 
+
+            // 루프 시작
+            requestAnimationFrame(loop);
         }
 
- function resize() {
-            // 1. 화면 크기 업데이트
+        function resize() {
             width = window.innerWidth;
             height = window.innerHeight;
 
-            // 2. 캔버스 해상도 조정
             canvas.width = width;
             canvas.height = height;
 
-            // 3. 컨테이너 스케일 초기화 (반응형 풀스크린 사용 시)
             const container = document.getElementById('game-container');
             if(container) container.style.transform = 'none';
 
-            // 4. 레벨 및 장애물 위치 재계산
             if (state.mode === 'challenge') {
                 setupLevel(state.level); 
             } else {
@@ -370,25 +434,16 @@
                 target.y = height / 2;
             }
 
-            // [핵심 추가] 입자를 "원래 위치"로 리셋
-            // 화면이 바뀌면 날아가던 입자를 취소하고, 새로운 화면의 중앙 높이로 입자를 되돌립니다.
-            resetSystem(); 
+            resetSystem();
+            draw(); // 리사이즈 즉시 화면 갱신
         }
-
-        // ... 나머지 setupLevel, updatePhysics 등에서...
-        // 'width'와 'height' 변수를 쓰던 곳을 모두 'DESIGN_WIDTH', 'DESIGN_HEIGHT'로 바꿔야 합니다.
-        // 혹은 아래처럼 전역 변수로 매핑해줘도 됩니다.
-        
-        // [편의를 위해 전역 변수 재선언] (init 함수 밖, 스크립트 최상단에 두세요)
 
         // --- 3. 로직 제어 ---
         function setParticle(type, el) {
             state.particleType = type;
-            // UI 업데이트
             document.querySelectorAll('.p-option').forEach(opt => opt.classList.remove('active'));
             el.classList.add('active');
             
-            // 재설정
             if(state.running) launch();
             else resetSystem();
         }
@@ -407,18 +462,15 @@
 
         function updateHUD() {
             const p = physics[state.particleType];
-            // 힘의 크기 (절댓값) 계산
-            const Fe = Math.abs(p.q * state.E);
-            const Fb = Math.abs(p.q * state.v0 * state.B); // 초기 속도 기준 근사치
+            // 화면 높이 스케일(전기장) 적용하여 표시값과 실제 힘 싱크 맞춤
+            const scaleY = Math.min(1.0, height / 700); 
+            const Fe = Math.abs(p.q * state.E * scaleY); 
+            const Fb = Math.abs(p.q * state.v0 * state.B); 
 
-            const hudFe = document.getElementById('hudFe');
-            const hudFb = document.getElementById('hudFb');
+            document.getElementById('hudFe').textContent = Fe.toFixed(2);
+            document.getElementById('hudFb').textContent = Fb.toFixed(2);
+
             const eqSign = document.getElementById('eqSign');
-
-            hudFe.textContent = Fe.toFixed(2);
-            hudFb.textContent = Fb.toFixed(2);
-
-            // 평형 상태 시각화 (오차 범위 내)
             if (state.running && Math.abs(Fe - Fb) < 0.1 && Fe > 0) {
                 eqSign.textContent = "=";
                 eqSign.classList.add('balanced');
@@ -451,94 +503,114 @@
             resetSystem();
         }
 
-function setupLevel(lvl) {
+        function setupLevel(lvl) {
             target.active = true;
             obstacles = [];
             document.getElementById('levelBadge').textContent = `LEVEL ${lvl}`;
 
+            // 화면의 중앙 좌표
             const cx = width / 2;
             const cy = height / 2;
 
             if (lvl === 1) {
-                // [LEVEL 1: 계단형 터널 (The Step-Up)]
-                // 정면이 막혀있어 위쪽 터널로 진입해야 합니다.
-                // "곡선 이동" 후 "직선 주행(평형)" 능력을 모두 테스트합니다.
+                // [LEVEL 1: 계단형 터널]
+                // 화면 높이의 30% 지점(상단)에 터널 생성
+                const tunnelY = height * 0.3; 
                 
-                // 타겟을 위쪽 터널 끝으로 이동
-                const tunnelY = cy - 120; // 터널의 중심 높이 (위쪽)
-                target.x = width - 80;
+                target.x = width * 0.9; // 오른쪽 90% 지점
                 target.y = tunnelY;
 
-                // 1. 정면을 막는 거대한 벽 (아래쪽 블록)
-                // 중앙(cy)보다 살짝 위까지 막아서 무조건 상승하게 유도
-                obstacles.push({ x: 300, y: tunnelY + 40, w: width - 300, h: height }); 
+                // 1. 아래쪽 벽 (터널 바닥)
+                obstacles.push({ 
+                    x: width * 0.25, // 왼쪽 25% 지점부터 시작
+                    y: tunnelY + 40, 
+                    w: width * 0.75, // 나머지 길이 꽉 채움
+                    h: height 
+                }); 
 
-                // 2. 터널 천장 (위쪽 블록)
-                // 너무 높게 날아가는 것을 방지 (좁은 터널 형성)
-                obstacles.push({ x: 300, y: 0, w: width - 300, h: tunnelY - 40 });
-
-                // (옵션) 시작 지점 바로 앞은 비워두어 입자가 상승할 공간(x=80~300)을 줍니다.
+                // 2. 위쪽 벽 (터널 천장)
+                obstacles.push({ 
+                    x: width * 0.25, 
+                    y: 0, 
+                    w: width * 0.75, 
+                    h: tunnelY - 40 
+                });
 
             } else if (lvl === 2) {
-                // [LEVEL 2: 지그재그 익스트림 (Triple Zig-Zag)]
-                // "위 -> 아래 -> 위"로 3번 꺾어야 하는 고난이도 코스입니다.
-                // 장애물이 촘촘하게 배치되어 빠른 컨트롤이 필요합니다.
+                // [LEVEL 2: 지그재그 익스트림]
+                target.x = width * 0.95;
+                target.y = cy - (height * 0.15); // 약간 위쪽
 
-                target.x = width - 60;
-                target.y = cy - 100; // 마지막엔 위로 솟구친 상태에서 골인해야 함
+                // 벽 배치 간격 (전체 너비의 25% 지점부터 시작)
+                const startX = width * 0.25;
+                const interval = (width * 0.6) / 3; // 60% 공간을 3등분
+                const wallW = width * 0.025; // 벽 두께는 화면 너비의 2.5%
+                const holeSize = height * 0.2; // 구멍 크기는 화면 높이의 20%
 
-                // 장애물 배치 간격 계산 (화면 크기에 맞춰 자동 조정)
-                const startX = 200; // 첫 장애물 시작 위치
-                const interval = (width - 300) / 3; // 장애물 사이 간격
-                const wallWidth = 30;
-                const holeSize = 120; // 구멍 크기 (작을수록 어려움)
-
-                // 1. 첫 번째 벽 (아래에서 솟음) -> 입자를 '위'로 유도
+                // 1. 첫 번째 벽 (아래에서 솟음)
                 obstacles.push({ 
                     x: startX, 
-                    y: cy - holeSize/2, // 중앙보다 살짝 위까지 막음
-                    w: wallWidth, 
+                    y: cy - holeSize/2, 
+                    w: wallW, 
                     h: height 
                 });
 
-                // 2. 두 번째 벽 (위에서 내려옴) -> 입자를 '아래'로 유도
+                // 2. 두 번째 벽 (위에서 내려옴)
                 obstacles.push({ 
                     x: startX + interval, 
                     y: 0, 
-                    w: wallWidth, 
-                    h: cy + holeSize/2 // 중앙보다 살짝 아래까지 막음
+                    w: wallW, 
+                    h: cy + holeSize/2 
                 });
 
-                // 3. 세 번째 벽 (아래에서 솟음) -> 입자를 다시 '위'로 유도
+                // 3. 세 번째 벽 (아래에서 솟음)
                 obstacles.push({ 
                     x: startX + interval * 2, 
                     y: cy - holeSize/2, 
-                    w: wallWidth, 
+                    w: wallW, 
                     h: height 
                 });
 
-                // 천장/바닥 제한 (너무 높게/낮게 피하는 꼼수 방지)
-                obstacles.push({ x: 0, y: 0, w: width, h: 30 }); // 천장
-                obstacles.push({ x: 0, y: height - 30, w: width, h: 30 }); // 바닥
+                // 천장/바닥 안전턱 (화면 높이의 5%)
+                const borderH = height * 0.05;
+                obstacles.push({ x: 0, y: 0, w: width, h: borderH }); 
+                obstacles.push({ x: 0, y: height - borderH, w: width, h: borderH });
 
             } else if (lvl === 3) {
-                // 타겟이 'ㄷ'자 박스 안에 갇혀있고, 입구는 반대편(오른쪽)입니다.
-                // 입자가 타겟을 지나쳐서 -> 크게 원을 그리며 회전(자기장) -> 뒤로 진입해야 함.
+                // [LEVEL 3: U-Turn]
                 target.x = cx;
                 target.y = cy;
 
-                // 'ㄷ'자 형태의 감옥 만들기
-                const boxSize = 80;
+                // 감옥 크기 (화면 높이 기준 15%)
+                const boxSize = height * 0.15;
+                const wallThick = 20;
+
+                // 'ㄷ'자 감옥 (화면 중앙 기준)
                 // 왼쪽 벽 (막힘)
-                obstacles.push({ x: cx - boxSize, y: cy - boxSize, w: 20, h: boxSize * 2 });
+                obstacles.push({ 
+                    x: cx - boxSize, 
+                    y: cy - boxSize, 
+                    w: wallThick, 
+                    h: boxSize * 2 
+                });
                 // 위쪽 벽
-                obstacles.push({ x: cx - boxSize, y: cy - boxSize, w: boxSize * 2, h: 20 });
+                obstacles.push({ 
+                    x: cx - boxSize, 
+                    y: cy - boxSize, 
+                    w: boxSize * 2, 
+                    h: wallThick 
+                });
                 // 아래쪽 벽
-                obstacles.push({ x: cx - boxSize, y: cy + boxSize - 20, w: boxSize * 2, h: 20 });
+                obstacles.push({ 
+                    x: cx - boxSize, 
+                    y: cy + boxSize - wallThick, 
+                    w: boxSize * 2, 
+                    h: wallThick 
+                });
                 
-                // 화면 위아래에 장애물을 두어 너무 크게 도는 것을 방지 (정밀한 제어 요구)
-                obstacles.push({ x: cx, y: 0, w: 20, h: 100 });
-                obstacles.push({ x: cx, y: height - 100, w: 20, h: 100 });
+                // 위아래 중앙 가이드 벽
+                obstacles.push({ x: cx, y: 0, w: wallThick, h: height * 0.2 });
+                obstacles.push({ x: cx, y: height * 0.8, w: wallThick, h: height * 0.2 });
             }
         }
 
@@ -550,100 +622,75 @@ function setupLevel(lvl) {
             particle.trail = [];
             state.running = false;
             
-            // 자유 모드일 때 타겟 숨김
             if(state.mode === 'free') target.active = false;
             
             document.getElementById('message').style.opacity = 0;
             document.getElementById('eqSign').classList.remove('balanced');
+            
+            // 리셋 시에도 화면 한번 그림
+            draw();
         }
 
         function launch() {
             resetSystem();
             
-            // [수정] 발사 속도에도 스케일 적용
-            const DESIGN_WIDTH = 1200;
-            const scale = Math.min(1.0, width / DESIGN_WIDTH);
-            
-            particle.vx = state.v0 * scale; // 화면이 작으면 느리게 발사
+            // [수정] 속도는 '너비' 기준 스케일 (가로가 좁으면 느리게)
+            const scaleX = Math.min(1.0, width / 1200);
+            particle.vx = state.v0 * scaleX; 
             state.running = true;
         }
 
-        // --- 4. 물리 엔진 ---
-       // --- 4. 물리 엔진 (수정됨: 정밀도 향상) ---
+        // --- 4. 물리 엔진 (FPS 60 고정 + 스케일 분리) ---
         function updatePhysics() {
             if (!state.running) return;
 
-            // [핵심 변경 사항] 화면 크기에 따른 스케일링 팩터 계산
-            // 기준 너비(1200px)보다 화면이 작으면, 속도와 전기장도 그만큼 줄입니다.
-            const DESIGN_WIDTH = 1200; 
-            const scale = Math.min(1.0, width / DESIGN_WIDTH); 
+            // [중요] 전기장은 '높이' 기준, 속도는 '너비' 기준
+            const scaleY = Math.min(1.0, height / 700); 
 
-            // 기존 정밀도 보정 (Sub-stepping)
             const originalDt = 0.2; 
             const steps = 20; 
             const dt = originalDt / steps; 
 
             const pProp = physics[state.particleType];
 
-            // 쪼개진 횟수만큼 반복 계산
             for (let i = 0; i < steps; i++) {
-                
-                // [스케일 적용 1] 전기장 (E) -> 스케일 적용 O
-                // 거리가 줄어든 만큼 힘(가속도)도 줄어야 궤적 모양이 유지됨
-                const scaledE = state.E * scale;
+                const scaledE = state.E * scaleY; // 전기장만 Y스케일 적용
                 const Fe_y = pProp.q * scaledE;
 
-                // [스케일 적용 2] 입자 속도 (v) -> 스케일 적용 O
-                // 이미 줄어든 속도(vx, vy)를 사용하므로 추가 연산 불필요
-                
-                // [스케일 적용 3] 자기장 (B) -> 스케일 적용 X
-                // 자기력 F = qvB에서 v가 이미 줄어들었으므로, 
-                // B까지 줄이면 힘이 너무 약해져서 궤적이 퍼져버림 (B는 유지!)
-                
-                // 자기력 계산 (현재 입자의 속도 vx, vy는 이미 scale에 의해 작아진 상태임)
                 const Fb_x = pProp.q * particle.vy * state.B;
                 const Fb_y = -pProp.q * particle.vx * state.B;
 
                 const Fnet_x = Fb_x;
                 const Fnet_y = Fe_y + Fb_y;
 
-                // 가속도 (F = ma)
                 const ax = Fnet_x / pProp.m;
                 const ay = Fnet_y / pProp.m;
 
-                // 속도 및 위치 업데이트
                 particle.vx += ax * dt;
                 particle.vy += ay * dt;
                 particle.x += particle.vx * dt;
                 particle.y += particle.vy * dt;
             }
 
-            // 궤적 저장
             particle.trail.push({x: particle.x, y: particle.y});
 
-            // 화면 이탈 확인
+            // 화면 이탈
             if (particle.x > width + 50 || particle.x < -50 || particle.y > height + 50 || particle.y < -50) {
                 state.running = false;
                 if(state.mode === 'challenge') failLevel();
             }
 
-            // 충돌 및 게임 로직
             if (state.mode === 'challenge') checkCollisions();
-            
-            // HUD 실시간 업데이트
             updateHUD();
         }
 
         function checkCollisions() {
-            // 1. 타겟 도달
             const dx = particle.x - target.x;
             const dy = particle.y - target.y;
             if (Math.hypot(dx, dy) < target.radius) {
                 winLevel();
                 return;
             }
-
-            // 2. 장애물 충돌
             for (let obs of obstacles) {
                 if (particle.x > obs.x && particle.x < obs.x + obs.w &&
                     particle.y > obs.y && particle.y < obs.y + obs.h) {
@@ -683,8 +730,9 @@ function setupLevel(lvl) {
 
         // --- 5. 렌더링 ---
         function draw() {
+            if(!width || !height) return; // 안전장치
+
             ctx.clearRect(0, 0, width, height);
-            time += 0.05;
 
             drawGrid();
             drawFields();
@@ -696,7 +744,6 @@ function setupLevel(lvl) {
 
             drawTrail();
             drawParticle();
-            drawVectors();
         }
 
         function drawGrid() {
@@ -716,11 +763,13 @@ function setupLevel(lvl) {
                 ctx.fillStyle = `rgba(${color}, 0.1)`;
                 ctx.fillRect(0, 0, width, 20);
                 ctx.fillRect(0, height-20, width, 20);
+                
                 ctx.strokeStyle = `rgba(${color}, 0.5)`;
                 ctx.beginPath();
-                // 단순화된 필드 라인
+                // [수정] 전기장 방향: 양수면 위->아래, 음수면 아래->위
                 for(let x=50; x<width; x+=100) {
-                    drawArrow(x, 30, x, height-30, 8);
+                    if(state.E > 0) drawArrow(x, 30, x, height-30, 8);
+                    else drawArrow(x, height-30, x, 30, 8);
                 }
                 ctx.stroke();
             }
@@ -740,39 +789,28 @@ function setupLevel(lvl) {
         }
 
         function drawObstacles() {
-            ctx.save(); // 현재 그리기 상태 저장 (클리핑을 위해)
-
+            ctx.save();
             for (let obs of obstacles) {
-                // 1. 클리핑 영역(네모) 설정
                 ctx.beginPath();
                 ctx.rect(obs.x, obs.y, obs.w, obs.h);
-                ctx.clip(); // 이 이후로는 네모 안쪽만 그려짐
-
-                // 2. 배경 채우기
+                ctx.clip();
                 ctx.fillStyle = "rgba(255, 107, 107, 0.2)";
                 ctx.fill();
-
-                // 3. 빗금 그리기 (클리핑 덕분에 삐져나가지 않음)
                 ctx.strokeStyle = "var(--obstacle-color)";
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                // 빗금이 네모를 꽉 채우도록 넉넉하게 반복
                 for (let i = -obs.h; i < obs.w + obs.h; i += 15) {
                     ctx.moveTo(obs.x + i, obs.y);
                     ctx.lineTo(obs.x + i + obs.h + 20, obs.y + obs.h + 20);
                 }
                 ctx.stroke();
-
-                // 클리핑 해제 전에 테두리 그리기
                 ctx.strokeStyle = "var(--obstacle-color)";
                 ctx.lineWidth = 3;
                 ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
-                
-                // 클리핑 해제 (다음 루프를 위해)
                 ctx.restore(); 
-                ctx.save(); // 다음 장애물을 위해 다시 save
+                ctx.save();
             }
-            ctx.restore(); // 최종 복구
+            ctx.restore();
         }
 
         function drawTarget() {
@@ -782,11 +820,11 @@ function setupLevel(lvl) {
             ctx.lineWidth = 3;
             ctx.shadowBlur = 15;
             ctx.shadowColor = color;
-
             ctx.beginPath();
-            ctx.arc(target.x, target.y, target.radius, time, time + Math.PI * 1.5);
+            // 타겟 애니메이션 (시간값 필요하므로 date 사용)
+            const t = Date.now() / 300;
+            ctx.arc(target.x, target.y, target.radius, t, t + Math.PI * 1.5);
             ctx.stroke();
-            
             ctx.font = "12px sans-serif";
             ctx.fillStyle = color;
             ctx.fillText("GOAL", target.x - 18, target.y + 4);
@@ -795,21 +833,14 @@ function setupLevel(lvl) {
 
         function drawTrail() {
             if (particle.trail.length < 2) return;
-
-            // [수정] 스케일 계산
-            const DESIGN_WIDTH = 1200;
-            const scale = Math.min(1.0, width / DESIGN_WIDTH);
-
+            // 시각 효과는 '너비' 기준
+            const scaleX = Math.min(1.0, width / 1200);
             const color = physics[state.particleType].color;
             ctx.strokeStyle = color;
-            
-            // [수정] 선 굵기도 화면에 비례해서 얇아짐
-            ctx.lineWidth = Math.max(1, 3 * scale); 
-            
+            ctx.lineWidth = Math.max(1, 3 * scaleX); 
             ctx.lineCap = 'round';
-            ctx.shadowBlur = 10 * scale; // 그림자도 스케일링
+            ctx.shadowBlur = 10 * scaleX; 
             ctx.shadowColor = color;
-            
             ctx.beginPath();
             ctx.moveTo(particle.trail[0].x, particle.trail[0].y);
             for (let p of particle.trail) ctx.lineTo(p.x, p.y);
@@ -818,34 +849,23 @@ function setupLevel(lvl) {
         }
 
         function drawParticle() {
-            // [수정] 화면 크기에 따른 스케일 계산
-            const DESIGN_WIDTH = 1200;
-            const scale = Math.min(1.0, width / DESIGN_WIDTH);
-
+            const scaleX = Math.min(1.0, width / 1200);
             const pProp = physics[state.particleType];
-            
-            // [수정] 입자 크기도 화면에 비례해서 작아짐 (최소 3px은 유지)
             const baseR = pProp.name === 'Alpha' ? 10 : 6;
-            const r = Math.max(3, baseR * scale); 
+            const r = Math.max(3, baseR * scaleX); 
             
             ctx.fillStyle = "#fff";
             ctx.beginPath();
             ctx.arc(particle.x, particle.y, r, 0, Math.PI*2);
             ctx.fill();
             
-            // 후광 효과
-            ctx.shadowBlur = 20 * scale; // 후광 범위도 스케일링
+            ctx.shadowBlur = 20 * scaleX; 
             ctx.shadowColor = pProp.color;
             ctx.beginPath();
-            ctx.arc(particle.x, particle.y, r + (4 * scale), 0, Math.PI*2);
+            ctx.arc(particle.x, particle.y, r + (4 * scaleX), 0, Math.PI*2);
             ctx.fillStyle = pProp.color;
             ctx.fill();
             ctx.shadowBlur = 0;
-        }
-
-        function drawVectors() {
-            if (!state.running) return;
-            // 벡터 그리기 (생략 가능하나 교육적 목적을 위해 유지)
         }
 
         function drawArrow(x1, y1, x2, y2, head) {
@@ -856,12 +876,24 @@ function setupLevel(lvl) {
             ctx.lineTo(x2 - head * Math.cos(angle + Math.PI/6), y2 - head * Math.sin(angle + Math.PI/6));
         }
 
-        function loop() {
-            updatePhysics();
-            draw();
+        // --- 6. 애니메이션 루프 (FPS 60 고정) ---
+        let lastTime = 0;
+        const fpsInterval = 1000 / 60; // 60FPS
+
+        function loop(timestamp) {
             animationId = requestAnimationFrame(loop);
+
+            if (!lastTime) { lastTime = timestamp; return; }
+            const elapsed = timestamp - lastTime;
+
+            if (elapsed > fpsInterval) {
+                lastTime = timestamp - (elapsed % fpsInterval);
+                updatePhysics();
+                draw();
+            }
         }
 
+        // 실행
         init();
     </script>
 </body>
