@@ -353,109 +353,379 @@
     next();
   })();
   
-  // ===== 인터랙티브 중력 배경 (기존 유지) =====
-  (function(){
-    const canvas=document.getElementById('gravity-bg');
-    const ctx=canvas.getContext('2d');
-    const dpr=Math.min(window.devicePixelRatio||1,2);
-    let W=0,H=0;
-    new ResizeObserver(()=>{
-      const r=canvas.getBoundingClientRect();
-      W=r.width|0; H=r.height|0;
-      canvas.width=(W*dpr)|0; canvas.height=(H*dpr)|0;
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-    }).observe(canvas);
-  
-    let PARTICLE_COUNT=260;
-    const particles=[];
-    function resetParticles(){
-      particles.length=0;
-      for(let i=0;i<PARTICLE_COUNT;i++){
-        particles.push({ x:Math.random()*W, y:Math.random()*H, vx:(Math.random()-.5)*.5, vy:(Math.random()-.5)*.5, m:1+Math.random()*1 });
+// ===== 인터랙티브 중력 배경 (Final Polish: Red Blur Reduced) =====
+(function () {
+  const canvas = document.getElementById('gravity-bg');
+  const ctx = canvas.getContext('2d');
+
+  let dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let W = 0, H = 0;
+
+  new ResizeObserver(() => {
+    const r = canvas.getBoundingClientRect();
+    W = r.width; H = r.height;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    ctx.scale(dpr, dpr);
+  }).observe(canvas);
+
+  let PARTICLE_COUNT = 350;
+  const particles = [];
+  const attractors = [];
+
+  // ===== 게임 상태 =====
+  let consumedCount = 0;
+  const TARGET_COUNT = 50; 
+  let sunState = 'normal'; 
+  let explosionTimer = 0;
+
+  // ===== 물리 상수 =====
+  const INITIAL_G = 80;
+  let G = INITIAL_G;
+  const SOFTENING = 800;
+
+  function initSolarSystem() {
+    particles.length = 0;
+    attractors.length = 0;
+    consumedCount = 0;
+    sunState = 'normal';
+    G = INITIAL_G;
+
+    const sun = {
+      x: W / 2, y: H / 2,
+      vx: 0, vy: 0,
+      m: 5000, 
+      fixed: true,
+      color: 'rgba(255, 220, 100,' 
+    };
+    attractors.push(sun);
+
+    spawnParticlesOrbiting(sun, PARTICLE_COUNT);
+  }
+
+  function spawnParticlesOrbiting(center, count, isExplosion = false) {
+    for (let i = 0; i < count; i++) {
+      const r = isExplosion ? Math.random() * 30 : 100 + Math.random() * (Math.min(W, H) / 2 - 120);
+      const angle = Math.random() * Math.PI * 2;
+      
+      const px = center.x + Math.cos(angle) * r;
+      const py = center.y + Math.sin(angle) * r;
+
+      let vx, vy;
+      if (isExplosion) {
+        const speed = 25 + Math.random() * 45;
+        vx = Math.cos(angle) * speed;
+        vy = Math.sin(angle) * speed;
+      } else {
+        const speed = Math.sqrt((G * center.m) / r);
+        vx = -Math.sin(angle) * speed + center.vx;
+        vy = Math.cos(angle) * speed + center.vy;
+      }
+
+      particles.push({
+        x: px, y: py,
+        vx: vx, vy: vy,
+        m: 0.8 + Math.random() * 1.2,
+        isDebris: isExplosion
+      });
+    }
+  }
+
+  function triggerSupernova() {
+    sunState = 'exploding';
+    explosionTimer = 140; 
+    const sun = attractors[0];
+    spawnParticlesOrbiting(sun, 700, true);
+    for(let i=1; i<attractors.length; i++) {
+      const p = attractors[i];
+      const dx = p.x - sun.x;
+      const dy = p.y - sun.y;
+      const angle = Math.atan2(dy, dx);
+      p.vx += Math.cos(angle) * 40;
+      p.vy += Math.sin(angle) * 40;
+    }
+  }
+
+  // UI 제어
+  const runBtn = document.getElementById('toggle-run');
+  const trailBtn = document.getElementById('toggle-trail');
+  const resetBtn = document.getElementById('reset');
+  const slider = document.getElementById('particle-count');
+  const label = document.getElementById('particle-label');
+  let running = true, trails = true;
+
+  runBtn.addEventListener('click', () => { running = !running; runBtn.textContent = running ? '⏸︎ 일시정지' : '▶ 재생'; });
+  trailBtn.addEventListener('click', () => { trails = !trails; trailBtn.textContent = '트레일: ' + (trails ? '켜짐' : '꺼짐'); });
+  resetBtn.addEventListener('click', initSolarSystem);
+  slider.addEventListener('input', () => { PARTICLE_COUNT = +slider.value; label.textContent = PARTICLE_COUNT; initSolarSystem(); });
+
+  canvas.addEventListener('mousedown', (e) => {
+    if (e.button === 2) return; 
+    if (sunState === 'exploding') return;
+
+    const r = canvas.getBoundingClientRect();
+    const x = e.clientX - r.left;
+    const y = e.clientY - r.top;
+    
+    const newMass = 3000; 
+    const center = attractors[0];
+    const dx = x - center.x;
+    const dy = y - center.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const angle = Math.atan2(dy, dx);
+
+    const orbitSpeed = Math.sqrt((G * center.m) / dist);
+    
+    const colors = ['rgba(150, 200, 255,', 'rgba(255, 180, 180,', 'rgba(200, 180, 255,'];
+    const randColor = colors[Math.floor(Math.random() * colors.length)];
+
+    attractors.push({ 
+        x: x, y: y, 
+        vx: -Math.sin(angle) * orbitSpeed, 
+        vy: Math.cos(angle) * orbitSpeed, 
+        m: newMass, 
+        fixed: false,
+        color: randColor 
+    });
+  });
+
+  canvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (attractors.length > 1) attractors.pop(); 
+  });
+
+  function step() {
+    const dt = 0.5;
+    const center = attractors[0];
+
+    if (sunState === 'exploding') {
+      explosionTimer--;
+      canvas.style.transform = `translate(${Math.random()*8-4}px, ${Math.random()*8-4}px)`;
+      if (explosionTimer <= 0) {
+        sunState = 'blackhole';
+        canvas.style.transform = 'none';
+        G = 600; 
+        center.m = 25000; 
       }
     }
-  
-    const runBtn=document.getElementById('toggle-run');
-    const trailBtn=document.getElementById('toggle-trail');
-    const resetBtn=document.getElementById('reset');
-    const slider=document.getElementById('particle-count');
-    const label=document.getElementById('particle-label');
-    let running=true, trails=true, pointerActive=false;
-  
-    runBtn.addEventListener('click',()=>{ running=!running; runBtn.textContent= running? '⏸︎ 일시정지':'▶ 재생'; });
-    trailBtn.addEventListener('click',()=>{ trails=!trails; trailBtn.textContent='트레일: '+(trails?'켜짐':'꺼짐'); });
-    resetBtn.addEventListener('click',()=>{ points.length=0; cursorPoint=null; resetParticles(); });
-    slider.addEventListener('input',()=>{ PARTICLE_COUNT=+slider.value; label.textContent=PARTICLE_COUNT; resetParticles(); });
-  
-    function pos(ev){
-      const r=canvas.getBoundingClientRect();
-      const x=(ev.touches? ev.touches[0].clientX:ev.clientX)-r.left;
-      const y=(ev.touches? ev.touches[0].clientY:ev.clientY)-r.top;
-      return {x,y};
-    }
-  
-    const points=[];
-    let cursorPoint=null;
-    function start(x,y){ pointerActive=true; cursorPoint={x,y,m:240}; points[0]=cursorPoint; }
-    function move(x,y){ if(pointerActive && cursorPoint){ cursorPoint.x=x; cursorPoint.y=y; } }
-    function end(){ pointerActive=false; cursorPoint=null; points.length=0; }
-  
-    canvas.addEventListener('pointerdown', e=>{ const p=pos(e); start(p.x,p.y); }, {passive:true});
-    canvas.addEventListener('pointermove', e=>{ if(pointerActive){ const p=pos(e); move(p.x,p.y);} }, {passive:true});
-    canvas.addEventListener('pointerup', end, {passive:true});
-    canvas.addEventListener('pointercancel', end, {passive:true});
-    canvas.addEventListener('mouseleave', end);
-  
-    canvas.addEventListener('touchstart', e=>{ const p=pos(e); start(p.x,p.y); }, {passive:true});
-    canvas.addEventListener('touchmove',  e=>{ if(pointerActive){ const p=pos(e); move(p.x,p.y);} }, {passive:true});
-    canvas.addEventListener('touchend', end, {passive:true});
-    canvas.addEventListener('touchcancel', end, {passive:true});
-  
-    const G=120, FRICTION=0.995, MAX_SPEED=3.6;
-    function step(dt){
-      for(const a of particles){
-        let ax=0, ay=0;
-        for(const p of points){
-          let dx=p.x-a.x, dy=p.y-a.y;
-          let r2=dx*dx+dy*dy;
-          r2=Math.max(36, Math.min(r2, 50000));
-          const invr=1/Math.sqrt(r2);
-          const force=(G*p.m*a.m)/r2;
-          ax+=force*dx*invr*0.0015; ay+=force*dy*invr*0.0015;
+
+    for (let i = attractors.length - 1; i > 0; i--) {
+        const body = attractors[i];
+        const dx = center.x - body.x;
+        const dy = center.y - body.y;
+        const distSq = dx*dx + dy*dy;
+        const dist = Math.sqrt(distSq);
+
+        const threshold = sunState === 'blackhole' ? 60 : 40;
+        if (dist < threshold) {
+            attractors.splice(i, 1);
+            if (sunState === 'normal') {
+                consumedCount++;
+                console.log(`Mass: ${consumedCount}/${TARGET_COUNT}`); 
+                if (consumedCount >= TARGET_COUNT) triggerSupernova();
+            }
+            continue; 
         }
-        a.vx=(a.vx+ax*dt)*FRICTION; a.vy=(a.vy+ay*dt)*FRICTION;
-        const sp=Math.hypot(a.vx,a.vy); if(sp>MAX_SPEED){ a.vx*=MAX_SPEED/sp; a.vy*=MAX_SPEED/sp; }
-        a.x+=a.vx*dt*60/1000*16; a.y+=a.vy*dt*60/1000*16;
-        if(a.x<0){a.x=0;a.vx*=-.8} if(a.x>W){a.x=W;a.vx*=-.8}
-        if(a.y<0){a.y=0;a.vy*=-.8} if(a.y>H){a.y=H;a.vy*=-.8}
+
+        let ax = 0, ay = 0;
+        for (let j = 0; j < attractors.length; j++) {
+            if (i === j) continue;
+            const other = attractors[j];
+            const odx = other.x - body.x;
+            const ody = other.y - body.y;
+            const odistSq = odx*odx + ody*ody;
+            const forceG = (j === 0) ? G : INITIAL_G; 
+            const force = (forceG * other.m) / (odistSq + SOFTENING);
+            const oDist = Math.sqrt(odistSq);
+            ax += (odx / oDist) * force;
+            ay += (ody / oDist) * force;
+        }
+
+        body.vx += ax * dt;
+        body.vy += ay * dt;
+        body.x += body.vx * dt;
+        body.y += body.vy * dt;
+
+        if(body.x < -W || body.x > W*2 || body.y < -H || body.y > H*2){
+            attractors.splice(i, 1);
+        }
+    }
+
+    for (const p of particles) {
+      let ax = 0, ay = 0;
+      for (const att of attractors) {
+          const dx = att.x - p.x;
+          const dy = att.y - p.y;
+          const distSq = dx*dx + dy*dy;
+          const currentG = (att === center) ? G : INITIAL_G;
+          const force = (currentG * att.m) / (distSq + SOFTENING);
+          const dist = Math.sqrt(distSq);
+          ax += (dx / dist) * force;
+          ay += (dy / dist) * force;
+
+          if (sunState === 'blackhole' && att === center && distSq < 2000) {
+              p.x = -9999; 
+          }
+      }
+
+      p.vx += ax * dt;
+      p.vy += ay * dt;
+      if (p.isDebris) { p.vx *= 0.98; p.vy *= 0.98; }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      
+      const limit = Math.max(W, H) * 2;
+      if (sunState !== 'blackhole' && (p.x < -limit || p.x > W+limit || p.y < -limit || p.y > H+limit)) {
+         const r = 150 + Math.random() * 200;
+         const a = Math.random() * Math.PI * 2;
+         p.x = center.x + Math.cos(a) * r;
+         p.y = center.y + Math.sin(a) * r;
+         const v = Math.sqrt((G * center.m) / r);
+         p.vx = -Math.sin(a) * v;
+         p.vy = Math.cos(a) * v;
       }
     }
-    function draw(){
-      if(!trails){ ctx.clearRect(0,0,W,H);} else { ctx.fillStyle='rgba(11,16,32,0.12)'; ctx.fillRect(0,0,W,H); }
-      for(const p of points){
-        const grd=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,28);
-        grd.addColorStop(0,'rgba(107,230,117,0.9)'); grd.addColorStop(1,'rgba(107,230,117,0)');
-        ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(p.x,p.y,28,0,Math.PI*2); ctx.fill();
-        ctx.strokeStyle='rgba(107,230,117,0.35)'; ctx.lineWidth=1; ctx.stroke();
+  }
+
+  // ★ 블러 처리된 유체 느낌의 원 그리기 함수
+  function drawFluidLayer(ctx, x, y, radius, color, blurAmount, time, speed) {
+    ctx.beginPath();
+    ctx.shadowBlur = blurAmount;
+    ctx.shadowColor = color;
+    ctx.fillStyle = color;
+
+    for (let angle = 0; angle <= Math.PI * 2; angle += 0.1) {
+        const noise = Math.sin(angle * 4 + time * speed) * 4 
+                    + Math.cos(angle * 6 - time * speed * 1.5) * 3;
+        
+        const r = radius + noise;
+        const px = x + Math.cos(angle) * r;
+        const py = y + Math.sin(angle) * r;
+        if (angle === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.shadowBlur = 0;
+  }
+
+  function draw() {
+    // 1. 배경 처리
+    if (trails) {
+      ctx.globalCompositeOperation = 'source-over';
+      if (sunState === 'exploding') ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.15})`;
+      else ctx.fillStyle = 'rgba(11, 16, 32, 0.2)'; 
+      ctx.fillRect(0, 0, W, H);
+    } else {
+      ctx.clearRect(0, 0, W, H);
+    }
+
+    const center = attractors[0];
+    const time = Date.now() / 1000; 
+
+    // 2. 태양 / 블랙홀 그리기
+    if (sunState === 'normal') {
+        ctx.globalCompositeOperation = 'lighter';
+        const grad = ctx.createRadialGradient(center.x, center.y, 5, center.x, center.y, 50);
+        grad.addColorStop(0, 'rgba(255, 240, 200, 1)'); 
+        grad.addColorStop(0.5, 'rgba(255, 200, 50, 0.3)');
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(center.x, center.y, 50, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(center.x, center.y, 8, 0, Math.PI*2); ctx.fill();
+
+    } else if (sunState === 'exploding') {
+        ctx.globalCompositeOperation = 'lighter';
+        const r = 60 + Math.random() * 100;
+        const grad = ctx.createRadialGradient(center.x, center.y, 10, center.x, center.y, r * 4);
+        grad.addColorStop(0, '#fff');
+        grad.addColorStop(1, 'rgba(200, 200, 255, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(center.x, center.y, r*4, 0, Math.PI*2); ctx.fill();
+
+    } else if (sunState === 'blackhole') {
+        // === [Black Hole Rendering] ===
+        ctx.globalCompositeOperation = 'lighter'; 
+
+        // 1. 외부 열기 (붉은색): Blur 25 -> 10 (선명하게!)
+        drawFluidLayer(ctx, center.x, center.y, 50, '#ff3300', 25, time, 1.5);
+
+        // 2. 중간 가스층 (주황색): Blur 15
+        drawFluidLayer(ctx, center.x, center.y, 40, '#ff9900', 15, time, 3.0);
+
+        // 3. 내부 핵심층 (노란색): Blur 7
+        drawFluidLayer(ctx, center.x, center.y, 35, '#ffffaa', 7, time, 5.0);
+
+        // 4. 사건의 지평선
+        ctx.globalCompositeOperation = 'source-over'; 
+        ctx.fillStyle = '#000';
+        ctx.beginPath(); 
+        const holeR = 28 + Math.sin(time * 15) * 0.3;
+        ctx.arc(center.x, center.y, holeR, 0, Math.PI*2); 
+        ctx.fill();
+
+        // 5. 포톤 링
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+
+    ctx.globalCompositeOperation = 'lighter';
+
+    // 3. 행성들
+    for (let i = 1; i < attractors.length; i++) {
+        const att = attractors[i];
+        const grad = ctx.createRadialGradient(att.x, att.y, 2, att.x, att.y, 25);
+        grad.addColorStop(0, att.color + '0.8)');
+        grad.addColorStop(1, att.color + '0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(att.x, att.y, 25, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(att.x, att.y, 4, 0, Math.PI*2); ctx.fill();
+    }
+
+    // 4. 입자들
+    for (const p of particles) {
+      if (p.x < 0 || p.x > W || p.y < 0 || p.y > H) continue;
+
+      const speed = Math.hypot(p.vx, p.vy);
+      let hue, sat, light, alpha;
+
+      if (sunState === 'blackhole') {
+          hue = 30 - speed * 1.5; 
+          sat = 100;
+          light = 60 + speed * 2;
+          alpha = 0.5 + speed * 0.05;
+      } else {
+          hue = 220;
+          sat = 60 + speed * 5;
+          light = 40 + speed * 8; 
+          alpha = 0.3 + speed * 0.05;
       }
+      
+      if(light > 95) { light = 100; sat = 0; }
+
       ctx.beginPath();
-      for(const a of particles){ ctx.moveTo(a.x+1.5,a.y); ctx.arc(a.x,a.y,1.5,0,Math.PI*2); }
-      ctx.fillStyle='rgba(200,220,240,0.9)'; ctx.fill();
+      ctx.fillStyle = `hsla(${hue}, ${sat}%, ${light}%, ${alpha})`;
+      ctx.arc(p.x, p.y, p.m, 0, Math.PI * 2);
+      ctx.fill();
     }
-  
-    let last=performance.now();
-    function loop(now){ 
-      const dt=Math.min(32, now-last); 
-      last=now; 
-      if(running){ step(dt); draw(); } 
-      requestAnimationFrame(loop); 
-    }
-    if(canvas.getBoundingClientRect().width===0) canvas.style.width='100%';
-    resetParticles();
+  }
+
+  let last = performance.now();
+  function loop(now) {
+    const dt = now - last;
+    last = now;
+    if (running) { step(); draw(); }
     requestAnimationFrame(loop);
-    new ResizeObserver(()=>{ resetParticles(); }).observe(canvas);
-  })();
-  
+  }
+
+  setTimeout(() => {
+     initSolarSystem();
+     requestAnimationFrame(loop);
+  }, 100);
+
+})();
   // ===== 로그인 모달 UI 동작 (기존 유지) =====
   (function(){
     const panel = document.getElementById('auth-panel');
