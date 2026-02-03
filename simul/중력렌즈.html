@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>중력렌즈</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; color: #eee; font-family: sans-serif; }
+        canvas { display: block; }
+        #info {
+            position: absolute; top: 20px; width: 100%; text-align: center;
+            pointer-events: none; z-index: 10;
+            text-shadow: 0 0 10px black;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h3>Black Hole</h3>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.Camera();
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        const loader = new THREE.TextureLoader();
+        const earthTexture = loader.load('./image/세계전도.png');
+        const sunTexture = loader.load('./image/태양전도.png');
+        
+        const bhPos = new THREE.Vector3(0.0, 0.0, 0.0);
+        const earthPos = new THREE.Vector3(0.0, 0.0, -5.0);
+        const sunPos = new THREE.Vector3(0.0, 0.0, 25.0);
+
+        const fragmentShader = `
+            precision highp float;
+
+            uniform float iTime;
+            uniform vec2 iResolution;
+            uniform vec2 iMouse;
+            uniform float uZoom;
+            
+            uniform sampler2D uTexEarth;
+            uniform sampler2D uTexSun;
+            uniform vec3 uBhPos;
+            uniform vec3 uEarthPos;
+            uniform vec3 uSunPos;
+
+            #define PI 3.14159265359
+            #define MAX_STEPS 300       
+            #define MAX_DIST 100.0       
+            #define SURF_DIST 0.001     
+            #define EVENT_HORIZON 0.6   
+
+            mat2 rot(float a) { float s = sin(a), c = cos(a); return mat2(c, -s, s, c); }
+
+            vec2 getSphereUV(vec3 p, vec3 center) {
+                vec3 n = normalize(p - center);
+                float u = atan(n.z, n.x) / (2.0 * PI) + 0.5;
+                float v = asin(n.y) / PI + 0.5;
+                return vec2(1.0 - u, v);
+            }
+
+            float hash21(vec2 p) {
+                p = fract(p * vec2(123.34, 456.21));
+                p += dot(p, p + 45.32);
+                return fract(p.x * p.y);
+            }
+
+            // 깔끔한 우주 배경 (별 조금)
+            vec3 getBackground(vec3 dir) {
+                vec3 bgCol = vec3(0.002, 0.003, 0.008); // 딥 다크 블루
+                
+                // 별 생성 (드문드문)
+                float stars = pow(hash21(dir.xy * 200.0 + dir.z * 100.0), 300.0) * 0.8;
+                float bigStar = pow(hash21(dir.xy * 50.0 + dir.z * 10.0), 100.0);
+                if(bigStar > 0.99) stars += (bigStar - 0.99) * 200.0;
+
+                return bgCol + vec3(stars);
+            }
+
+            // --- [신규] ACES Tone Mapping (영화 같은 색감) ---
+            vec3 ACESFilm(vec3 x) {
+                float a = 2.51;
+                float b = 0.03;
+                float c = 2.43;
+                float d = 0.59;
+                float e = 0.14;
+                return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
+            }
+
+            void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
+                vec2 uv = (fragCoord - 0.5 * iResolution.xy) / iResolution.y;
+                
+                vec2 m = iMouse.xy / iResolution.xy;
+                float camRotX = (m.y - 0.5) * 3.0;
+                float camRotY = (m.x - 0.5) * 6.0;
+
+                vec3 ro = vec3(0.0, 0.0, uZoom); 
+                vec3 rd = normalize(vec3(uv, 1.8));
+
+                ro.yz *= rot(camRotX); rd.yz *= rot(camRotX);
+                ro.xz *= rot(camRotY); rd.xz *= rot(camRotY);
+
+                float bhMass = 0.8;
+                float earthRad = 0.5; 
+                float sunRad = 4.0;   
+
+                vec3 col = vec3(0.0);
+                vec3 p = ro;
+                vec3 dir = rd;
+                float totDist = 0.0;
+                bool hitBH = false, hitObj = false;
+
+                // --- [신규] 태양 글로우(Corona) 누적 변수 ---
+                vec3 sunGlow = vec3(0.0);
+
+                for(int i = 0; i < MAX_STEPS; i++) {
+                    float dBH = length(p - uBhPos);
+
+                    // 1. 지구 렌더링 + [신규] 대기권(Atmosphere)
+                    float dEarth = length(p - uEarthPos) - earthRad;
+                    if(dEarth < SURF_DIST) {
+                        vec3 normal = normalize(p - uEarthPos);
+                        vec3 lightDir = normalize(uSunPos - uEarthPos);
+                        
+                        // 기본 텍스처
+                        vec3 texCol = texture(uTexEarth, getSphereUV(p, uEarthPos)).rgb;
+                        
+                        // 라이팅 (태양빛)
+                        float diff = max(dot(normal, lightDir), 0.05);
+                        
+                        // [핵심] 대기권 Fresnel 효과 (가장자리가 푸르게 빛남)
+                        // 시선(dir)과 법선(normal)이 수직일수록 강해짐
+                        float fresnel = pow(1.0 + dot(dir, normal), 3.0);
+                        vec3 atmosphere = vec3(0.1, 0.4, 1.0) * fresnel * 1.5 * diff; // 빛 받는 쪽만
+
+                        col = texCol * diff + atmosphere; 
+                        hitObj = true; break;
+                    }
+
+                    // 2. 블랙홀 충돌
+                    if(dBH < EVENT_HORIZON) { hitBH = true; break; }
+
+                    // 3. 태양 렌더링 (자체 발광)
+                    float dSun = length(p - uSunPos) - sunRad;
+                    if(dSun < SURF_DIST) {
+                        col = texture(uTexSun, getSphereUV(p, uSunPos)).rgb;
+                        col *= 4.0; // 태양 밝기 증폭 (HDR 효과)
+                        hitObj = true; break;
+                    }
+
+                    // --- [신규] 태양 코로나 (Volumetric Glow) ---
+                    // 레이가 태양 근처를 지나갈 때 빛을 누적함
+                    // 블랙홀 뒤에 있어도 빛이 휘어져서 보임
+                    float distToSunCenter = length(p - uSunPos);
+                    // 태양 중심과의 거리가 가까울수록 빛남 (지수 함수 감쇠)
+                    float glowIntensity = 1.0 / (distToSunCenter * distToSunCenter * 0.5 + 0.1);
+                    // 태양색(주황/노랑) 추가
+                    sunGlow += vec3(1.0, 0.6, 0.2) * glowIntensity * 0.015;
+
+
+                    // 4. 중력 렌즈 & 이동
+                    vec3 gravDir = normalize(uBhPos - p);
+                    float force = bhMass / (dBH * dBH + 0.02);
+                    dir = normalize(dir + gravDir * force * 0.15);
+
+                    float stepSize = max(SURF_DIST, dBH * 0.02); 
+                    stepSize = min(stepSize, max(SURF_DIST, dEarth * 0.3)); 
+                    stepSize = min(stepSize, max(SURF_DIST, dSun * 0.3));
+
+                    p += dir * stepSize;
+                    totDist += stepSize;
+                    if(totDist > MAX_DIST) break;
+                }
+
+                if(hitBH) {
+                    col = vec3(0.0);
+                } else if(!hitObj) {
+                    col = getBackground(dir);
+                }
+
+                // [신규] 누적된 태양 빛(Corona)을 최종 색상에 더함
+                col += sunGlow;
+
+                // [신규] ACES Tone Mapping (영화 같은 색감 보정)
+                col = ACESFilm(col);
+                
+                // 감마 보정
+                col = pow(col, vec3(0.4545));
+                
+                fragColor = vec4(col, 1.0);
+            }
+            void main() { mainImage(gl_FragColor, gl_FragCoord.xy); }
+        `;
+
+        const geometry = new THREE.PlaneGeometry(2, 2);
+        const uniforms = {
+            iTime: { value: 0 },
+            iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+            iMouse: { value: new THREE.Vector2(window.innerWidth/2, window.innerHeight/2) },
+            uZoom: { value: -12.0 },
+            uTexEarth: { value: earthTexture },
+            uTexSun: { value: sunTexture },
+            uBhPos: { value: bhPos },
+            uEarthPos: { value: earthPos },
+            uSunPos: { value: sunPos }
+        };
+
+        const material = new THREE.ShaderMaterial({
+            fragmentShader: fragmentShader, uniforms: uniforms
+        });
+        scene.add(new THREE.Mesh(geometry, material));
+
+        let isDragging = false;
+        document.addEventListener('mousedown', () => isDragging = true);
+        document.addEventListener('mouseup', () => isDragging = false);
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                uniforms.iMouse.value.x += e.movementX * 2.0;
+                uniforms.iMouse.value.y -= e.movementY * 2.0;
+            }
+        });
+        
+        document.addEventListener('wheel', (e) => {
+            const zoomSpeed = 0.01;
+            let newZoom = uniforms.uZoom.value - e.deltaY * zoomSpeed;
+            newZoom = Math.max(-50.0, Math.min(-6.0, newZoom)); 
+            uniforms.uZoom.value = newZoom;
+        });
+
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            uniforms.iResolution.value.set(window.innerWidth, window.innerHeight);
+        });
+
+        function animate(time) {
+            requestAnimationFrame(animate);
+            uniforms.iTime.value = time * 0.001;
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
