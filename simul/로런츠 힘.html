@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>크로스 필드: 입자 가속 시뮬레이터</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --bg-color: #050a14;
+            --panel-bg: rgba(15, 23, 42, 0.7);
+            --text-color: #e0e6ed;
+            --accent-color: #00f2fe; /* Cyan */
+            --danger-color: #ff4757; /* Electric */
+            --warning-color: #ffa502; /* Magnetic */
+            --success-color: #2ed573;
+            --obstacle-color: #ff6b6b;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000; /* 배경을 검게 처리 */
+            color: var(--text-color);
+        }
+        /* [신규] 게임 컨테이너: 기준 해상도(1280x720)로 고정 */
+        #game-container {
+            position: relative; /* absolute에서 relative로 변경 */
+            width: 100vw;       /* 화면 전체 너비 */
+            height: 100vh;      /* 화면 전체 높이 */  
+            overflow: hidden;
+        }
+
+        /* [수정] 캔버스: 컨테이너에 꽉 차게 */
+        #simCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* [신규] 가로 모드 유도 화면 (기본은 숨김) */
+        #rotate-warning {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #050a14;
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+        }
+        .phone-icon { font-size: 3rem; animation: rotatePhone 1.5s infinite; margin-bottom: 20px; }
+        
+        @keyframes rotatePhone {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(-90deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        /* [신규] 미디어 쿼리: 세로 모드일 때 경고창 표시 */
+        @media screen and (orientation: portrait) {
+            #rotate-warning { display: flex; }
+            #game-container { display: none; } /* 게임 숨김 */
+        }
+
+        /* [기존 UI 수정] 위치를 절대값이 아닌 퍼센트나 픽셀로 조금 조정 */
+        /* 컨트롤 패널이 너무 바닥에 붙지 않게 조정 */
+        #controls { 
+            width: 90%; 
+            max-width: 600px; /* 너무 넓어지지 않게 제한 */
+            bottom: 20px;
+        }
+        
+        /* 슬라이더 터치 편의성: 모바일에서 잘 눌리게 영역 확대 */
+        input[type=range] { height: 20px; margin: 15px 0; }
+        input[type=range]::-webkit-slider-thumb { width: 24px; height: 24px; margin-top: -10px; }
+
+        /* 캔버스 */
+        #simCanvas {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: transparent;
+            cursor: crosshair;
+            z-index: 1;
+        }
+
+        /* 상단: 수식 대시보드 (HUD) */
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 40px;
+            z-index: 10;
+        }
+
+        .hud-box {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-family: 'Share Tech Mono', monospace;
+            text-align: center;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            min-width: 140px;
+        }
+        .hud-label { font-size: 0.8rem; color: #aaa; margin-bottom: 5px; }
+        .hud-val { font-size: 1.2rem; font-weight: bold; }
+        .force-eq { font-size: 1.5rem; font-weight: bold; color: #555; align-self: center;}
+        .force-eq.balanced { color: var(--success-color); text-shadow: 0 0 10px var(--success-color); }
+
+        /* 좌측 상단: 입자 선택기 */
+        #particleSelector {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--panel-bg);
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            z-index: 20;
+        }
+        .p-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            opacity: 0.6;
+            transition: 0.2s;
+        }
+        .p-option:hover, .p-option.active { opacity: 1; }
+        .p-option.active { color: var(--accent-color); font-weight: bold; }
+        .p-dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 10px; background: #fff; }
+
+        /* 우측 상단: 게임 모드 버튼 */
+        #gameModePanel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 20;
+            text-align: right;
+        }
+        .level-badge {
+            display: none;
+            background: var(--warning-color);
+            color: #000;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            box-shadow: 0 0 10px var(--warning-color);
+        }
+
+        /* 하단 컨트롤 패널 */
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--panel-bg);
+            padding: 20px 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            z-index: 100;
+        }
+
+        .control-group { display: flex; flex-direction: column; align-items: center; min-width: 140px; }
+        .control-group label { font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; text-shadow: 0 0 5px currentColor; }
+        
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin: 10px 0; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #fff; margin-top: -6px; cursor: pointer; transition: 0.2s; }
+        input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
+        
+        #eSlider::-webkit-slider-thumb { background: var(--danger-color); box-shadow: 0 0 10px var(--danger-color); }
+        #bSlider::-webkit-slider-thumb { background: var(--warning-color); box-shadow: 0 0 10px var(--warning-color); }
+        #vSlider::-webkit-slider-thumb { background: var(--accent-color); box-shadow: 0 0 10px var(--accent-color); }
+
+        .value-display { font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; margin-top: 5px; color: #ccc; }
+
+        /* 버튼 */
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 30px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+        }
+        #launchBtn { background: var(--accent-color); color: #000; }
+        #launchBtn:hover { transform: translateY(-2px); box-shadow: 0 0 20px var(--accent-color); }
+        
+        #challengeBtn { background: transparent; border: 2px solid var(--warning-color); color: var(--warning-color); }
+        #challengeBtn:hover, #challengeBtn.active { background: var(--warning-color); color: #000; box-shadow: 0 0 20px var(--warning-color); }
+        /* [추가] 오로라 버튼 스타일 (신비로운 보라색/오로라 느낌) */
+        #auroraBtn { 
+            background: transparent; 
+            border: 2px solid #a29bfe; /* 연한 보라색 테두리 */
+            color: #a29bfe; 
+        }
+        #auroraBtn:hover { 
+            background: #a29bfe; 
+            color: #000; 
+            box-shadow: 0 0 20px #a29bfe; /* 보라색 네온 효과 */
+            transform: translateY(-2px);
+        }
+        /* 메시지 */
+        #message {
+            position: absolute;
+            top: 45%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem; font-weight: 800;
+            text-align: center;
+            opacity: 0; pointer-events: none;
+            transition: 0.3s;
+            z-index: 200; text-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+    </style>
+</head>
+<body>
+    <div id="rotate-warning">
+        <div class="phone-icon">📱</div>
+        <p>가로 모드로 돌려주세요<br>(Please Rotate Your Device)</p>
+    </div>
+
+    <div id="game-container">
+        
+        <div id="hud">...</div>
+        <div id="particleSelector">...</div>
+        <div id="gameModePanel">...</div>
+        <div id="message">...</div>
+        <canvas id="simCanvas"></canvas>
+        <div id="controls">...</div>
+
+    <div id="hud">
+        <div class="hud-box" style="border-color: var(--danger-color);">
+            <div class="hud-label">ELECTRIC FORCE (Fe = qE)</div>
+            <div class="hud-val" id="hudFe" style="color: var(--danger-color);">0.00</div>
+        </div>
+        <div class="force-eq" id="eqSign">≠</div>
+        <div class="hud-box" style="border-color: var(--warning-color);">
+            <div class="hud-label">MAGNETIC FORCE (Fb = qvB)</div>
+            <div class="hud-val" id="hudFb" style="color: var(--warning-color);">0.00</div>
+        </div>
+    </div>
+
+    <div id="particleSelector">
+        <div class="hud-label" style="margin-bottom:10px;">PARTICLE TYPE</div>
+        <div class="p-option active" onclick="setParticle('proton', this)">
+            <div class="p-dot" style="background: #ff4757;"></div> Proton (p+)
+        </div>
+        <div class="p-option" onclick="setParticle('electron', this)">
+            <div class="p-dot" style="background: #00f2fe;"></div> Electron (e-)
+        </div>
+        <div class="p-option" onclick="setParticle('alpha', this)">
+            <div class="p-dot" style="background: #2ed573;"></div> Alpha (He2+)
+        </div>
+    </div>
+
+    <div id="gameModePanel">
+        <div id="levelBadge" class="level-badge">LEVEL 1</div>
+        <button id="auroraBtn" class="btn" style="margin-right: 15px;">PROJECT: AURORA</button>
+        <button id="challengeBtn" class="btn">CHALLENGE MODE</button>
+    </div>
+
+    <div id="message"></div>
+
+    <canvas id="simCanvas"></canvas>
+
+    <div id="controls">
+        <div class="control-group">
+            <label style="color:var(--danger-color)">E-FIELD</label>
+            <input type="range" id="eSlider" min="-5" max="5" step="0.1" value="0">
+            <div class="value-display" id="eVal">0.0</div>
+        </div>
+        <div class="control-group">
+            <label style="color:var(--warning-color)">B-FIELD</label>
+            <input type="range" id="bSlider" min="-2" max="2" step="0.1" value="0">
+            <div class="value-display" id="bVal">0.0</div>
+        </div>
+        <div class="control-group">
+            <label style="color:var(--accent-color)">VELOCITY</label>
+            <input type="range" id="vSlider" min="1" max="10" step="0.5" value="5">
+            <div class="value-display" id="vVal">5.0</div>
+        </div>
+        <button id="launchBtn" class="btn">LAUNCH</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let animationId;
+        let time = 0;
+        
+        // --- 1. 상태 및 물리 설정 ---
+        const physics = {
+            proton: { m: 2.0, q: 1, color: '#ff4757', name: 'Proton' },
+            electron: { m: 0.5, q: -1, color: '#00f2fe', name: 'Electron' }, // 실제 비율보다 과장됨 (게임성)
+            alpha: { m: 8.0, q: 2, color: '#2ed573', name: 'Alpha' }
+        };
+
+        const state = {
+            E: 0, B: 0, v0: 5,
+            running: false,
+            mode: 'free', // 'free' or 'challenge'
+            level: 1,
+            particleType: 'proton'
+        };
+
+        let particle = {
+            x: 0, y: 0, vx: 0, vy: 0,
+            trail: []
+        };
+
+        let target = { x: 0, y: 0, radius: 30, active: false };
+        let obstacles = []; // {x, y, w, h}
+
+        // --- 2. 초기화 ---
+        function init() {
+            resize();
+            window.addEventListener('resize', resize);
+            
+            // 컨트롤 이벤트
+            document.getElementById('eSlider').addEventListener('input', updateUI);
+            document.getElementById('bSlider').addEventListener('input', updateUI);
+            document.getElementById('vSlider').addEventListener('input', updateUI);
+            document.getElementById('launchBtn').addEventListener('click', launch);
+            document.getElementById('challengeBtn').addEventListener('click', toggleChallenge);
+            document.getElementById('auroraBtn').addEventListener('click', function() {window.location.href = '오로라.html';});
+
+            updateUI();
+            resetSystem();
+            loop();
+        }
+
+ function resize() {
+            // 1. 화면 크기 업데이트
+            width = window.innerWidth;
+            height = window.innerHeight;
+
+            // 2. 캔버스 해상도 조정
+            canvas.width = width;
+            canvas.height = height;
+
+            // 3. 컨테이너 스케일 초기화 (반응형 풀스크린 사용 시)
+            const container = document.getElementById('game-container');
+            if(container) container.style.transform = 'none';
+
+            // 4. 레벨 및 장애물 위치 재계산
+            if (state.mode === 'challenge') {
+                setupLevel(state.level); 
+            } else {
+                target.x = width - 100;
+                target.y = height / 2;
+            }
+
+            // [핵심 추가] 입자를 "원래 위치"로 리셋
+            // 화면이 바뀌면 날아가던 입자를 취소하고, 새로운 화면의 중앙 높이로 입자를 되돌립니다.
+            resetSystem(); 
+        }
+
+        // ... 나머지 setupLevel, updatePhysics 등에서...
+        // 'width'와 'height' 변수를 쓰던 곳을 모두 'DESIGN_WIDTH', 'DESIGN_HEIGHT'로 바꿔야 합니다.
+        // 혹은 아래처럼 전역 변수로 매핑해줘도 됩니다.
+        
+        // [편의를 위해 전역 변수 재선언] (init 함수 밖, 스크립트 최상단에 두세요)
+
+        // --- 3. 로직 제어 ---
+        function setParticle(type, el) {
+            state.particleType = type;
+            // UI 업데이트
+            document.querySelectorAll('.p-option').forEach(opt => opt.classList.remove('active'));
+            el.classList.add('active');
+            
+            // 재설정
+            if(state.running) launch();
+            else resetSystem();
+        }
+
+        function updateUI() {
+            state.E = parseFloat(document.getElementById('eSlider').value);
+            state.B = parseFloat(document.getElementById('bSlider').value);
+            state.v0 = parseFloat(document.getElementById('vSlider').value);
+
+            document.getElementById('eVal').textContent = state.E.toFixed(1);
+            document.getElementById('bVal').textContent = state.B.toFixed(1);
+            document.getElementById('vVal').textContent = state.v0.toFixed(1);
+
+            updateHUD();
+        }
+
+        function updateHUD() {
+            const p = physics[state.particleType];
+            // 힘의 크기 (절댓값) 계산
+            const Fe = Math.abs(p.q * state.E);
+            const Fb = Math.abs(p.q * state.v0 * state.B); // 초기 속도 기준 근사치
+
+            const hudFe = document.getElementById('hudFe');
+            const hudFb = document.getElementById('hudFb');
+            const eqSign = document.getElementById('eqSign');
+
+            hudFe.textContent = Fe.toFixed(2);
+            hudFb.textContent = Fb.toFixed(2);
+
+            // 평형 상태 시각화 (오차 범위 내)
+            if (state.running && Math.abs(Fe - Fb) < 0.1 && Fe > 0) {
+                eqSign.textContent = "=";
+                eqSign.classList.add('balanced');
+            } else {
+                eqSign.textContent = "vs";
+                eqSign.classList.remove('balanced');
+            }
+        }
+
+        function toggleChallenge() {
+            const btn = document.getElementById('challengeBtn');
+            const badge = document.getElementById('levelBadge');
+            
+            if (state.mode === 'free') {
+                state.mode = 'challenge';
+                state.level = 1;
+                btn.classList.add('active');
+                btn.textContent = "EXIT CHALLENGE";
+                badge.style.display = 'block';
+                setupLevel(1);
+                showMsg("LEVEL 1 START", "#fff");
+            } else {
+                state.mode = 'free';
+                btn.classList.remove('active');
+                btn.textContent = "CHALLENGE MODE";
+                badge.style.display = 'none';
+                target.active = false;
+                obstacles = [];
+            }
+            resetSystem();
+        }
+
+function setupLevel(lvl) {
+            target.active = true;
+            obstacles = [];
+            document.getElementById('levelBadge').textContent = `LEVEL ${lvl}`;
+
+            const cx = width / 2;
+            const cy = height / 2;
+
+            if (lvl === 1) {
+                // [LEVEL 1: 계단형 터널 (The Step-Up)]
+                // 정면이 막혀있어 위쪽 터널로 진입해야 합니다.
+                // "곡선 이동" 후 "직선 주행(평형)" 능력을 모두 테스트합니다.
+                
+                // 타겟을 위쪽 터널 끝으로 이동
+                const tunnelY = cy - 120; // 터널의 중심 높이 (위쪽)
+                target.x = width - 80;
+                target.y = tunnelY;
+
+                // 1. 정면을 막는 거대한 벽 (아래쪽 블록)
+                // 중앙(cy)보다 살짝 위까지 막아서 무조건 상승하게 유도
+                obstacles.push({ x: 300, y: tunnelY + 40, w: width - 300, h: height }); 
+
+                // 2. 터널 천장 (위쪽 블록)
+                // 너무 높게 날아가는 것을 방지 (좁은 터널 형성)
+                obstacles.push({ x: 300, y: 0, w: width - 300, h: tunnelY - 40 });
+
+                // (옵션) 시작 지점 바로 앞은 비워두어 입자가 상승할 공간(x=80~300)을 줍니다.
+
+            } else if (lvl === 2) {
+                // [LEVEL 2: 지그재그 익스트림 (Triple Zig-Zag)]
+                // "위 -> 아래 -> 위"로 3번 꺾어야 하는 고난이도 코스입니다.
+                // 장애물이 촘촘하게 배치되어 빠른 컨트롤이 필요합니다.
+
+                target.x = width - 60;
+                target.y = cy - 100; // 마지막엔 위로 솟구친 상태에서 골인해야 함
+
+                // 장애물 배치 간격 계산 (화면 크기에 맞춰 자동 조정)
+                const startX = 200; // 첫 장애물 시작 위치
+                const interval = (width - 300) / 3; // 장애물 사이 간격
+                const wallWidth = 30;
+                const holeSize = 120; // 구멍 크기 (작을수록 어려움)
+
+                // 1. 첫 번째 벽 (아래에서 솟음) -> 입자를 '위'로 유도
+                obstacles.push({ 
+                    x: startX, 
+                    y: cy - holeSize/2, // 중앙보다 살짝 위까지 막음
+                    w: wallWidth, 
+                    h: height 
+                });
+
+                // 2. 두 번째 벽 (위에서 내려옴) -> 입자를 '아래'로 유도
+                obstacles.push({ 
+                    x: startX + interval, 
+                    y: 0, 
+                    w: wallWidth, 
+                    h: cy + holeSize/2 // 중앙보다 살짝 아래까지 막음
+                });
+
+                // 3. 세 번째 벽 (아래에서 솟음) -> 입자를 다시 '위'로 유도
+                obstacles.push({ 
+                    x: startX + interval * 2, 
+                    y: cy - holeSize/2, 
+                    w: wallWidth, 
+                    h: height 
+                });
+
+                // 천장/바닥 제한 (너무 높게/낮게 피하는 꼼수 방지)
+                obstacles.push({ x: 0, y: 0, w: width, h: 30 }); // 천장
+                obstacles.push({ x: 0, y: height - 30, w: width, h: 30 }); // 바닥
+
+            } else if (lvl === 3) {
+                // 타겟이 'ㄷ'자 박스 안에 갇혀있고, 입구는 반대편(오른쪽)입니다.
+                // 입자가 타겟을 지나쳐서 -> 크게 원을 그리며 회전(자기장) -> 뒤로 진입해야 함.
+                target.x = cx;
+                target.y = cy;
+
+                // 'ㄷ'자 형태의 감옥 만들기
+                const boxSize = 80;
+                // 왼쪽 벽 (막힘)
+                obstacles.push({ x: cx - boxSize, y: cy - boxSize, w: 20, h: boxSize * 2 });
+                // 위쪽 벽
+                obstacles.push({ x: cx - boxSize, y: cy - boxSize, w: boxSize * 2, h: 20 });
+                // 아래쪽 벽
+                obstacles.push({ x: cx - boxSize, y: cy + boxSize - 20, w: boxSize * 2, h: 20 });
+                
+                // 화면 위아래에 장애물을 두어 너무 크게 도는 것을 방지 (정밀한 제어 요구)
+                obstacles.push({ x: cx, y: 0, w: 20, h: 100 });
+                obstacles.push({ x: cx, y: height - 100, w: 20, h: 100 });
+            }
+        }
+
+        function resetSystem() {
+            particle.x = 80;
+            particle.y = height / 2;
+            particle.vx = state.v0;
+            particle.vy = 0;
+            particle.trail = [];
+            state.running = false;
+            
+            // 자유 모드일 때 타겟 숨김
+            if(state.mode === 'free') target.active = false;
+            
+            document.getElementById('message').style.opacity = 0;
+            document.getElementById('eqSign').classList.remove('balanced');
+        }
+
+        function launch() {
+            resetSystem();
+            
+            // [수정] 발사 속도에도 스케일 적용
+            const DESIGN_WIDTH = 1200;
+            const scale = Math.min(1.0, width / DESIGN_WIDTH);
+            
+            particle.vx = state.v0 * scale; // 화면이 작으면 느리게 발사
+            state.running = true;
+        }
+
+        // --- 4. 물리 엔진 ---
+       // --- 4. 물리 엔진 (수정됨: 정밀도 향상) ---
+        function updatePhysics() {
+            if (!state.running) return;
+
+            // [핵심 변경 사항] 화면 크기에 따른 스케일링 팩터 계산
+            // 기준 너비(1200px)보다 화면이 작으면, 속도와 전기장도 그만큼 줄입니다.
+            const DESIGN_WIDTH = 1200; 
+            const scale = Math.min(1.0, width / DESIGN_WIDTH); 
+
+            // 기존 정밀도 보정 (Sub-stepping)
+            const originalDt = 0.2; 
+            const steps = 20; 
+            const dt = originalDt / steps; 
+
+            const pProp = physics[state.particleType];
+
+            // 쪼개진 횟수만큼 반복 계산
+            for (let i = 0; i < steps; i++) {
+                
+                // [스케일 적용 1] 전기장 (E) -> 스케일 적용 O
+                // 거리가 줄어든 만큼 힘(가속도)도 줄어야 궤적 모양이 유지됨
+                const scaledE = state.E * scale;
+                const Fe_y = pProp.q * scaledE;
+
+                // [스케일 적용 2] 입자 속도 (v) -> 스케일 적용 O
+                // 이미 줄어든 속도(vx, vy)를 사용하므로 추가 연산 불필요
+                
+                // [스케일 적용 3] 자기장 (B) -> 스케일 적용 X
+                // 자기력 F = qvB에서 v가 이미 줄어들었으므로, 
+                // B까지 줄이면 힘이 너무 약해져서 궤적이 퍼져버림 (B는 유지!)
+                
+                // 자기력 계산 (현재 입자의 속도 vx, vy는 이미 scale에 의해 작아진 상태임)
+                const Fb_x = pProp.q * particle.vy * state.B;
+                const Fb_y = -pProp.q * particle.vx * state.B;
+
+                const Fnet_x = Fb_x;
+                const Fnet_y = Fe_y + Fb_y;
+
+                // 가속도 (F = ma)
+                const ax = Fnet_x / pProp.m;
+                const ay = Fnet_y / pProp.m;
+
+                // 속도 및 위치 업데이트
+                particle.vx += ax * dt;
+                particle.vy += ay * dt;
+                particle.x += particle.vx * dt;
+                particle.y += particle.vy * dt;
+            }
+
+            // 궤적 저장
+            particle.trail.push({x: particle.x, y: particle.y});
+
+            // 화면 이탈 확인
+            if (particle.x > width + 50 || particle.x < -50 || particle.y > height + 50 || particle.y < -50) {
+                state.running = false;
+                if(state.mode === 'challenge') failLevel();
+            }
+
+            // 충돌 및 게임 로직
+            if (state.mode === 'challenge') checkCollisions();
+            
+            // HUD 실시간 업데이트
+            updateHUD();
+        }
+
+        function checkCollisions() {
+            // 1. 타겟 도달
+            const dx = particle.x - target.x;
+            const dy = particle.y - target.y;
+            if (Math.hypot(dx, dy) < target.radius) {
+                winLevel();
+                return;
+            }
+
+            // 2. 장애물 충돌
+            for (let obs of obstacles) {
+                if (particle.x > obs.x && particle.x < obs.x + obs.w &&
+                    particle.y > obs.y && particle.y < obs.y + obs.h) {
+                    failLevel("CRASHED!");
+                    return;
+                }
+            }
+        }
+
+        function winLevel() {
+            state.running = false;
+            if (state.level < 3) {
+                showMsg(`LEVEL ${state.level} CLEARED!`, "var(--success-color)");
+                setTimeout(() => {
+                    state.level++;
+                    setupLevel(state.level);
+                    resetSystem();
+                    showMsg(`LEVEL ${state.level} START`, "#fff");
+                }, 2000);
+            } else {
+                showMsg("ALL LEVELS COMPLETED!", "var(--accent-color)");
+            }
+        }
+
+        function failLevel(text = "MISSED!") {
+            state.running = false;
+            showMsg(text, "var(--obstacle-color)");
+        }
+
+        function showMsg(text, color) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.style.color = color;
+            msg.style.opacity = 1;
+            msg.style.textShadow = `0 0 30px ${color}`;
+        }
+
+        // --- 5. 렌더링 ---
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            time += 0.05;
+
+            drawGrid();
+            drawFields();
+            
+            if (state.mode === 'challenge') {
+                drawTarget();
+                drawObstacles();
+            }
+
+            drawTrail();
+            drawParticle();
+            drawVectors();
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.05)";
+            ctx.lineWidth = 1;
+            const size = 60;
+            ctx.beginPath();
+            for (let x = 0; x < width; x += size) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
+            for (let y = 0; y < height; y += size) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
+            ctx.stroke();
+        }
+
+        function drawFields() {
+            // 전기장 (Plate)
+            if (state.E !== 0) {
+                const color = state.E > 0 ? "255, 71, 87" : "0, 242, 254";
+                ctx.fillStyle = `rgba(${color}, 0.1)`;
+                ctx.fillRect(0, 0, width, 20);
+                ctx.fillRect(0, height-20, width, 20);
+                ctx.strokeStyle = `rgba(${color}, 0.5)`;
+                ctx.beginPath();
+                // 단순화된 필드 라인
+                for(let x=50; x<width; x+=100) {
+                    drawArrow(x, 30, x, height-30, 8);
+                }
+                ctx.stroke();
+            }
+            // 자기장
+            if (state.B !== 0) {
+                ctx.fillStyle = "rgba(255, 165, 2, 0.3)";
+                ctx.font = "20px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                const symbol = state.B > 0 ? "✕" : "●";
+                for(let x=50; x<width; x+=100) {
+                    for(let y=50; y<height; y+=100) {
+                        ctx.fillText(symbol, x, y);
+                    }
+                }
+            }
+        }
+
+        function drawObstacles() {
+            ctx.save(); // 현재 그리기 상태 저장 (클리핑을 위해)
+
+            for (let obs of obstacles) {
+                // 1. 클리핑 영역(네모) 설정
+                ctx.beginPath();
+                ctx.rect(obs.x, obs.y, obs.w, obs.h);
+                ctx.clip(); // 이 이후로는 네모 안쪽만 그려짐
+
+                // 2. 배경 채우기
+                ctx.fillStyle = "rgba(255, 107, 107, 0.2)";
+                ctx.fill();
+
+                // 3. 빗금 그리기 (클리핑 덕분에 삐져나가지 않음)
+                ctx.strokeStyle = "var(--obstacle-color)";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                // 빗금이 네모를 꽉 채우도록 넉넉하게 반복
+                for (let i = -obs.h; i < obs.w + obs.h; i += 15) {
+                    ctx.moveTo(obs.x + i, obs.y);
+                    ctx.lineTo(obs.x + i + obs.h + 20, obs.y + obs.h + 20);
+                }
+                ctx.stroke();
+
+                // 클리핑 해제 전에 테두리 그리기
+                ctx.strokeStyle = "var(--obstacle-color)";
+                ctx.lineWidth = 3;
+                ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+                
+                // 클리핑 해제 (다음 루프를 위해)
+                ctx.restore(); 
+                ctx.save(); // 다음 장애물을 위해 다시 save
+            }
+            ctx.restore(); // 최종 복구
+        }
+
+        function drawTarget() {
+            if (!target.active) return;
+            const color = "var(--success-color)";
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = color;
+
+            ctx.beginPath();
+            ctx.arc(target.x, target.y, target.radius, time, time + Math.PI * 1.5);
+            ctx.stroke();
+            
+            ctx.font = "12px sans-serif";
+            ctx.fillStyle = color;
+            ctx.fillText("GOAL", target.x - 18, target.y + 4);
+            ctx.shadowBlur = 0;
+        }
+
+        function drawTrail() {
+            if (particle.trail.length < 2) return;
+
+            // [수정] 스케일 계산
+            const DESIGN_WIDTH = 1200;
+            const scale = Math.min(1.0, width / DESIGN_WIDTH);
+
+            const color = physics[state.particleType].color;
+            ctx.strokeStyle = color;
+            
+            // [수정] 선 굵기도 화면에 비례해서 얇아짐
+            ctx.lineWidth = Math.max(1, 3 * scale); 
+            
+            ctx.lineCap = 'round';
+            ctx.shadowBlur = 10 * scale; // 그림자도 스케일링
+            ctx.shadowColor = color;
+            
+            ctx.beginPath();
+            ctx.moveTo(particle.trail[0].x, particle.trail[0].y);
+            for (let p of particle.trail) ctx.lineTo(p.x, p.y);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+
+        function drawParticle() {
+            // [수정] 화면 크기에 따른 스케일 계산
+            const DESIGN_WIDTH = 1200;
+            const scale = Math.min(1.0, width / DESIGN_WIDTH);
+
+            const pProp = physics[state.particleType];
+            
+            // [수정] 입자 크기도 화면에 비례해서 작아짐 (최소 3px은 유지)
+            const baseR = pProp.name === 'Alpha' ? 10 : 6;
+            const r = Math.max(3, baseR * scale); 
+            
+            ctx.fillStyle = "#fff";
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, r, 0, Math.PI*2);
+            ctx.fill();
+            
+            // 후광 효과
+            ctx.shadowBlur = 20 * scale; // 후광 범위도 스케일링
+            ctx.shadowColor = pProp.color;
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, r + (4 * scale), 0, Math.PI*2);
+            ctx.fillStyle = pProp.color;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        function drawVectors() {
+            if (!state.running) return;
+            // 벡터 그리기 (생략 가능하나 교육적 목적을 위해 유지)
+        }
+
+        function drawArrow(x1, y1, x2, y2, head) {
+            const angle = Math.atan2(y2-y1, x2-x1);
+            ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+            ctx.lineTo(x2 - head * Math.cos(angle - Math.PI/6), y2 - head * Math.sin(angle - Math.PI/6));
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - head * Math.cos(angle + Math.PI/6), y2 - head * Math.sin(angle + Math.PI/6));
+        }
+
+        function loop() {
+            updatePhysics();
+            draw();
+            animationId = requestAnimationFrame(loop);
+        }
+
+        init();
+    </script>
+</body>
+</html>
