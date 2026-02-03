@@ -380,6 +380,15 @@ stepSize = max(stepSize, 0.02);
         window.addEventListener('resize', () => {
             renderer.setSize(window.innerWidth, window.innerHeight);
             uniforms.iResolution.value.set(window.innerWidth, window.innerHeight);
+            uniforms.iMouse.value.set(window.innerWidth / 2, window.innerHeight / 2);
+
+        });
+        window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        uniforms.iResolution.value.set(window.innerWidth, window.innerHeight);
+        uniforms.iMouse.value.set(window.innerWidth / 2, window.innerHeight / 2);
+        }, 50);
         });
 
         function animate(time) {
@@ -387,6 +396,7 @@ stepSize = max(stepSize, 0.02);
             uniforms.iTime.value = time * 0.001;
             renderer.render(scene, camera);
         }
+        uniforms.iMouse.value.set(window.innerWidth / 2, window.innerHeight / 2);
         animate();
     </script>
 </body>
