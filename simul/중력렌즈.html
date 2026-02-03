@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>중력 렌즈</title>
+    <title>중력 렌즈 조절</title>
     <style>
         body { 
             margin: 0; 
@@ -14,21 +14,61 @@
             touch-action: none; 
         }
         canvas { display: block; }
-        #info {
-            position: absolute; top: 20px; width: 100%; text-align: center;
-            pointer-events: none; z-index: 10;
-            text-shadow: 0 0 5px black;
-            font-size: 0.9rem;
-            opacity: 0.8;
+        
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding-top: 20px;
+            text-align: center;
+            pointer-events: none; 
+            z-index: 10;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.8);
         }
+        h3 { margin: 0 0 10px 0; }
+
+        .slider-container {
+            pointer-events: auto;
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        /* 슬라이더 반응형 크기 */
+        input[type=range] {
+            width: 40vw;         
+            max-width: 300px;    
+            min-width: 150px;    
+            vertical-align: middle;
+            cursor: pointer;
+        }
+        #mass-value {
+            font-weight: bold;
+            color: #ffaa55;
+            min-width: 30px;
+            display: inline-block;
+            text-align: left;
+        }
+        
         @media (orientation: portrait) {
-            #info { top: 10%; }
+            #ui-layer { top: 5%; }
         }
     </style>
 </head>
 <body>
-    <div id="info">
+    <div id="ui-layer">
         <h3>중력 렌즈</h3>
+        <div class="slider-container">
+            <label for="mass-slider">블랙홀 질량: <span id="mass-value">1.2</span></label>
+            <input type="range" id="mass-slider" min="0.0" max="5.0" step="0.1" value="1.2">
+        </div>
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -44,16 +84,14 @@
         const loader = new THREE.TextureLoader();
         const earthTexture = loader.load('./image/세계전도.png');
         const sunTexture = loader.load('./image/태양전도.png');
-
-        // --- [핵심 수정] 텍스처 반복 방지 설정 ---
-        // 텍스처 좌표가 0~1 범위를 벗어나면 가장자리 색상을 사용하도록 설정합니다.
+        
         earthTexture.wrapS = earthTexture.wrapT = THREE.ClampToEdgeWrapping;
         sunTexture.wrapS = sunTexture.wrapT = THREE.ClampToEdgeWrapping;
         
-        // 좌표: 태양(뒤) - 블랙홀(중간) - 지구(앞)
+        // --- [수정] 거리 대폭 확장 (겹침 방지) ---
         const bhPos = new THREE.Vector3(0.0, 0.0, 0.0);
-        const earthPos = new THREE.Vector3(0.0, 0.0, -10.0);
-        const sunPos = new THREE.Vector3(0.0, 0.0, 50.0);
+        const earthPos = new THREE.Vector3(0.0, 0.0, -20.0); // 지구를 더 앞으로 (-10 -> -20)
+        const sunPos = new THREE.Vector3(0.0, 0.0, 100.0);   // 태양을 더 뒤로 (50 -> 100)
 
         const fragmentShader = `
             precision highp float;
@@ -62,7 +100,8 @@
             uniform vec2 iResolution;
             uniform vec2 iMouse;
             uniform float uZoom;
-            
+            uniform float uBhMass;
+
             uniform sampler2D uTexEarth;
             uniform sampler2D uTexSun;
             uniform vec3 uBhPos;
@@ -71,7 +110,7 @@
 
             #define PI 3.14159265359
             #define MAX_STEPS 200       
-            #define MAX_DIST 200.0       
+            #define MAX_DIST 400.0   // [수정] 렌더링 거리 증가
             #define SURF_DIST 0.005     
             #define EVENT_HORIZON 0.7 
 
@@ -116,9 +155,9 @@
                 ro.yz *= rot(camRotX); rd.yz *= rot(camRotX);
                 ro.xz *= rot(camRotY); rd.xz *= rot(camRotY);
 
-                float bhMass = 1.2;  
+                float bhMass = uBhMass;  
                 float earthRad = 0.5; 
-                float sunRad = 7.5;  
+                float sunRad = 15.0; // 멀리 있는 태양을 크게 보이게
 
                 vec3 col = vec3(0.0);
                 vec3 p = ro;
@@ -127,10 +166,13 @@
                 bool hitBH = false, hitObj = false;
                 vec3 sunGlow = vec3(0.0);
 
+                // --- [핵심] 질량이 아주 작으면 그냥 0으로 처리 (노이즈 방지) ---
+                if (bhMass < 0.05) bhMass = 0.0;
+
                 for(int i = 0; i < MAX_STEPS; i++) {
                     float dBH = length(p - uBhPos);
 
-                    // 지구 + 대기권
+                    // 1. 지구 체크
                     float dEarth = length(p - uEarthPos) - earthRad;
                     if(dEarth < SURF_DIST) {
                         vec3 normal = normalize(p - uEarthPos);
@@ -143,9 +185,11 @@
                         hitObj = true; break;
                     }
 
-                    if(dBH < EVENT_HORIZON) { hitBH = true; break; }
+                    // 2. 블랙홀(사건의 지평선) 체크
+                    // [수정] 질량이 0이면 이 코드는 절대 실행되지 않음 -> 팩맨 현상 해결
+                    if(bhMass > 0.0 && dBH < EVENT_HORIZON) { hitBH = true; break; }
 
-                    // 태양
+                    // 3. 태양 체크
                     float dSun = length(p - uSunPos) - sunRad;
                     if(dSun < SURF_DIST) {
                         col = texture(uTexSun, getSphereUV(p, uSunPos)).rgb;
@@ -153,19 +197,28 @@
                         hitObj = true; break;
                     }
 
-                    // 코로나 글로우
+                    // 4. 태양 코로나 (빛 번짐)
                     float distToSunCenter = length(p - uSunPos);
                     float glowIntensity = 1.0 / (distToSunCenter * distToSunCenter * 0.2 + 0.1);
                     sunGlow += vec3(1.0, 0.6, 0.2) * glowIntensity * 0.02;
 
-                    // 렌즈 효과
-                    vec3 gravDir = normalize(uBhPos - p);
-                    float force = bhMass / (dBH * dBH + 0.05); 
-                    dir = normalize(dir + gravDir * force * 0.2); 
+                    // 5. 중력 렌즈 효과 (빛 굴절)
+                    // [수정] bhMass > 0.0 조건 추가. 질량이 0이면 굴절 계산 스킵
+                    if (bhMass > 0.0 && p.z > uEarthPos.z) {
+                        vec3 gravDir = normalize(uBhPos - p);
+                        float force = bhMass / (dBH * dBH + 0.05); 
+                        dir = normalize(dir + gravDir * force * 0.2); 
+                    }
 
-                    float stepSize = max(SURF_DIST, dBH * 0.05); 
-                    stepSize = min(stepSize, max(SURF_DIST, dEarth * 0.5)); 
-                    stepSize = min(stepSize, max(SURF_DIST, dSun * 0.5)); 
+                    float stepSize = max(SURF_DIST, min(dEarth, dSun));
+
+// 2) 블랙홀이 실제로 작동할 때만(질량>0) 중심 근처에서 정밀하게 하려고 dBH 제한을 추가
+if (bhMass > 0.0) {
+    stepSize = min(stepSize, max(SURF_DIST, dBH * 0.05));
+}
+
+// 안전장치(너무 작아져서 스텝 한도에 걸리는 것 방지)
+stepSize = max(stepSize, 0.02);
 
                     p += dir * stepSize;
                     totDist += stepSize;
@@ -189,7 +242,9 @@
             iTime: { value: 0 },
             iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
             iMouse: { value: new THREE.Vector2(window.innerWidth/2, window.innerHeight/2) },
-            uZoom: { value: -70.0 },
+            // [수정] 카메라를 더 뒤로 뺌 (-100 -> -150)
+            uZoom: { value: -150.0 },
+            uBhMass: { value: 1.2 }, 
             uTexEarth: { value: earthTexture },
             uTexSun: { value: sunTexture },
             uBhPos: { value: bhPos },
@@ -202,13 +257,21 @@
         });
         scene.add(new THREE.Mesh(geometry, material));
 
-        // --- 입력 처리 (마우스 & 터치) ---
+        const slider = document.getElementById('mass-slider');
+        const massValueDisplay = document.getElementById('mass-value');
+
+        slider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            uniforms.uBhMass.value = val;
+            massValueDisplay.textContent = val.toFixed(1);
+        });
 
         let isDragging = false;
         let previousMousePosition = { x: 0, y: 0 };
         let initialPinchDistance = null; 
 
         document.addEventListener('mousedown', (e) => {
+            if (e.target.id === 'mass-slider') return; 
             isDragging = true;
             previousMousePosition = { x: e.clientX, y: e.clientY };
         });
@@ -222,11 +285,13 @@
         document.addEventListener('wheel', (e) => {
             const zoomSpeed = 0.01;
             let newZoom = uniforms.uZoom.value - e.deltaY * zoomSpeed;
-            newZoom = Math.max(-50.0, Math.min(-6.0, newZoom));
+            // 줌 범위 조정
+            newZoom = Math.max(-200.0, Math.min(-20.0, newZoom));
             uniforms.uZoom.value = newZoom;
         });
 
         document.addEventListener('touchstart', (e) => {
+            if (e.target.id === 'mass-slider') return;
             if (e.touches.length === 1) {
                 isDragging = true;
                 previousMousePosition = { x: e.touches[0].pageX, y: e.touches[0].pageY };
@@ -238,7 +303,9 @@
         }, { passive: false });
 
         document.addEventListener('touchmove', (e) => {
+            if (e.target.id === 'mass-slider') return;
             e.preventDefault(); 
+            
             if (e.touches.length === 1 && isDragging) {
                 const deltaX = e.touches[0].pageX - previousMousePosition.x;
                 const deltaY = e.touches[0].pageY - previousMousePosition.y;
@@ -252,7 +319,7 @@
                 const diff = currentDistance - initialPinchDistance;
                 const zoomSpeed = 0.05; 
                 let newZoom = uniforms.uZoom.value + diff * zoomSpeed;
-                newZoom = Math.max(-50.0, Math.min(-6.0, newZoom));
+                newZoom = Math.max(-200.0, Math.min(-20.0, newZoom));
                 uniforms.uZoom.value = newZoom;
                 initialPinchDistance = currentDistance; 
             }
