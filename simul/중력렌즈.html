@@ -90,9 +90,14 @@
         const scene = new THREE.Scene();
         const camera = new THREE.Camera();
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        
+        // 1. 픽셀 비율 설정
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
+        renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
+
+        // [중요] 모바일 해상도 보정을 위한 DPR 값 가져오기
+        const dpr = renderer.getPixelRatio();
 
         const loader = new THREE.TextureLoader();
         const earthTexture = loader.load('./image/세계전도.png');
@@ -101,10 +106,9 @@
         earthTexture.wrapS = earthTexture.wrapT = THREE.ClampToEdgeWrapping;
         sunTexture.wrapS = sunTexture.wrapT = THREE.ClampToEdgeWrapping;
 
-        // --- [수정] 거리 대폭 확장 (겹침 방지) ---
         const bhPos = new THREE.Vector3(0.0, 0.0, 0.0);
-        const earthPos = new THREE.Vector3(0.0, 0.0, -20.0); // 지구를 더 앞으로 (-10 -> -20)
-        const sunPos = new THREE.Vector3(0.0, 0.0, 100.0);   // 태양을 더 뒤로 (50 -> 100)
+        const earthPos = new THREE.Vector3(0.0, 0.0, -20.0);
+        const sunPos = new THREE.Vector3(0.0, 0.0, 100.0);
 
         const fragmentShader = `
             precision highp float;
@@ -123,7 +127,7 @@
 
             #define PI 3.14159265359
             #define MAX_STEPS 200       
-            #define MAX_DIST 400.0   // [수정] 렌더링 거리 증가
+            #define MAX_DIST 400.0   
             #define SURF_DIST 0.005     
             #define EVENT_HORIZON 0.7 
 
@@ -170,7 +174,7 @@
 
                 float bhMass = uBhMass;  
                 float earthRad = 0.5; 
-                float sunRad = 15.0; // 멀리 있는 태양을 크게 보이게
+                float sunRad = 15.0; 
 
                 vec3 col = vec3(0.0);
                 vec3 p = ro;
@@ -180,14 +184,10 @@
                 vec3 sunGlow = vec3(0.0);
                 vec3 diskGlow = vec3(0.0);
 
-
-                // --- [핵심] 질량이 아주 작으면 그냥 0으로 처리 (노이즈 방지) ---
                 if (bhMass < 0.05) bhMass = 0.0;
 
                 for(int i = 0; i < MAX_STEPS; i++) {
                     float dBH = length(p - uBhPos);
-
-                    // 1. 지구 체크
                     float dEarth = length(p - uEarthPos) - earthRad;
                     if(dEarth < SURF_DIST) {
                         vec3 normal = normalize(p - uEarthPos);
@@ -200,11 +200,8 @@
                         hitObj = true; break;
                     }
 
-                    // 2. 블랙홀(사건의 지평선) 체크
-                    // [수정] 질량이 0이면 이 코드는 절대 실행되지 않음 -> 팩맨 현상 해결
                     if(bhMass > 0.0 && dBH < EVENT_HORIZON) { hitBH = true; break; }
 
-                    // 3. 태양 체크
                     float dSun = length(p - uSunPos) - sunRad;
                     if(dSun < SURF_DIST) {
                         col = texture(uTexSun, getSphereUV(p, uSunPos)).rgb;
@@ -212,58 +209,34 @@
                         hitObj = true; break;
                     }
 
-                    // 4. 태양 코로나 (빛 번짐)
                     float distToSunCenter = length(p - uSunPos);
                     float glowIntensity = 1.0 / (distToSunCenter * distToSunCenter * 0.2 + 0.1);
                     sunGlow += vec3(1.0, 0.6, 0.2) * glowIntensity * 0.02;
 
-                    // =============================
-// [추가] Gargantua-style orange ring (accretion disk-ish)
-// =============================
-if (bhMass > 0.0) {
+                    if (bhMass > 0.0) {
+                        vec3 diskN = normalize(vec3(0.25, 1.0, 0.15));
+                        float h = dot(p - uBhPos, diskN);
+                        float distToPlane = abs(h);
+                        vec3  proj = (p - uBhPos) - diskN * h;
+                        float r = length(proj);
+                        float rIn = 1.2;                
+                        float rOut = 8.0 + 1.5*bhMass;  
+                        float ringBand = smoothstep(rOut, rOut-1.5, r) * smoothstep(rIn, rIn+0.6, r);
+                        float wH = 0.25;
+                        float planeMask = exp(-pow(distToPlane / wH, 2.0));
+                        float edgeBoost = pow(1.0 - abs(dot(dir, diskN)), 2.2);
+                        float t = clamp((r - rIn) / (rOut - rIn), 0.0, 1.0);
+                        vec3 hot  = vec3(1.0, 0.85, 0.35);
+                        vec3 warm = vec3(1.0, 0.35, 0.06);
+                        vec3 diskCol = mix(hot, warm, pow(t, 0.85));
+                        vec3 tdir = normalize(cross(diskN, proj) + 1e-6);
+                        float dop = dot(tdir, dir);
+                        float beaming = clamp(1.0 + 1.2*dop, 0.25, 2.6);
+                        float falloff = 1.0 / (0.6 + 0.12*r*r);
+                        float mask = ringBand * planeMask * edgeBoost * beaming;
+                        diskGlow += diskCol * mask * falloff * (1.8 + 0.35*bhMass);
+                    }
 
-    vec3 diskN = normalize(vec3(0.25, 1.0, 0.15));
-
-    float h = dot(p - uBhPos, diskN);
-    float distToPlane = abs(h);
-
-    vec3  proj = (p - uBhPos) - diskN * h;
-    float r = length(proj);
-
-    // 디스크 반경 범위를 넓혀서 "항상 보이게" (가르강튀아 느낌)
-    float rIn = 1.2;                // 안쪽 경계
-    float rOut = 8.0 + 1.5*bhMass;  // 바깥 경계(질량에 따라)
-    float ringBand = smoothstep(rOut, rOut-1.5, r) * smoothstep(rIn, rIn+0.6, r);
-
-    // 평면 두께(좀 더 두껍게 -> 잘 보이게)
-    float wH = 0.25;
-    float planeMask = exp(-pow(distToPlane / wH, 2.0));
-
-    // 엣지에서 더 밝게
-    float edgeBoost = pow(1.0 - abs(dot(dir, diskN)), 2.2);
-
-    // 뜨거운 색(안쪽이 더 밝고 노랗게)
-    float t = clamp((r - rIn) / (rOut - rIn), 0.0, 1.0);
-    vec3 hot  = vec3(1.0, 0.85, 0.35);
-    vec3 warm = vec3(1.0, 0.35, 0.06);
-    vec3 diskCol = mix(hot, warm, pow(t, 0.85));
-
-    // 도플러 비밍 흉내(한쪽 밝게)
-    vec3 tdir = normalize(cross(diskN, proj) + 1e-6);
-    float dop = dot(tdir, dir);
-    float beaming = clamp(1.0 + 1.2*dop, 0.25, 2.6);
-
-    // 중심 가까울수록 밝기 증가(약간의 감쇠)
-    float falloff = 1.0 / (0.6 + 0.12*r*r);
-
-    float mask = ringBand * planeMask * edgeBoost * beaming;
-
-    // ✅ col 말고 diskGlow에 누적 (hitBH에서 덮어써도 남는다)
-    diskGlow += diskCol * mask * falloff * (1.8 + 0.35*bhMass);
-}
-
-                    // 5. 중력 렌즈 효과 (빛 굴절)
-                    // [수정] bhMass > 0.0 조건 추가. 질량이 0이면 굴절 계산 스킵
                     if (bhMass > 0.0 && p.z > uEarthPos.z) {
                         vec3 gravDir = normalize(uBhPos - p);
                         float force = bhMass / (dBH * dBH + 0.05); 
@@ -271,14 +244,10 @@ if (bhMass > 0.0) {
                     }
 
                     float stepSize = max(SURF_DIST, min(dEarth, dSun));
-
-// 2) 블랙홀이 실제로 작동할 때만(질량>0) 중심 근처에서 정밀하게 하려고 dBH 제한을 추가
-if (bhMass > 0.0) {
-    stepSize = min(stepSize, max(SURF_DIST, dBH * 0.05));
-}
-
-// 안전장치(너무 작아져서 스텝 한도에 걸리는 것 방지)
-stepSize = max(stepSize, 0.02);
+                    if (bhMass > 0.0) {
+                        stepSize = min(stepSize, max(SURF_DIST, dBH * 0.05));
+                    }
+                    stepSize = max(stepSize, 0.02);
 
                     p += dir * stepSize;
                     totDist += stepSize;
@@ -298,11 +267,14 @@ stepSize = max(stepSize, 0.02);
         `;
 
         const geometry = new THREE.PlaneGeometry(2, 2);
+        
+        // 2. uniforms 수정 (dpr 반영)
         const uniforms = {
             iTime: { value: 0 },
-            iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-            iMouse: { value: new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2) },
-            // [수정] 카메라를 더 뒤로 뺌 (-100 -> -150)
+            // [중요] 해상도에 dpr 곱함 -> 블랙홀 센터 정렬
+            iResolution: { value: new THREE.Vector2(window.innerWidth * dpr, window.innerHeight * dpr) },
+            // [중요] 마우스 초기값에도 dpr 곱함
+            iMouse: { value: new THREE.Vector2((window.innerWidth * dpr) / 2, (window.innerHeight * dpr) / 2) },
             uZoom: { value: -150.0 },
             uBhMass: { value: 1.2 },
             uTexEarth: { value: earthTexture },
@@ -336,16 +308,19 @@ stepSize = max(stepSize, 0.02);
             previousMousePosition = { x: e.clientX, y: e.clientY };
         });
         document.addEventListener('mouseup', () => isDragging = false);
+        
+        // 3. 마우스 이동 이벤트 수정 (dpr 반영)
         document.addEventListener('mousemove', (e) => {
             if (isDragging) {
-                uniforms.iMouse.value.x += e.movementX * 2.0;
-                uniforms.iMouse.value.y -= e.movementY * 2.0;
+                // 이동 속도 보정
+                uniforms.iMouse.value.x += e.movementX * 2.0 * dpr;
+                uniforms.iMouse.value.y -= e.movementY * 2.0 * dpr;
             }
         });
+
         document.addEventListener('wheel', (e) => {
             const zoomSpeed = 0.01;
             let newZoom = uniforms.uZoom.value - e.deltaY * zoomSpeed;
-            // 줌 범위 조정
             newZoom = Math.max(-200.0, Math.min(-20.0, newZoom));
             uniforms.uZoom.value = newZoom;
         });
@@ -362,6 +337,7 @@ stepSize = max(stepSize, 0.02);
             }
         }, { passive: false });
 
+        // 4. 터치 이동 이벤트 수정 (dpr 반영)
         document.addEventListener('touchmove', (e) => {
             if (e.target.id === 'mass-slider') return;
             e.preventDefault();
@@ -369,8 +345,11 @@ stepSize = max(stepSize, 0.02);
             if (e.touches.length === 1 && isDragging) {
                 const deltaX = e.touches[0].pageX - previousMousePosition.x;
                 const deltaY = e.touches[0].pageY - previousMousePosition.y;
-                uniforms.iMouse.value.x += deltaX * 2.0;
-                uniforms.iMouse.value.y -= deltaY * 2.0;
+                
+                // 이동 속도 보정
+                uniforms.iMouse.value.x += deltaX * 2.0 * dpr;
+                uniforms.iMouse.value.y -= deltaY * 2.0 * dpr;
+                
                 previousMousePosition = { x: e.touches[0].pageX, y: e.touches[0].pageY };
             } else if (e.touches.length === 2 && initialPinchDistance) {
                 const dx = e.touches[0].pageX - e.touches[1].pageX;
@@ -390,9 +369,12 @@ stepSize = max(stepSize, 0.02);
             initialPinchDistance = null;
         });
 
+        // 5. 리사이즈 이벤트 수정 (dpr 반영)
         window.addEventListener('resize', () => {
+            const newDpr = renderer.getPixelRatio();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            uniforms.iResolution.value.set(window.innerWidth, window.innerHeight);
+            // 해상도 재계산
+            uniforms.iResolution.value.set(window.innerWidth * newDpr, window.innerHeight * newDpr);
         });
 
         function animate(time) {
