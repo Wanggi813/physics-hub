@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>이동거리 vs 변위 (Hell Mode)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>이동거리 vs 변위</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -11,8 +12,10 @@
       --secondary-color: #ef4444;
       --bg-color: #f1f5f9;
     }
-    
-    * { box-sizing: border-box; }
+
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       font-family: 'Noto Sans KR', sans-serif;
@@ -31,7 +34,7 @@
       flex: 0 0 auto;
       background: white;
       padding: 10px 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
       z-index: 10;
       display: flex;
       justify-content: space-between;
@@ -59,11 +62,17 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    .badge-master { background: #0f172a; } /* 아주 진한 남색 */
-    .badge-god { 
-      background: linear-gradient(135deg, #ef4444, #f59e0b); /* 불타는 색 */
+
+    .badge-master {
+      background: #0f172a;
+    }
+
+    /* 아주 진한 남색 */
+    .badge-god {
+      background: linear-gradient(135deg, #ef4444, #f59e0b);
+      /* 불타는 색 */
       box-shadow: 0 2px 5px rgba(245, 158, 11, 0.4);
-    } 
+    }
 
     #canvas-container {
       flex: 1 1 auto;
@@ -87,8 +96,8 @@
       backdrop-filter: blur(5px);
       padding: 15px;
       border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-      border: 1px solid rgba(0,0,0,0.05);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(0, 0, 0, 0.05);
       pointer-events: none;
       min-width: 180px;
     }
@@ -100,10 +109,11 @@
       justify-content: space-between;
       margin-bottom: 4px;
     }
-    
+
     .info-sub {
       font-size: 0.9rem;
-      color: #ef4444; /* 오차는 빨간색으로 강조 */
+      color: #ef4444;
+      /* 오차는 빨간색으로 강조 */
       margin-top: 8px;
       text-align: right;
       font-weight: 700;
@@ -111,8 +121,13 @@
       padding-top: 5px;
     }
 
-    .label-distance { color: var(--primary-color); }
-    .label-displacement { color: var(--secondary-color); }
+    .label-distance {
+      color: var(--primary-color);
+    }
+
+    .label-displacement {
+      color: var(--secondary-color);
+    }
 
     /* 메시지 박스 */
     .message-box {
@@ -126,10 +141,10 @@
       z-index: 20;
       white-space: nowrap;
       text-align: center;
-      background: rgba(255,255,255,0.95);
+      background: rgba(255, 255, 255, 0.95);
       padding: 25px 50px;
       border-radius: 16px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
     }
 
     .message-box.show {
@@ -151,15 +166,21 @@
     }
 
     /* God Tier 스타일 */
-    #msg-god { border: 4px solid #ef4444; }
-    #msg-god .message-title { 
+    #msg-god {
+      border: 4px solid #ef4444;
+    }
+
+    #msg-god .message-title {
       background: linear-gradient(to right, #ef4444, #f59e0b);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
     /* Master Tier 스타일 */
-    #msg-master { border: 4px solid #0f172a; color: #0f172a; }
+    #msg-master {
+      border: 4px solid #0f172a;
+      color: #0f172a;
+    }
 
     .fab-reset {
       position: absolute;
@@ -171,7 +192,7 @@
       background: #1e293b;
       color: white;
       border: none;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -180,17 +201,35 @@
       z-index: 30;
       transition: transform 0.2s, background 0.2s;
     }
-    .fab-reset:active { transform: scale(0.9); }
-    .fab-reset:hover { background: #334155; }
+
+    .fab-reset:active {
+      transform: scale(0.9);
+    }
+
+    .fab-reset:hover {
+      background: #334155;
+    }
 
     @media (max-width: 600px) {
-      h1 { font-size: 1rem; }
-      .message-title { font-size: 2rem; }
-      .message-box { padding: 20px 30px; }
-      .difficulty-badge { font-size: 0.6rem; }
+      h1 {
+        font-size: 1rem;
+      }
+
+      .message-title {
+        font-size: 2rem;
+      }
+
+      .message-box {
+        padding: 20px 30px;
+      }
+
+      .difficulty-badge {
+        font-size: 0.6rem;
+      }
     }
   </style>
 </head>
+
 <body>
 
   <header>
@@ -234,21 +273,21 @@
     const distanceText = document.getElementById("distance");
     const displacementText = document.getElementById("displacement");
     const errorText = document.getElementById("error-display");
-    
+
     const msgGod = document.getElementById("msg-god");
     const msgMaster = document.getElementById("msg-master");
 
     let isDrawing = false;
     let points = [];
     let particles = [];
-    
-    const PX_PER_CM = 37.8; 
+
+    const PX_PER_CM = 37.8;
 
     function resizeCanvas() {
       canvas.width = container.clientWidth;
       canvas.height = container.clientHeight;
       drawGrid();
-      if (points.length > 0) resetApp(); 
+      if (points.length > 0) resetApp();
     }
 
     window.addEventListener('resize', resizeCanvas);
@@ -259,17 +298,17 @@
       isDrawing = false;
       msgGod.classList.remove("show");
       msgMaster.classList.remove("show");
-      
+
       distanceText.textContent = "0.00 cm";
       displacementText.textContent = "0.00 cm";
       errorText.textContent = "오차: -";
-      
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawGrid();
     }
 
     function drawGrid() {
-      const step = PX_PER_CM; 
+      const step = PX_PER_CM;
       ctx.beginPath();
       ctx.strokeStyle = "#e2e8f0";
       ctx.lineWidth = 1;
@@ -298,7 +337,7 @@
     }
 
     function calculateDistance(p1, p2) {
-      return Math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2);
+      return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
     }
 
     function calculatePathLength(pts) {
@@ -314,7 +353,7 @@
       const pos = getPosition(e);
       points = [pos];
       isDrawing = true;
-      
+
       msgGod.classList.remove("show");
       msgMaster.classList.remove("show");
 
@@ -327,7 +366,7 @@
       ctx.fill();
       ctx.beginPath();
       ctx.moveTo(pos.x, pos.y);
-      
+
       distanceText.textContent = "0.00 cm";
       displacementText.textContent = "0.00 cm";
       errorText.textContent = "오차: -";
@@ -338,14 +377,14 @@
       if (e.cancelable) e.preventDefault();
       const pos = getPosition(e);
       points.push(pos);
-      
+
       ctx.lineTo(pos.x, pos.y);
       ctx.strokeStyle = "#3b82f6";
       ctx.lineWidth = 4;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       ctx.stroke();
-      
+
       const dist = (calculatePathLength(points) / PX_PER_CM).toFixed(2);
       distanceText.textContent = `${dist} cm`;
     }
@@ -372,18 +411,18 @@
       errorText.textContent = `오차: ${diff.toFixed(4)} cm`;
 
       if (moveDistVal >= 5.0) {
-        
+
         // 1. GOD Tier (0.001 cm 이하)
         if (diff <= 0.001) {
           msgGod.classList.add("show");
           // 모든 색상 총동원 + 폭발적인 입자
           createFireworks(end.x, end.y, 100);
           createFireworks(start.x, start.y, 100);
-          createFireworks((start.x+end.x)/2, (start.y+end.y)/2, 100);
+          createFireworks((start.x + end.x) / 2, (start.y + end.y) / 2, 100);
           // 화면 전체 무작위 폭죽
-          setTimeout(() => createFireworks(canvas.width*0.2, canvas.height*0.3, 80), 200);
-          setTimeout(() => createFireworks(canvas.width*0.8, canvas.height*0.6, 80), 400);
-        } 
+          setTimeout(() => createFireworks(canvas.width * 0.2, canvas.height * 0.3, 80), 200);
+          setTimeout(() => createFireworks(canvas.width * 0.8, canvas.height * 0.6, 80), 400);
+        }
         // 2. MASTER Tier (0.005 cm 이하)
         else if (diff <= 0.005) {
           msgMaster.classList.add("show");
@@ -395,7 +434,7 @@
     }
 
     function drawArrow(fromX, fromY, toX, toY) {
-      const headLength = 15; 
+      const headLength = 15;
       const dx = toX - fromX;
       const dy = toY - fromY;
       const angle = Math.atan2(dy, dx);
@@ -405,9 +444,9 @@
       ctx.lineTo(toX, toY);
       ctx.strokeStyle = "#ef4444";
       ctx.lineWidth = 3;
-      ctx.setLineDash([5, 5]); 
+      ctx.setLineDash([5, 5]);
       ctx.stroke();
-      ctx.setLineDash([]); 
+      ctx.setLineDash([]);
 
       ctx.beginPath();
       ctx.moveTo(toX, toY);
@@ -454,7 +493,7 @@
       const defaultColors = ['#ff0000', '#ffa500', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#ffffff'];
       const colors = customColors || defaultColors;
 
-      for (let i = 0; i < count; i++) { 
+      for (let i = 0; i < count; i++) {
         const color = colors[Math.floor(Math.random() * colors.length)];
         particles.push(new Particle(x, y, color));
       }
@@ -466,22 +505,22 @@
         drawGrid();
 
         if (points.length > 0) {
-            ctx.beginPath();
-            ctx.moveTo(points[0].x, points[0].y);
-            for(let i=1; i<points.length; i++) ctx.lineTo(points[i].x, points[i].y);
-            ctx.strokeStyle = "#3b82f6";
-            ctx.lineWidth = 4;
-            ctx.setLineDash([]);
-            ctx.stroke();
-            
-            const s = points[0];
-            const e = points[points.length-1];
-            ctx.beginPath(); ctx.arc(s.x, s.y, 6, 0, Math.PI*2); ctx.fillStyle="#3b82f6"; ctx.fill();
-            
-            if (!isDrawing) {
-                drawArrow(s.x, s.y, e.x, e.y);
-                ctx.beginPath(); ctx.arc(e.x, e.y, 6, 0, Math.PI*2); ctx.fillStyle="#ef4444"; ctx.fill();
-            }
+          ctx.beginPath();
+          ctx.moveTo(points[0].x, points[0].y);
+          for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+          ctx.strokeStyle = "#3b82f6";
+          ctx.lineWidth = 4;
+          ctx.setLineDash([]);
+          ctx.stroke();
+
+          const s = points[0];
+          const e = points[points.length - 1];
+          ctx.beginPath(); ctx.arc(s.x, s.y, 6, 0, Math.PI * 2); ctx.fillStyle = "#3b82f6"; ctx.fill();
+
+          if (!isDrawing) {
+            drawArrow(s.x, s.y, e.x, e.y);
+            ctx.beginPath(); ctx.arc(e.x, e.y, 6, 0, Math.PI * 2); ctx.fillStyle = "#ef4444"; ctx.fill();
+          }
         }
 
         for (let i = particles.length - 1; i >= 0; i--) {
@@ -494,8 +533,8 @@
     }
     animate();
 
-    canvas.addEventListener("touchstart", startDrawing, {passive: false});
-    canvas.addEventListener("touchmove", draw, {passive: false});
+    canvas.addEventListener("touchstart", startDrawing, { passive: false });
+    canvas.addEventListener("touchmove", draw, { passive: false });
     canvas.addEventListener("touchend", endDrawing);
     canvas.addEventListener("mousedown", startDrawing);
     canvas.addEventListener("mousemove", draw);
@@ -505,4 +544,5 @@
     window.onload = resizeCanvas;
   </script>
 </body>
+
 </html>

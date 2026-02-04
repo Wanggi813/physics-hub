@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -11,610 +12,851 @@
             --accent-color: #00e5ff;
             --highlight-color: #ffd700;
             --danger-color: #ff4444;
-            --e-pot: #ffcc00; --e-kin: #44ff44; --e-spr: #ff4444; --e-mec: #c77dff;
+            --e-pot: #ffcc00;
+            --e-kin: #44ff44;
+            --e-spr: #ff4444;
+            --e-mec: #c77dff;
         }
 
         body {
-            margin: 0; padding: 0;
-            background-color: var(--bg-color); color: #fff;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: #fff;
             font-family: 'Pretendard', sans-serif;
-            display: flex; height: 100vh; overflow: hidden;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
             /* 모바일에서 텍스트 선택 방지 */
-            user-select: none; -webkit-user-select: none;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         /* 세로 모드 경고 오버레이 */
         #portrait-warning {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 9999;
-            display: none; /* JS로 제어 */
-            flex-direction: column; justify-content: center; align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 9999;
+            display: none;
+            /* JS로 제어 */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             text-align: center;
         }
-        #portrait-warning .icon { font-size: 3rem; margin-bottom: 20px; animation: rotate-phone 2s infinite; }
-        @keyframes rotate-phone { 0% { transform: rotate(0deg); } 25% { transform: rotate(90deg); } 50% { transform: rotate(90deg); } 100% { transform: rotate(0deg); } }
+
+        #portrait-warning .icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            animation: rotate-phone 2s infinite;
+        }
+
+        @keyframes rotate-phone {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            25% {
+                transform: rotate(90deg);
+            }
+
+            50% {
+                transform: rotate(90deg);
+            }
+
+            100% {
+                transform: rotate(0deg);
+            }
+        }
 
         /* 왼쪽: 게임 화면 */
         #game-view {
-            position: relative; flex: 2; /* 화면 비율 조정 */
-            border-right: 2px solid #444; overflow: hidden; cursor: crosshair;
+            position: relative;
+            flex: 2;
+            /* 화면 비율 조정 */
+            border-right: 2px solid #444;
+            overflow: hidden;
+            cursor: crosshair;
             background: #87CEEB;
         }
-        canvas { display: block; width: 100%; height: 100%; }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
 
         #photo-flash {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: white; opacity: 0; pointer-events: none; transition: opacity 0.1s;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.1s;
         }
 
         /* 오른쪽: 컨트롤 패널 */
         #control-panel {
-            flex: 1; min-width: 280px; max-width: 400px; /* 너무 넓어지지 않게 제한 */
+            flex: 1;
+            min-width: 280px;
+            max-width: 400px;
+            /* 너무 넓어지지 않게 제한 */
             background: var(--panel-bg);
-            padding: 15px; display: flex; flex-direction: column; gap: 10px;
-            overflow-y: auto; box-shadow: -5px 0 15px rgba(0,0,0,0.5); z-index: 10;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
+            z-index: 10;
         }
 
-        h2 { margin: 0 0 5px 0; color: var(--accent-color); text-align: center; border-bottom: 1px solid #444; padding-bottom: 5px; font-size: 1.2rem; }
-        
+        h2 {
+            margin: 0 0 5px 0;
+            color: var(--accent-color);
+            text-align: center;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+            font-size: 1.2rem;
+        }
+
         .info-box {
-            background: rgba(0, 0, 0, 0.3); padding: 10px; border-radius: 8px;
-            border-left: 4px solid var(--accent-color); min-height: 40px;
-            display: flex; align-items: center; justify-content: center;
-            text-align: center; font-weight: bold; line-height: 1.3;
-            transition: all 0.3s; font-size: 0.9rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-color);
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: bold;
+            line-height: 1.3;
+            transition: all 0.3s;
+            font-size: 0.9rem;
         }
-        .info-box.highlight { background: rgba(0, 229, 255, 0.1); border-left-color: var(--highlight-color); color: var(--highlight-color); }
-        .info-box.danger { background: rgba(255, 68, 68, 0.1); border-left-color: var(--danger-color); color: var(--danger-color); }
 
-        .section { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 2px; }
-        .section-title { font-size: 0.8rem; color: #aaa; margin-bottom: 8px; display: block; font-weight: bold; }
+        .info-box.highlight {
+            background: rgba(0, 229, 255, 0.1);
+            border-left-color: var(--highlight-color);
+            color: var(--highlight-color);
+        }
+
+        .info-box.danger {
+            background: rgba(255, 68, 68, 0.1);
+            border-left-color: var(--danger-color);
+            color: var(--danger-color);
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 2px;
+        }
+
+        .section-title {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-bottom: 8px;
+            display: block;
+            font-weight: bold;
+        }
 
         /* 스위치 & 슬라이더 등 UI 요소 크기 조정 */
-        .toggle-wrapper { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; font-size: 0.8rem; }
-        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--accent-color); }
-        input:checked + .slider:before { transform: translateX(20px); }
+        .toggle-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.8rem;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #555;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--accent-color);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
 
         /* 에너지 바 */
-        .energy-bar-container { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; font-size: 0.75rem; }
-        .bar-label { width: 50px; font-weight: bold; }
-        .bar-bg { 
-            flex: 1; height: 10px; background-color: #444; border-radius: 5px; overflow: hidden; 
-            background-image: linear-gradient(90deg, transparent 0%, transparent 98%, rgba(255,255,255,0.3) 98%, rgba(255,255,255,0.3) 100%);
+        .energy-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 4px;
+            font-size: 0.75rem;
+        }
+
+        .bar-label {
+            width: 50px;
+            font-weight: bold;
+        }
+
+        .bar-bg {
+            flex: 1;
+            height: 10px;
+            background-color: #444;
+            border-radius: 5px;
+            overflow: hidden;
+            background-image: linear-gradient(90deg, transparent 0%, transparent 98%, rgba(255, 255, 255, 0.3) 98%, rgba(255, 255, 255, 0.3) 100%);
             background-size: 10% 100%;
         }
-        .bar-fill { height: 100%; transition: width 0.05s linear; }
 
-        input[type="range"] { width: 100%; accent-color: var(--accent-color); cursor: pointer; height: 20px; } /* 터치하기 편하게 높이 증가 */
-        
-        button#jumpBtn {
-            width: 100%; padding: 15px; font-size: 1.1rem; font-weight: bold;
-            background: var(--accent-color); border: none; border-radius: 8px;
-            cursor: pointer; color: #000; margin-top: auto; transition: 0.1s;
-            touch-action: manipulation; /* 터치 딜레이 제거 */
+        .bar-fill {
+            height: 100%;
+            transition: width 0.05s linear;
         }
-        button#jumpBtn:active { transform: scale(0.98); }
-        button#jumpBtn:disabled { background: #555; color: #888; }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+            height: 20px;
+        }
+
+        /* 터치하기 편하게 높이 증가 */
+
+        button#jumpBtn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            background: var(--accent-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #000;
+            margin-top: auto;
+            transition: 0.1s;
+            touch-action: manipulation;
+            /* 터치 딜레이 제거 */
+        }
+
+        button#jumpBtn:active {
+            transform: scale(0.98);
+        }
+
+        button#jumpBtn:disabled {
+            background: #555;
+            color: #888;
+        }
 
         #resetBtn {
-            width: 100%; padding: 10px; background: #444; border: none; border-radius: 8px;
-            color: #fff; cursor: pointer; margin-top: 5px; font-size: 0.9rem;
+            width: 100%;
+            padding: 10px;
+            background: #444;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            margin-top: 5px;
+            font-size: 0.9rem;
             touch-action: manipulation;
         }
 
         /* 모달 (상단 배치) */
         #result-modal {
-            position: absolute; top: 10%; left: 50%; transform: translateX(-50%);
-            background: rgba(20, 20, 20, 0.95); padding: 20px; border-radius: 15px;
-            text-align: center; border: 2px solid var(--accent-color); display: none; z-index: 100;
-            width: 80%; max-width: 320px; box-shadow: 0 5px 30px rgba(0,0,0,0.5);
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 20, 20, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid var(--accent-color);
+            display: none;
+            z-index: 100;
+            width: 80%;
+            max-width: 320px;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.5);
         }
-        #modal-title.fail { color: #ff4444; }
+
+        #modal-title.fail {
+            color: #ff4444;
+        }
 
         /* 모바일 반응형 처리 */
         @media (max-width: 800px) {
-            h2 { font-size: 1rem; }
-            .info-box { font-size: 0.8rem; padding: 8px; }
-            #control-panel { min-width: 220px; padding: 10px; }
+            h2 {
+                font-size: 1rem;
+            }
+
+            .info-box {
+                font-size: 0.8rem;
+                padding: 8px;
+            }
+
+            #control-panel {
+                min-width: 220px;
+                padding: 10px;
+            }
         }
     </style>
 </head>
+
 <body>
 
-<div id="portrait-warning">
-    <div class="icon">📱🔄</div>
-    <h2>가로로 회전해주세요</h2>
-    <p>이 실험은 가로 모드에 최적화되어 있습니다.<br>핸드폰을 돌려주세요.</p>
-</div>
-
-<div id="game-view">
-    <canvas id="simCanvas"></canvas>
-    <div id="photo-flash"></div>
-    <div id="result-modal">
-        <h2 id="modal-title">결과</h2>
-        <p id="modal-desc" style="font-size:1rem; line-height:1.5;">내용</p>
-        <button onclick="resetGame()" style="padding:10px 25px; background:#444; color:white; border:none; border-radius:5px; cursor:pointer; margin-top:15px; font-size:0.9rem;">다시 설계하기</button>
-    </div>
-</div>
-
-<div id="control-panel">
-    <h2>🔬 물리 실험실 v3.7 (Mobile)</h2>
-
-    <div id="guide-box" class="info-box">
-        안전한 번지점프를 설계하세요.<br>
-        <span style="font-size:0.8rem; color:#aaa; font-weight:normal;">1차 시기 미션: 최하점에서 [SPACE] 촬영!</span>
+    <div id="portrait-warning">
+        <div class="icon">📱🔄</div>
+        <h2>가로로 회전해주세요</h2>
+        <p>이 실험은 가로 모드에 최적화되어 있습니다.<br>핸드폰을 돌려주세요.</p>
     </div>
 
-    <div id="analysis-controls" class="section" style="display:none;">
-        <span class="section-title" style="color:var(--highlight-color)">⏱️ 타임 컨트롤러</span>
-        <div style="font-size:0.75rem; margin-bottom:5px;">슬라이더로 에너지 분석</div>
-        <div style="display:flex; align-items:center; gap:5px;">
-            <span>⏪</span><input type="range" id="time-slider" min="0" max="100" value="100" step="1"><span>⏩</span>
+    <div id="game-view">
+        <canvas id="simCanvas"></canvas>
+        <div id="photo-flash"></div>
+        <div id="result-modal">
+            <h2 id="modal-title">결과</h2>
+            <p id="modal-desc" style="font-size:1rem; line-height:1.5;">내용</p>
+            <button onclick="resetGame()"
+                style="padding:10px 25px; background:#444; color:white; border:none; border-radius:5px; cursor:pointer; margin-top:15px; font-size:0.9rem;">다시
+                설계하기</button>
         </div>
     </div>
 
-    <div id="energy-section" class="section">
-        <div class="toggle-wrapper">
-            <span class="section-title" style="margin:0;">📊 공기 저항 (Air Drag)</span>
-            <label class="switch">
-                <input type="checkbox" id="air-toggle" checked>
-                <span class="slider"></span>
-            </label>
-        </div>
-        
-        <div class="energy-bar-container"><span class="bar-label" style="color:var(--e-pot);">위치(P)</span><div class="bar-bg"><div id="bar-pe" class="bar-fill" style="background:var(--e-pot); width:0%;"></div></div></div>
-        <div class="energy-bar-container"><span class="bar-label" style="color:var(--e-kin);">운동(K)</span><div class="bar-bg"><div id="bar-ke" class="bar-fill" style="background:var(--e-kin); width:0%;"></div></div></div>
-        <div class="energy-bar-container"><span class="bar-label" style="color:var(--e-spr);">탄성(E)</span><div class="bar-bg"><div id="bar-se" class="bar-fill" style="background:var(--e-spr); width:0%;"></div></div></div>
-        <div class="energy-bar-container" style="margin-top:5px; border-top:1px solid #444; padding-top:5px;"><span class="bar-label" style="color:var(--e-mec);">역학적</span><div class="bar-bg"><div id="bar-mec" class="bar-fill" style="background:var(--e-mec); width:0%;"></div></div></div>
-    </div>
+    <div id="control-panel">
+        <h2>🔬 물리 실험실 v3.7 (Mobile)</h2>
 
-    <div class="section">
-        <span class="section-title">⚙️ 장비 설계</span>
-        
-        <div style="margin-bottom: 8px; font-weight:bold; color:#fff; background:#444; padding:5px; border-radius:4px; text-align:center; font-size:0.8rem;">
-            현재 바닥 높이: <span id="val-ground-height" style="color:var(--accent-color)">--</span> m
+        <div id="guide-box" class="info-box">
+            안전한 번지점프를 설계하세요.<br>
+            <span style="font-size:0.8rem; color:#aaa; font-weight:normal;">1차 시기 미션: 최하점에서 [SPACE] 촬영!</span>
         </div>
 
-        <label style="font-size:0.8rem;">줄의 탄성 (k): <span id="val-k" style="float:right; color:var(--accent-color)">40</span></label>
-        <input type="range" id="input-k" min="30" max="300" value="40" step="5">
-        
-        <label style="font-size:0.8rem; margin-top:5px; display:block;">줄의 길이 (L): <span id="val-l" style="float:right; color:var(--accent-color)">30</span></label>
-        <input type="range" id="input-l" min="20" max="50" value="30" step="1">
+        <div id="analysis-controls" class="section" style="display:none;">
+            <span class="section-title" style="color:var(--highlight-color)">⏱️ 타임 컨트롤러</span>
+            <div style="font-size:0.75rem; margin-bottom:5px;">슬라이더로 에너지 분석</div>
+            <div style="display:flex; align-items:center; gap:5px;">
+                <span>⏪</span><input type="range" id="time-slider" min="0" max="100" value="100" step="1"><span>⏩</span>
+            </div>
+        </div>
+
+        <div id="energy-section" class="section">
+            <div class="toggle-wrapper">
+                <span class="section-title" style="margin:0;">📊 공기 저항 (Air Drag)</span>
+                <label class="switch">
+                    <input type="checkbox" id="air-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="energy-bar-container"><span class="bar-label" style="color:var(--e-pot);">위치(P)</span>
+                <div class="bar-bg">
+                    <div id="bar-pe" class="bar-fill" style="background:var(--e-pot); width:0%;"></div>
+                </div>
+            </div>
+            <div class="energy-bar-container"><span class="bar-label" style="color:var(--e-kin);">운동(K)</span>
+                <div class="bar-bg">
+                    <div id="bar-ke" class="bar-fill" style="background:var(--e-kin); width:0%;"></div>
+                </div>
+            </div>
+            <div class="energy-bar-container"><span class="bar-label" style="color:var(--e-spr);">탄성(E)</span>
+                <div class="bar-bg">
+                    <div id="bar-se" class="bar-fill" style="background:var(--e-spr); width:0%;"></div>
+                </div>
+            </div>
+            <div class="energy-bar-container" style="margin-top:5px; border-top:1px solid #444; padding-top:5px;"><span
+                    class="bar-label" style="color:var(--e-mec);">역학적</span>
+                <div class="bar-bg">
+                    <div id="bar-mec" class="bar-fill" style="background:var(--e-mec); width:0%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <span class="section-title">⚙️ 장비 설계</span>
+
+            <div
+                style="margin-bottom: 8px; font-weight:bold; color:#fff; background:#444; padding:5px; border-radius:4px; text-align:center; font-size:0.8rem;">
+                현재 바닥 높이: <span id="val-ground-height" style="color:var(--accent-color)">--</span> m
+            </div>
+
+            <label style="font-size:0.8rem;">줄의 탄성 (k): <span id="val-k"
+                    style="float:right; color:var(--accent-color)">40</span></label>
+            <input type="range" id="input-k" min="30" max="300" value="40" step="5">
+
+            <label style="font-size:0.8rem; margin-top:5px; display:block;">줄의 길이 (L): <span id="val-l"
+                    style="float:right; color:var(--accent-color)">30</span></label>
+            <input type="range" id="input-l" min="20" max="50" value="30" step="1">
+        </div>
+
+        <div class="section" id="photo-section" style="padding: 5px; display:none;">
+            <div id="photo-status" style="color:#aaa; text-align:center; font-size:0.8rem;">📸 미션 대기 중...</div>
+        </div>
+
+        <button id="jumpBtn">JUMP! (낙하 시작)</button>
+        <button id="resetBtn">설정 초기화</button>
     </div>
 
-    <div class="section" id="photo-section" style="padding: 5px; display:none;"> <div id="photo-status" style="color:#aaa; text-align:center; font-size:0.8rem;">📸 미션 대기 중...</div>
-    </div>
+    <script>
+        // --- 물리 및 게임 상수 ---
+        const G = 9.8;
+        const MASS = 60;
+        const DEFAULT_DAMPING = 0.997;
+        const NO_DAMPING = 1.0;
+        let SCALE = 10;
+        const BLACKOUT_G = 4.0;
+        const FATAL_G = 6.0;
 
-    <button id="jumpBtn">JUMP! (낙하 시작)</button>
-    <button id="resetBtn">설정 초기화</button>
-</div>
+        let phase = 0;
+        let replayData = [];
+        let trees = [];
 
-<script>
-    // --- 물리 및 게임 상수 ---
-    const G = 9.8;
-    const MASS = 60;
-    const DEFAULT_DAMPING = 0.997; 
-    const NO_DAMPING = 1.0;        
-    let SCALE = 10; 
-    const BLACKOUT_G = 4.0;
-    const FATAL_G = 6.0; 
+        const state = {
+            y: 2, v: 0, a: 0,
+            k: 40, l: 30,
+            damping: DEFAULT_DAMPING,
+            isRunning: false,
+            timeScale: 1.0,
+            zoom: 1.0, targetZoom: 1.0,
+            photoTaken: false, photoScore: 0,
+            maxRecordG: 0,
+            isBlackout: false
+        };
 
-    let phase = 0; 
-    let replayData = []; 
-    let trees = [];
+        // --- DOM 요소 ---
+        const ui = {
+            canvas: document.getElementById('simCanvas'),
+            ctx: document.getElementById('simCanvas').getContext('2d'),
+            k: document.getElementById('input-k'), l: document.getElementById('input-l'),
+            valK: document.getElementById('val-k'), valL: document.getElementById('val-l'),
+            valGround: document.getElementById('val-ground-height'),
+            jumpBtn: document.getElementById('jumpBtn'), resetBtn: document.getElementById('resetBtn'),
+            guide: document.getElementById('guide-box'),
+            energySec: document.getElementById('energy-section'),
+            analysisPanel: document.getElementById('analysis-controls'),
+            timeSlider: document.getElementById('time-slider'),
+            photoStat: document.getElementById('photo-status'),
+            airToggle: document.getElementById('air-toggle'),
+            bars: { pe: document.getElementById('bar-pe'), ke: document.getElementById('bar-ke'), se: document.getElementById('bar-se'), mec: document.getElementById('bar-mec') },
+            flash: document.getElementById('photo-flash'),
+            modal: document.getElementById('result-modal'),
+            mTitle: document.getElementById('modal-title'), mDesc: document.getElementById('modal-desc'),
+            warning: document.getElementById('portrait-warning')
+        };
 
-    const state = {
-        y: 2, v: 0, a: 0,
-        k: 40, l: 30,
-        damping: DEFAULT_DAMPING,
-        isRunning: false,
-        timeScale: 1.0,
-        zoom: 1.0, targetZoom: 1.0,
-        photoTaken: false, photoScore: 0,
-        maxRecordG: 0,
-        isBlackout: false 
-    };
-
-    // --- DOM 요소 ---
-    const ui = {
-        canvas: document.getElementById('simCanvas'),
-        ctx: document.getElementById('simCanvas').getContext('2d'),
-        k: document.getElementById('input-k'), l: document.getElementById('input-l'),
-        valK: document.getElementById('val-k'), valL: document.getElementById('val-l'),
-        valGround: document.getElementById('val-ground-height'),
-        jumpBtn: document.getElementById('jumpBtn'), resetBtn: document.getElementById('resetBtn'),
-        guide: document.getElementById('guide-box'),
-        energySec: document.getElementById('energy-section'),
-        analysisPanel: document.getElementById('analysis-controls'),
-        timeSlider: document.getElementById('time-slider'),
-        photoStat: document.getElementById('photo-status'),
-        airToggle: document.getElementById('air-toggle'),
-        bars: { pe:document.getElementById('bar-pe'), ke:document.getElementById('bar-ke'), se:document.getElementById('bar-se'), mec:document.getElementById('bar-mec') },
-        flash: document.getElementById('photo-flash'),
-        modal: document.getElementById('result-modal'),
-        mTitle: document.getElementById('modal-title'), mDesc: document.getElementById('modal-desc'),
-        warning: document.getElementById('portrait-warning')
-    };
-
-    // --- 화면 방향 및 리사이징 ---
-    function checkOrientation() {
-        if (window.innerHeight > window.innerWidth) {
-            ui.warning.style.display = 'flex';
-        } else {
-            ui.warning.style.display = 'none';
-            resize(); // 가로 모드일 때만 리사이징 수행
-        }
-    }
-    window.addEventListener('resize', checkOrientation);
-    
-    function resize() {
-        if (!ui.canvas) return;
-        const container = document.getElementById('game-view');
-        // Retina Display 대응 (선명하게)
-        const dpr = window.devicePixelRatio || 1;
-        const rect = container.getBoundingClientRect();
-        
-        ui.canvas.width = rect.width * dpr;
-        ui.canvas.height = rect.height * dpr;
-        
-        // CSS 크기 설정은 100%로 두고, 드로잉 스케일 조정
-        ui.ctx.scale(dpr, dpr);
-
-        // 논리적 높이 (CSS 픽셀 기준)
-        const logicalHeight = rect.height;
-        
-        // 화면 높이를 약 55m로 가정하여 스케일 계산
-        SCALE = logicalHeight / 55; 
-        ui.valGround.innerText = (logicalHeight / SCALE).toFixed(1);
-        
-        initTrees(rect.width, logicalHeight);
-    }
-
-    function initTrees(w, h) {
-        trees = [];
-        for (let i = -50; i <= w + 50; i += 30) {
-            const height = Math.random() * 80 + 100; 
-            const type = Math.random() > 0.5 ? 0 : 1; 
-            trees.push({ x: i, h: height, t: type, offset: Math.random()*10 });
-        }
-    }
-
-    // --- 게임 로직 ---
-    function resetGame() {
-        state.y = 2; state.v = 0; state.a = 0;
-        state.isRunning = false; 
-        state.timeScale = 1.0; state.zoom = 1.0; state.targetZoom = 1.0;
-        state.photoTaken = false; state.photoScore = 0; state.maxRecordG = 0;
-        state.isBlackout = false; 
-
-        state.damping = ui.airToggle.checked ? DEFAULT_DAMPING : NO_DAMPING;
-
-        phase = 0; replayData = [];
-
-        ui.modal.style.display = 'none'; ui.mTitle.classList.remove('fail');
-        ui.jumpBtn.disabled = false; ui.jumpBtn.innerText = "JUMP! (낙하 시작)";
-        ui.photoStat.innerText = "📸 미션 대기 중..."; ui.photoStat.style.color = "#aaa";
-        ui.guide.className = "info-box";
-        ui.guide.innerHTML = "안전한 번지점프를 설계하세요.<br><span style='font-size:0.8rem; font-weight:normal;'>1차 시기: 최하점에서 [SPACE] 촬영</span>";
-        ui.analysisPanel.style.display = "none";
-        ui.energySec.style.opacity = "0.6"; 
-        updateEnergyUI(); 
-    }
-
-    // --- 이벤트 핸들러 ---
-    ui.k.addEventListener('input', e => { state.k = +e.target.value; ui.valK.innerText = state.k; });
-    ui.l.addEventListener('input', e => { state.l = +e.target.value; ui.valL.innerText = state.l; });
-    ui.jumpBtn.addEventListener('click', startJump);
-    ui.resetBtn.addEventListener('click', resetGame);
-    ui.airToggle.addEventListener('change', e => { state.damping = e.target.checked ? DEFAULT_DAMPING : NO_DAMPING; });
-    
-    window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space' && state.isRunning && phase === 1 && !state.photoTaken) takePhoto();
-    });
-    // 모바일 터치로 사진 찍기 (화면 터치 시)
-    ui.canvas.addEventListener('touchstart', (e) => {
-        if (state.isRunning && phase === 1 && !state.photoTaken) {
-            e.preventDefault();
-            takePhoto();
-        }
-    });
-
-    ui.timeSlider.addEventListener('input', handleTimeSlider);
-
-    function startJump() {
-        if(!state.isRunning) { 
-            state.isRunning = true; phase = 1; 
-            ui.jumpBtn.disabled = true; ui.jumpBtn.innerText = "낙하 중..."; 
-            ui.guide.innerHTML = "떨어집니다!<br><span style='color:var(--accent-color)'>최하점에서 [화면 터치] 또는 [SPACE]!</span>";
-            ui.energySec.style.opacity = "1";
-        }
-    }
-
-    function takePhoto() {
-        state.photoTaken = true;
-        const speed = Math.abs(state.v);
-        let msg = "";
-        ui.flash.style.opacity = 0.8; setTimeout(() => ui.flash.style.opacity = 0, 100);
-
-        if (speed < 2.5) { state.photoScore = 100; msg = "📸 NICE SHOT! (완벽)"; ui.photoStat.style.color = "#44ff44"; } 
-        else { state.photoScore = 50; msg = "📸 찰칵! (흔들림)"; ui.photoStat.style.color = "#ffd700"; }
-        ui.photoStat.innerText = msg;
-        ui.guide.innerHTML = msg + "<br><span style='font-size:0.8rem; font-weight:normal;'>반동 후 '정밀 분석 모드'로 진입합니다.</span>";
-    }
-
-    function handleTimeSlider(e) {
-        if (phase === 4) {
-            const idx = parseInt(e.target.value);
-            if (replayData[idx]) {
-                const frame = replayData[idx];
-                state.y = frame.y; state.v = frame.v; state.a = frame.a;
-                updateEnergyUI();
+        // --- 화면 방향 및 리사이징 ---
+        function checkOrientation() {
+            if (window.innerHeight > window.innerWidth) {
+                ui.warning.style.display = 'flex';
+            } else {
+                ui.warning.style.display = 'none';
+                resize(); // 가로 모드일 때만 리사이징 수행
             }
         }
-    }
+        window.addEventListener('resize', checkOrientation);
 
-    // --- 메인 루프 ---
-    function update() {
-        if (!state.isRunning || phase === 4) return;
+        function resize() {
+            if (!ui.canvas) return;
+            const container = document.getElementById('game-view');
+            // Retina Display 대응 (선명하게)
+            const dpr = window.devicePixelRatio || 1;
+            const rect = container.getBoundingClientRect();
 
-        const dt = 0.016 * state.timeScale;
+            ui.canvas.width = rect.width * dpr;
+            ui.canvas.height = rect.height * dpr;
 
-        // 1. 물리 계산
-        let force = MASS * G; 
-        if (state.y > state.l) force += -state.k * (state.y - state.l); 
-        force -= 0.5 * state.v * (state.damping === NO_DAMPING ? 0 : 1);
+            // CSS 크기 설정은 100%로 두고, 드로잉 스케일 조정
+            ui.ctx.scale(dpr, dpr);
 
-        state.a = force / MASS;
-        state.v += state.a * dt;
-        state.y += state.v * dt;
-        state.v *= state.damping;
+            // 논리적 높이 (CSS 픽셀 기준)
+            const logicalHeight = rect.height;
 
-        const currentG = Math.abs(state.a) / G;
-        state.maxRecordG = Math.max(state.maxRecordG, currentG);
+            // 화면 높이를 약 55m로 가정하여 스케일 계산
+            SCALE = logicalHeight / 55;
+            ui.valGround.innerText = (logicalHeight / SCALE).toFixed(1);
 
-        // [기절 로직]
-        if (state.y > state.l && currentG > BLACKOUT_G) {
-            state.isBlackout = true;
+            initTrees(rect.width, logicalHeight);
         }
 
-        const container = document.getElementById('game-view');
-        const logicalHeight = container.getBoundingClientRect().height;
-        const groundM = logicalHeight / SCALE;
-        
-        // (A) 바닥 충돌
-        if (state.y + 1.8 >= groundM) {
-            endGame("실패: 바닥 충돌!", "줄이 너무 길거나 탄성이 부족했습니다.<br>줄의 길이(L)를 줄여보세요.");
-            return;
+        function initTrees(w, h) {
+            trees = [];
+            for (let i = -50; i <= w + 50; i += 30) {
+                const height = Math.random() * 80 + 100;
+                const type = Math.random() > 0.5 ? 0 : 1;
+                trees.push({ x: i, h: height, t: type, offset: Math.random() * 10 });
+            }
         }
 
-        // (B) 실시간 위험 알림
-        if (currentG > FATAL_G && state.y > state.l) {
-            ui.guide.className = "info-box danger";
-            ui.guide.innerHTML = `⚠️ <strong>위험: ${currentG.toFixed(1)}G</strong><br>파일럿이 기절했습니다!`;
-        }
+        // --- 게임 로직 ---
+        function resetGame() {
+            state.y = 2; state.v = 0; state.a = 0;
+            state.isRunning = false;
+            state.timeScale = 1.0; state.zoom = 1.0; state.targetZoom = 1.0;
+            state.photoTaken = false; state.photoScore = 0; state.maxRecordG = 0;
+            state.isBlackout = false;
 
-        // 3. 시나리오 진행
-        if (phase === 1 && state.v < 0) phase = 2; 
-        if (phase === 2 && state.v > 0) { 
-            phase = 3; 
+            state.damping = ui.airToggle.checked ? DEFAULT_DAMPING : NO_DAMPING;
+
+            phase = 0; replayData = [];
+
+            ui.modal.style.display = 'none'; ui.mTitle.classList.remove('fail');
+            ui.jumpBtn.disabled = false; ui.jumpBtn.innerText = "JUMP! (낙하 시작)";
+            ui.photoStat.innerText = "📸 미션 대기 중..."; ui.photoStat.style.color = "#aaa";
             ui.guide.className = "info-box";
-            ui.guide.innerHTML = "🔻 2차 낙하 중 (기록) 🔻<br><span style='font-size:0.8rem;'>잠시 후 분석 모드가 됩니다.</span>";
-            replayData = []; 
-        }
-        if (phase === 3) {
-            replayData.push({ y: state.y, v: state.v, a: state.a }); 
-            if (state.y > state.l && state.v < -0.5) enterAnalysisMode();
-        }
-        
-        state.zoom += (state.targetZoom - state.zoom) * 0.1;
-        updateEnergyUI();
-    }
-
-    function enterAnalysisMode() {
-        if (state.isBlackout) {
-            endGame("실패: 파일럿 기절!", `최대 ${state.maxRecordG.toFixed(1)}G로 기절했습니다.<br>줄의 탄성(k)을 줄여서 부드럽게 만들어보세요.`);
-            return;
+            ui.guide.innerHTML = "안전한 번지점프를 설계하세요.<br><span style='font-size:0.8rem; font-weight:normal;'>1차 시기: 최하점에서 [SPACE] 촬영</span>";
+            ui.analysisPanel.style.display = "none";
+            ui.energySec.style.opacity = "0.6";
+            updateEnergyUI();
         }
 
-        phase = 4; state.targetZoom = 2.0; 
-        ui.analysisPanel.style.display = "block";
-        ui.guide.className = "info-box highlight";
-        ui.guide.innerHTML = "✋ <strong>분석 모드</strong><br>슬라이더를 움직여보세요.";
-        ui.timeSlider.max = replayData.length - 1;
-        ui.timeSlider.value = replayData.length - 1;
-    }
+        // --- 이벤트 핸들러 ---
+        ui.k.addEventListener('input', e => { state.k = +e.target.value; ui.valK.innerText = state.k; });
+        ui.l.addEventListener('input', e => { state.l = +e.target.value; ui.valL.innerText = state.l; });
+        ui.jumpBtn.addEventListener('click', startJump);
+        ui.resetBtn.addEventListener('click', resetGame);
+        ui.airToggle.addEventListener('change', e => { state.damping = e.target.checked ? DEFAULT_DAMPING : NO_DAMPING; });
 
-    function updateEnergyUI() {
-        const container = document.getElementById('game-view');
-        const groundM = container.getBoundingClientRect().height / SCALE;
-        const h = Math.max(0, groundM - state.y);
-        
-        const pe = MASS * G * h; 
-        const ke = 0.5 * MASS * state.v * state.v; 
-        const extension = Math.max(0, state.y - state.l);
-        const se = 0.5 * state.k * extension * extension;
-        const mec = pe + ke + se; 
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && state.isRunning && phase === 1 && !state.photoTaken) takePhoto();
+        });
+        // 모바일 터치로 사진 찍기 (화면 터치 시)
+        ui.canvas.addEventListener('touchstart', (e) => {
+            if (state.isRunning && phase === 1 && !state.photoTaken) {
+                e.preventDefault();
+                takePhoto();
+            }
+        });
 
-        const maxE = MASS * G * groundM; 
-        
-        ui.bars.pe.style.width = Math.min(100, (pe / maxE) * 100) + "%";
-        ui.bars.ke.style.width = Math.min(100, (ke / maxE) * 100) + "%";
-        ui.bars.se.style.width = Math.min(100, (se / maxE) * 100) + "%";
-        ui.bars.mec.style.width = Math.min(100, (mec / maxE) * 100) + "%";
-    }
+        ui.timeSlider.addEventListener('input', handleTimeSlider);
 
-    function endGame(title, desc) {
-        state.isRunning = false;
-        ui.mTitle.innerText = title; ui.mTitle.classList.add('fail');
-        ui.mDesc.innerHTML = desc;
-        ui.modal.style.display = 'block';
-    }
-
-    // --- 렌더링 ---
-    function draw() {
-        const ctx = ui.ctx; 
-        // 캔버스의 실제 픽셀 크기가 아니라 CSS 레이아웃 크기를 가져옴 (논리적 좌표계 사용)
-        const container = document.getElementById('game-view');
-        const w = container.getBoundingClientRect().width;
-        const h = container.getBoundingClientRect().height;
-
-        // 전체 지우기 (논리적 크기 기준)
-        ctx.clearRect(0, 0, w, h);
-        ctx.save();
-
-        // 1. 배경 (하늘)
-        const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
-        skyGrad.addColorStop(0, "#4facfe"); skyGrad.addColorStop(1, "#00f2fe");
-        ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, w, h);
-
-        // 원경 산 (Parallax)
-        const mountOffset = state.y * SCALE * 0.1; 
-        ctx.save();
-        ctx.translate(0, -mountOffset);
-        ctx.fillStyle = "#2c5f2d";
-        ctx.beginPath(); ctx.moveTo(0, h+300);
-        ctx.lineTo(0, h-100); 
-        ctx.lineTo(w/3, h-250); ctx.lineTo(w*2/3, h-180); ctx.lineTo(w, h-120);
-        ctx.lineTo(w, h+300); ctx.fill();
-        ctx.restore();
-
-        // 카메라 적용
-        ctx.translate(w/2, h/2); ctx.scale(state.zoom, state.zoom);
-        const charY = state.y * SCALE; const charX = w/2;
-        ctx.translate(-charX, -charY);
-
-        // 2. 숲/나무/땅
-        const groundY = h;
-        for (let t of trees) {
-            const treeBottom = groundY;
-            const treeX = t.x;
-            ctx.fillStyle = "#5d4037"; ctx.fillRect(treeX + t.offset, treeBottom - t.h/3, 15, t.h/3);
-            ctx.fillStyle = t.t === 0 ? "#2e7d32" : "#1b5e20"; 
-            ctx.beginPath(); ctx.moveTo(treeX - 25 + t.offset, treeBottom - t.h/4);
-            ctx.lineTo(treeX + 7 + t.offset, treeBottom - t.h);
-            ctx.lineTo(treeX + 40 + t.offset, treeBottom - t.h/4);
-            ctx.fill();
+        function startJump() {
+            if (!state.isRunning) {
+                state.isRunning = true; phase = 1;
+                ui.jumpBtn.disabled = true; ui.jumpBtn.innerText = "낙하 중...";
+                ui.guide.innerHTML = "떨어집니다!<br><span style='color:var(--accent-color)'>최하점에서 [화면 터치] 또는 [SPACE]!</span>";
+                ui.energySec.style.opacity = "1";
+            }
         }
 
-        // 바닥
-        ctx.fillStyle = "#4e342e"; ctx.fillRect(0, groundY, w, 500);
-        ctx.fillStyle = "#388e3c"; ctx.fillRect(0, groundY, w, 15);
+        function takePhoto() {
+            state.photoTaken = true;
+            const speed = Math.abs(state.v);
+            let msg = "";
+            ui.flash.style.opacity = 0.8; setTimeout(() => ui.flash.style.opacity = 0, 100);
 
-        // 점프대
-        ctx.fillStyle = "#5d4037"; ctx.fillRect(charX - 70, -25, 140, 25);
-        ctx.strokeStyle = "#3e2723"; ctx.lineWidth=2; ctx.strokeRect(charX - 70, -25, 140, 25);
+            if (speed < 2.5) { state.photoScore = 100; msg = "📸 NICE SHOT! (완벽)"; ui.photoStat.style.color = "#44ff44"; }
+            else { state.photoScore = 50; msg = "📸 찰칵! (흔들림)"; ui.photoStat.style.color = "#ffd700"; }
+            ui.photoStat.innerText = msg;
+            ui.guide.innerHTML = msg + "<br><span style='font-size:0.8rem; font-weight:normal;'>반동 후 '정밀 분석 모드'로 진입합니다.</span>";
+        }
 
-        // 평형점
-        const lineY = state.l * SCALE;
-        if (state.y > state.l || phase === 4) {
+        function handleTimeSlider(e) {
+            if (phase === 4) {
+                const idx = parseInt(e.target.value);
+                if (replayData[idx]) {
+                    const frame = replayData[idx];
+                    state.y = frame.y; state.v = frame.v; state.a = frame.a;
+                    updateEnergyUI();
+                }
+            }
+        }
+
+        // --- 메인 루프 ---
+        function update() {
+            if (!state.isRunning || phase === 4) return;
+
+            const dt = 0.016 * state.timeScale;
+
+            // 1. 물리 계산
+            let force = MASS * G;
+            if (state.y > state.l) force += -state.k * (state.y - state.l);
+            force -= 0.5 * state.v * (state.damping === NO_DAMPING ? 0 : 1);
+
+            state.a = force / MASS;
+            state.v += state.a * dt;
+            state.y += state.v * dt;
+            state.v *= state.damping;
+
+            const currentG = Math.abs(state.a) / G;
+            state.maxRecordG = Math.max(state.maxRecordG, currentG);
+
+            // [기절 로직]
+            if (state.y > state.l && currentG > BLACKOUT_G) {
+                state.isBlackout = true;
+            }
+
+            const container = document.getElementById('game-view');
+            const logicalHeight = container.getBoundingClientRect().height;
+            const groundM = logicalHeight / SCALE;
+
+            // (A) 바닥 충돌
+            if (state.y + 1.8 >= groundM) {
+                endGame("실패: 바닥 충돌!", "줄이 너무 길거나 탄성이 부족했습니다.<br>줄의 길이(L)를 줄여보세요.");
+                return;
+            }
+
+            // (B) 실시간 위험 알림
+            if (currentG > FATAL_G && state.y > state.l) {
+                ui.guide.className = "info-box danger";
+                ui.guide.innerHTML = `⚠️ <strong>위험: ${currentG.toFixed(1)}G</strong><br>파일럿이 기절했습니다!`;
+            }
+
+            // 3. 시나리오 진행
+            if (phase === 1 && state.v < 0) phase = 2;
+            if (phase === 2 && state.v > 0) {
+                phase = 3;
+                ui.guide.className = "info-box";
+                ui.guide.innerHTML = "🔻 2차 낙하 중 (기록) 🔻<br><span style='font-size:0.8rem;'>잠시 후 분석 모드가 됩니다.</span>";
+                replayData = [];
+            }
+            if (phase === 3) {
+                replayData.push({ y: state.y, v: state.v, a: state.a });
+                if (state.y > state.l && state.v < -0.5) enterAnalysisMode();
+            }
+
+            state.zoom += (state.targetZoom - state.zoom) * 0.1;
+            updateEnergyUI();
+        }
+
+        function enterAnalysisMode() {
+            if (state.isBlackout) {
+                endGame("실패: 파일럿 기절!", `최대 ${state.maxRecordG.toFixed(1)}G로 기절했습니다.<br>줄의 탄성(k)을 줄여서 부드럽게 만들어보세요.`);
+                return;
+            }
+
+            phase = 4; state.targetZoom = 2.0;
+            ui.analysisPanel.style.display = "block";
+            ui.guide.className = "info-box highlight";
+            ui.guide.innerHTML = "✋ <strong>분석 모드</strong><br>슬라이더를 움직여보세요.";
+            ui.timeSlider.max = replayData.length - 1;
+            ui.timeSlider.value = replayData.length - 1;
+        }
+
+        function updateEnergyUI() {
+            const container = document.getElementById('game-view');
+            const groundM = container.getBoundingClientRect().height / SCALE;
+            const h = Math.max(0, groundM - state.y);
+
+            const pe = MASS * G * h;
+            const ke = 0.5 * MASS * state.v * state.v;
+            const extension = Math.max(0, state.y - state.l);
+            const se = 0.5 * state.k * extension * extension;
+            const mec = pe + ke + se;
+
+            const maxE = MASS * G * groundM;
+
+            ui.bars.pe.style.width = Math.min(100, (pe / maxE) * 100) + "%";
+            ui.bars.ke.style.width = Math.min(100, (ke / maxE) * 100) + "%";
+            ui.bars.se.style.width = Math.min(100, (se / maxE) * 100) + "%";
+            ui.bars.mec.style.width = Math.min(100, (mec / maxE) * 100) + "%";
+        }
+
+        function endGame(title, desc) {
+            state.isRunning = false;
+            ui.mTitle.innerText = title; ui.mTitle.classList.add('fail');
+            ui.mDesc.innerHTML = desc;
+            ui.modal.style.display = 'block';
+        }
+
+        // --- 렌더링 ---
+        function draw() {
+            const ctx = ui.ctx;
+            // 캔버스의 실제 픽셀 크기가 아니라 CSS 레이아웃 크기를 가져옴 (논리적 좌표계 사용)
+            const container = document.getElementById('game-view');
+            const w = container.getBoundingClientRect().width;
+            const h = container.getBoundingClientRect().height;
+
+            // 전체 지우기 (논리적 크기 기준)
+            ctx.clearRect(0, 0, w, h);
             ctx.save();
-            ctx.strokeStyle = "rgba(0, 229, 255, 0.6)"; ctx.lineWidth = 2 / state.zoom; 
-            ctx.setLineDash([10, 10]);
-            ctx.beginPath(); ctx.moveTo(charX-w, lineY); ctx.lineTo(charX+w, lineY); ctx.stroke();
-            ctx.fillStyle = "rgba(0, 229, 255, 0.9)"; ctx.font = "12px Arial";
-            ctx.fillText("평형점 (L)", charX + 80, lineY + 4);
+
+            // 1. 배경 (하늘)
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+            skyGrad.addColorStop(0, "#4facfe"); skyGrad.addColorStop(1, "#00f2fe");
+            ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, w, h);
+
+            // 원경 산 (Parallax)
+            const mountOffset = state.y * SCALE * 0.1;
+            ctx.save();
+            ctx.translate(0, -mountOffset);
+            ctx.fillStyle = "#2c5f2d";
+            ctx.beginPath(); ctx.moveTo(0, h + 300);
+            ctx.lineTo(0, h - 100);
+            ctx.lineTo(w / 3, h - 250); ctx.lineTo(w * 2 / 3, h - 180); ctx.lineTo(w, h - 120);
+            ctx.lineTo(w, h + 300); ctx.fill();
+            ctx.restore();
+
+            // 카메라 적용
+            ctx.translate(w / 2, h / 2); ctx.scale(state.zoom, state.zoom);
+            const charY = state.y * SCALE; const charX = w / 2;
+            ctx.translate(-charX, -charY);
+
+            // 2. 숲/나무/땅
+            const groundY = h;
+            for (let t of trees) {
+                const treeBottom = groundY;
+                const treeX = t.x;
+                ctx.fillStyle = "#5d4037"; ctx.fillRect(treeX + t.offset, treeBottom - t.h / 3, 15, t.h / 3);
+                ctx.fillStyle = t.t === 0 ? "#2e7d32" : "#1b5e20";
+                ctx.beginPath(); ctx.moveTo(treeX - 25 + t.offset, treeBottom - t.h / 4);
+                ctx.lineTo(treeX + 7 + t.offset, treeBottom - t.h);
+                ctx.lineTo(treeX + 40 + t.offset, treeBottom - t.h / 4);
+                ctx.fill();
+            }
+
+            // 바닥
+            ctx.fillStyle = "#4e342e"; ctx.fillRect(0, groundY, w, 500);
+            ctx.fillStyle = "#388e3c"; ctx.fillRect(0, groundY, w, 15);
+
+            // 점프대
+            ctx.fillStyle = "#5d4037"; ctx.fillRect(charX - 70, -25, 140, 25);
+            ctx.strokeStyle = "#3e2723"; ctx.lineWidth = 2; ctx.strokeRect(charX - 70, -25, 140, 25);
+
+            // 평형점
+            const lineY = state.l * SCALE;
+            if (state.y > state.l || phase === 4) {
+                ctx.save();
+                ctx.strokeStyle = "rgba(0, 229, 255, 0.6)"; ctx.lineWidth = 2 / state.zoom;
+                ctx.setLineDash([10, 10]);
+                ctx.beginPath(); ctx.moveTo(charX - w, lineY); ctx.lineTo(charX + w, lineY); ctx.stroke();
+                ctx.fillStyle = "rgba(0, 229, 255, 0.9)"; ctx.font = "12px Arial";
+                ctx.fillText("평형점 (L)", charX + 80, lineY + 4);
+                ctx.restore();
+            }
+
+            // 3. 줄 그리기 (자연스러운 코일 스프링)
+            const isTaut = state.y > state.l;
+            ctx.beginPath();
+            ctx.strokeStyle = "#e0e0e0";
+            ctx.lineWidth = isTaut ? 3 : 5;
+
+            // 코일 그리기 (Quadratic Curves)
+            const startY = 0;
+            const endY = charY - 25; // 머리 위
+            const springLen = endY - startY;
+            const coils = 12; // 코일 개수
+            const coilH = springLen / coils;
+            const width = isTaut ? 10 : 25; // 늘어나면 폭이 좁아짐
+
+            ctx.moveTo(charX, startY);
+            for (let i = 0; i < coils; i++) {
+                const cy = startY + coilH * i;
+                // 왼쪽으로 둥글게, 오른쪽으로 둥글게 반복
+                ctx.quadraticCurveTo(charX - width, cy + coilH / 4, charX, cy + coilH / 2);
+                ctx.quadraticCurveTo(charX + width, cy + coilH * 0.75, charX, cy + coilH);
+            }
+            ctx.stroke();
+
+
+            // 캐릭터
+            drawCharacter(ctx, charX, charY, state.a, isTaut);
             ctx.restore();
         }
 
-        // 3. 줄 그리기 (자연스러운 코일 스프링)
-        const isTaut = state.y > state.l;
-        ctx.beginPath(); 
-        ctx.strokeStyle = "#e0e0e0"; 
-        ctx.lineWidth = isTaut ? 3 : 5;
-        
-        // 코일 그리기 (Quadratic Curves)
-        const startY = 0;
-        const endY = charY - 25; // 머리 위
-        const springLen = endY - startY;
-        const coils = 12; // 코일 개수
-        const coilH = springLen / coils;
-        const width = isTaut ? 10 : 25; // 늘어나면 폭이 좁아짐
+        function drawCharacter(ctx, x, y, a, isTaut) {
+            const gForce = Math.abs(a) / G;
+            const showBlackout = state.isBlackout;
 
-        ctx.moveTo(charX, startY);
-        for (let i = 0; i < coils; i++) {
-            const cy = startY + coilH * i;
-            // 왼쪽으로 둥글게, 오른쪽으로 둥글게 반복
-            ctx.quadraticCurveTo(charX - width, cy + coilH/4, charX, cy + coilH/2);
-            ctx.quadraticCurveTo(charX + width, cy + coilH*0.75, charX, cy + coilH);
-        }
-        ctx.stroke();
+            ctx.save(); ctx.translate(x, y);
 
+            // 몸통
+            ctx.fillStyle = showBlackout ? "#555" : "#ff5722";
+            ctx.fillRect(-12, -5, 24, 25);
 
-        // 캐릭터
-        drawCharacter(ctx, charX, charY, state.a, isTaut);
-        ctx.restore();
-    }
+            ctx.strokeStyle = showBlackout ? "#555" : "#ff5722"; ctx.lineWidth = 6;
+            const armAngle = Math.min(Math.PI / 2, gForce * 0.2);
+            ctx.beginPath(); ctx.moveTo(-12, 0); ctx.lineTo(-25, -5 - gForce * 2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(25, -5 - gForce * 2); ctx.stroke();
 
-    function drawCharacter(ctx, x, y, a, isTaut) {
-        const gForce = Math.abs(a) / G;
-        const showBlackout = state.isBlackout; 
+            // 머리
+            ctx.fillStyle = showBlackout ? "#999" : "#ffdbac";
+            ctx.beginPath(); ctx.arc(0, -18, 16, 0, Math.PI * 2); ctx.fill();
 
-        ctx.save(); ctx.translate(x, y);
+            ctx.fillStyle = "#4e342e";
+            ctx.beginPath(); ctx.arc(0, -22, 16, Math.PI, Math.PI * 2); ctx.fill();
 
-        // 몸통
-        ctx.fillStyle = showBlackout ? "#555" : "#ff5722"; 
-        ctx.fillRect(-12, -5, 24, 25);
-        
-        ctx.strokeStyle = showBlackout ? "#555" : "#ff5722"; ctx.lineWidth = 6;
-        const armAngle = Math.min(Math.PI/2, gForce * 0.2);
-        ctx.beginPath(); ctx.moveTo(-12, 0); ctx.lineTo(-25, -5 - gForce*2); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(25, -5 - gForce*2); ctx.stroke();
-
-        // 머리
-        ctx.fillStyle = showBlackout ? "#999" : "#ffdbac";
-        ctx.beginPath(); ctx.arc(0, -18, 16, 0, Math.PI*2); ctx.fill();
-
-        ctx.fillStyle = "#4e342e";
-        ctx.beginPath(); ctx.arc(0, -22, 16, Math.PI, Math.PI*2); ctx.fill();
-
-        // 표정
-        ctx.fillStyle = "#000";
-        if (showBlackout) {
-            ctx.font = "bold 16px sans-serif"; ctx.textAlign = "center";
-            ctx.fillText("X  X", 0, -16); 
-            ctx.beginPath(); ctx.ellipse(0, -8, 3, 5, 0, 0, Math.PI); ctx.stroke(); 
-        } else {
-            ctx.beginPath(); ctx.arc(-6, -18, 2.5, 0, Math.PI*2); ctx.arc(6, -18, 2.5, 0, Math.PI*2); ctx.fill(); 
-            const mouthOpen = Math.min(gForce, 10);
-            ctx.beginPath(); ctx.ellipse(0, -8, 4, 2 + mouthOpen/2, 0, 0, Math.PI, false); ctx.stroke(); 
-        }
-
-        // HUD
-        if (state.isRunning || phase === 4) {
-            ctx.font = "bold 14px Pretendard"; ctx.textAlign = "left";
-            ctx.fillStyle = "#44ff44"; ctx.fillText(`v=${state.v.toFixed(1)}`, 35, -20);
-            if (isTaut) {
-                ctx.fillStyle = showBlackout ? "#ff4444" : "#00e5ff";
-                ctx.fillText(`${gForce.toFixed(1)} G`, 35, 5);
+            // 표정
+            ctx.fillStyle = "#000";
+            if (showBlackout) {
+                ctx.font = "bold 16px sans-serif"; ctx.textAlign = "center";
+                ctx.fillText("X  X", 0, -16);
+                ctx.beginPath(); ctx.ellipse(0, -8, 3, 5, 0, 0, Math.PI); ctx.stroke();
+            } else {
+                ctx.beginPath(); ctx.arc(-6, -18, 2.5, 0, Math.PI * 2); ctx.arc(6, -18, 2.5, 0, Math.PI * 2); ctx.fill();
+                const mouthOpen = Math.min(gForce, 10);
+                ctx.beginPath(); ctx.ellipse(0, -8, 4, 2 + mouthOpen / 2, 0, 0, Math.PI, false); ctx.stroke();
             }
-            drawVector(ctx, 30, -10, 0, state.v * 2, "#44ff44");
-            drawVector(ctx, -30, -10, 0, state.a * 3, "#ff4444");
+
+            // HUD
+            if (state.isRunning || phase === 4) {
+                ctx.font = "bold 14px Pretendard"; ctx.textAlign = "left";
+                ctx.fillStyle = "#44ff44"; ctx.fillText(`v=${state.v.toFixed(1)}`, 35, -20);
+                if (isTaut) {
+                    ctx.fillStyle = showBlackout ? "#ff4444" : "#00e5ff";
+                    ctx.fillText(`${gForce.toFixed(1)} G`, 35, 5);
+                }
+                drawVector(ctx, 30, -10, 0, state.v * 2, "#44ff44");
+                drawVector(ctx, -30, -10, 0, state.a * 3, "#ff4444");
+            }
+            ctx.restore();
         }
-        ctx.restore();
-    }
 
-    function drawVector(ctx, x, y, dx, dy, color) {
-        if (Math.abs(dy) < 0.5) return;
-        ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + dx, y + dy); ctx.stroke();
-        const angle = Math.atan2(dy, dx); const head = 10;
-        ctx.beginPath(); ctx.moveTo(x+dx, y+dy);
-        ctx.lineTo(x+dx - head * Math.cos(angle-Math.PI/6), y+dy - head * Math.sin(angle-Math.PI/6));
-        ctx.lineTo(x+dx - head * Math.cos(angle+Math.PI/6), y+dy - head * Math.sin(angle+Math.PI/6));
-        ctx.fill(); ctx.restore();
-    }
+        function drawVector(ctx, x, y, dx, dy, color) {
+            if (Math.abs(dy) < 0.5) return;
+            ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + dx, y + dy); ctx.stroke();
+            const angle = Math.atan2(dy, dx); const head = 10;
+            ctx.beginPath(); ctx.moveTo(x + dx, y + dy);
+            ctx.lineTo(x + dx - head * Math.cos(angle - Math.PI / 6), y + dy - head * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(x + dx - head * Math.cos(angle + Math.PI / 6), y + dy - head * Math.sin(angle + Math.PI / 6));
+            ctx.fill(); ctx.restore();
+        }
 
-    // 초기 실행
-    checkOrientation();
-    
-    function loop() {
-        update(); draw(); requestAnimationFrame(loop);
-    }
-    loop();
-</script>
+        // 초기 실행
+        checkOrientation();
+
+        function loop() {
+            update(); draw(); requestAnimationFrame(loop);
+        }
+        loop();
+    </script>
 </body>
+
 </html>

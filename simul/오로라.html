@@ -1,86 +1,152 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8">
-  <title>Solar Wind & Lorentz Force Visualization</title>
+  <title>오로라 실험실</title>
   <style>
-    body { margin: 0; overflow: hidden; background-color: #000; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #000;
+    }
 
     #ui-container {
-      position: absolute; top: 20px; left: 20px; z-index: 100; pointer-events: none;
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 100;
+      pointer-events: none;
     }
-    button{
-      pointer-events:auto; padding:12px 24px; font-size:16px; margin-right:10px;
-      border:none; border-radius:8px; cursor:pointer; font-weight:bold; color:#050510;
-      transition:transform 0.1s, box-shadow 0.2s; box-shadow:0 4px 10px rgba(0,0,0,0.5);
-    }
-    button:active{ transform:scale(0.95); }
-    #fireBtn{ background:linear-gradient(135deg,#00FFD1,#008f7a); }
-    #resetBtn{ background:linear-gradient(135deg,#ff9a9e,#fecfef); color:#333; }
-    button:disabled{ background:#444; color:#888; cursor:not-allowed; }
 
-    #status-panel{
-      margin-top:15px; background:rgba(10,20,30,0.9); padding:15px;
-      border-radius:8px; border-left:4px solid #00FFD1;
-      color:#b0c4de; font-family:'Segoe UI', monospace; font-size:13px; width:320px;
+    button {
+      pointer-events: auto;
+      padding: 12px 24px;
+      font-size: 16px;
+      margin-right: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #050510;
+      transition: transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    button:active {
+      transform: scale(0.95);
+    }
+
+    #fireBtn {
+      background: linear-gradient(135deg, #00FFD1, #008f7a);
+    }
+
+    #resetBtn {
+      background: linear-gradient(135deg, #ff9a9e, #fecfef);
+      color: #333;
+    }
+
+    button:disabled {
+      background: #444;
+      color: #888;
+      cursor: not-allowed;
+    }
+
+    #status-panel {
+      margin-top: 15px;
+      background: rgba(10, 20, 30, 0.9);
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #00FFD1;
+      color: #b0c4de;
+      font-family: 'Segoe UI', monospace;
+      font-size: 13px;
+      width: 320px;
       backdrop-filter: blur(5px);
     }
-    .row{ margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
-    .legend-icon{
-      width:14px; height:14px; display:inline-block; margin-right:8px;
-      border-radius:2px; vertical-align:middle;
+
+    .row {
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .highlight{ color:#00FFD1; font-weight:bold; font-size:1.1em; }
-    .sub-text{ font-size:11px; color:#8899aa; margin-top:5px; line-height:1.4; }
+
+    .legend-icon {
+      width: 14px;
+      height: 14px;
+      display: inline-block;
+      margin-right: 8px;
+      border-radius: 2px;
+      vertical-align: middle;
+    }
+
+    .highlight {
+      color: #00FFD1;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+
+    .sub-text {
+      font-size: 11px;
+      color: #8899aa;
+      margin-top: 5px;
+      line-height: 1.4;
+    }
+
     /* [추가] 우측 상단 '돌아가기' 버튼 스타일 */
     #returnBtn {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        z-index: 100;
-        padding: 12px 24px;
-        font-size: 16px;
-        font-weight: bold;
-        color: #00f2fe; /* 사이버네틱한 시안(Cyan) 색상 */
-        background: rgba(0, 0, 0, 0.6); /* 반투명 검정 배경 */
-        border: 2px solid #00f2fe;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.3s;
-        backdrop-filter: blur(5px);
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #00f2fe;
+      /* 사이버네틱한 시안(Cyan) 색상 */
+      background: rgba(0, 0, 0, 0.6);
+      /* 반투명 검정 배경 */
+      border: 2px solid #00f2fe;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      backdrop-filter: blur(5px);
     }
-    
+
     #returnBtn:hover {
-        background: #00f2fe;
-        color: #000;
-        box-shadow: 0 0 20px rgba(0, 242, 254, 0.7); /* 네온 글로우 효과 */
-        transform: translateY(-2px);
+      background: #00f2fe;
+      color: #000;
+      box-shadow: 0 0 20px rgba(0, 242, 254, 0.7);
+      /* 네온 글로우 효과 */
+      transform: translateY(-2px);
     }
   </style>
 </head>
+
 <body>
-<div id="ui-container">
-  <button id="fireBtn">시뮬레이션 시작 (Start)</button>
-  <button id="resetBtn">초기화 (Reset)</button>
+  <div id="ui-container">
+    <button id="fireBtn">시뮬레이션 시작 (Start)</button>
+    <button id="resetBtn">초기화 (Reset)</button>
 
-  <div id="status-panel">
-    <div class="row">STATUS: <span id="st-state" class="highlight">SOLAR WIND</span></div>
-    <div style="border-top: 1px solid #444; margin: 10px 0;"></div>
-    <div class="row">
-      <span><span class="legend-icon" style="background:yellow; box-shadow:0 0 5px yellow;"></span>속도 (v)</span>
-      <span id="val-v">--</span>
-    </div>
-    <div class="row">
-      <span><span class="legend-icon" style="background:red; box-shadow:0 0 5px red;"></span>자기력 (F)</span>
-      <span id="val-f">--</span>
+    <div id="status-panel">
+      <div class="row">STATUS: <span id="st-state" class="highlight">SOLAR WIND</span></div>
+      <div style="border-top: 1px solid #444; margin: 10px 0;"></div>
+      <div class="row">
+        <span><span class="legend-icon" style="background:yellow; box-shadow:0 0 5px yellow;"></span>속도 (v)</span>
+        <span id="val-v">--</span>
+      </div>
+      <div class="row">
+        <span><span class="legend-icon" style="background:red; box-shadow:0 0 5px red;"></span>자기력 (F)</span>
+        <span id="val-f">--</span>
+      </div>
     </div>
   </div>
-</div>
-<div id="ui-container">
+  <div id="ui-container">
   </div>
 
-<button id="returnBtn">실험실로 돌아가기</button>
-<script type="importmap">
+  <button id="returnBtn">실험실로 돌아가기</button>
+  <script type="importmap">
 {
   "imports": {
     "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
@@ -89,58 +155,58 @@
 }
 </script>
 
-<script type="module">
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-let scene, camera, renderer, controls;
-let sun, earth;
-let backgroundParticles = [];
-let heroParticle = null;
-let magneticFieldLines = [];
-let auroraMesh;
-let atmosphere;         // 대기권 글로우
-let auroraGroup = null; // 오로라 커튼 그룹 (earth에 붙임)
-let auroraMatA = null, auroraMatB = null; 
-let auroraMesh1 = null, auroraMesh2 = null;
+    let scene, camera, renderer, controls;
+    let sun, earth;
+    let backgroundParticles = [];
+    let heroParticle = null;
+    let magneticFieldLines = [];
+    let auroraMesh;
+    let atmosphere;         // 대기권 글로우
+    let auroraGroup = null; // 오로라 커튼 그룹 (earth에 붙임)
+    let auroraMatA = null, auroraMatB = null;
+    let auroraMesh1 = null, auroraMesh2 = null;
 
-let arrowV, arrowF;
-let followTarget = null;   // 카메라 시선 타깃 (hero 또는 earth)
+    let arrowV, arrowF;
+    let followTarget = null;   // 카메라 시선 타깃 (hero 또는 earth)
 
 
-let simulationState = 'IDLE'; // IDLE, WIND_BLOWING, TRACKING, AURORA
-let timeScale = 1.0;
-let windInterval = null;
-let heroTimeout = null;
+    let simulationState = 'IDLE'; // IDLE, WIND_BLOWING, TRACKING, AURORA
+    let timeScale = 1.0;
+    let windInterval = null;
+    let heroTimeout = null;
 
-const EARTH_RADIUS = 5;
-const SUN_RADIUS = 15;
-const DISTANCE = 140;
+    const EARTH_RADIUS = 5;
+    const SUN_RADIUS = 15;
+    const DISTANCE = 140;
 
-const elState = document.getElementById('st-state');
-const elV = document.getElementById('val-v');
-const elF = document.getElementById('val-f');
-const btnFire = document.getElementById('fireBtn');
-const btnReset = document.getElementById('resetBtn');
-const textureLoader = new THREE.TextureLoader();
+    const elState = document.getElementById('st-state');
+    const elV = document.getElementById('val-v');
+    const elF = document.getElementById('val-f');
+    const btnFire = document.getElementById('fireBtn');
+    const btnReset = document.getElementById('resetBtn');
+    const textureLoader = new THREE.TextureLoader();
 
-// ====== HERO "미끄럼틀 + 나선하강" 파라미터 ======
-let heroPathCurve = null;      // CatmullRomCurve3 (보이지 않는 경로)
-let heroS = 0;                 // 0..1 (curve parameter)
-let heroSlideSpeed = 0.006;    // 커질수록 더 빨리 북극 입구 도착
-let heroLastPos = null;        // 속도(벡터) 추정용
+    // ====== HERO "미끄럼틀 + 나선하강" 파라미터 ======
+    let heroPathCurve = null;      // CatmullRomCurve3 (보이지 않는 경로)
+    let heroS = 0;                 // 0..1 (curve parameter)
+    let heroSlideSpeed = 0.006;    // 커질수록 더 빨리 북극 입구 도착
+    let heroLastPos = null;        // 속도(벡터) 추정용
 
-let poleDirWorld = null;       // 지구 자기축(단순화) 방향 (월드 좌표 고정)
-let basisU = null, basisW = null;  // poleDir에 수직인 직교기저
-let spiralTheta = 0;
-let spiralRadius = 6.5;
-const SPIRAL_START_HEIGHT = 22;
-let spiralHeight = SPIRAL_START_HEIGHT;         // 북극 상공 시작 높이
-let spiralDescendRate = 0.025;  // 내려오는 속도
-let spiralSpinRate = 0.020;     // 회전 각속도
+    let poleDirWorld = null;       // 지구 자기축(단순화) 방향 (월드 좌표 고정)
+    let basisU = null, basisW = null;  // poleDir에 수직인 직교기저
+    let spiralTheta = 0;
+    let spiralRadius = 6.5;
+    const SPIRAL_START_HEIGHT = 22;
+    let spiralHeight = SPIRAL_START_HEIGHT;         // 북극 상공 시작 높이
+    let spiralDescendRate = 0.025;  // 내려오는 속도
+    let spiralSpinRate = 0.020;     // 회전 각속도
 
-// ====== 오로라 쉐이더 ======
-const auroraVert = `
+    // ====== 오로라 쉐이더 ======
+    const auroraVert = `
 varying vec2 vUv; uniform float time;
 void main(){
   vUv = uv; vec3 pos = position;
@@ -149,7 +215,7 @@ void main(){
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos,1.0);
 }
 `;
-const auroraFrag = `
+    const auroraFrag = `
 uniform float time; uniform float opacity; varying vec2 vUv;
 void main(){
   float streak = sin(vUv.x*40.0 + time) + sin(vUv.x*70.0 - time*0.5);
@@ -161,10 +227,10 @@ void main(){
 }
 `;
 
-// =====================================================
-// [추가] 대기권(Atmosphere) Fresnel Glow (카메라-의존형)
-// =====================================================
-const atmosphereVertexShader = `
+    // =====================================================
+    // [추가] 대기권(Atmosphere) Fresnel Glow (카메라-의존형)
+    // =====================================================
+    const atmosphereVertexShader = `
   varying vec3 vWorldPos;
   varying vec3 vWorldNormal;
   void main() {
@@ -175,7 +241,7 @@ const atmosphereVertexShader = `
   }
 `;
 
-const atmosphereFragmentShader = `
+    const atmosphereFragmentShader = `
   varying vec3 vWorldPos;
   varying vec3 vWorldNormal;
   void main() {
@@ -188,68 +254,68 @@ gl_FragColor = vec4(col * a, a);          // RGB도 같이 줄여서 과발광 �
   }
 `;
 
-function createAtmosphere() {
-  const mat = new THREE.ShaderMaterial({
-    vertexShader: atmosphereVertexShader,
-    fragmentShader: atmosphereFragmentShader,
-    blending: THREE.AdditiveBlending,
-    side: THREE.BackSide,
-    transparent: true,
-    depthWrite: false
-  });
+    function createAtmosphere() {
+      const mat = new THREE.ShaderMaterial({
+        vertexShader: atmosphereVertexShader,
+        fragmentShader: atmosphereFragmentShader,
+        blending: THREE.AdditiveBlending,
+        side: THREE.BackSide,
+        transparent: true,
+        depthWrite: false
+      });
 
-  atmosphere = new THREE.Mesh(
-    new THREE.SphereGeometry(EARTH_RADIUS * 1.03, 64, 64),
-    mat
-  );
+      atmosphere = new THREE.Mesh(
+        new THREE.SphereGeometry(EARTH_RADIUS * 1.03, 64, 64),
+        mat
+      );
 
-  // 지구에 붙이면 자전/기울기와 함께 자연스럽게 따라감
-  earth.add(atmosphere);
-}
+      // 지구에 붙이면 자전/기울기와 함께 자연스럽게 따라감
+      earth.add(atmosphere);
+    }
 
-// =====================================================
-// [추가] 오로라 커튼 (Vertical Aurora Curtain)
-// =====================================================
-function createAuroraGeometry(numPoints, radius, height) {
-  const geometry = new THREE.BufferGeometry();
-  const vertices = [];
-  const uvs = [];
-  const indices = [];
+    // =====================================================
+    // [추가] 오로라 커튼 (Vertical Aurora Curtain)
+    // =====================================================
+    function createAuroraGeometry(numPoints, radius, height) {
+      const geometry = new THREE.BufferGeometry();
+      const vertices = [];
+      const uvs = [];
+      const indices = [];
 
-  for (let i = 0; i <= numPoints; i++) {
-    const angle = (i / numPoints) * Math.PI * 2;
-    const wave = Math.sin(angle * 6) * 0.1 + Math.sin(angle * 13) * 0.05;
-    const phi = 0.35 + wave; // 북극 근처로 몰리게
+      for (let i = 0; i <= numPoints; i++) {
+        const angle = (i / numPoints) * Math.PI * 2;
+        const wave = Math.sin(angle * 6) * 0.1 + Math.sin(angle * 13) * 0.05;
+        const phi = 0.35 + wave; // 북극 근처로 몰리게
 
-    const x1 = radius * Math.sin(phi) * Math.cos(angle);
-    const y1 = radius * Math.cos(phi);
-    const z1 = radius * Math.sin(phi) * Math.sin(angle);
+        const x1 = radius * Math.sin(phi) * Math.cos(angle);
+        const y1 = radius * Math.cos(phi);
+        const z1 = radius * Math.sin(phi) * Math.sin(angle);
 
-    const x2 = (radius + height) * Math.sin(phi) * Math.cos(angle);
-    const y2 = (radius + height) * Math.cos(phi);
-    const z2 = (radius + height) * Math.sin(phi) * Math.sin(angle);
+        const x2 = (radius + height) * Math.sin(phi) * Math.cos(angle);
+        const y2 = (radius + height) * Math.cos(phi);
+        const z2 = (radius + height) * Math.sin(phi) * Math.sin(angle);
 
-    vertices.push(x1, y1, z1);
-    vertices.push(x2, y2, z2);
+        vertices.push(x1, y1, z1);
+        vertices.push(x2, y2, z2);
 
-    uvs.push(i / numPoints, 0);
-    uvs.push(i / numPoints, 1);
-  }
+        uvs.push(i / numPoints, 0);
+        uvs.push(i / numPoints, 1);
+      }
 
-  for (let i = 0; i < numPoints; i++) {
-    const base = i * 2;
-    indices.push(base, base + 1, base + 2);
-    indices.push(base + 1, base + 3, base + 2);
-  }
+      for (let i = 0; i < numPoints; i++) {
+        const base = i * 2;
+        indices.push(base, base + 1, base + 2);
+        indices.push(base + 1, base + 3, base + 2);
+      }
 
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  return geometry;
-}
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+      geometry.setIndex(indices);
+      geometry.computeVertexNormals();
+      return geometry;
+    }
 
-const auroraCurtainVert = `
+    const auroraCurtainVert = `
   varying vec2 vUv;
   uniform float time;
   void main() {
@@ -262,7 +328,7 @@ const auroraCurtainVert = `
   }
 `;
 
-const auroraCurtainFrag = `
+    const auroraCurtainFrag = `
   uniform float time;
   varying vec2 vUv;
   void main() {
@@ -283,167 +349,167 @@ const auroraCurtainFrag = `
 `;
 
 
-function init(){
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x020205);
-  scene.fog = new THREE.FogExp2(0x020205, 0.001);
+    function init() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x020205);
+      scene.fog = new THREE.FogExp2(0x020205, 0.001);
 
-  camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
-  resetCamera();
+      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+      resetCamera();
 
-  renderer = new THREE.WebGLRenderer({ antialias:true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
-  document.body.appendChild(renderer.domElement);
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      document.body.appendChild(renderer.domElement);
 
-  const ambient = new THREE.AmbientLight(0xffffff, 0.4);
-  scene.add(ambient);
-  const sunLight = new THREE.PointLight(0xffffee, 2.0, 500);
-  sunLight.position.set(-DISTANCE,0,0);
-  scene.add(sunLight);
+      const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+      scene.add(ambient);
+      const sunLight = new THREE.PointLight(0xffffee, 2.0, 500);
+      sunLight.position.set(-DISTANCE, 0, 0);
+      scene.add(sunLight);
 
-  createSun();
-  createEarth();
-  createStars();
-  createVectorArrows();
-  createAtmosphere();
+      createSun();
+      createEarth();
+      createStars();
+      createVectorArrows();
+      createAtmosphere();
 
 
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.enabled = true;                 // 항상 켜기
-  controls.target.copy(earth.position);    // 지구 중심을 기준으로 회전
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.12;
-  controls.rotateSpeed = 0.6;
-  controls.zoomSpeed = 0.8;
-  controls.panSpeed = 0.4;
-  controls.autoRotate = false;             // 필요하면 상태에 따라 켜기
-  controls.update();
-  window.addEventListener('resize', onWindowResize);
-  btnFire.addEventListener('click', startSimulation);
-  btnReset.addEventListener('click', resetSimulation);
-  // [추가] 돌아가기 버튼 클릭 이벤트
-  document.getElementById('returnBtn').addEventListener('click', function() {window.location.href = '로런츠 힘.html';});
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.enabled = true;                 // 항상 켜기
+      controls.target.copy(earth.position);    // 지구 중심을 기준으로 회전
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.12;
+      controls.rotateSpeed = 0.6;
+      controls.zoomSpeed = 0.8;
+      controls.panSpeed = 0.4;
+      controls.autoRotate = false;             // 필요하면 상태에 따라 켜기
+      controls.update();
+      window.addEventListener('resize', onWindowResize);
+      btnFire.addEventListener('click', startSimulation);
+      btnReset.addEventListener('click', resetSimulation);
+      // [추가] 돌아가기 버튼 클릭 이벤트
+      document.getElementById('returnBtn').addEventListener('click', function () { window.location.href = '로런츠 힘.html'; });
 
-  animate();
-}
-
-function createSun(){
-  const geo = new THREE.SphereGeometry(SUN_RADIUS, 32, 32);
-  const mat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
-  textureLoader.load('./image/태양전도.png', t => { mat.map = t; mat.needsUpdate = true; });
-  sun = new THREE.Mesh(geo, mat);
-  sun.position.set(-DISTANCE,0,0);
-
-  const canvas = document.createElement('canvas'); canvas.width=64; canvas.height=64;
-  const ctx = canvas.getContext('2d');
-  const g = ctx.createRadialGradient(32,32,0,32,32,32);
-  g.addColorStop(0,'rgba(255,100,0,1)'); g.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=g; ctx.fillRect(0,0,64,64);
-  const tex = new THREE.CanvasTexture(canvas);
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: tex, blending: THREE.AdditiveBlending, color: 0xffaa00
-  }));
-  sprite.scale.set(SUN_RADIUS*4, SUN_RADIUS*4, 1);
-  sun.add(sprite);
-
-  scene.add(sun);
-}
-
-function createEarth(){
-  const geo = new THREE.SphereGeometry(EARTH_RADIUS, 32, 32);
-  const mat = new THREE.MeshPhongMaterial({ color:0xffffff, specular:0x333333, shininess:15 });
-  textureLoader.load('./image/세계전도.png', t => { mat.map=t; mat.needsUpdate=true; });
-  earth = new THREE.Mesh(geo, mat);
-  earth.position.set(0,0,0);
-  earth.rotation.z = THREE.MathUtils.degToRad(23.5);
-  scene.add(earth);
-
-  // 자기력선(딥폴 근사 곡선들) - 시각용
-  const lineMat = new THREE.LineBasicMaterial({ color:0x00ffff, transparent:true, opacity:0.15 });
-  magneticFieldLines = [];
-  for(let i=0;i<16;i++){
-    const angle = (i/16) * Math.PI*2;
-    const pts = [];
-    for(let t=0;t<=1;t+=0.05){
-      const theta = Math.PI * t;
-      const r = EARTH_RADIUS * 3.0 * Math.pow(Math.sin(theta),2);
-      const y = r * Math.cos(theta);
-  const squash = 0.65;
-  const x = (r * Math.sin(theta) * Math.cos(angle)) * squash;
-  const z = (r * Math.sin(theta) * Math.sin(angle)) * squash;
-      pts.push(new THREE.Vector3(x,y,z));
+      animate();
     }
-    const curve = new THREE.CatmullRomCurve3(pts);
-    magneticFieldLines.push(curve);
-    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(50)), lineMat);
-    earth.add(line);
-  }
-}
 
-function createStars(){
-  // 별 스프라이트 텍스처 (부드러운 원형 글로우)
-  const starTex = (() => {
-    const c = document.createElement('canvas');
-    c.width = 64; c.height = 64;
-    const ctx = c.getContext('2d');
+    function createSun() {
+      const geo = new THREE.SphereGeometry(SUN_RADIUS, 32, 32);
+      const mat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+      textureLoader.load('./image/태양전도.png', t => { mat.map = t; mat.needsUpdate = true; });
+      sun = new THREE.Mesh(geo, mat);
+      sun.position.set(-DISTANCE, 0, 0);
 
-    const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-    g.addColorStop(0.0, 'rgba(255,255,255,1)');
-    g.addColorStop(0.2, 'rgba(255,255,255,0.9)');
-    g.addColorStop(0.5, 'rgba(180,200,255,0.25)');
-    g.addColorStop(1.0, 'rgba(0,0,0,0)');
+      const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      g.addColorStop(0, 'rgba(255,100,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, 64, 64);
+      const tex = new THREE.CanvasTexture(canvas);
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: tex, blending: THREE.AdditiveBlending, color: 0xffaa00
+      }));
+      sprite.scale.set(SUN_RADIUS * 4, SUN_RADIUS * 4, 1);
+      sun.add(sprite);
 
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 64, 64);
+      scene.add(sun);
+    }
 
-    const tex = new THREE.CanvasTexture(c);
-    tex.needsUpdate = true;
-    return tex;
-  })();
+    function createEarth() {
+      const geo = new THREE.SphereGeometry(EARTH_RADIUS, 32, 32);
+      const mat = new THREE.MeshPhongMaterial({ color: 0xffffff, specular: 0x333333, shininess: 15 });
+      textureLoader.load('./image/세계전도.png', t => { mat.map = t; mat.needsUpdate = true; });
+      earth = new THREE.Mesh(geo, mat);
+      earth.position.set(0, 0, 0);
+      earth.rotation.z = THREE.MathUtils.degToRad(23.5);
+      scene.add(earth);
 
-  const starCount = 2500;
+      // 자기력선(딥폴 근사 곡선들) - 시각용
+      const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.15 });
+      magneticFieldLines = [];
+      for (let i = 0; i < 16; i++) {
+        const angle = (i / 16) * Math.PI * 2;
+        const pts = [];
+        for (let t = 0; t <= 1; t += 0.05) {
+          const theta = Math.PI * t;
+          const r = EARTH_RADIUS * 3.0 * Math.pow(Math.sin(theta), 2);
+          const y = r * Math.cos(theta);
+          const squash = 0.65;
+          const x = (r * Math.sin(theta) * Math.cos(angle)) * squash;
+          const z = (r * Math.sin(theta) * Math.sin(angle)) * squash;
+          pts.push(new THREE.Vector3(x, y, z));
+        }
+        const curve = new THREE.CatmullRomCurve3(pts);
+        magneticFieldLines.push(curve);
+        const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(50)), lineMat);
+        earth.add(line);
+      }
+    }
 
-  // 구면 셸: rMin~rMax 사이의 “껍질”에만 분포
-  const rMin = 350;
-  const rMax = 900;
+    function createStars() {
+      // 별 스프라이트 텍스처 (부드러운 원형 글로우)
+      const starTex = (() => {
+        const c = document.createElement('canvas');
+        c.width = 64; c.height = 64;
+        const ctx = c.getContext('2d');
 
-  const positions = new Float32Array(starCount * 3);
-  const sizes = new Float32Array(starCount);
+        const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        g.addColorStop(0.0, 'rgba(255,255,255,1)');
+        g.addColorStop(0.2, 'rgba(255,255,255,0.9)');
+        g.addColorStop(0.5, 'rgba(180,200,255,0.25)');
+        g.addColorStop(1.0, 'rgba(0,0,0,0)');
 
-  for(let i = 0; i < starCount; i++){
-    // 균일 구면분포 (cosθ 균일)
-    const u = Math.random();
-    const v = Math.random();
-    const theta = 2 * Math.PI * u;
-    const phi = Math.acos(2 * v - 1);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 64, 64);
 
-    // 반지름은 셸 내부에서 약간 바깥쪽에 더 많게 (자연스러움)
-    const t = Math.pow(Math.random(), 0.35);
-    const r = rMin + (rMax - rMin) * t;
+        const tex = new THREE.CanvasTexture(c);
+        tex.needsUpdate = true;
+        return tex;
+      })();
 
-    const x = r * Math.sin(phi) * Math.cos(theta);
-    const y = r * Math.sin(phi) * Math.sin(theta);
-    const z = r * Math.cos(phi);
+      const starCount = 2500;
 
-    positions[i*3+0] = x;
-    positions[i*3+1] = y;
-    positions[i*3+2] = z;
+      // 구면 셸: rMin~rMax 사이의 “껍질”에만 분포
+      const rMin = 350;
+      const rMax = 900;
 
-    // 크기 다양화 (대부분 작고, 가끔 큰 별)
-    const s = Math.pow(Math.random(), 2.8); // 0에 몰림
-    sizes[i] = 0.6 + s * 2.8;
-  }
+      const positions = new Float32Array(starCount * 3);
+      const sizes = new Float32Array(starCount);
 
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+      for (let i = 0; i < starCount; i++) {
+        // 균일 구면분포 (cosθ 균일)
+        const u = Math.random();
+        const v = Math.random();
+        const theta = 2 * Math.PI * u;
+        const phi = Math.acos(2 * v - 1);
 
-  const mat = new THREE.ShaderMaterial({
-    uniforms: {
-      uTex: { value: starTex }
-    },
-    vertexShader: `
+        // 반지름은 셸 내부에서 약간 바깥쪽에 더 많게 (자연스러움)
+        const t = Math.pow(Math.random(), 0.35);
+        const r = rMin + (rMax - rMin) * t;
+
+        const x = r * Math.sin(phi) * Math.cos(theta);
+        const y = r * Math.sin(phi) * Math.sin(theta);
+        const z = r * Math.cos(phi);
+
+        positions[i * 3 + 0] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = z;
+
+        // 크기 다양화 (대부분 작고, 가끔 큰 별)
+        const s = Math.pow(Math.random(), 2.8); // 0에 몰림
+        sizes[i] = 0.6 + s * 2.8;
+      }
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+
+      const mat = new THREE.ShaderMaterial({
+        uniforms: {
+          uTex: { value: starTex }
+        },
+        vertexShader: `
       attribute float aSize;
       varying float vAlpha;
       void main(){
@@ -463,7 +529,7 @@ function createStars(){
         vAlpha = clamp(aSize / 3.4, 0.2, 1.0);
       }
     `,
-    fragmentShader: `
+        fragmentShader: `
       uniform sampler2D uTex;
       varying float vAlpha;
       void main(){
@@ -471,449 +537,458 @@ function createStars(){
         gl_FragColor = vec4(c.rgb, c.a * vAlpha);
       }
     `,
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending
-  });
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
 
-  const stars = new THREE.Points(geo, mat);
-  stars.name = "STARFIELD";
-  scene.add(stars);
+      const stars = new THREE.Points(geo, mat);
+      stars.name = "STARFIELD";
+      scene.add(stars);
 
-  // 회전시키고 싶으면, animate()에서 stars를 찾기 위해 전역으로 잡아도 됨
-}
-
-
-function createVectorArrows(){
-  arrowV = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 4, 0xffff00, 1, 0.5);
-  arrowF = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 4, 0xff0000, 1, 0.5);
-  arrowV.visible = false;
-  arrowF.visible = false;
-  scene.add(arrowV);
-  scene.add(arrowF);
-}
-
-// ==========================
-//  태양풍 더미 입자 (유지)
-// ==========================
-function spawnBackgroundParticles(){
-  for(let i=0;i<50;i++){
-    const mesh = new THREE.Mesh(
-      new THREE.SphereGeometry(0.2),
-      new THREE.MeshBasicMaterial({ color:0x88ccff })
-    );
-
-    const theta = Math.random()*Math.PI*2;
-    const phi = Math.acos(2*Math.random()-1);
-    const r = SUN_RADIUS + 1;
-    mesh.position.set(
-      -DISTANCE + r*Math.sin(phi)*Math.cos(theta),
-      r*Math.sin(phi)*Math.sin(theta),
-      r*Math.cos(phi)
-    );
-
-    mesh.userData = {
-      velocity: new THREE.Vector3(
-        1.5 + Math.random(),
-        (Math.random()-0.5)*0.5,
-        (Math.random()-0.5)*0.5
-      ),
-      life: 300,
-      type: 'DUMMY'
-    };
-
-    backgroundParticles.push(mesh);
-    scene.add(mesh);
-  }
-}
-
-// =====================================
-//  HERO: "미끄럼틀" 경로 생성 + 강제이동
-// =====================================
-function spawnHeroParticle(){
-  heroParticle = new THREE.Mesh(
-    new THREE.SphereGeometry(0.5),
-    new THREE.MeshBasicMaterial({ color:0x00ffff })
-  );
-
-  // 1) 출발 위치: 태양 정면 + 위/아래/옆 오프셋
-  const startOffsetY = (Math.random()-0.5) * 18;  // 위아래
-  const startOffsetZ = (Math.random()-0.5) * 18;  // 좌우
-  const start = new THREE.Vector3(
-    -DISTANCE + SUN_RADIUS + 2,
-    startOffsetY,
-    startOffsetZ
-  );
-  heroParticle.position.copy(start);
-
-  // 2) 지구 자기축(단순화) 방향을 "그 순간"의 월드 방향으로 고정
-  //    (지구가 계속 자전해도, hero 경로는 고정된 연출 경로로 유지)
-  poleDirWorld = new THREE.Vector3(0,1,0).applyQuaternion(earth.quaternion).normalize();
-  spiralHeight = SPIRAL_START_HEIGHT;
-
-  // 3) 북극 입구(상공) 목표점: 지구 중심 + poleDir * 높이
-  const northEntry = earth.position.clone().add(poleDirWorld.clone().multiplyScalar(spiralHeight));
-
-  // 4) 스플라인 제어점(미끄럼틀):
-  //    태양(시작) -> (중간) -> (지구 근처) -> 북극 입구
-  const mid1 = start.clone().lerp(earth.position, 0.35).add(new THREE.Vector3(0, startOffsetY*0.35, startOffsetZ*0.25));
-  const nearEarth = earth.position.clone()
-    .add(new THREE.Vector3(-35, 8, 12)) // 지구 앞쪽(태양쪽)에서 살짝 위/옆으로 진입
-    .add(poleDirWorld.clone().multiplyScalar(3.0)); // 북극쪽으로 약간 편향
-
-  const mid2 = nearEarth.clone().lerp(northEntry, 0.55).add(new THREE.Vector3(8, 10, -6));
-
-  heroPathCurve = new THREE.CatmullRomCurve3([ start, mid1, nearEarth, mid2, northEntry ], false, 'catmullrom', 0.5);
-
-  // (디버그로 보고 싶으면 true로 바꾸고 opacity 올려서 선을 추가해도 됨)
-  // addDebugCurve(heroPathCurve);
-
-  heroS = 0;
-  heroSlideSpeed = 0.006; // 미끄럼틀 속도
-  heroLastPos = start.clone();
-
-  heroParticle.userData = {
-    state: 'SLIDING', // SLIDING -> SPIRAL
-  };
-
-  scene.add(heroParticle);
-
-  // 카메라/시간 연출
-  timeScale = 1.0;
-}
-
-// (선택) 디버그용 경로 표시
-function addDebugCurve(curve){
-  const pts = curve.getPoints(120);
-  const geo = new THREE.BufferGeometry().setFromPoints(pts);
-  const mat = new THREE.LineBasicMaterial({ color:0xffffff, transparent:true, opacity:0.15 });
-  const line = new THREE.Line(geo, mat);
-  scene.add(line);
-}
-
-function startSimulation(){
-  if(simulationState !== 'IDLE') return;
-
-  simulationState = 'WIND_BLOWING';
-  elState.innerText = "SOLAR WIND (태양풍 발생)";
-  btnFire.disabled = true;
-
-  windInterval = setInterval(() => {
-  if (simulationState === 'IDLE') { clearInterval(windInterval); windInterval = null; return; }
-  spawnBackgroundParticles();
-}, 100);
-
-heroTimeout = setTimeout(() => {
-  if (simulationState === 'IDLE') return;
-
-  spawnHeroParticle();
-  simulationState = 'TRACKING';
-  elState.innerText = "TRACKING (미끄럼틀 → 북극 진입)";
-  elState.style.color = "#00FFD1";
-
-  if (windInterval) { clearInterval(windInterval); windInterval = null; }
-}, 2000);
-}
-
-function resetSimulation(){
-  simulationState = 'IDLE';
-  elState.innerText = "READY";
-  elState.style.color = "#b0c4de";
-  btnFire.disabled = false;
-  timeScale = 1.0;
-  if (windInterval) { clearInterval(windInterval); windInterval = null; }
-  if (heroTimeout) { clearTimeout(heroTimeout); heroTimeout = null; }
-
-  backgroundParticles.forEach(p => scene.remove(p));
-  backgroundParticles = [];
-
-  if(heroParticle){ scene.remove(heroParticle); heroParticle = null; }
-  if (auroraGroup) { earth.remove(auroraGroup); auroraGroup = null; }
-  auroraMesh1 = auroraMesh2 = null;
-  auroraMatA = auroraMatB = null;
-  arrowV.visible = false;
-  arrowF.visible = false;
-  elV.innerText = "--";
-  elF.innerText = "--";
-
-  // hero 연출 상태 초기화
-  heroPathCurve = null;
-  heroS = 0;
-  heroLastPos = null;
-  poleDirWorld = null;
-  basisU = null; basisW = null;
-  spiralTheta = 0;
-  spiralRadius = 6.5;
-  spiralHeight = SPIRAL_START_HEIGHT;
-
-  resetCamera();
-}
-
-function resetCamera(){
-  camera.position.set(-20, 40, 60);
-  camera.lookAt(-40, 0, 0);
-  if(controls){
-    controls.enabled = false;
-    controls.autoRotate = false;
-  }
-}
-
-function setupOrbitCamera(){
-  const endPos = new THREE.Vector3(10, 15, 20);
-  const startPos = camera.position.clone();
-  let f=0;
-  const interval = setInterval(()=>{
-    f++; const t=f/100;
-    camera.position.lerpVectors(startPos, endPos, t);
-    if(f>=100){
-      clearInterval(interval);
-      controls.enabled = true;
-      controls.autoRotate = true;
-    }
-  }, 16);
-}
-
-function createAurora() {
-  // 이미 있으면 제거 후 재생성
-  if (auroraGroup) {
-    earth.remove(auroraGroup);
-    auroraGroup = null;
-  }
-
-  auroraGroup = new THREE.Group();
-
-  // 머티리얼 2개 (두 겹 커튼)
-  auroraMatA = new THREE.ShaderMaterial({
-    uniforms: { time: { value: 0 } },
-    vertexShader: auroraCurtainVert,
-    fragmentShader: auroraCurtainFrag,
-    side: THREE.DoubleSide,
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending
-  });
-
-  auroraMatB = auroraMatA.clone();
-
-  // 지구 표면 반경에 맞춰 커튼 생성
-  // (너 지구 반경 EARTH_RADIUS=5에 맞춤)
-  auroraMesh1 = new THREE.Mesh(createAuroraGeometry(200, EARTH_RADIUS * 1.00, 1.5), auroraMatA);
-  auroraMesh2 = new THREE.Mesh(createAuroraGeometry(200, EARTH_RADIUS * 1.00, 1.8), auroraMatB);
-  auroraMesh2.rotation.y = Math.PI / 4;
-
-  auroraGroup.add(auroraMesh1);
-  auroraGroup.add(auroraMesh2);
-
-  // 지구에 붙임 (자전/기울기와 함께 회전)
-  earth.add(auroraGroup);
-}
-
-
-function onWindowResize(){
-  camera.aspect = window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}
-
-// ==========================================
-//  HERO 나선 운동: poleDirWorld 주변으로
-// ==========================================
-function ensureSpiralBasis(){
-  // poleDirWorld에 수직인 두 벡터 basisU, basisW 생성 (직교정규)
-  const tmp = Math.abs(poleDirWorld.y) < 0.9 ? new THREE.Vector3(0,1,0) : new THREE.Vector3(1,0,0);
-  basisU = new THREE.Vector3().crossVectors(poleDirWorld, tmp).normalize();
-  basisW = new THREE.Vector3().crossVectors(poleDirWorld, basisU).normalize();
-}
-
-// ==========================================
-//  Animation Loop
-// ==========================================
-function animate(){
-  requestAnimationFrame(animate);
-  const dt = 1.0 * timeScale;
-
-  earth.rotation.y += 0.002 * dt;
-  sun.rotation.y += 0.001 * dt;
-
-  // 1) 더미 태양풍 업데이트 (그대로 유지)
-  for(let i=backgroundParticles.length-1;i>=0;i--){
-    const p = backgroundParticles[i];
-    const v = p.userData.velocity;
-
-    p.position.addScaledVector(v, dt);
-
-    const d = p.position.distanceTo(earth.position);
-    if(d < 25){
-      const repelDir = p.position.clone().sub(earth.position).normalize();
-      v.add(repelDir.multiplyScalar(0.15 * dt));
-      v.normalize().multiplyScalar(2.0);
+      // 회전시키고 싶으면, animate()에서 stars를 찾기 위해 전역으로 잡아도 됨
     }
 
-    p.userData.life -= dt;
-    if(p.userData.life <= 0 || p.position.x > 50){
-      scene.remove(p);
-      backgroundParticles.splice(i,1);
+
+    function createVectorArrows() {
+      arrowV = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0), 4, 0xffff00, 1, 0.5);
+      arrowF = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 4, 0xff0000, 1, 0.5);
+      arrowV.visible = false;
+      arrowF.visible = false;
+      scene.add(arrowV);
+      scene.add(arrowF);
     }
-  }
 
-  // 2) HERO 업데이트 (미끄럼틀 -> 나선하강)
-  if(heroParticle){
-    const hp = heroParticle;
+    // ==========================
+    //  태양풍 더미 입자 (유지)
+    // ==========================
+    function spawnBackgroundParticles() {
+      for (let i = 0; i < 50; i++) {
+        const mesh = new THREE.Mesh(
+          new THREE.SphereGeometry(0.2),
+          new THREE.MeshBasicMaterial({ color: 0x88ccff })
+        );
 
-    // 카메라 추적
-    const camOffset = new THREE.Vector3(10, 6, 22);
-    const targetCamPos = hp.position.clone().add(camOffset);
-    camera.position.lerp(targetCamPos, 0.02);
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        const r = SUN_RADIUS + 1;
+        mesh.position.set(
+          -DISTANCE + r * Math.sin(phi) * Math.cos(theta),
+          r * Math.sin(phi) * Math.sin(theta),
+          r * Math.cos(phi)
+        );
 
-    if(hp.userData.state === 'SLIDING'){
-      // 미끄럼틀을 타며, 오차 없이 경로에 "스냅"
-      heroS += heroSlideSpeed * dt;
-      if(heroS > 1) heroS = 1;
+        mesh.userData = {
+          velocity: new THREE.Vector3(
+            1.5 + Math.random(),
+            (Math.random() - 0.5) * 0.5,
+            (Math.random() - 0.5) * 0.5
+          ),
+          life: 300,
+          type: 'DUMMY'
+        };
 
-      const pos = heroPathCurve.getPointAt(heroS);
-      hp.position.copy(pos);
-
-      // 속도 추정: (현재-이전)/dt
-      const v = pos.clone().sub(heroLastPos).multiplyScalar(1/Math.max(1e-6, dt));
-      heroLastPos.copy(pos);
-
-      // B: 고정된 poleDirWorld로 단순화
-      const B = poleDirWorld.clone().normalize();
-      const F = new THREE.Vector3().crossVectors(v, B);
-
-      // 벡터 화살표
-      arrowV.visible = true;
-      arrowF.visible = true;
-      arrowV.position.copy(pos);
-      arrowF.position.copy(pos);
-
-      const vLen = v.length();
-      arrowV.setDirection(vLen > 1e-6 ? v.clone().normalize() : new THREE.Vector3(1,0,0));
-      arrowV.setLength(Math.min(6, 1.5 + vLen*1.2), 1, 0.5);
-
-      const fLen = F.length();
-      arrowF.setDirection(fLen > 1e-6 ? F.clone().normalize() : new THREE.Vector3(0,1,0));
-      arrowF.setLength(Math.min(5, 1.2 + fLen*0.8), 1, 0.5);
-
-      elV.innerText = vLen.toFixed(2) + " (arb.)";
-      elF.innerText = "v × B";
-
-      // 북극 입구 도착 → 나선하강으로 전환
-      if (heroS >= 1) {
-  hp.userData.state = 'SPIRAL';
-  elState.innerText = "TRACKING (북극 진입 → 나선 하강)";
-  timeScale = 0.35;
-
-  // 1) 기저 생성
-  ensureSpiralBasis();
-
-  // 2) 현재 위치를 기준으로 나선 상태를 "역산"해서 연속 연결
-  const rel = hp.position.clone().sub(earth.position);
-
-  // 축 방향 높이
-  spiralHeight = rel.dot(poleDirWorld);
-
-  // 축에 수직인(반경) 성분
-  const radialVec = rel.clone().sub(poleDirWorld.clone().multiplyScalar(spiralHeight));
-
-  // 반경 = 현재 반경으로 맞춤
-  spiralRadius = radialVec.length();
-  const computedRadius = radialVec.length();
-const MIN_SPIRAL_RADIUS = 4.5;   // ← 여기서 크기 조절
-
-spiralRadius = Math.max(computedRadius, MIN_SPIRAL_RADIUS);
-  if (spiralRadius < 1e-4) spiralRadius = 1e-4;
-
-  // 각도 theta를 basisU/basisW 성분으로 역산
-  const u = radialVec.dot(basisU);
-  const w = radialVec.dot(basisW);
-  spiralTheta = Math.atan2(w, u);
-
-  // 3) 속도 추정 튐 방지: 기준점 갱신
-  heroLastPos.copy(hp.position);
-}
-    }
-    else if(hp.userData.state === 'SPIRAL'){
-      // poleDirWorld 축 주변으로 회전 + 아래로 하강 + 반지름 감소
-      spiralTheta += spiralSpinRate * dt * 8.0;
-      spiralRadius = Math.max(0.8, spiralRadius - 0.012 * dt * 8.0);
-      spiralHeight = spiralHeight - spiralDescendRate * dt * 10.0;
-
-      const radial = basisU.clone().multiplyScalar(Math.cos(spiralTheta) * spiralRadius)
-        .add(basisW.clone().multiplyScalar(Math.sin(spiralTheta) * spiralRadius));
-
-      const pos = earth.position.clone()
-        .add(poleDirWorld.clone().multiplyScalar(spiralHeight))
-        .add(radial);
-
-      // 속도(추정)
-      const v = pos.clone().sub(heroLastPos).multiplyScalar(1/Math.max(1e-6, dt));
-      heroLastPos.copy(pos);
-
-      hp.position.copy(pos);
-
-      // Lorentz 방향 시각화
-      const B = poleDirWorld.clone().normalize();
-      const F = new THREE.Vector3().crossVectors(v, B);
-
-      arrowV.visible = true;
-      arrowF.visible = true;
-      arrowV.position.copy(pos);
-      arrowF.position.copy(pos);
-
-      const vLen = v.length();
-      arrowV.setDirection(vLen > 1e-6 ? v.clone().normalize() : new THREE.Vector3(1,0,0));
-      arrowV.setLength(Math.min(6, 1.5 + vLen*1.0), 1, 0.5);
-
-      const fLen = F.length();
-      arrowF.setDirection(fLen > 1e-6 ? F.clone().normalize() : new THREE.Vector3(0,1,0));
-      arrowF.setLength(Math.min(5, 1.2 + fLen*0.8), 1, 0.5);
-
-      elV.innerText = vLen.toFixed(2) + " (arb.)";
-      elF.innerText = "v × B";
-
-      // "대기권 도착" 판정: 지표면 근처(북극 상공)로 내려오면 오로라
-      const distToCenter = pos.distanceTo(earth.position);
-      if(distToCenter <= EARTH_RADIUS + 1.5){
-        scene.remove(heroParticle);
-        heroParticle = null;
-        arrowV.visible = false;
-        arrowF.visible = false;
-
-        createAurora();
-        simulationState = 'AURORA';
-        elState.innerText = "AURORA (오로라 발생)";
-
-        timeScale = 1.0;
-        setupOrbitCamera();
+        backgroundParticles.push(mesh);
+        scene.add(mesh);
       }
     }
-  }
 
-// 3) 오로라 커튼 애니메이션
-if (auroraGroup && auroraMatA && auroraMatB && auroraMesh1 && auroraMesh2) {
-  // 시간
-  auroraMatA.uniforms.time.value += 0.02;
-  auroraMatB.uniforms.time.value = auroraMatA.uniforms.time.value + 10.0;
+    // =====================================
+    //  HERO: "미끄럼틀" 경로 생성 + 강제이동
+    // =====================================
+    function spawnHeroParticle() {
+      heroParticle = new THREE.Mesh(
+        new THREE.SphereGeometry(0.5),
+        new THREE.MeshBasicMaterial({ color: 0x00ffff })
+      );
 
-  // 커튼 회전 (지구 자전에 더해 약간씩 흐르는 느낌)
-  auroraMesh1.rotation.y -= 0.001;
-  auroraMesh2.rotation.y -= 0.0012;
-}
+      // 1) 출발 위치: 태양 정면 + 위/아래/옆 오프셋
+      const startOffsetY = (Math.random() - 0.5) * 18;  // 위아래
+      const startOffsetZ = (Math.random() - 0.5) * 18;  // 좌우
+      const start = new THREE.Vector3(
+        -DISTANCE + SUN_RADIUS + 2,
+        startOffsetY,
+        startOffsetZ
+      );
+      heroParticle.position.copy(start);
 
-if (controls) {
-  if (heroParticle) {
-    controls.target.lerp(heroParticle.position, 0.06);
-  } else {
-    controls.target.lerp(earth.position, 0.06);
-  }
-  controls.update();
-}
+      // 2) 지구 자기축(단순화) 방향을 "그 순간"의 월드 방향으로 고정
+      //    (지구가 계속 자전해도, hero 경로는 고정된 연출 경로로 유지)
+      poleDirWorld = new THREE.Vector3(0, 1, 0).applyQuaternion(earth.quaternion).normalize();
+      spiralHeight = SPIRAL_START_HEIGHT;
 
-renderer.render(scene, camera);
-}
+      // 3) 북극 입구(상공) 목표점: 지구 중심 + poleDir * 높이
+      const northEntry = earth.position.clone().add(poleDirWorld.clone().multiplyScalar(spiralHeight));
 
-init();
-</script>
+      // 4) 스플라인 제어점(미끄럼틀):
+      //    태양(시작) -> (중간) -> (지구 근처) -> 북극 입구
+      const mid1 = start.clone().lerp(earth.position, 0.35).add(new THREE.Vector3(0, startOffsetY * 0.35, startOffsetZ * 0.25));
+      const nearEarth = earth.position.clone()
+        .add(new THREE.Vector3(-35, 8, 12)) // 지구 앞쪽(태양쪽)에서 살짝 위/옆으로 진입
+        .add(poleDirWorld.clone().multiplyScalar(3.0)); // 북극쪽으로 약간 편향
+
+      const mid2 = nearEarth.clone().lerp(northEntry, 0.55).add(new THREE.Vector3(8, 10, -6));
+
+      heroPathCurve = new THREE.CatmullRomCurve3([start, mid1, nearEarth, mid2, northEntry], false, 'catmullrom', 0.5);
+
+      // (디버그로 보고 싶으면 true로 바꾸고 opacity 올려서 선을 추가해도 됨)
+      // addDebugCurve(heroPathCurve);
+
+      heroS = 0;
+      heroSlideSpeed = 0.006; // 미끄럼틀 속도
+      heroLastPos = start.clone();
+
+      heroParticle.userData = {
+        state: 'SLIDING', // SLIDING -> SPIRAL
+      };
+
+      scene.add(heroParticle);
+
+      // 카메라/시간 연출
+      timeScale = 1.0;
+    }
+
+    // (선택) 디버그용 경로 표시
+    function addDebugCurve(curve) {
+      const pts = curve.getPoints(120);
+      const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      const mat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 });
+      const line = new THREE.Line(geo, mat);
+      scene.add(line);
+    }
+
+    function startSimulation() {
+      if (simulationState !== 'IDLE') return;
+
+      simulationState = 'WIND_BLOWING';
+      elState.innerText = "SOLAR WIND (태양풍 발생)";
+      btnFire.disabled = true;
+
+      windInterval = setInterval(() => {
+        if (simulationState === 'IDLE') { clearInterval(windInterval); windInterval = null; return; }
+        spawnBackgroundParticles();
+      }, 100);
+
+      heroTimeout = setTimeout(() => {
+        if (simulationState === 'IDLE') return;
+
+        spawnHeroParticle();
+        simulationState = 'TRACKING';
+        elState.innerText = "TRACKING (미끄럼틀 → 북극 진입)";
+        elState.style.color = "#00FFD1";
+
+        if (windInterval) { clearInterval(windInterval); windInterval = null; }
+      }, 2000);
+    }
+
+    function resetSimulation() {
+      simulationState = 'IDLE';
+      elState.innerText = "READY";
+      elState.style.color = "#b0c4de";
+      btnFire.disabled = false;
+      timeScale = 1.0;
+      if (windInterval) { clearInterval(windInterval); windInterval = null; }
+      if (heroTimeout) { clearTimeout(heroTimeout); heroTimeout = null; }
+
+      backgroundParticles.forEach(p => scene.remove(p));
+      backgroundParticles = [];
+
+      if (heroParticle) { scene.remove(heroParticle); heroParticle = null; }
+      if (auroraGroup) { earth.remove(auroraGroup); auroraGroup = null; }
+      auroraMesh1 = auroraMesh2 = null;
+      auroraMatA = auroraMatB = null;
+      arrowV.visible = false;
+      arrowF.visible = false;
+      elV.innerText = "--";
+      elF.innerText = "--";
+
+      // hero 연출 상태 초기화
+      heroPathCurve = null;
+      heroS = 0;
+      heroLastPos = null;
+      poleDirWorld = null;
+      basisU = null; basisW = null;
+      spiralTheta = 0;
+      spiralRadius = 6.5;
+      spiralHeight = SPIRAL_START_HEIGHT;
+
+      resetCamera();
+    }
+
+    function resetCamera() {
+      // 초기 카메라 위치 설정
+      camera.position.set(-20, 40, 60);
+      camera.lookAt(0, 0, 0); // 지구 중심을 바라봄
+
+      if (controls) {
+        // [수정됨] 시작 전에도 자유롭게 돌려볼 수 있도록 true로 변경
+        controls.enabled = true;
+
+        // 타겟을 지구 중심으로 초기화
+        if (earth) controls.target.copy(earth.position);
+
+        controls.autoRotate = false;
+        controls.update();
+      }
+    }
+
+    function setupOrbitCamera() {
+      const endPos = new THREE.Vector3(10, 15, 20);
+      const startPos = camera.position.clone();
+      let f = 0;
+      const interval = setInterval(() => {
+        f++; const t = f / 100;
+        camera.position.lerpVectors(startPos, endPos, t);
+        if (f >= 100) {
+          clearInterval(interval);
+          controls.enabled = true;
+          controls.autoRotate = true;
+        }
+      }, 16);
+    }
+
+    function createAurora() {
+      // 이미 있으면 제거 후 재생성
+      if (auroraGroup) {
+        earth.remove(auroraGroup);
+        auroraGroup = null;
+      }
+
+      auroraGroup = new THREE.Group();
+
+      // 머티리얼 2개 (두 겹 커튼)
+      auroraMatA = new THREE.ShaderMaterial({
+        uniforms: { time: { value: 0 } },
+        vertexShader: auroraCurtainVert,
+        fragmentShader: auroraCurtainFrag,
+        side: THREE.DoubleSide,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+
+      auroraMatB = auroraMatA.clone();
+
+      // 지구 표면 반경에 맞춰 커튼 생성
+      // (너 지구 반경 EARTH_RADIUS=5에 맞춤)
+      auroraMesh1 = new THREE.Mesh(createAuroraGeometry(200, EARTH_RADIUS * 1.00, 1.5), auroraMatA);
+      auroraMesh2 = new THREE.Mesh(createAuroraGeometry(200, EARTH_RADIUS * 1.00, 1.8), auroraMatB);
+      auroraMesh2.rotation.y = Math.PI / 4;
+
+      auroraGroup.add(auroraMesh1);
+      auroraGroup.add(auroraMesh2);
+
+      // 지구에 붙임 (자전/기울기와 함께 회전)
+      earth.add(auroraGroup);
+    }
+
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // ==========================================
+    //  HERO 나선 운동: poleDirWorld 주변으로
+    // ==========================================
+    function ensureSpiralBasis() {
+      // poleDirWorld에 수직인 두 벡터 basisU, basisW 생성 (직교정규)
+      const tmp = Math.abs(poleDirWorld.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+      basisU = new THREE.Vector3().crossVectors(poleDirWorld, tmp).normalize();
+      basisW = new THREE.Vector3().crossVectors(poleDirWorld, basisU).normalize();
+    }
+
+    // ==========================================
+    //  Animation Loop
+    // ==========================================
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = 1.0 * timeScale;
+
+      earth.rotation.y += 0.002 * dt;
+      sun.rotation.y += 0.001 * dt;
+
+      // 1) 더미 태양풍 업데이트 (그대로 유지)
+      for (let i = backgroundParticles.length - 1; i >= 0; i--) {
+        const p = backgroundParticles[i];
+        const v = p.userData.velocity;
+
+        p.position.addScaledVector(v, dt);
+
+        const d = p.position.distanceTo(earth.position);
+        if (d < 25) {
+          const repelDir = p.position.clone().sub(earth.position).normalize();
+          v.add(repelDir.multiplyScalar(0.15 * dt));
+          v.normalize().multiplyScalar(2.0);
+        }
+
+        p.userData.life -= dt;
+        if (p.userData.life <= 0 || p.position.x > 50) {
+          scene.remove(p);
+          backgroundParticles.splice(i, 1);
+        }
+      }
+
+      // 2) HERO 업데이트 (미끄럼틀 -> 나선하강)
+      if (heroParticle) {
+        const hp = heroParticle;
+
+        // 카메라 추적
+        const camOffset = new THREE.Vector3(10, 6, 22);
+        const targetCamPos = hp.position.clone().add(camOffset);
+        camera.position.lerp(targetCamPos, 0.02);
+
+        if (hp.userData.state === 'SLIDING') {
+          // 미끄럼틀을 타며, 오차 없이 경로에 "스냅"
+          heroS += heroSlideSpeed * dt;
+          if (heroS > 1) heroS = 1;
+
+          const pos = heroPathCurve.getPointAt(heroS);
+          hp.position.copy(pos);
+
+          // 속도 추정: (현재-이전)/dt
+          const v = pos.clone().sub(heroLastPos).multiplyScalar(1 / Math.max(1e-6, dt));
+          heroLastPos.copy(pos);
+
+          // B: 고정된 poleDirWorld로 단순화
+          const B = poleDirWorld.clone().normalize();
+          const F = new THREE.Vector3().crossVectors(v, B);
+
+          // 벡터 화살표
+          arrowV.visible = true;
+          arrowF.visible = true;
+          arrowV.position.copy(pos);
+          arrowF.position.copy(pos);
+
+          const vLen = v.length();
+          arrowV.setDirection(vLen > 1e-6 ? v.clone().normalize() : new THREE.Vector3(1, 0, 0));
+          arrowV.setLength(Math.min(6, 1.5 + vLen * 1.2), 1, 0.5);
+
+          const fLen = F.length();
+          arrowF.setDirection(fLen > 1e-6 ? F.clone().normalize() : new THREE.Vector3(0, 1, 0));
+          arrowF.setLength(Math.min(5, 1.2 + fLen * 0.8), 1, 0.5);
+
+          elV.innerText = vLen.toFixed(2) + " (arb.)";
+          elF.innerText = "v × B";
+
+          // 북극 입구 도착 → 나선하강으로 전환
+          if (heroS >= 1) {
+            hp.userData.state = 'SPIRAL';
+            elState.innerText = "TRACKING (북극 진입 → 나선 하강)";
+            timeScale = 0.35;
+
+            // 1) 기저 생성
+            ensureSpiralBasis();
+
+            // 2) 현재 위치를 기준으로 나선 상태를 "역산"해서 연속 연결
+            const rel = hp.position.clone().sub(earth.position);
+
+            // 축 방향 높이
+            spiralHeight = rel.dot(poleDirWorld);
+
+            // 축에 수직인(반경) 성분
+            const radialVec = rel.clone().sub(poleDirWorld.clone().multiplyScalar(spiralHeight));
+
+            // 반경 = 현재 반경으로 맞춤
+            spiralRadius = radialVec.length();
+            const computedRadius = radialVec.length();
+            const MIN_SPIRAL_RADIUS = 4.5;   // ← 여기서 크기 조절
+
+            spiralRadius = Math.max(computedRadius, MIN_SPIRAL_RADIUS);
+            if (spiralRadius < 1e-4) spiralRadius = 1e-4;
+
+            // 각도 theta를 basisU/basisW 성분으로 역산
+            const u = radialVec.dot(basisU);
+            const w = radialVec.dot(basisW);
+            spiralTheta = Math.atan2(w, u);
+
+            // 3) 속도 추정 튐 방지: 기준점 갱신
+            heroLastPos.copy(hp.position);
+          }
+        }
+        else if (hp.userData.state === 'SPIRAL') {
+          // poleDirWorld 축 주변으로 회전 + 아래로 하강 + 반지름 감소
+          spiralTheta += spiralSpinRate * dt * 8.0;
+          spiralRadius = Math.max(0.8, spiralRadius - 0.012 * dt * 8.0);
+          spiralHeight = spiralHeight - spiralDescendRate * dt * 10.0;
+
+          const radial = basisU.clone().multiplyScalar(Math.cos(spiralTheta) * spiralRadius)
+            .add(basisW.clone().multiplyScalar(Math.sin(spiralTheta) * spiralRadius));
+
+          const pos = earth.position.clone()
+            .add(poleDirWorld.clone().multiplyScalar(spiralHeight))
+            .add(radial);
+
+          // 속도(추정)
+          const v = pos.clone().sub(heroLastPos).multiplyScalar(1 / Math.max(1e-6, dt));
+          heroLastPos.copy(pos);
+
+          hp.position.copy(pos);
+
+          // Lorentz 방향 시각화
+          const B = poleDirWorld.clone().normalize();
+          const F = new THREE.Vector3().crossVectors(v, B);
+
+          arrowV.visible = true;
+          arrowF.visible = true;
+          arrowV.position.copy(pos);
+          arrowF.position.copy(pos);
+
+          const vLen = v.length();
+          arrowV.setDirection(vLen > 1e-6 ? v.clone().normalize() : new THREE.Vector3(1, 0, 0));
+          arrowV.setLength(Math.min(6, 1.5 + vLen * 1.0), 1, 0.5);
+
+          const fLen = F.length();
+          arrowF.setDirection(fLen > 1e-6 ? F.clone().normalize() : new THREE.Vector3(0, 1, 0));
+          arrowF.setLength(Math.min(5, 1.2 + fLen * 0.8), 1, 0.5);
+
+          elV.innerText = vLen.toFixed(2) + " (arb.)";
+          elF.innerText = "v × B";
+
+          // "대기권 도착" 판정: 지표면 근처(북극 상공)로 내려오면 오로라
+          const distToCenter = pos.distanceTo(earth.position);
+          if (distToCenter <= EARTH_RADIUS + 1.5) {
+            scene.remove(heroParticle);
+            heroParticle = null;
+            arrowV.visible = false;
+            arrowF.visible = false;
+
+            createAurora();
+            simulationState = 'AURORA';
+            elState.innerText = "AURORA (오로라 발생)";
+
+            timeScale = 1.0;
+            setupOrbitCamera();
+          }
+        }
+      }
+
+      // 3) 오로라 커튼 애니메이션
+      if (auroraGroup && auroraMatA && auroraMatB && auroraMesh1 && auroraMesh2) {
+        // 시간
+        auroraMatA.uniforms.time.value += 0.02;
+        auroraMatB.uniforms.time.value = auroraMatA.uniforms.time.value + 10.0;
+
+        // 커튼 회전 (지구 자전에 더해 약간씩 흐르는 느낌)
+        auroraMesh1.rotation.y -= 0.001;
+        auroraMesh2.rotation.y -= 0.0012;
+      }
+
+      if (controls) {
+        if (heroParticle) {
+          controls.target.lerp(heroParticle.position, 0.06);
+        } else {
+          controls.target.lerp(earth.position, 0.06);
+        }
+        controls.update();
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    init();
+  </script>
 </body>
+
 </html>

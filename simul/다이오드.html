@@ -1,62 +1,143 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>PN 다이오드</title>
   <style>
-    :root{--bg:#0f1115;--panel:#171a22;--text:#e7ebf3;--muted:#9aa3b2;--accent:#5bb0ff}
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,Apple SD Gothic Neo,sans-serif; overscroll-behavior: none;}
-    
+    :root {
+      --bg: #0f1115;
+      --panel: #171a22;
+      --text: #e7ebf3;
+      --muted: #9aa3b2;
+      --accent: #5bb0ff
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Apple SD Gothic Neo, sans-serif;
+      overscroll-behavior: none;
+    }
+
     /* 기본 데스크탑 레이아웃 (좌우 배치) */
-    .wrap{display:flex;height:100%}
-    aside{width:320px;padding:16px;background:var(--panel);border-right:1px solid #222634; overflow-y: auto;}
-    h1{font-size:18px;margin:0 0 10px}
-    label{display:block;color:var(--muted);margin:12px 0 6px}
-    select,input[type=range]{width:100%;padding:10px 12px;background:#0e1118;color:var(--text);border:1px solid #2a2f3d;border-radius:12px}
-    
-    .view{flex:1;display:block;min-width:0}
-    #canvasRoot{position:relative;width:100%;height:100vh;min-height:520px} /* 데스크탑 최소 높이 유지 */
-    
-    .hint{color:var(--muted);font-size:12px}
-    .row{display:flex;gap:8px;align-items:center}
-    .value{min-width:64px;text-align:right;color:var(--accent)}
+    .wrap {
+      display: flex;
+      height: 100%
+    }
+
+    aside {
+      width: 320px;
+      padding: 16px;
+      background: var(--panel);
+      border-right: 1px solid #222634;
+      overflow-y: auto;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0 0 10px
+    }
+
+    label {
+      display: block;
+      color: var(--muted);
+      margin: 12px 0 6px
+    }
+
+    select,
+    input[type=range] {
+      width: 100%;
+      padding: 10px 12px;
+      background: #0e1118;
+      color: var(--text);
+      border: 1px solid #2a2f3d;
+      border-radius: 12px
+    }
+
+    .view {
+      flex: 1;
+      display: block;
+      min-width: 0
+    }
+
+    #canvasRoot {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      min-height: 520px
+    }
+
+    /* 데스크탑 최소 높이 유지 */
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center
+    }
+
+    .value {
+      min-width: 64px;
+      text-align: right;
+      color: var(--accent)
+    }
 
     /* =========================================
        ★ 모바일 최적화 (Split View) CSS 추가 ★
        ========================================= */
     @media (max-width: 768px) {
+
       /* 전체 레이아웃: 세로 배치 (역순: 캔버스가 위로 가도록) */
       .wrap {
-        flex-direction: column-reverse; 
+        flex-direction: column-reverse;
       }
 
       /* 1. 상단: 캔버스 영역 (45%) */
       .view {
         flex: none;
         width: 100%;
-        height: 45vh; /* 화면 높이의 45% */
+        height: 45vh;
+        /* 화면 높이의 45% */
         border-bottom: 1px solid #222634;
       }
+
       /* 캔버스 컨테이너: CSS 높이에 꽉 차게 */
       #canvasRoot {
         height: 100% !important;
-        min-height: 0 !important; /* 최소 높이 제한 해제 */
+        min-height: 0 !important;
+        /* 최소 높이 제한 해제 */
       }
 
       /* 2. 하단: 조작 패널 (55%) */
       aside {
         width: 100%;
-        height: 55vh; /* 나머지 높이 */
+        height: 55vh;
+        /* 나머지 높이 */
         border-right: none;
         border-top: 1px solid #222634;
-        padding-bottom: 40px; /* 하단 여백 */
+        padding-bottom: 40px;
+        /* 하단 여백 */
       }
     }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <aside>
@@ -76,147 +157,149 @@
       <div class="hint">상태를 고른 뒤 슬라이더로 미세 조절하세요.</div>
     </aside>
 
-    <main class="view"><div id="canvasRoot"></div></main>
+    <main class="view">
+      <div id="canvasRoot"></div>
+    </main>
   </div>
 
   <script src="./libs/p5.min.js"></script>
   <script>
-    const root   = document.getElementById('canvasRoot');
-    const modeSel= document.getElementById('mode');
-    const vol    = document.getElementById('vol');
+    const root = document.getElementById('canvasRoot');
+    const modeSel = document.getElementById('mode');
+    const vol = document.getElementById('vol');
     const volVal = document.getElementById('volVal');
 
     // 상태 파라미터 (기존 로직 유지)
     const STATES = {
-      eq:  { dep:0.34, bend:1.00, efSplit:0.00, flow:0 },
-      rev: { dep:0.52, bend:1.45, efSplit:-0.22, flow:0 },
-      fwd: { dep:0.18, bend:0.35, efSplit:+0.22, flow:1 }
+      eq: { dep: 0.34, bend: 1.00, efSplit: 0.00, flow: 0 },
+      rev: { dep: 0.52, bend: 1.45, efSplit: -0.22, flow: 0 },
+      fwd: { dep: 0.18, bend: 0.35, efSplit: +0.22, flow: 1 }
     };
 
-    const st = { key:'eq', dep:0.34, bend:1.00, efSplit:0, flow:0, V:0, Vmax:1.5, label:'열적 평형' };
+    const st = { key: 'eq', dep: 0.34, bend: 1.00, efSplit: 0, flow: 0, V: 0, Vmax: 1.5, label: '열적 평형' };
 
-    modeSel.addEventListener('change', ()=> setState(modeSel.value));
-    vol.addEventListener('input', ()=>{
-      st.V = parseFloat(vol.value)||0;
-      st.key = st.V>0? 'fwd' : st.V<0? 'rev' : 'eq';
+    modeSel.addEventListener('change', () => setState(modeSel.value));
+    vol.addEventListener('input', () => {
+      st.V = parseFloat(vol.value) || 0;
+      st.key = st.V > 0 ? 'fwd' : st.V < 0 ? 'rev' : 'eq';
       modeSel.value = st.key;
       updateVoltageUI();
     });
 
-    function setState(k){
+    function setState(k) {
       st.key = k;
-      st.V   = (k==='eq') ? 0 : (k==='rev' ? -0.9 : +0.9);
+      st.V = (k === 'eq') ? 0 : (k === 'rev' ? -0.9 : +0.9);
       modeSel.value = k;
       updateVoltageUI();
     }
-    function updateVoltageUI(){
-      if(vol)    vol.value = st.V.toFixed(2);
-      if(volVal) volVal.textContent = `${(+st.V).toFixed(2)} V`;
+    function updateVoltageUI() {
+      if (vol) vol.value = st.V.toFixed(2);
+      if (volVal) volVal.textContent = `${(+st.V).toFixed(2)} V`;
     }
 
-    new p5((p)=>{
-      let W=960, H=640;
+    new p5((p) => {
+      let W = 960, H = 640;
 
       // ===== 캐리어(전자/정공) =====
-      const electrons=[]; // {x,y,vx,vy}
-      const holes=[];
+      const electrons = []; // {x,y,vx,vy}
+      const holes = [];
 
-      function resetCarriers(x0,x1,y0,h){
-        electrons.length=0; holes.length=0;
-        const mid=(x0+x1)/2;
-        for(let i=0;i<60;i++){ 
+      function resetCarriers(x0, x1, y0, h) {
+        electrons.length = 0; holes.length = 0;
+        const mid = (x0 + x1) / 2;
+        for (let i = 0; i < 60; i++) {
           electrons.push({
-            x:p.random(mid+10,x1-12),
-            y:p.random(y0+8,y0+h-8),
-            vx:p.random(-30,30),
-            vy:p.random(-30,30)
+            x: p.random(mid + 10, x1 - 12),
+            y: p.random(y0 + 8, y0 + h - 8),
+            vx: p.random(-30, 30),
+            vy: p.random(-30, 30)
           });
           holes.push({
-            x:p.random(x0+12,mid-10),
-            y:p.random(y0+8,y0+h-8),
-            vx:p.random(-30,30),
-            vy:p.random(-30,30)
+            x: p.random(x0 + 12, mid - 10),
+            y: p.random(y0 + 8, y0 + h - 8),
+            vx: p.random(-30, 30),
+            vy: p.random(-30, 30)
           });
         }
       }
 
-      function updateCarriers(dt, x0,x1,y0,h){
-        const mid=(x0+x1)/2;
-        const sign = Math.sign(st.V||0);
-        const ax = 30*sign;
+      function updateCarriers(dt, x0, x1, y0, h) {
+        const mid = (x0 + x1) / 2;
+        const sign = Math.sign(st.V || 0);
+        const ax = 30 * sign;
 
-        electrons.forEach(pt=>{
-          pt.vx += (-ax)*dt;                 
-          pt.vy += p.random(-20,20)*dt;      
-          pt.vy *= 0.9;                      
-          pt.x  += pt.vx*dt;
-          pt.y  += pt.vy*dt;
+        electrons.forEach(pt => {
+          pt.vx += (-ax) * dt;
+          pt.vy += p.random(-20, 20) * dt;
+          pt.vy *= 0.9;
+          pt.x += pt.vx * dt;
+          pt.y += pt.vy * dt;
 
-          if(sign>0 && pt.x < mid){
-            pt.x = x1 - 12; pt.y = p.random(y0+8,y0+h-8);
-            pt.vx = p.random(-30,30); pt.vy = p.random(-30,30);
+          if (sign > 0 && pt.x < mid) {
+            pt.x = x1 - 12; pt.y = p.random(y0 + 8, y0 + h - 8);
+            pt.vx = p.random(-30, 30); pt.vy = p.random(-30, 30);
           }
-          if(sign<0 && pt.x > x1-8){
-            pt.x = p.random(mid+10, x1-12);
-            pt.vx = p.random(-30,30); pt.vy = p.random(-30,30);
+          if (sign < 0 && pt.x > x1 - 8) {
+            pt.x = p.random(mid + 10, x1 - 12);
+            pt.vx = p.random(-30, 30); pt.vy = p.random(-30, 30);
           }
 
-          pt.x = p.constrain(pt.x, x0+6, x1-6);
-          pt.y = p.constrain(pt.y, y0+6, y0+h-6);
+          pt.x = p.constrain(pt.x, x0 + 6, x1 - 6);
+          pt.y = p.constrain(pt.y, y0 + 6, y0 + h - 6);
         });
 
-        holes.forEach(pt=>{
-          pt.vx += (+ax)*dt;                 
-          pt.vy += p.random(-20,20)*dt;
+        holes.forEach(pt => {
+          pt.vx += (+ax) * dt;
+          pt.vy += p.random(-20, 20) * dt;
           pt.vy *= 0.9;
-          pt.x  += pt.vx*dt;
-          pt.y  += pt.vy*dt;
+          pt.x += pt.vx * dt;
+          pt.y += pt.vy * dt;
 
-          if(sign>0 && pt.x > mid){
-            pt.x = x0 + 12; pt.y = p.random(y0+8,y0+h-8);
-            pt.vx = p.random(-30,30); pt.vy = p.random(-30,30);
+          if (sign > 0 && pt.x > mid) {
+            pt.x = x0 + 12; pt.y = p.random(y0 + 8, y0 + h - 8);
+            pt.vx = p.random(-30, 30); pt.vy = p.random(-30, 30);
           }
-          if(sign<0 && pt.x < x0+8){
-            pt.x = p.random(x0+12, mid-10);
-            pt.vx = p.random(-30,30); pt.vy = p.random(-30,30);
+          if (sign < 0 && pt.x < x0 + 8) {
+            pt.x = p.random(x0 + 12, mid - 10);
+            pt.vx = p.random(-30, 30); pt.vy = p.random(-30, 30);
           }
 
-          pt.x = p.constrain(pt.x, x0+6, x1-6);
-          pt.y = p.constrain(pt.y, y0+6, y0+h-6);
+          pt.x = p.constrain(pt.x, x0 + 6, x1 - 6);
+          pt.y = p.constrain(pt.y, y0 + 6, y0 + h - 6);
         });
       }
 
-      function drawCarriers(x0,x1,y0,h){
-        const mid=(x0+x1)/2;
+      function drawCarriers(x0, x1, y0, h) {
+        const mid = (x0 + x1) / 2;
 
-        electrons.forEach(e=>{
+        electrons.forEach(e => {
           const isP = e.x < mid;
           p.noStroke();
-          p.fill(isP ? p.color(255,120,120) : p.color(120,160,255));
-          p.circle(e.x,e.y,4);
+          p.fill(isP ? p.color(255, 120, 120) : p.color(120, 160, 255));
+          p.circle(e.x, e.y, 4);
         });
 
-        holes.forEach(o=>{
+        holes.forEach(o => {
           const isP = o.x < mid;
           p.noFill();
-          p.stroke(isP ? p.color(255,120,120) : p.color(120,160,255));
-          p.circle(o.x,o.y,4);
+          p.stroke(isP ? p.color(255, 120, 120) : p.color(120, 160, 255));
+          p.circle(o.x, o.y, 4);
         });
 
         p.noStroke(); p.fill(200); p.textSize(12);
-        if(st.V>0.02){
-          p.text('전자 →', x1-90, y0+14);
-          p.text('← 정공', x0+24, y0+14);
-        } else if(st.V<-0.02){
-          p.text('전자 → (멀어짐)', x1-150, y0+14);
-          p.text('정공 ← (멀어짐)', x0+24, y0+14);
+        if (st.V > 0.02) {
+          p.text('전자 →', x1 - 90, y0 + 14);
+          p.text('← 정공', x0 + 24, y0 + 14);
+        } else if (st.V < -0.02) {
+          p.text('전자 → (멀어짐)', x1 - 150, y0 + 14);
+          p.text('정공 ← (멀어짐)', x0 + 24, y0 + 14);
         }
       }
 
-      function easeTo(){
+      function easeTo() {
         const s = Math.max(-1, Math.min(1, st.V / st.Vmax));
         let target;
-        if (s>0){
+        if (s > 0) {
           target = {
             dep: p.lerp(STATES.eq.dep, STATES.fwd.dep, s),
             bend: p.lerp(STATES.eq.bend, STATES.fwd.bend, s),
@@ -224,7 +307,7 @@
             flow: p.lerp(STATES.eq.flow, STATES.fwd.flow, s)
           };
           st.label = '정방향 바이어스';
-        } else if (s<0){
+        } else if (s < 0) {
           const u = -s;
           target = {
             dep: p.lerp(STATES.eq.dep, STATES.rev.dep, u),
@@ -237,177 +320,178 @@
           target = STATES.eq;
           st.label = '열적 평형';
         }
-        const k=0.1;
-        st.dep += (target.dep-st.dep)*k;
-        st.bend += (target.bend-st.bend)*k;
-        st.efSplit += (target.efSplit-st.efSplit)*k;
-        st.flow += (target.flow-st.flow)*k;
+        const k = 0.1;
+        st.dep += (target.dep - st.dep) * k;
+        st.bend += (target.bend - st.bend) * k;
+        st.efSplit += (target.efSplit - st.efSplit) * k;
+        st.flow += (target.flow - st.flow) * k;
       }
 
-      function drawDevice(x0,x1,y0,h){
-        const mid=(x0+x1)/2;
-        const full=x1-x0;
+      function drawDevice(x0, x1, y0, h) {
+        const mid = (x0 + x1) / 2;
+        const full = x1 - x0;
         const w = st.dep * full * 0.8;
-        const left=mid - w/2, right=mid + w/2;
+        const left = mid - w / 2, right = mid + w / 2;
 
-        p.noStroke(); p.fill(200); p.rect(x0, y0, (full/2)-w*0.2, h, 6); 
-        p.fill(130); p.rect(x1-(full/2)+w*0.2, y0, (full/2)-w*0.2, h, 6); 
+        p.noStroke(); p.fill(200); p.rect(x0, y0, (full / 2) - w * 0.2, h, 6);
+        p.fill(130); p.rect(x1 - (full / 2) + w * 0.2, y0, (full / 2) - w * 0.2, h, 6);
 
-        p.noStroke(); p.fill(30,30,34,180);
-        p.rect(x0+10,y0+10,26,18,4); p.rect(x1-36,y0+10,26,18,4);
-        p.fill(235); p.textAlign(p.CENTER,p.CENTER); p.textSize(12);
-        p.text('p', x0+23, y0+19); p.text('n', x1-23, y0+19);
+        p.noStroke(); p.fill(30, 30, 34, 180);
+        p.rect(x0 + 10, y0 + 10, 26, 18, 4); p.rect(x1 - 36, y0 + 10, 26, 18, 4);
+        p.fill(235); p.textAlign(p.CENTER, p.CENTER); p.textSize(12);
+        p.text('p', x0 + 23, y0 + 19); p.text('n', x1 - 23, y0 + 19);
 
-        p.noStroke(); p.fill(207,232,255); p.rect(left, y0, w, h, 4);
+        p.noStroke(); p.fill(207, 232, 255); p.rect(left, y0, w, h, 4);
 
         p.stroke(170); p.strokeWeight(1.5);
-        p.drawingContext.setLineDash([6,5]); p.line(left, y0, left, y0+h); p.line(right, y0, right, y0+h);
+        p.drawingContext.setLineDash([6, 5]); p.line(left, y0, left, y0 + h); p.line(right, y0, right, y0 + h);
         p.drawingContext.setLineDash([]);
 
-        p.stroke(207,232,255); p.strokeWeight(2);
-        p.line(left, y0-10, right, y0-10);
-        p.line(left, y0-14, left, y0-6);
-        p.line(right, y0-14, right, y0-6);
-        p.noStroke(); p.fill(220); p.textSize(12); p.textAlign(p.CENTER,p.BOTTOM);
-        p.text('공핍층 폭 W', mid, y0-14);
+        p.stroke(207, 232, 255); p.strokeWeight(2);
+        p.line(left, y0 - 10, right, y0 - 10);
+        p.line(left, y0 - 14, left, y0 - 6);
+        p.line(right, y0 - 14, right, y0 - 6);
+        p.noStroke(); p.fill(220); p.textSize(12); p.textAlign(p.CENTER, p.BOTTOM);
+        p.text('공핍층 폭 W', mid, y0 - 14);
 
         p.stroke(200); p.strokeWeight(2.2);
         const ey = y0 + h + 22;
-        p.line(mid+40, ey, mid-40, ey);
-        p.line(mid-40, ey, mid-34, ey-5);
-        p.line(mid-40, ey, mid-34, ey+5);
-        p.noStroke(); p.fill(200); p.textSize(12); p.textAlign(p.LEFT,p.BASELINE);
-        p.text('전기장 E', mid-52, ey-8);
+        p.line(mid + 40, ey, mid - 40, ey);
+        p.line(mid - 40, ey, mid - 34, ey - 5);
+        p.line(mid - 40, ey, mid - 34, ey + 5);
+        p.noStroke(); p.fill(200); p.textSize(12); p.textAlign(p.LEFT, p.BASELINE);
+        p.text('전기장 E', mid - 52, ey - 8);
 
-        const by=y0-28; const bl=mid-70, br=mid+70;
+        const by = y0 - 28; const bl = mid - 70, br = mid + 70;
         p.stroke(200); p.strokeWeight(2);
-        p.line(bl-8, by, bl+8, by); if(st.label==='정방향 바이어스'){ p.line(bl, by-7, bl, by+7); }
-        p.line(br-8, by, br+8, by); if(st.label==='역방향 바이어스'){ p.line(br, by-7, br, by+7); }
+        p.line(bl - 8, by, bl + 8, by); if (st.label === '정방향 바이어스') { p.line(bl, by - 7, bl, by + 7); }
+        p.line(br - 8, by, br + 8, by); if (st.label === '역방향 바이어스') { p.line(br, by - 7, br, by + 7); }
 
-        p.noStroke(); p.fill(220); p.textAlign(p.CENTER,p.BOTTOM); p.textSize(16);
-        p.text(st.label, mid, y0-40);
+        p.noStroke(); p.fill(220); p.textAlign(p.CENTER, p.BOTTOM); p.textSize(16);
+        p.text(st.label, mid, y0 - 40);
       }
 
-      function drawBands(x0,x1,y0,h){
-        const midx=(x0+x1)/2;
-        const W=(x1-x0);
-        const depWpx = st.dep*W*0.8;
-        const L=midx-depWpx/2, R=midx+depWpx/2;
+      function drawBands(x0, x1, y0, h) {
+        const midx = (x0 + x1) / 2;
+        const W = (x1 - x0);
+        const depWpx = st.dep * W * 0.8;
+        const L = midx - depWpx / 2, R = midx + depWpx / 2;
 
-        const EcFlat = y0 + h*0.28;
+        const EcFlat = y0 + h * 0.28;
         const Eg = 120;
         const EvFlat = EcFlat + Eg;
 
-        const curve=(x)=>{
-          if(x<=L) return 0.5;
-          if(x>=R) return -0.5;
-          const u=(x-L)/(R-L);            
-          return 0.5 + (-1)*(3*u*u - 2*u*u*u);  
+        const curve = (x) => {
+          if (x <= L) return 0.5;
+          if (x >= R) return -0.5;
+          const u = (x - L) / (R - L);
+          return 0.5 + (-1) * (3 * u * u - 2 * u * u * u);
         };
         const amp = -80 * st.bend;
 
         p.noFill(); p.stroke(235); p.strokeWeight(2.5);
-        p.beginShape(); for(let i=0;i<=140;i++){ const xx=p.lerp(x0,x1,i/140); p.vertex(xx, EcFlat + amp*curve(xx)); } p.endShape();
-        p.beginShape(); for(let i=0;i<=140;i++){ const xx=p.lerp(x0,x1,i/140); p.vertex(xx, EvFlat + amp*curve(xx)); } p.endShape();
+        p.beginShape(); for (let i = 0; i <= 140; i++) { const xx = p.lerp(x0, x1, i / 140); p.vertex(xx, EcFlat + amp * curve(xx)); } p.endShape();
+        p.beginShape(); for (let i = 0; i <= 140; i++) { const xx = p.lerp(x0, x1, i / 140); p.vertex(xx, EvFlat + amp * curve(xx)); } p.endShape();
 
         p.noStroke(); p.fill(210); p.textSize(12);
-        p.text('전도띠 Ec', x1-90, EcFlat-16);
-        p.text('원자가띠 Ev', x1-96, EvFlat+10);
+        p.text('전도띠 Ec', x1 - 90, EcFlat - 16);
+        p.text('원자가띠 Ev', x1 - 96, EvFlat + 10);
 
-        const EfL = y0 + h*0.52 + st.efSplit*80;
-        const EfR = y0 + h*0.52 - st.efSplit*80;
-        p.stroke(255,110,110); p.strokeWeight(2);
-        p.drawingContext.setLineDash([7,6]);
+        const EfL = y0 + h * 0.52 + st.efSplit * 80;
+        const EfR = y0 + h * 0.52 - st.efSplit * 80;
+        p.stroke(255, 110, 110); p.strokeWeight(2);
+        p.drawingContext.setLineDash([7, 6]);
         p.line(x0, EfL, midx, EfL); p.line(midx, EfR, x1, EfR);
         p.drawingContext.setLineDash([]);
 
-        p.noStroke(); p.fill(255,140,140);
-        p.text('페르미 준위 E_F', x1-140, ((EfL+EfR)/2)-10);
+        p.noStroke(); p.fill(255, 140, 140);
+        p.text('페르미 준위 E_F', x1 - 140, ((EfL + EfR) / 2) - 10);
 
-        const aY = (EfL+EfR)/2;
-        const aMag = Math.abs(st.efSplit)*80;
-        if(aMag>2){
-          p.stroke(255,110,110); p.strokeWeight(2);
-          p.line(x1-36, aY-aMag, x1-36, aY+aMag);
-          p.line(x1-36, aY-aMag, x1-40, aY-aMag+6);
-          p.line(x1-36, aY-aMag, x1-32, aY-aMag+6);
-          p.line(x1-36, aY+aMag, x1-40, aY+aMag-6);
-          p.line(x1-36, aY+aMag, x1-32, aY+aMag-6);
-          p.noStroke(); p.fill(255,140,140);
-          p.text(st.label==='역방향 바이어스'? 'eV_R' : st.label==='정방향 바이어스'? 'eV_a' : '', x1-30, aY-6);
+        const aY = (EfL + EfR) / 2;
+        const aMag = Math.abs(st.efSplit) * 80;
+        if (aMag > 2) {
+          p.stroke(255, 110, 110); p.strokeWeight(2);
+          p.line(x1 - 36, aY - aMag, x1 - 36, aY + aMag);
+          p.line(x1 - 36, aY - aMag, x1 - 40, aY - aMag + 6);
+          p.line(x1 - 36, aY - aMag, x1 - 32, aY - aMag + 6);
+          p.line(x1 - 36, aY + aMag, x1 - 40, aY + aMag - 6);
+          p.line(x1 - 36, aY + aMag, x1 - 32, aY + aMag - 6);
+          p.noStroke(); p.fill(255, 140, 140);
+          p.text(st.label === '역방향 바이어스' ? 'eV_R' : st.label === '정방향 바이어스' ? 'eV_a' : '', x1 - 30, aY - 6);
         }
 
         p.stroke(170); p.strokeWeight(1.5);
-        p.drawingContext.setLineDash([6,5]); p.line(L, y0, L, y0+h); p.line(R, y0, R, y0+h);
+        p.drawingContext.setLineDash([6, 5]); p.line(L, y0, L, y0 + h); p.line(R, y0, R, y0 + h);
         p.drawingContext.setLineDash([]);
 
-        p.noStroke(); p.fill(220); p.text('공핍층 영역', midx-36, y0+h-8);
+        p.noStroke(); p.fill(220); p.text('공핍층 영역', midx - 36, y0 + h - 8);
 
-        if(st.flow>0.01){
+        if (st.flow > 0.01) {
           p.stroke(220); p.strokeWeight(2);
-          const yC = EcFlat - 12 + amp*curve(midx)*0.1;
-          const yV = EvFlat + 12 + amp*curve(midx)*0.1;
-          for(let i=0;i<3;i++){
-            const px = p.lerp(x1-80, x0+80, ((p.frameCount*0.01 + i/3)%1));
-            p.line(px+10,yC, px-10,yC);
-            p.line(px-10,yC, px-6,yC-4);
-            p.line(px-10,yC, px-6,yC+4);
+          const yC = EcFlat - 12 + amp * curve(midx) * 0.1;
+          const yV = EvFlat + 12 + amp * curve(midx) * 0.1;
+          for (let i = 0; i < 3; i++) {
+            const px = p.lerp(x1 - 80, x0 + 80, ((p.frameCount * 0.01 + i / 3) % 1));
+            p.line(px + 10, yC, px - 10, yC);
+            p.line(px - 10, yC, px - 6, yC - 4);
+            p.line(px - 10, yC, px - 6, yC + 4);
           }
-          for(let i=0;i<3;i++){
-            const px = p.lerp(x0+80, x1-80, ((p.frameCount*0.01 + i/3)%1));
-            p.line(px-10,yV, px+10,yV);
-            p.line(px+10,yV, px+6,yV-4);
-            p.line(px+10,yV, px+6,yV+4);
+          for (let i = 0; i < 3; i++) {
+            const px = p.lerp(x0 + 80, x1 - 80, ((p.frameCount * 0.01 + i / 3) % 1));
+            p.line(px - 10, yV, px + 10, yV);
+            p.line(px + 10, yV, px + 6, yV - 4);
+            p.line(px + 10, yV, px + 6, yV + 4);
           }
           p.noStroke(); p.fill(200);
-          p.text('전자 흐름', x0+18, yC-14);
-          p.text('정공 흐름', x1-96, yV+6);
+          p.text('전자 흐름', x0 + 18, yC - 14);
+          p.text('정공 흐름', x1 - 96, yV + 6);
         }
       }
 
       // ===== p5 라이프사이클 =====
-      p.setup=()=>{
-        const box=root.getBoundingClientRect();
+      p.setup = () => {
+        const box = root.getBoundingClientRect();
         // ★ 수정됨: box.width/height가 있으면 그걸 우선 사용 (모바일에서 480/520 강제 적용 방지)
-        W=box.width || window.innerWidth;
-        H=box.height || window.innerHeight;
-        p.createCanvas(W,H).parent(root);
+        W = box.width || window.innerWidth;
+        H = box.height || window.innerHeight;
+        p.createCanvas(W, H).parent(root);
         p.textFont('system-ui');
         updateVoltageUI();
       };
 
-      p.windowResized=()=>{
-        const box=root.getBoundingClientRect();
+      p.windowResized = () => {
+        const box = root.getBoundingClientRect();
         // ★ 수정됨: 리사이즈 시에도 컨테이너 크기에 딱 맞춤
-        W=box.width || window.innerWidth;
-        H=box.height || window.innerHeight;
-        p.resizeCanvas(W,H);
+        W = box.width || window.innerWidth;
+        H = box.height || window.innerHeight;
+        p.resizeCanvas(W, H);
       };
 
-      p.draw=()=>{
-        p.background(14,17,24);
+      p.draw = () => {
+        p.background(14, 17, 24);
 
         easeTo();
 
-        const pad=50;
-        const x0=pad, x1=p.width-pad;
+        const pad = 50;
+        const x0 = pad, x1 = p.width - pad;
         // 높이 비율은 그대로 유지 (화면 높이에 따라 자동 조절됨)
-        const topH = p.height*0.44;
-        const botH = p.height*0.44;
+        const topH = p.height * 0.44;
+        const botH = p.height * 0.44;
 
-        if(electrons.length===0) resetCarriers(x0,x1, pad, topH-40);
+        if (electrons.length === 0) resetCarriers(x0, x1, pad, topH - 40);
 
-        updateCarriers(Math.min(0.033, p.deltaTime/1000), x0,x1, pad, topH-40);
+        updateCarriers(Math.min(0.033, p.deltaTime / 1000), x0, x1, pad, topH - 40);
 
-        drawDevice(x0,x1, pad, topH-40);
-        drawCarriers(x0,x1, pad, topH-40);
+        drawDevice(x0, x1, pad, topH - 40);
+        drawCarriers(x0, x1, pad, topH - 40);
 
-        drawBands(x0,x1, pad+topH, botH);
+        drawBands(x0, x1, pad + topH, botH);
 
-        p.noStroke(); p.fill(200); p.textAlign(p.RIGHT,p.TOP); p.textSize(12);
+        p.noStroke(); p.fill(200); p.textAlign(p.RIGHT, p.TOP); p.textSize(12);
         p.text(`V = ${st.V.toFixed(2)} V`, x1, 12);
       };
     });
   </script>
 </body>
+
 </html>

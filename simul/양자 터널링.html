@@ -1,590 +1,773 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
-    <title>Quantum & Semiconductor Lab (Symmetric View)</title>
+    <title>양자 터널링</title>
     <style>
-        :root { --cyan: #00f7ff; --red: #ff4d4d; --amber: #ffbf00; --bg: #0a0a0c; --panel-bg: #151518; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Pretendard', sans-serif; display: flex; height: 100vh; overflow: hidden; }
-        
-        #container { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; background: radial-gradient(circle at center, #1a1a20 0%, #000 100%); }
-        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        
-        .ui-panel { width: 350px; background: var(--panel-bg); padding: 25px; display: flex; flex-direction: column; gap: 18px; box-shadow: -10px 0 30px rgba(0,0,0,0.8); z-index: 10; transition: border-color 0.3s; border-left: 2px solid #333; }
-        
-        h2 { margin: 0; font-size: 1.2rem; padding-left: 12px; transition: 0.3s; border-left: 4px solid #555; }
-        h2.quantum { color: var(--cyan); border-color: var(--cyan); }
-        h2.leakage { color: var(--red); border-color: var(--red); }
-
-        .data-box { background: #1e1e22; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #333; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
-        .data-label { font-size: 0.8rem; color: #888; margin-bottom: 5px; }
-        .data-val { font-size: 1.8rem; font-family: 'Courier New', monospace; font-weight: bold; }
-        
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        button { padding: 12px; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 0.9rem; }
-        button:hover { filter: brightness(1.2); transform: translateY(-2px); }
-        .btn-mode { grid-column: span 2; background: #333; color: #fff; border: 1px solid #555; }
-        .btn-mode.active { background: var(--red); color: white; border-color: var(--red); box-shadow: 0 0 15px rgba(255, 77, 77, 0.4); }
-        .btn-action { background: var(--cyan); color: #000; }
-        
-        .controls { display: flex; flex-direction: column; gap: 15px; transition: opacity 0.3s; }
-        .control-row { display: flex; flex-direction: column; gap: 6px; }
-        .label-row { display: flex; justify-content: space-between; font-size: 0.85rem; color: #ccc; }
-        input[type=range] { width: 100%; accent-color: var(--cyan); cursor: pointer; }
-        
-        .mat-group { display: flex; gap: 5px; margin-top: 5px; }
-        .mat-btn { flex: 1; padding: 8px; background: #222; border: 1px solid #444; color: #aaa; border-radius: 4px; font-size: 0.8rem; }
-        .mat-btn.selected { background: var(--cyan); color: #000; font-weight: bold; border-color: var(--cyan); box-shadow: 0 0 10px rgba(0, 247, 255, 0.3); }
-
-        .hidden { display: none !important; }
-        .heat-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; mix-blend-mode: hard-light; transition: background 0.5s; z-index: 5; }
-        .guide-text { font-size: 0.75rem; color: #666; margin-top: auto; line-height: 1.4; border-top: 1px solid #333; padding-top: 10px; }
-
-/* ===== 모바일 최적화 (가로 폭 수정판) ===== */
-    @media (max-width: 768px) {
-        /* 전체 레이아웃: 세로 배치 */
-        body { 
-            flex-direction: column; 
-            overflow: hidden; /* 스크롤 방지 */
-        }
-        
-        /* 1. 상단 시뮬레이션 영역 (45%) */
-        #container { 
-            flex: none; 
-            width: 100%; /* 가로 꽉 채우기 */
-            height: 45vh; 
-            border-bottom: 2px solid #333;
-        }
-        
-        /* 2. 하단 조작 패널 (55%) */
-        .ui-panel { 
-            width: 100%;  /* 가로 꽉 채우기 */
-            height: 55vh; 
-            
-            /* ★ 핵심 수정: 여백이 너비에 포함되도록 설정 */
-            box-sizing: border-box; 
-            
-            /* 모바일에서는 여백을 조금 줄여서 공간 확보 */
-            padding: 15px; 
-            
-            border-left: none; 
-            overflow-y: auto;
-            padding-bottom: 40px;
+        :root {
+            --cyan: #00f7ff;
+            --red: #ff4d4d;
+            --amber: #ffbf00;
+            --bg: #0a0a0c;
+            --panel-bg: #151518;
         }
 
-        /* 모바일에서 버튼들이 너무 꽉 차 보이지 않게 조정 */
-        .btn-group { gap: 8px; }
-        button { padding: 10px; font-size: 0.85rem; }
-    }
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: #fff;
+            font-family: 'Pretendard', sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
 
+        #container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #1a1a20 0%, #000 100%);
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .ui-panel {
+            width: 350px;
+            background: var(--panel-bg);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            transition: border-color 0.3s;
+            border-left: 2px solid #333;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            padding-left: 12px;
+            transition: 0.3s;
+            border-left: 4px solid #555;
+        }
+
+        h2.quantum {
+            color: var(--cyan);
+            border-color: var(--cyan);
+        }
+
+        h2.leakage {
+            color: var(--red);
+            border-color: var(--red);
+        }
+
+        .data-box {
+            background: #1e1e22;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #333;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .data-label {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .data-val {
+            font-size: 1.8rem;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px;
+            border: none;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+
+        button:hover {
+            filter: brightness(1.2);
+            transform: translateY(-2px);
+        }
+
+        .btn-mode {
+            grid-column: span 2;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+        }
+
+        .btn-mode.active {
+            background: var(--red);
+            color: white;
+            border-color: var(--red);
+            box-shadow: 0 0 15px rgba(255, 77, 77, 0.4);
+        }
+
+        .btn-action {
+            background: var(--cyan);
+            color: #000;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            transition: opacity 0.3s;
+        }
+
+        .control-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #ccc;
+        }
+
+        input[type=range] {
+            width: 100%;
+            accent-color: var(--cyan);
+            cursor: pointer;
+        }
+
+        .mat-group {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .mat-btn {
+            flex: 1;
+            padding: 8px;
+            background: #222;
+            border: 1px solid #444;
+            color: #aaa;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .mat-btn.selected {
+            background: var(--cyan);
+            color: #000;
+            font-weight: bold;
+            border-color: var(--cyan);
+            box-shadow: 0 0 10px rgba(0, 247, 255, 0.3);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .heat-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            mix-blend-mode: hard-light;
+            transition: background 0.5s;
+            z-index: 5;
+        }
+
+        .guide-text {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: auto;
+            line-height: 1.4;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+        }
+
+        /* ===== 모바일 최적화 (가로 폭 수정판) ===== */
+        @media (max-width: 768px) {
+
+            /* 전체 레이아웃: 세로 배치 */
+            body {
+                flex-direction: column;
+                overflow: hidden;
+                /* 스크롤 방지 */
+            }
+
+            /* 1. 상단 시뮬레이션 영역 (45%) */
+            #container {
+                flex: none;
+                width: 100%;
+                /* 가로 꽉 채우기 */
+                height: 45vh;
+                border-bottom: 2px solid #333;
+            }
+
+            /* 2. 하단 조작 패널 (55%) */
+            .ui-panel {
+                width: 100%;
+                /* 가로 꽉 채우기 */
+                height: 55vh;
+
+                /* ★ 핵심 수정: 여백이 너비에 포함되도록 설정 */
+                box-sizing: border-box;
+
+                /* 모바일에서는 여백을 조금 줄여서 공간 확보 */
+                padding: 15px;
+
+                border-left: none;
+                overflow-y: auto;
+                padding-bottom: 40px;
+            }
+
+            /* 모바일에서 버튼들이 너무 꽉 차 보이지 않게 조정 */
+            .btn-group {
+                gap: 8px;
+            }
+
+            button {
+                padding: 10px;
+                font-size: 0.85rem;
+            }
+        }
     </style>
 </head>
+
 <body>
 
-<div id="container">
-    <div id="heatLayer" class="heat-overlay"></div>
-    <canvas id="qCanvas"></canvas> 
-    <canvas id="lCanvas" class="hidden"></canvas>
-    <div id="overlayText" style="position:absolute; bottom:20px; left:20px; color:rgba(255,255,255,0.3); font-size:0.8rem; pointer-events:none;">
-        * 장벽 드래그 가능 (두께/높이 조절)
-    </div>
-</div>
-
-<div class="ui-panel">
-    <h2 id="appTitle" class="quantum">Quantum Lab Mode</h2>
-
-    <div class="data-box">
-        <span id="dataLabel" class="data-label">투과 확률 (Transmission)</span>
-        <span id="dataVal" class="data-val" style="color:var(--cyan)">0.00 %</span>
-        <div id="warnMsg" style="color:var(--red); font-size:0.7rem; margin-top:5px; display:none;">⚠️ 누설 전류 과다 (발열 경고)</div>
-    </div>
-
-    <div class="btn-group">
-        <button id="modeBtn" class="btn-mode" onclick="toggleMode()">누설 전류 모드 (OFF)</button>
-        <button id="actionBtn" class="btn-action" onclick="triggerAction()">입자 발사</button>
-        <button style="background:#444; color:#ccc;" onclick="resetSim()">초기화</button>
-    </div>
-
-    <div id="ctrlQuantum" class="controls">
-        <div class="control-row">
-            <div class="label-row"><span>입자 에너지 (E - 진폭)</span><span id="txtE">5.0</span></div>
-            <input type="range" id="slE" min="0.1" max="12" step="0.1" value="5">
-        </div>
-        <div class="control-row">
-            <div class="label-row"><span>장벽 높이 (V - 높이)</span><span id="txtV_q">5.0</span></div>
-            <input type="range" id="slV_q" min="1" max="12" step="0.1" value="5">
-        </div>
-        <div class="control-row">
-            <div class="label-row"><span>장벽 두께 (W)</span><span id="txtW_q">40</span></div>
-            <input type="range" id="slW_q" min="10" max="200" value="40">
+    <div id="container">
+        <div id="heatLayer" class="heat-overlay"></div>
+        <canvas id="qCanvas"></canvas>
+        <canvas id="lCanvas" class="hidden"></canvas>
+        <div id="overlayText"
+            style="position:absolute; bottom:20px; left:20px; color:rgba(255,255,255,0.3); font-size:0.8rem; pointer-events:none;">
+            * 장벽 드래그 가능 (두께/높이 조절)
         </div>
     </div>
 
-    <div id="ctrlLeakage" class="controls hidden">
-        <div class="control-row">
-            <span class="label-row">절연막 소재 (Material)</span>
-            <div class="mat-group">
-                <button class="mat-btn selected" onclick="setMaterial('SiO2', 0.6)">SiO₂<br>(표준)</button>
-                <button class="mat-btn" onclick="setMaterial('SiN', 1.5)">SiN<br>(강화)</button>
-                <button class="mat-btn" onclick="setMaterial('High-K', 3.0)">HfO₂<br>(High-k)</button>
+    <div class="ui-panel">
+        <h2 id="appTitle" class="quantum">Quantum Lab Mode</h2>
+
+        <div class="data-box">
+            <span id="dataLabel" class="data-label">투과 확률 (Transmission)</span>
+            <span id="dataVal" class="data-val" style="color:var(--cyan)">0.00 %</span>
+            <div id="warnMsg" style="color:var(--red); font-size:0.7rem; margin-top:5px; display:none;">⚠️ 누설 전류 과다 (발열
+                경고)</div>
+        </div>
+
+        <div class="btn-group">
+            <button id="modeBtn" class="btn-mode" onclick="toggleMode()">누설 전류 모드 (OFF)</button>
+            <button id="actionBtn" class="btn-action" onclick="triggerAction()">입자 발사</button>
+            <button style="background:#444; color:#ccc;" onclick="resetSim()">초기화</button>
+        </div>
+
+        <div id="ctrlQuantum" class="controls">
+            <div class="control-row">
+                <div class="label-row"><span>입자 에너지 (E - 진폭)</span><span id="txtE">5.0</span></div>
+                <input type="range" id="slE" min="0.1" max="12" step="0.1" value="5">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>장벽 높이 (V - 높이)</span><span id="txtV_q">5.0</span></div>
+                <input type="range" id="slV_q" min="1" max="12" step="0.1" value="5">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>장벽 두께 (W)</span><span id="txtW_q">40</span></div>
+                <input type="range" id="slW_q" min="10" max="200" value="40">
             </div>
         </div>
-        <div class="control-row">
-            <div class="label-row"><span>절연막 두께 (Thickness)</span><span id="txtW_l">4.0 nm</span></div>
-            <input type="range" id="slW_l" min="5" max="100" value="40">
+
+        <div id="ctrlLeakage" class="controls hidden">
+            <div class="control-row">
+                <span class="label-row">절연막 소재 (Material)</span>
+                <div class="mat-group">
+                    <button class="mat-btn selected" onclick="setMaterial('SiO2', 0.6)">SiO₂<br>(표준)</button>
+                    <button class="mat-btn" onclick="setMaterial('SiN', 1.5)">SiN<br>(강화)</button>
+                    <button class="mat-btn" onclick="setMaterial('High-K', 3.0)">HfO₂<br>(High-k)</button>
+                </div>
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>절연막 두께 (Thickness)</span><span id="txtW_l">4.0 nm</span></div>
+                <input type="range" id="slW_l" min="5" max="100" value="40">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>인가 전압 (Voltage)</span><span id="txtV_l">1.2 V</span></div>
+                <input type="range" id="slV_l" min="0.5" max="5.0" step="0.1" value="1.2">
+            </div>
         </div>
-        <div class="control-row">
-            <div class="label-row"><span>인가 전압 (Voltage)</span><span id="txtV_l">1.2 V</span></div>
-            <input type="range" id="slV_l" min="0.5" max="5.0" step="0.1" value="1.2">
+
+        <div id="guideText" class="guide-text">
+            [가이드] E > V 이면 파동이 장벽보다 커져서 넘어갑니다.<br>상단: 에너지 다이어그램 / 하단: 확률 밀도
         </div>
     </div>
 
-    <div id="guideText" class="guide-text">
-        [가이드] E > V 이면 파동이 장벽보다 커져서 넘어갑니다.<br>상단: 에너지 다이어그램 / 하단: 확률 밀도
-    </div>
-</div>
+    <script>
+        // --- Constants ---
+        const C_CYAN = '#00f7ff';
+        const C_RED = '#ff4d4d';
+        const C_AMBER = '#ffbf00';
 
-<script>
-    // --- Constants ---
-    const C_CYAN = '#00f7ff';
-    const C_RED = '#ff4d4d';
-    const C_AMBER = '#ffbf00';
+        let mode = 'quantum';
+        let isDragging = false;
+        let audioCtx = null;
 
-    let mode = 'quantum';
-    let isDragging = false;
-    let audioCtx = null;
-    
-    // --- Canvas Setup ---
-    const qCanvas = document.getElementById('qCanvas');
-    const lCanvas = document.getElementById('lCanvas');
-    const ctxQ = qCanvas.getContext('2d');
-    const ctxL = lCanvas.getContext('2d');
-    const heatLayer = document.getElementById('heatLayer');
+        // --- Canvas Setup ---
+        const qCanvas = document.getElementById('qCanvas');
+        const lCanvas = document.getElementById('lCanvas');
+        const ctxQ = qCanvas.getContext('2d');
+        const ctxL = lCanvas.getContext('2d');
+        const heatLayer = document.getElementById('heatLayer');
 
-    let width = 0, height = 0;
-    
-    // Quantum Params
-    // scale: 시각적 크기 비율 (화면 크기에 따라 조정됨)
-    let qParams = { E: 5, V: 5, W: 40, bX: 0, gY: 0, scale: 30, currentT: 0 };
-    let qParticles = [];
-    
-    // Leakage Params
-    let lParams = { V: 1.2, W: 40, bX: 0, bY: 0, scale: 1 };
-    let lParticles = [];
-    let matFactor = 0.6;
-    let matName = 'SiO2';
-    
-    function init() {
-        resize();
-        window.addEventListener('resize', resize);
-        
-        // Initial setup
-        updateLayout();
-        
-        document.getElementById('slE').addEventListener('input', update);
-        document.getElementById('slV_q').addEventListener('input', update);
-        document.getElementById('slW_q').addEventListener('input', update);
-        document.getElementById('slW_l').addEventListener('input', update);
-        document.getElementById('slV_l').addEventListener('input', update);
+        let width = 0, height = 0;
 
-        window.addEventListener('mousedown', handleMouseDown);
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseup', () => isDragging = false);
+        // Quantum Params
+        // scale: 시각적 크기 비율 (화면 크기에 따라 조정됨)
+        let qParams = { E: 5, V: 5, W: 40, bX: 0, gY: 0, scale: 30, currentT: 0 };
+        let qParticles = [];
 
-        requestAnimationFrame(animate);
-    }
+        // Leakage Params
+        let lParams = { V: 1.2, W: 40, bX: 0, bY: 0, scale: 1 };
+        let lParticles = [];
+        let matFactor = 0.6;
+        let matName = 'SiO2';
 
-    function resize() {
-        if(!document.getElementById('container')) return;
-        width = document.getElementById('container').clientWidth;
-        height = document.getElementById('container').clientHeight;
-        qCanvas.width = lCanvas.width = width;
-        qCanvas.height = lCanvas.height = height;
-        updateLayout();
-    }
+        function init() {
+            resize();
+            window.addEventListener('resize', resize);
 
-    function updateLayout() {
-        qParams.bX = width * 0.4;
-        // [중요] 중심축을 화면 중앙으로 설정
-        qParams.gY = height * 0.5; 
-        lParams.bX = width / 2;
-        lParams.bY = height / 2;
-    }
+            // Initial setup
+            updateLayout();
 
-    function playSound(freq, type) {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        osc.type = type;
-        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-    }
+            document.getElementById('slE').addEventListener('input', update);
+            document.getElementById('slV_q').addEventListener('input', update);
+            document.getElementById('slW_q').addEventListener('input', update);
+            document.getElementById('slW_l').addEventListener('input', update);
+            document.getElementById('slV_l').addEventListener('input', update);
 
-    function update() {
-        if (mode === 'quantum') {
-            qParams.E = parseFloat(document.getElementById('slE').value);
-            qParams.V = parseFloat(document.getElementById('slV_q').value);
-            qParams.W = parseFloat(document.getElementById('slW_q').value);
-            
-            document.getElementById('txtE').innerText = qParams.E.toFixed(1);
-            document.getElementById('txtV_q').innerText = qParams.V.toFixed(1);
-            document.getElementById('txtW_q').innerText = qParams.W;
+            window.addEventListener('mousedown', handleMouseDown);
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', () => isDragging = false);
 
-            if (qParams.E >= qParams.V) {
-                qParams.currentT = 1.0;
+            requestAnimationFrame(animate);
+        }
+
+        function resize() {
+            if (!document.getElementById('container')) return;
+            width = document.getElementById('container').clientWidth;
+            height = document.getElementById('container').clientHeight;
+            qCanvas.width = lCanvas.width = width;
+            qCanvas.height = lCanvas.height = height;
+            updateLayout();
+        }
+
+        function updateLayout() {
+            qParams.bX = width * 0.4;
+            // [중요] 중심축을 화면 중앙으로 설정
+            qParams.gY = height * 0.5;
+            lParams.bX = width / 2;
+            lParams.bY = height / 2;
+        }
+
+        function playSound(freq, type) {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            osc.type = type;
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        function update() {
+            if (mode === 'quantum') {
+                qParams.E = parseFloat(document.getElementById('slE').value);
+                qParams.V = parseFloat(document.getElementById('slV_q').value);
+                qParams.W = parseFloat(document.getElementById('slW_q').value);
+
+                document.getElementById('txtE').innerText = qParams.E.toFixed(1);
+                document.getElementById('txtV_q').innerText = qParams.V.toFixed(1);
+                document.getElementById('txtW_q').innerText = qParams.W;
+
+                if (qParams.E >= qParams.V) {
+                    qParams.currentT = 1.0;
+                } else {
+                    const kappa = Math.sqrt(qParams.V - qParams.E) * 0.45;
+                    qParams.currentT = Math.exp(-2 * kappa * (qParams.W * 0.06));
+                }
+
+                document.getElementById('dataVal').innerText = (qParams.currentT * 100).toFixed(3) + " %";
+                document.getElementById('dataVal').style.color = C_CYAN;
+                heatLayer.style.background = 'transparent';
+
             } else {
-                const kappa = Math.sqrt(qParams.V - qParams.E) * 0.45;
-                qParams.currentT = Math.exp(-2 * kappa * (qParams.W * 0.06));
-            }
+                lParams.W = parseFloat(document.getElementById('slW_l').value);
+                lParams.V = parseFloat(document.getElementById('slV_l').value);
 
-            document.getElementById('dataVal').innerText = (qParams.currentT * 100).toFixed(3) + " %";
-            document.getElementById('dataVal').style.color = C_CYAN;
+                document.getElementById('txtW_l').innerText = (lParams.W / 10).toFixed(1) + " nm";
+                document.getElementById('txtV_l').innerText = lParams.V.toFixed(1) + " V";
+
+                const tunnelProb = Math.exp(- (lParams.W * 0.1) * matFactor / Math.sqrt(lParams.V));
+                lParams.currentT = tunnelProb;
+
+                const current = tunnelProb * 100 * lParams.V;
+                document.getElementById('dataVal').innerText = current.toFixed(2) + " nA";
+                document.getElementById('dataVal').style.color = C_RED;
+
+                const intensity = Math.min(0.8, current / 50);
+                heatLayer.style.background = `radial-gradient(circle, rgba(255, 50, 0, ${intensity}) 0%, transparent 70%)`;
+                document.getElementById('warnMsg').style.display = current > 20 ? 'block' : 'none';
+            }
+        }
+
+        function triggerAction() {
+            if (mode === 'quantum') {
+                let count = 0;
+                let timer = setInterval(() => {
+                    let success = Math.random() < qParams.currentT;
+                    // 입자도 중심축(0)에서 생성
+                    qParticles.push({ x: 50, yOffset: 0, success: success });
+                    if (success) playSound(880, 'sine'); else playSound(200, 'triangle');
+                    count++;
+                    if (count >= 30) clearInterval(timer);
+                }, 100);
+            } else {
+                for (let i = 0; i < 50; i++) lParticles.push(new VerticalParticle());
+            }
+        }
+
+        function toggleMode() {
+            mode = (mode === 'quantum') ? 'leakage' : 'quantum';
+            const btn = document.getElementById('modeBtn');
+            const title = document.getElementById('appTitle');
+            const label = document.getElementById('dataLabel');
+            const guide = document.getElementById('guideText');
+            const actionBtn = document.getElementById('actionBtn');
+
+            qParticles = []; lParticles = [];
             heatLayer.style.background = 'transparent';
 
-        } else {
-            lParams.W = parseFloat(document.getElementById('slW_l').value);
-            lParams.V = parseFloat(document.getElementById('slV_l').value);
+            if (mode === 'leakage') {
+                qCanvas.classList.add('hidden');
+                lCanvas.classList.remove('hidden');
+                document.getElementById('ctrlQuantum').classList.add('hidden');
+                document.getElementById('ctrlLeakage').classList.remove('hidden');
 
-            document.getElementById('txtW_l').innerText = (lParams.W / 10).toFixed(1) + " nm";
-            document.getElementById('txtV_l').innerText = lParams.V.toFixed(1) + " V";
+                btn.innerText = "양자 역학 모드 (돌아가기)";
+                btn.classList.add('active');
+                title.innerText = "Semiconductor Leakage Lab";
+                title.className = "leakage";
+                label.innerText = "누설 전류 (Leakage Current)";
+                actionBtn.innerText = "전자 주입 (Boost)";
+                guide.innerHTML = "[반도체 모드] SiO₂는 장벽이 얇을 때 전자가 쉽게 샙니다.<br>High-k 소재로 바꿔 누설 전류를 줄여보세요.";
 
-            const tunnelProb = Math.exp(- (lParams.W * 0.1) * matFactor / Math.sqrt(lParams.V));
-            lParams.currentT = tunnelProb;
+                for (let i = 0; i < 400; i++) lParticles.push(new VerticalParticle(true));
 
-            const current = tunnelProb * 100 * lParams.V;
-            document.getElementById('dataVal').innerText = current.toFixed(2) + " nA";
-            document.getElementById('dataVal').style.color = C_RED;
-            
-            const intensity = Math.min(0.8, current / 50);
-            heatLayer.style.background = `radial-gradient(circle, rgba(255, 50, 0, ${intensity}) 0%, transparent 70%)`;
-            document.getElementById('warnMsg').style.display = current > 20 ? 'block' : 'none';
-        }
-    }
-
-    function triggerAction() {
-        if (mode === 'quantum') {
-            let count = 0;
-            let timer = setInterval(() => {
-                let success = Math.random() < qParams.currentT;
-                // 입자도 중심축(0)에서 생성
-                qParticles.push({ x: 50, yOffset: 0, success: success });
-                if (success) playSound(880, 'sine'); else playSound(200, 'triangle');
-                count++;
-                if (count >= 30) clearInterval(timer);
-            }, 100);
-        } else {
-            for(let i=0; i<50; i++) lParticles.push(new VerticalParticle());
-        }
-    }
-
-    function toggleMode() {
-        mode = (mode === 'quantum') ? 'leakage' : 'quantum';
-        const btn = document.getElementById('modeBtn');
-        const title = document.getElementById('appTitle');
-        const label = document.getElementById('dataLabel');
-        const guide = document.getElementById('guideText');
-        const actionBtn = document.getElementById('actionBtn');
-
-        qParticles = []; lParticles = [];
-        heatLayer.style.background = 'transparent';
-
-        if (mode === 'leakage') {
-            qCanvas.classList.add('hidden');
-            lCanvas.classList.remove('hidden');
-            document.getElementById('ctrlQuantum').classList.add('hidden');
-            document.getElementById('ctrlLeakage').classList.remove('hidden');
-
-            btn.innerText = "양자 역학 모드 (돌아가기)";
-            btn.classList.add('active');
-            title.innerText = "Semiconductor Leakage Lab";
-            title.className = "leakage";
-            label.innerText = "누설 전류 (Leakage Current)";
-            actionBtn.innerText = "전자 주입 (Boost)";
-            guide.innerHTML = "[반도체 모드] SiO₂는 장벽이 얇을 때 전자가 쉽게 샙니다.<br>High-k 소재로 바꿔 누설 전류를 줄여보세요.";
-            
-            for(let i=0; i<400; i++) lParticles.push(new VerticalParticle(true));
-
-        } else {
-            qCanvas.classList.remove('hidden');
-            lCanvas.classList.add('hidden');
-            document.getElementById('ctrlQuantum').classList.remove('hidden');
-            document.getElementById('ctrlLeakage').classList.add('hidden');
-
-            btn.innerText = "누설 전류 모드 (전환)";
-            btn.classList.remove('active');
-            title.innerText = "Quantum Lab Mode";
-            title.className = "quantum";
-            label.innerText = "투과 확률 (Transmission)";
-            actionBtn.innerText = "입자 발사";
-            guide.innerHTML = "[양자 모드] 파동의 진폭(E)과 장벽의 높이(V)를 비교해보세요.";
-        }
-        update();
-    }
-
-    class VerticalParticle {
-        constructor(randomY = false) { this.reset(randomY); }
-        reset(randomY = false) {
-            this.x = width/2 - (Math.random() * 80 + 20);
-            this.y = randomY ? Math.random() * height : -10;
-            this.vy = Math.random() * 3 + 2;
-            this.vx = (Math.random() - 0.4) * 1.5; 
-            this.isLeaked = false;
-        }
-        update() {
-            this.y += this.vy;
-            this.x += this.vx;
-            const bHalfW = lParams.W / 2;
-            const barrierLeft = width/2 - bHalfW;
-            const barrierRight = width/2 + bHalfW;
-            
-            if (!this.isLeaked && this.x > barrierLeft - 5 && this.x < barrierRight && this.y > height*0.1 && this.y < height*0.9) {
-                if (Math.random() < lParams.currentT) {
-                    this.isLeaked = true;
-                    this.x = barrierRight + 5;
-                    this.vx = 1;
-                } else {
-                    this.x = barrierLeft - 5;
-                    this.vx = -1; 
-                }
-            }
-            if (this.y > height || this.x < 0 || this.x > width) this.reset();
-        }
-        draw() {
-            ctxL.beginPath();
-            ctxL.arc(this.x, this.y, this.isLeaked ? 3.5 : 2, 0, Math.PI*2);
-            if (this.isLeaked) {
-                ctxL.fillStyle = C_RED;
-                ctxL.shadowColor = C_RED;
-                ctxL.shadowBlur = 10;
             } else {
-                ctxL.fillStyle = C_CYAN;
-                ctxL.shadowColor = C_CYAN;
-                ctxL.shadowBlur = 4;
+                qCanvas.classList.remove('hidden');
+                lCanvas.classList.add('hidden');
+                document.getElementById('ctrlQuantum').classList.remove('hidden');
+                document.getElementById('ctrlLeakage').classList.add('hidden');
+
+                btn.innerText = "누설 전류 모드 (전환)";
+                btn.classList.remove('active');
+                title.innerText = "Quantum Lab Mode";
+                title.className = "quantum";
+                label.innerText = "투과 확률 (Transmission)";
+                actionBtn.innerText = "입자 발사";
+                guide.innerHTML = "[양자 모드] 파동의 진폭(E)과 장벽의 높이(V)를 비교해보세요.";
             }
-            ctxL.fill();
-            ctxL.shadowBlur = 0;
+            update();
         }
-    }
 
-    window.setMaterial = function(name, factor) {
-        matName = name;
-        matFactor = factor;
-        document.querySelectorAll('.mat-btn').forEach(b => {
-            if(b.innerText.includes(name)) b.classList.add('selected');
-            else b.classList.remove('selected');
-        });
-        update();
-    }
+        class VerticalParticle {
+            constructor(randomY = false) { this.reset(randomY); }
+            reset(randomY = false) {
+                this.x = width / 2 - (Math.random() * 80 + 20);
+                this.y = randomY ? Math.random() * height : -10;
+                this.vy = Math.random() * 3 + 2;
+                this.vx = (Math.random() - 0.4) * 1.5;
+                this.isLeaked = false;
+            }
+            update() {
+                this.y += this.vy;
+                this.x += this.vx;
+                const bHalfW = lParams.W / 2;
+                const barrierLeft = width / 2 - bHalfW;
+                const barrierRight = width / 2 + bHalfW;
 
-    function handleMouseDown(e) {
-        const mx = e.clientX;
-        const my = e.clientY;
-        if (mode === 'quantum') {
-            if (mx > qParams.bX && mx < qParams.bX + qParams.W) isDragging = true;
-        } else {
-            if (Math.abs(mx - width/2) < lParams.W/2 + 30) isDragging = true;
-        }
-    }
-
-    function handleMouseMove(e) {
-        if (!isDragging) return;
-        const mx = e.clientX;
-        const my = e.clientY;
-
-        if (mode === 'quantum') {
-            qParams.W = Math.max(10, Math.min(300, mx - qParams.bX));
-            // 장벽 높이 조절: 중심축(gY)에서 위아래로 벌어지는 방식이므로 거리 계산
-            const distY = Math.abs(my - qParams.gY);
-            // 스케일 보정: 절반 높이가 distY이므로 전체 높이는 2*distY
-            qParams.V = Math.max(1, Math.min(12, (2 * distY) / qParams.scale));
-            
-            document.getElementById('slW_q').value = qParams.W;
-            document.getElementById('slV_q').value = qParams.V;
-        } else {
-            let dist = Math.abs(mx - width/2);
-            lParams.W = Math.max(10, Math.min(300, dist * 2));
-            document.getElementById('slW_l').value = lParams.W;
-        }
-        update();
-    }
-
-    function resetSim() {
-        qParticles = [];
-        lParticles = [];
-        if (mode === 'leakage') {
-            for(let i=0; i<400; i++) lParticles.push(new VerticalParticle(true));
-        }
-    }
-
-    // --- Main Loop ---
-    function animate() {
-        if (mode === 'quantum') {
-            ctxQ.clearRect(0, 0, width, height);
-            const { bX, W, V, gY, scale, E } = qParams;
-            
-            // 중심축 (화면 중앙)
-            const centerY = gY;
-            
-            // --- 1. Top: Energy Diagram ---
-            // 에너지 다이어그램도 대칭형 컨셉에 맞게 텍스트만 표시
-            ctxQ.fillStyle = '#aaa';
-            ctxQ.font = '12px Arial';
-            ctxQ.fillText("Energy Diagram (Top)", 20, 30);
-            
-            // Diagram drawing (Miniaturized top-left)
-            const diaY = 60; 
-            const diaH = 40;
-            // Draw Axes
-            ctxQ.strokeStyle = '#555';
-            ctxQ.beginPath(); ctxQ.moveTo(20, diaY + diaH); ctxQ.lineTo(150, diaY + diaH); ctxQ.stroke();
-            // Draw Barrier
-            ctxQ.fillStyle = 'rgba(255, 77, 77, 0.5)';
-            const diaV = (V / 12) * diaH;
-            ctxQ.fillRect(70, diaY + diaH - diaV, 30, diaV);
-            // Draw Energy
-            ctxQ.strokeStyle = C_CYAN;
-            const diaE = (E / 12) * diaH;
-            ctxQ.beginPath(); ctxQ.moveTo(20, diaY + diaH - diaE); ctxQ.lineTo(150, diaY + diaH - diaE); ctxQ.stroke();
-
-
-            // --- 2. Middle: Wave Function & Barrier ---
-            
-            // [Barrier]
-            // 중심(centerY)에서 위아래로 V만큼 펼쳐짐 (Total Height = V * scale)
-            const barrierHalfHeight = (V * scale) / 2;
-            
-            ctxQ.fillStyle = isDragging ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)';
-            ctxQ.fillRect(bX, centerY - barrierHalfHeight, W, V * scale);
-            
-            ctxQ.strokeStyle = C_CYAN;
-            ctxQ.lineWidth = 2;
-            ctxQ.strokeRect(bX, centerY - barrierHalfHeight, W, V * scale);
-            
-            // [Center Guide Line]
-            ctxQ.strokeStyle = 'rgba(255,255,255,0.1)';
-            ctxQ.setLineDash([5,5]);
-            ctxQ.beginPath(); ctxQ.moveTo(0, centerY); ctxQ.lineTo(width, centerY); ctxQ.stroke();
-            ctxQ.setLineDash([]);
-            
-            // [Labels]
-            ctxQ.fillStyle = '#aaa';
-            ctxQ.fillText(`Wave Amplitude (E) = ${E.toFixed(1)}`, 20, centerY - 10);
-            ctxQ.fillText(`Barrier Height (V) = ${V.toFixed(1)}`, bX, centerY - barrierHalfHeight - 10);
-
-            // [Wave Function]
-            ctxQ.beginPath();
-            ctxQ.strokeStyle = C_CYAN;
-            ctxQ.shadowColor = C_CYAN;
-            ctxQ.shadowBlur = 10;
-            ctxQ.lineWidth = 2;
-
-            let time = Date.now() * 0.005;
-            let path = [];
-            for(let x=0; x<width; x+=3) {
-                // [핵심] E = 5 이면 전체 높이가 5*scale이 되도록 진폭 설정
-                // Total Height = 2 * Amplitude = E * scale
-                // -> Amplitude = (E * scale) / 2
-                let baseAmp = (E * scale) / 2; 
-                
-                let currentAmp = baseAmp;
-                
-                // Tunneling / Decay Logic
-                if (E < V) {
-                    let kappa = Math.sqrt(V - E) * 0.45;
-                    if (x >= bX && x <= bX + W) currentAmp *= Math.exp(-kappa * (x - bX) * 0.18);
-                    else if (x > bX + W) currentAmp *= Math.exp(-kappa * W * 0.18);
+                if (!this.isLeaked && this.x > barrierLeft - 5 && this.x < barrierRight && this.y > height * 0.1 && this.y < height * 0.9) {
+                    if (Math.random() < lParams.currentT) {
+                        this.isLeaked = true;
+                        this.x = barrierRight + 5;
+                        this.vx = 1;
+                    } else {
+                        this.x = barrierLeft - 5;
+                        this.vx = -1;
+                    }
                 }
-                
-                let wave = Math.sin(x * 0.15 - time * 3) * currentAmp;
-                path.push({x: x, amp: currentAmp, wave: wave});
-                
-                if (x===0) ctxQ.moveTo(x, centerY + wave); else ctxQ.lineTo(x, centerY + wave);
+                if (this.y > height || this.x < 0 || this.x > width) this.reset();
             }
-            ctxQ.stroke();
-            ctxQ.shadowBlur = 0;
-
-            // Particles
-            qParticles.forEach(p => {
-                p.x += 6;
-                // Collision Logic: if E < V, bounce
-                if (!p.success && p.x >= bX - 5 && p.x <= bX + W) p.x = bX - 8;
-                
-                ctxQ.beginPath(); ctxQ.arc(p.x, centerY, 5, 0, Math.PI*2);
-                ctxQ.fillStyle = p.success ? C_CYAN : C_AMBER;
-                ctxQ.shadowColor = ctxQ.fillStyle;
-                ctxQ.shadowBlur = 8;
-                ctxQ.fill();
-                ctxQ.shadowBlur = 0;
-            });
-            qParticles = qParticles.filter(p => p.x < width);
-
-            // --- 3. Bottom: Probability Density (|ψ|²) ---
-            const botY = height * 0.9;
-            ctxQ.beginPath();
-            ctxQ.fillStyle = 'rgba(0, 247, 255, 0.15)';
-            ctxQ.moveTo(0, botY);
-            for(let p of path) {
-                // Prob density scale
-                let prob = (p.amp * p.amp) / 50; 
-                ctxQ.lineTo(p.x, botY - prob);
+            draw() {
+                ctxL.beginPath();
+                ctxL.arc(this.x, this.y, this.isLeaked ? 3.5 : 2, 0, Math.PI * 2);
+                if (this.isLeaked) {
+                    ctxL.fillStyle = C_RED;
+                    ctxL.shadowColor = C_RED;
+                    ctxL.shadowBlur = 10;
+                } else {
+                    ctxL.fillStyle = C_CYAN;
+                    ctxL.shadowColor = C_CYAN;
+                    ctxL.shadowBlur = 4;
+                }
+                ctxL.fill();
+                ctxL.shadowBlur = 0;
             }
-            ctxQ.lineTo(width, botY);
-            ctxQ.fill();
-            ctxQ.fillStyle = '#aaa';
-            ctxQ.fillText("Probability Density (|ψ|²)", 20, botY + 10);
-
-        } else {
-            // Vertical Mode (No Change)
-            ctxL.clearRect(0, 0, width, height);
-            const bW = lParams.W;
-            const bH = height * 0.8;
-            
-            let matColor = matName === 'High-K' ? 'rgba(150, 255, 100, 0.15)' : 'rgba(255, 255, 255, 0.1)';
-            ctxL.fillStyle = matColor;
-            ctxL.fillRect(width/2 - bW/2, height/2 - bH/2, bW, bH);
-            ctxL.strokeStyle = isDragging ? '#fff' : C_RED;
-            ctxL.lineWidth = 2;
-            ctxL.strokeRect(width/2 - bW/2, height/2 - bH/2, bW, bH);
-            
-            ctxL.fillStyle = 'rgba(255,255,255,0.5)';
-            ctxL.font = '12px Arial';
-            ctxL.textAlign = 'center';
-            ctxL.fillText(`${matName}`, width/2, height/2 - 10);
-            ctxL.fillText(`${(lParams.W/10).toFixed(1)}nm`, width/2, height/2 + 10);
-            
-            if (lParticles.length < 300) lParticles.push(new VerticalParticle());
-            lParticles.forEach(p => { p.update(); p.draw(); });
-            lParticles = lParticles.filter(p => p.y < height);
         }
-        requestAnimationFrame(animate);
-    }
 
-    init();
+        window.setMaterial = function (name, factor) {
+            matName = name;
+            matFactor = factor;
+            document.querySelectorAll('.mat-btn').forEach(b => {
+                if (b.innerText.includes(name)) b.classList.add('selected');
+                else b.classList.remove('selected');
+            });
+            update();
+        }
 
-// ===== 모바일 터치 지원 추가 =====
-    const cnt = document.getElementById('container');
+        function handleMouseDown(e) {
+            const mx = e.clientX;
+            const my = e.clientY;
+            if (mode === 'quantum') {
+                if (mx > qParams.bX && mx < qParams.bX + qParams.W) isDragging = true;
+            } else {
+                if (Math.abs(mx - width / 2) < lParams.W / 2 + 30) isDragging = true;
+            }
+        }
 
-    // 터치 시작 -> 마우스 클릭처럼 처리
-    cnt.addEventListener('touchstart', (e) => {
-        const t = e.touches[0];
-        handleMouseDown({ clientX: t.clientX, clientY: t.clientY });
-    }, {passive: false});
+        function handleMouseMove(e) {
+            if (!isDragging) return;
+            const mx = e.clientX;
+            const my = e.clientY;
 
-    // 터치 이동 -> 마우스 이동처럼 처리 (드래그 중에는 화면 스크롤 막기)
-    cnt.addEventListener('touchmove', (e) => {
-        if(isDragging) e.preventDefault(); 
-        const t = e.touches[0];
-        handleMouseMove({ clientX: t.clientX, clientY: t.clientY });
-    }, {passive: false});
+            if (mode === 'quantum') {
+                qParams.W = Math.max(10, Math.min(300, mx - qParams.bX));
+                // 장벽 높이 조절: 중심축(gY)에서 위아래로 벌어지는 방식이므로 거리 계산
+                const distY = Math.abs(my - qParams.gY);
+                // 스케일 보정: 절반 높이가 distY이므로 전체 높이는 2*distY
+                qParams.V = Math.max(1, Math.min(12, (2 * distY) / qParams.scale));
 
-    // 터치 끝 -> 드래그 종료
-    cnt.addEventListener('touchend', () => {
-        isDragging = false;
-    });
+                document.getElementById('slW_q').value = qParams.W;
+                document.getElementById('slV_q').value = qParams.V;
+            } else {
+                let dist = Math.abs(mx - width / 2);
+                lParams.W = Math.max(10, Math.min(300, dist * 2));
+                document.getElementById('slW_l').value = lParams.W;
+            }
+            update();
+        }
 
-</script>
+        function resetSim() {
+            qParticles = [];
+            lParticles = [];
+            if (mode === 'leakage') {
+                for (let i = 0; i < 400; i++) lParticles.push(new VerticalParticle(true));
+            }
+        }
+
+        // --- Main Loop ---
+        function animate() {
+            if (mode === 'quantum') {
+                ctxQ.clearRect(0, 0, width, height);
+                const { bX, W, V, gY, scale, E } = qParams;
+
+                // 중심축 (화면 중앙)
+                const centerY = gY;
+
+                // --- 1. Top: Energy Diagram ---
+                // 에너지 다이어그램도 대칭형 컨셉에 맞게 텍스트만 표시
+                ctxQ.fillStyle = '#aaa';
+                ctxQ.font = '12px Arial';
+                ctxQ.fillText("Energy Diagram (Top)", 20, 30);
+
+                // Diagram drawing (Miniaturized top-left)
+                const diaY = 60;
+                const diaH = 40;
+                // Draw Axes
+                ctxQ.strokeStyle = '#555';
+                ctxQ.beginPath(); ctxQ.moveTo(20, diaY + diaH); ctxQ.lineTo(150, diaY + diaH); ctxQ.stroke();
+                // Draw Barrier
+                ctxQ.fillStyle = 'rgba(255, 77, 77, 0.5)';
+                const diaV = (V / 12) * diaH;
+                ctxQ.fillRect(70, diaY + diaH - diaV, 30, diaV);
+                // Draw Energy
+                ctxQ.strokeStyle = C_CYAN;
+                const diaE = (E / 12) * diaH;
+                ctxQ.beginPath(); ctxQ.moveTo(20, diaY + diaH - diaE); ctxQ.lineTo(150, diaY + diaH - diaE); ctxQ.stroke();
+
+
+                // --- 2. Middle: Wave Function & Barrier ---
+
+                // [Barrier]
+                // 중심(centerY)에서 위아래로 V만큼 펼쳐짐 (Total Height = V * scale)
+                const barrierHalfHeight = (V * scale) / 2;
+
+                ctxQ.fillStyle = isDragging ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)';
+                ctxQ.fillRect(bX, centerY - barrierHalfHeight, W, V * scale);
+
+                ctxQ.strokeStyle = C_CYAN;
+                ctxQ.lineWidth = 2;
+                ctxQ.strokeRect(bX, centerY - barrierHalfHeight, W, V * scale);
+
+                // [Center Guide Line]
+                ctxQ.strokeStyle = 'rgba(255,255,255,0.1)';
+                ctxQ.setLineDash([5, 5]);
+                ctxQ.beginPath(); ctxQ.moveTo(0, centerY); ctxQ.lineTo(width, centerY); ctxQ.stroke();
+                ctxQ.setLineDash([]);
+
+                // [Labels]
+                ctxQ.fillStyle = '#aaa';
+                ctxQ.fillText(`Wave Amplitude (E) = ${E.toFixed(1)}`, 20, centerY - 10);
+                ctxQ.fillText(`Barrier Height (V) = ${V.toFixed(1)}`, bX, centerY - barrierHalfHeight - 10);
+
+                // [Wave Function]
+                ctxQ.beginPath();
+                ctxQ.strokeStyle = C_CYAN;
+                ctxQ.shadowColor = C_CYAN;
+                ctxQ.shadowBlur = 10;
+                ctxQ.lineWidth = 2;
+
+                let time = Date.now() * 0.005;
+                let path = [];
+                for (let x = 0; x < width; x += 3) {
+                    // [핵심] E = 5 이면 전체 높이가 5*scale이 되도록 진폭 설정
+                    // Total Height = 2 * Amplitude = E * scale
+                    // -> Amplitude = (E * scale) / 2
+                    let baseAmp = (E * scale) / 2;
+
+                    let currentAmp = baseAmp;
+
+                    // Tunneling / Decay Logic
+                    if (E < V) {
+                        let kappa = Math.sqrt(V - E) * 0.45;
+                        if (x >= bX && x <= bX + W) currentAmp *= Math.exp(-kappa * (x - bX) * 0.18);
+                        else if (x > bX + W) currentAmp *= Math.exp(-kappa * W * 0.18);
+                    }
+
+                    let wave = Math.sin(x * 0.15 - time * 3) * currentAmp;
+                    path.push({ x: x, amp: currentAmp, wave: wave });
+
+                    if (x === 0) ctxQ.moveTo(x, centerY + wave); else ctxQ.lineTo(x, centerY + wave);
+                }
+                ctxQ.stroke();
+                ctxQ.shadowBlur = 0;
+
+                // Particles
+                qParticles.forEach(p => {
+                    p.x += 6;
+                    // Collision Logic: if E < V, bounce
+                    if (!p.success && p.x >= bX - 5 && p.x <= bX + W) p.x = bX - 8;
+
+                    ctxQ.beginPath(); ctxQ.arc(p.x, centerY, 5, 0, Math.PI * 2);
+                    ctxQ.fillStyle = p.success ? C_CYAN : C_AMBER;
+                    ctxQ.shadowColor = ctxQ.fillStyle;
+                    ctxQ.shadowBlur = 8;
+                    ctxQ.fill();
+                    ctxQ.shadowBlur = 0;
+                });
+                qParticles = qParticles.filter(p => p.x < width);
+
+                // --- 3. Bottom: Probability Density (|ψ|²) ---
+                const botY = height * 0.9;
+                ctxQ.beginPath();
+                ctxQ.fillStyle = 'rgba(0, 247, 255, 0.15)';
+                ctxQ.moveTo(0, botY);
+                for (let p of path) {
+                    // Prob density scale
+                    let prob = (p.amp * p.amp) / 50;
+                    ctxQ.lineTo(p.x, botY - prob);
+                }
+                ctxQ.lineTo(width, botY);
+                ctxQ.fill();
+                ctxQ.fillStyle = '#aaa';
+                ctxQ.fillText("Probability Density (|ψ|²)", 20, botY + 10);
+
+            } else {
+                // Vertical Mode (No Change)
+                ctxL.clearRect(0, 0, width, height);
+                const bW = lParams.W;
+                const bH = height * 0.8;
+
+                let matColor = matName === 'High-K' ? 'rgba(150, 255, 100, 0.15)' : 'rgba(255, 255, 255, 0.1)';
+                ctxL.fillStyle = matColor;
+                ctxL.fillRect(width / 2 - bW / 2, height / 2 - bH / 2, bW, bH);
+                ctxL.strokeStyle = isDragging ? '#fff' : C_RED;
+                ctxL.lineWidth = 2;
+                ctxL.strokeRect(width / 2 - bW / 2, height / 2 - bH / 2, bW, bH);
+
+                ctxL.fillStyle = 'rgba(255,255,255,0.5)';
+                ctxL.font = '12px Arial';
+                ctxL.textAlign = 'center';
+                ctxL.fillText(`${matName}`, width / 2, height / 2 - 10);
+                ctxL.fillText(`${(lParams.W / 10).toFixed(1)}nm`, width / 2, height / 2 + 10);
+
+                if (lParticles.length < 300) lParticles.push(new VerticalParticle());
+                lParticles.forEach(p => { p.update(); p.draw(); });
+                lParticles = lParticles.filter(p => p.y < height);
+            }
+            requestAnimationFrame(animate);
+        }
+
+        init();
+
+        // ===== 모바일 터치 지원 추가 =====
+        const cnt = document.getElementById('container');
+
+        // 터치 시작 -> 마우스 클릭처럼 처리
+        cnt.addEventListener('touchstart', (e) => {
+            const t = e.touches[0];
+            handleMouseDown({ clientX: t.clientX, clientY: t.clientY });
+        }, { passive: false });
+
+        // 터치 이동 -> 마우스 이동처럼 처리 (드래그 중에는 화면 스크롤 막기)
+        cnt.addEventListener('touchmove', (e) => {
+            if (isDragging) e.preventDefault();
+            const t = e.touches[0];
+            handleMouseMove({ clientX: t.clientX, clientY: t.clientY });
+        }, { passive: false });
+
+        // 터치 끝 -> 드래그 종료
+        cnt.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+    </script>
 </body>
+
 </html>

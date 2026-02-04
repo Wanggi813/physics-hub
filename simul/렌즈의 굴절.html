@@ -1,191 +1,335 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
-<meta charset="UTF-8" />
-<title>렌즈의 굴절</title>
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<script src="./libs/p5.min.js"></script>
-<style>
-  :root{
-    --bg1:#f7fbff; --bg2:#eef6ff; --ink:#0f172a; --sub:#546076; --axis:#2563eb;
-    --accent:#2563eb; --good:#16a34a; --warn:#f59e0b; --bad:#ef4444;
-    --panel:#ffffff; --line:#e6eef9; --shadow:0 12px 36px rgba(15,23,42,.12); --radius:14px;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0; color:var(--ink);
-    background: radial-gradient(1200px 800px at 10% -10%, var(--bg2) 0%, var(--bg1) 60%);
-    font:16px/1.7 system-ui,-apple-system,Segoe UI,Roboto,Pretendard,'Noto Sans KR',sans-serif;
-  }
-  #sketch{position:fixed; inset:0}
-  .overlay{
-    position:fixed; top:14px; right:14px; z-index:10; width:min(380px, 92vw);
-    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
-    padding:14px 14px 12px;
-  }
-  .overlay h2{margin:0 0 8px; font-size:17px}
-  .row{display:flex; align-items:center; gap:10px; margin:10px 0}
-  label{font-size:14.5px; color:var(--sub)}
-  select,input[type="range"]{width:100%; accent-color:var(--accent)}
-  .kv{display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; margin-top:10px}
-  .kv div{background:#f7fafc; border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-size:15px}
-  .kv b{display:block; font-weight:700; color:#65748b; margin-bottom:3px; font-size:14px}
-  .badge{display:inline-block; padding:3px 10px; border-radius:999px; font-size:13px; margin-right:6px}
-  .real{background:#e8f7ee; border:1px solid #b7ebc3; color:#065f46}
-  .virtual{background:#ffecec; border:1px solid #ffc6c6; color:#7f1d1d}
-  .note{color:#65748b; font-size:14px; margin-top:8px}
-  .hint{position:fixed; left:14px; bottom:14px; background:#ffffffcc; backdrop-filter: blur(4px);
-        border:1px solid var(--line); border-radius:12px; padding:9px 12px; box-shadow:var(--shadow); font-size:14px}
-  .hidden{display:none}
-  canvas{display:block}
+  <meta charset="UTF-8" />
+  <title>렌즈의 굴절</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="./libs/p5.min.js"></script>
+  <style>
+    :root {
+      --bg1: #f7fbff;
+      --bg2: #eef6ff;
+      --ink: #0f172a;
+      --sub: #546076;
+      --axis: #2563eb;
+      --accent: #2563eb;
+      --good: #16a34a;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --panel: #ffffff;
+      --line: #e6eef9;
+      --shadow: 0 12px 36px rgba(15, 23, 42, .12);
+      --radius: 14px;
+    }
 
-  /* === 도전 박스 (렌즈 게임용, 왼쪽 위) - 밝은 색 테마 === */
-  .challenge-box{
-    position:fixed;
-    top:14px;
-    left:14px;
-    z-index:15;
-    background:rgba(255,255,255,0.98);
-    border:1px solid #e2e8f0;
-    border-radius:14px;
-    padding:10px 12px;
-    min-width:230px;
-    color:#0f172a;
-    backdrop-filter:blur(8px);
-    box-shadow:0 12px 28px rgba(148,163,184,0.55);
-    font-size:13px;
-  }
-  .cb-title{
-    font-size:12px;
-    font-weight:800;
-    letter-spacing:.08em;
-    color:#2563eb;
-    margin-bottom:6px;
-    text-transform:uppercase;
-  }
-  .cb-row{
-    display:flex;
-    justify-content:space-between;
-    align-items:baseline;
-    margin-bottom:4px;
-  }
-  .cb-label{
-    font-size:12px;
-    color:#64748b;
-  }
-  .cb-value{
-    font-size:16px;
-    font-weight:800;
-    min-width:60px;
-    text-align:right;
-    color:#0f172a;
-  }
-  .cb-best .cb-value{
-    color:#f59e0b;
-    text-shadow:0 0 5px rgba(245,158,11,0.6);
-    display:flex;
-    align-items:center;
-    justify-content:flex-end;
-    gap:4px;
-  }
-  .cb-best .trophy{
-    font-size:18px;
-  }
-  .cb-btn{
-    margin-top:6px;
-    width:100%;
-    border-radius:999px;
-    border:1px solid #bfdbfe;
-    background:linear-gradient(135deg,#2563eb,#38bdf8);
-    color:#f9fafb;
-    font-size:13px;
-    font-weight:700;
-    padding:6px 0;
-    cursor:pointer;
-  }
-  .cb-btn:hover{
-    filter:brightness(1.05);
-  }
-  .cb-btn-secondary{
-    margin-top:4px;
-    background:#e5e7eb;
-    border-color:#cbd5e1;
-    color:#111827;
-    font-size:12px;
-    padding:5px 0;
-  }
-  .cb-btn-secondary:hover{
-    background:#d1d5db;
-  }
-  .cb-msg{
-    margin-top:6px;
-    font-size:11.5px;
-    line-height:1.5;
-    color:#4b5563;
-    min-height:40px;
-  }
-  .cb-msg small{
-    display:block;
-    color:#9ca3af;
-    margin-top:2px;
-  }
-  .cb-section{
-    margin-top:6px;
-  }
-  .cb-subtitle{
-    font-size:11px;
-    color:#64748b;
-    margin-bottom:4px;
-  }
-  .cb-choice-grid{
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:4px;
-  }
-  .cb-choice-grid.cb-size-grid{
-    grid-template-columns:repeat(3,minmax(0,1fr));
-  }
-  .cb-opt{
-    border-radius:999px;
-    border:1px solid #d1d5db;
-    background:#f9fafb;
-    color:#374151;
-    padding:4px 6px;
-    font-size:11px;
-    cursor:pointer;
-    text-align:center;
-    white-space:nowrap;
-  }
-  .cb-opt:hover{
-    background:#e5f0ff;
-    border-color:#93c5fd;
-  }
-  .cb-opt.selected{
-    border-color:#2563eb;
-    background:radial-gradient(circle at 0% 0%,#bfdbfe,#3b82f6);
-    color:#f9fafb;
-    box-shadow:0 0 0 1px rgba(59,130,246,0.4);
-  }
-  .cb-size-section{
-    margin-top:4px;
-  }
+    * {
+      box-sizing: border-box
+    }
 
-  /* 최고점수 팝 애니메이션 */
-  @keyframes bestPop {
-    0%   { transform:scale(1); }
-    30%  { transform:scale(1.25); }
-    60%  { transform:scale(0.92); }
-    100% { transform:scale(1); }
-  }
-  #lens-challenge .best-badge{
-    animation:none;
-  }
-  #lens-challenge .best-badge.best-bump{
-    animation:bestPop .6s ease-out;
-  }
-</style>
+    html,
+    body {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: radial-gradient(1200px 800px at 10% -10%, var(--bg2) 0%, var(--bg1) 60%);
+      font: 16px/1.7 system-ui, -apple-system, Segoe UI, Roboto, Pretendard, 'Noto Sans KR', sans-serif;
+    }
+
+    #sketch {
+      position: fixed;
+      inset: 0
+    }
+
+    .overlay {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 10;
+      width: min(380px, 92vw);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px 14px 12px;
+    }
+
+    .overlay h2 {
+      margin: 0 0 8px;
+      font-size: 17px
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0
+    }
+
+    label {
+      font-size: 14.5px;
+      color: var(--sub)
+    }
+
+    select,
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent)
+    }
+
+    .kv {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 14px;
+      margin-top: 10px
+    }
+
+    .kv div {
+      background: #f7fafc;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 15px
+    }
+
+    .kv b {
+      display: block;
+      font-weight: 700;
+      color: #65748b;
+      margin-bottom: 3px;
+      font-size: 14px
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      margin-right: 6px
+    }
+
+    .real {
+      background: #e8f7ee;
+      border: 1px solid #b7ebc3;
+      color: #065f46
+    }
+
+    .virtual {
+      background: #ffecec;
+      border: 1px solid #ffc6c6;
+      color: #7f1d1d
+    }
+
+    .note {
+      color: #65748b;
+      font-size: 14px;
+      margin-top: 8px
+    }
+
+    .hint {
+      position: fixed;
+      left: 14px;
+      bottom: 14px;
+      background: #ffffffcc;
+      backdrop-filter: blur(4px);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 9px 12px;
+      box-shadow: var(--shadow);
+      font-size: 14px
+    }
+
+    .hidden {
+      display: none
+    }
+
+    canvas {
+      display: block
+    }
+
+    /* === 도전 박스 (렌즈 게임용, 왼쪽 위) - 밝은 색 테마 === */
+    .challenge-box {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      z-index: 15;
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 10px 12px;
+      min-width: 230px;
+      color: #0f172a;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 12px 28px rgba(148, 163, 184, 0.55);
+      font-size: 13px;
+    }
+
+    .cb-title {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      color: #2563eb;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .cb-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 4px;
+    }
+
+    .cb-label {
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .cb-value {
+      font-size: 16px;
+      font-weight: 800;
+      min-width: 60px;
+      text-align: right;
+      color: #0f172a;
+    }
+
+    .cb-best .cb-value {
+      color: #f59e0b;
+      text-shadow: 0 0 5px rgba(245, 158, 11, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+
+    .cb-best .trophy {
+      font-size: 18px;
+    }
+
+    .cb-btn {
+      margin-top: 6px;
+      width: 100%;
+      border-radius: 999px;
+      border: 1px solid #bfdbfe;
+      background: linear-gradient(135deg, #2563eb, #38bdf8);
+      color: #f9fafb;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 0;
+      cursor: pointer;
+    }
+
+    .cb-btn:hover {
+      filter: brightness(1.05);
+    }
+
+    .cb-btn-secondary {
+      margin-top: 4px;
+      background: #e5e7eb;
+      border-color: #cbd5e1;
+      color: #111827;
+      font-size: 12px;
+      padding: 5px 0;
+    }
+
+    .cb-btn-secondary:hover {
+      background: #d1d5db;
+    }
+
+    .cb-msg {
+      margin-top: 6px;
+      font-size: 11.5px;
+      line-height: 1.5;
+      color: #4b5563;
+      min-height: 40px;
+    }
+
+    .cb-msg small {
+      display: block;
+      color: #9ca3af;
+      margin-top: 2px;
+    }
+
+    .cb-section {
+      margin-top: 6px;
+    }
+
+    .cb-subtitle {
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .cb-choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 4px;
+    }
+
+    .cb-choice-grid.cb-size-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .cb-opt {
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      color: #374151;
+      padding: 4px 6px;
+      font-size: 11px;
+      cursor: pointer;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .cb-opt:hover {
+      background: #e5f0ff;
+      border-color: #93c5fd;
+    }
+
+    .cb-opt.selected {
+      border-color: #2563eb;
+      background: radial-gradient(circle at 0% 0%, #bfdbfe, #3b82f6);
+      color: #f9fafb;
+      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.4);
+    }
+
+    .cb-size-section {
+      margin-top: 4px;
+    }
+
+    /* 최고점수 팝 애니메이션 */
+    @keyframes bestPop {
+      0% {
+        transform: scale(1);
+      }
+
+      30% {
+        transform: scale(1.25);
+      }
+
+      60% {
+        transform: scale(0.92);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    #lens-challenge .best-badge {
+      animation: none;
+    }
+
+    #lens-challenge .best-badge.best-bump {
+      animation: bestPop .6s ease-out;
+    }
+  </style>
 </head>
+
 <body>
   <div id="sketch"></div>
 
@@ -275,776 +419,777 @@
     </div>
   </div>
 
-<script>
-/* ===== Fullscreen Lens Simulator (값 박스 토글) ===== */
-let W, H, axisY;
-let lensX;
-let objectX, objectH;
-let dragging = null;
-let dragOffsetX = 0, dragOffsetY = 0;
+  <script>
+    /* ===== Fullscreen Lens Simulator (값 박스 토글) ===== */
+    let W, H, axisY;
+    let lensX;
+    let objectX, objectH;
+    let dragging = null;
+    let dragOffsetX = 0, dragOffsetY = 0;
 
-let ui = {};
-const EPS = 1e-4;
-const GRID = 72;
+    let ui = {};
+    const EPS = 1e-4;
+    const GRID = 72;
 
-/* 게임 상태를 p5 쪽에서도 알 수 있게 전역으로 둠 */
-let lensGameOn = false;
-let lensGameRound = 0;
-let lensRoundLocked = false;  // 한 라운드에서 중복 클릭 방지
+    /* 게임 상태를 p5 쪽에서도 알 수 있게 전역으로 둠 */
+    let lensGameOn = false;
+    let lensGameRound = 0;
+    let lensRoundLocked = false;  // 한 라운드에서 중복 클릭 방지
 
-function setup(){
-  pixelDensity(1);
-  createCanvas(windowWidth, windowHeight).parent('sketch');
-  const c = document.querySelector('#sketch canvas');
-initLayout();
+    function setup() {
+      pixelDensity(1);
+      createCanvas(windowWidth, windowHeight).parent('sketch');
+      const c = document.querySelector('#sketch canvas');
+      initLayout();
 
-  ui.lensType = document.getElementById('lensType');
-  ui.focal    = document.getElementById('focal');
-  ui.showRays = document.getElementById('showRays');
-  ui.showGrid = document.getElementById('showGrid');
-  ui.showInfo = document.getElementById('showInfo');
-  ui.showGuide= document.getElementById('showGuide');
-  ui.kvSection= document.getElementById('kvSection');
-  ui.kv = {
-    f:  document.getElementById('kv_f'),
-    do: document.getElementById('kv_do'),
-    di: document.getElementById('kv_di'),
-    m:  document.getElementById('kv_m'),
-    kind: document.getElementById('kv_kind'),
-  };
+      ui.lensType = document.getElementById('lensType');
+      ui.focal = document.getElementById('focal');
+      ui.showRays = document.getElementById('showRays');
+      ui.showGrid = document.getElementById('showGrid');
+      ui.showInfo = document.getElementById('showInfo');
+      ui.showGuide = document.getElementById('showGuide');
+      ui.kvSection = document.getElementById('kvSection');
+      ui.kv = {
+        f: document.getElementById('kv_f'),
+        do: document.getElementById('kv_do'),
+        di: document.getElementById('kv_di'),
+        m: document.getElementById('kv_m'),
+        kind: document.getElementById('kv_kind'),
+      };
 
-  const applyKvVisibility = () => {
-    if (ui.showInfo.checked) ui.kvSection.classList.remove('hidden');
-    else                     ui.kvSection.classList.add('hidden');
-  };
-  ui.showInfo.addEventListener('change', applyKvVisibility);
-  applyKvVisibility(); // 초기 적용
-}
-
-function initLayout(){
-  W = windowWidth; H = windowHeight;
-  const rawAxis = H * 0.58;
-  axisY = Math.round(rawAxis / GRID) * GRID;
-  lensX = W * 0.5;
-  objectX = W * 0.25;
-  objectH = 120;
-}
-
-function windowResized(){
-  resizeCanvas(windowWidth, windowHeight);
-  W = windowWidth; H = windowHeight;
-  const rawAxis = H * 0.58;
-  axisY = Math.round(rawAxis / GRID) * GRID;
-  lensX   = constrain(lensX, 40, W-40);
-  objectX = constrain(objectX, 20, W-20);
-}
-
-function draw(){
-  clear();
-  noStroke(); fill(255,255,255,230); rect(0,0,width,height);
-
-  const type = ui.lensType.value;
-  const fmag = parseFloat(ui.focal.value);
-  const f = (type==='convex') ? +fmag : -fmag;
-
-  if(ui.showGrid.checked) drawGrid();
-
-  stroke('#2563eb'); strokeWeight(2.2);
-  line(0, axisY, width, axisY);
-
-  drawLensSilhouette(lensX, f, type);
-
-  const objTip = {x: objectX, y: axisY - objectH};
-  drawArrow(objectX, axisY, objTip.x, objTip.y, color(37,99,235), true);
-
-  const incomingLeft = objectX < lensX;
-  const a = Math.abs(lensX - objectX);
-  const denom = (1/f) - (1/a);
-  let atInfinity = false, b, m;
-
-  if(Math.abs(denom) < EPS){ atInfinity = true; b = Infinity; m = NaN; }
-  else { b = 1/denom; m = -b/a; }
-
-  const imgX = atInfinity ? (incomingLeft ? width-10 : 10)
-                          : (incomingLeft ? lensX + b : lensX - b);
-  const imgH = atInfinity ? 0 : objectH * m;
-  const imgTip = {x: imgX, y: axisY - imgH};
-  const isReal = !atInfinity && (b > 0);
-
-  if(ui.showRays.checked){
-    drawPrincipalRays({objTip, lensX, axisY, f, type, incomingLeft});
-  }
-
-  if(!atInfinity){
-    const clr = isReal ? color(22,163,74) : color(239,68,68);
-    drawArrow(imgX, axisY, imgTip.x, imgTip.y, clr, isReal, !isReal);
-  }else{
-    push(); noStroke(); fill('#f59e0b'); textAlign(CENTER, BOTTOM); textSize(16);
-    text('a ≈ f  →  상이 무한 원거리(평행광)', width*0.5, 26); pop();
-  }
-
-  // 허상 보조선: 9~10라운드에는 난이도 상승을 위해 숨김
-  if(ui.showGuide.checked && !atInfinity && !isReal && !(lensGameOn && lensGameRound >= 9)){
-    const passPt = {x: lensX, y: objTip.y};
-    push();
-      stroke(100,116,139); strokeWeight(2);
-      drawingContext.setLineDash([7,7]);
-      line(passPt.x, passPt.y, imgTip.x, imgTip.y);
-      drawingContext.setLineDash([]);
-      noStroke(); fill(100,116,139);
-      circle(passPt.x, passPt.y, 6);
-      circle(imgTip.x, imgTip.y, 6);
-    pop();
-  }
-
-  drawFoci(lensX, axisY, f);
-
-  // a, b 보조선: 9~10라운드에는 숨김
-  if(ui.showGuide.checked && !(lensGameOn && lensGameRound >= 9)){
-    drawMeasureAB({a, b, lensX, objectX, imgX, axisY, showB: !atInfinity});
-  }
-
-  drawHandles();
-
-  if(ui.showInfo.checked){
-    updateKV(f, a, b, m, atInfinity, incomingLeft);
-  }
-
-  // === 6~10라운드: 렌즈 중심부터 오른쪽 모두 완전히 가리기 (불투명) ===
-  if (lensGameOn && lensGameRound >= 6 && lensGameRound <= 10) {
-    push();
-    noStroke();
-    fill(255);               // 완전 불투명
-    rect(lensX, 0, width - lensX, height);
-    pop();
-  }
-}
-
-function drawGrid(){
-  push();
-  stroke('#e6eef9'); strokeWeight(1.2);
-  for(let x=0; x<=width; x+=GRID) line(x,0,x,height);
-  for(let y=axisY; y<=height; y+=GRID) line(0,y,width,y);
-  for(let y=axisY-GRID; y>=0; y-=GRID) line(0,y,width,y);
-  pop();
-}
-
-/* ===== 렌즈 실루엣 ===== */
-function drawLensSilhouette(x, f, type){
-  const top = 24, bot = height-24;
-  const h = bot - top;
-  const leftPts = [], rightPts = [];
-  const steps = 64;
-
-  for(let i=0;i<=steps;i++){
-    const t = i/steps, y = top + t*h, s = Math.sin(t*Math.PI);
-    let half;
-    if(type==='convex'){ half = 6 + 18*s; } else { half = 18 - 12*s; }
-    leftPts.push({x:x - half, y}); rightPts.push({x:x + half, y});
-  }
-
-  push();
-    noStroke(); fill(37, 99, 235, 40);
-    beginShape();
-      for(const p of leftPts)  vertex(p.x, p.y);
-      for(let i=rightPts.length-1;i>=0;i--) vertex(rightPts[i].x, rightPts[i].y);
-    endShape(CLOSE);
-
-    stroke('#2563eb'); strokeWeight(2.2); noFill();
-    beginShape(); for(const p of leftPts)  vertex(p.x, p.y); endShape();
-    beginShape(); for(const p of rightPts) vertex(p.x, p.y); endShape();
-
-    stroke('#60a5fa'); strokeWeight(1.6);
-    line(x, top, x, bot);
-
-    noStroke(); fill('#475569'); textAlign(CENTER,TOP); textSize(16);
-    text((type==='convex')?'볼록렌즈':'오목렌즈', x, 2);
-  pop();
-}
-
-function drawFoci(x, y, f){
-  push();
-  stroke('#93c5fd'); strokeWeight(2);
-  line(x+f, y-8, x+f, y+8);
-  line(x-f, y-8, x-f, y+8);
-  noStroke(); fill('#64748b'); textAlign(CENTER, BOTTOM); textSize(16);
-  text('F', x+f, y-10); text('F', x-f, y-10);
-  pop();
-}
-
-function drawArrow(baseX, baseY, tipX, tipY, clr, solid=true, dashed=false){
-  push();
-  stroke(clr); strokeWeight(3);
-  drawingContext.setLineDash(dashed ? [8,7] : []);
-  line(baseX, baseY, tipX, tipY);
-  const ang = Math.atan2(tipY-baseY, tipX-baseX);
-  const ah = 13, a1 = ang + Math.PI*0.9, a2 = ang - Math.PI*0.9;
-  line(tipX, tipY, tipX + ah*Math.cos(a1), tipY + ah*Math.sin(a1));
-  line(tipX, tipY, tipX + ah*Math.cos(a2), tipY + ah*Math.sin(a2));
-  pop();
-}
-
-function drawPrincipalRays({objTip, lensX, axisY, f, type, incomingLeft}){
-  const F_left  = {x:lensX - Math.abs(f), y:axisY};
-  const F_right = {x:lensX + Math.abs(f), y:axisY};
-  const F_in  = incomingLeft ? F_left  : F_right;
-  const F_out = incomingLeft ? F_right : F_left;
-  const center = {x:lensX, y:axisY};
-
-  push();
-  stroke(255, 193, 7, 230); strokeWeight(2.4);
-  line(objTip.x, objTip.y, lensX, objTip.y);
-  if(type==='convex'){
-    extendFromThrough({x:lensX,y:objTip.y}, F_out, incomingLeft ? +1 : -1);
-  }else{
-    const dir = {x: lensX - F_in.x, y: objTip.y - F_in.y};
-    extendFromDir({x:lensX,y:objTip.y}, dir, incomingLeft ? +1 : -1);
-    drawingContext.setLineDash([6,6]); stroke(255,193,7,140);
-    extendFromDir({x:lensX,y:objTip.y}, {x:-dir.x,y:-dir.y}, incomingLeft ? -1 : +1);
-    drawingContext.setLineDash([]);
-  }
-  pop();
-
-  push();
-  stroke(56, 189, 248, 230); strokeWeight(2.4);
-  line(objTip.x, objTip.y, center.x, center.y);
-  const dirC = {x: center.x - objTip.x, y: center.y - objTip.y};
-  extendFromDir(center, dirC, incomingLeft ? +1 : -1);
-  pop();
-
-  push();
-  stroke(168, 85, 247, 230); strokeWeight(2.4);
-  const hit2 = lineIntersectionWithX(objTip, F_in, lensX);
-  if(hit2){ line(objTip.x, objTip.y, hit2.x, hit2.y); extendHorizontal(hit2, incomingLeft ? +1 : -1); }
-  pop();
-}
-
-function extendFromThrough(P, Q, sideSign){ const dir = {x: Q.x - P.x, y: Q.y - P.y}; extendFromDir(P, dir, sideSign); }
-function extendFromDir(P, dir, sideSign){
-  let t;
-  if(sideSign>0){
-    if(Math.abs(dir.x) < 1e-6){ line(P.x, P.y, width, P.y); return; }
-    t = (width - P.x)/dir.x; line(P.x, P.y, width, P.y + dir.y * t);
-  }else{
-    if(Math.abs(dir.x) < 1e-6){ line(P.x, P.y, 0, P.y); return; }
-    t = (0 - P.x)/dir.x; line(P.x, P.y, 0, P.y + dir.y * t);
-  }
-}
-function extendHorizontal(P, sideSign){ if(sideSign>0) line(P.x,P.y,width,P.y); else line(P.x,P.y,0,P.y); }
-function lineIntersectionWithX(A, B, xLine){
-  const dx = B.x - A.x; if(Math.abs(dx) < 1e-6) return null;
-  const t = (xLine - A.x) / dx; return {x:xLine, y: A.y + (B.y - A.y)*t};
-}
-
-/* ===== 측정 화살표 a, b ===== */
-function drawMeasureAB({a, b, lensX, objectX, imgX, axisY, showB}){
-  const yA = axisY + 30, yB = axisY + 58;
-  drawDoubleArrow(min(lensX, objectX), max(lensX, objectX), yA, '#64748b', 'a');
-  if(showB) drawDoubleArrow(min(lensX, imgX), max(lensX, imgX), yB, (b>0 ? '#16a34a' : '#ef4444'), 'b');
-}
-function drawDoubleArrow(x1, x2, y, colorHex, label){
-  push();
-    stroke(colorHex); strokeWeight(2.2);
-    line(x1, y, x2, y);
-    drawHead(x1, y, -1, colorHex); drawHead(x2, y, +1, colorHex);
-    noStroke(); fill(colorHex); textAlign(CENTER, BOTTOM); textSize(16);
-    text(label, (x1+x2)/2, y-4);
-  pop();
-}
-function drawHead(x, y, dir, colorHex){
-  const ah = 11; push(); stroke(colorHex); strokeWeight(2.2);
-  line(x, y, x + dir*ah, y - ah*0.6);
-  line(x, y, x + dir*ah, y + ah*0.6); pop();
-}
-
-function updateKV(f, a, b, m, atInf, incomingLeft){
-  const fmt = (v)=> (Number.isFinite(v) ? (Math.abs(v)>9999 ? v.toExponential(2) : v.toFixed(2)) : '—');
-  const sideIn  = incomingLeft ? '입사측(좌)' : '입사측(우)';
-  const sideOut = incomingLeft ? '출사측(우)' : '출사측(좌)';
-
-  ui.kv.f.textContent  = `${fmt(f)} px  ${f>0?'(볼록)':'(오목)'}`;
-  ui.kv.do.textContent = `${fmt(a)} px ${sideIn}  ≡  a`;
-  if(atInf){
-    ui.kv.di.textContent = '∞ (평행)  ≡  b';
-    ui.kv.m.textContent  = '—';
-    ui.kv.kind.innerHTML = `a ≈ f  →  <span class="badge real">상이 무한 원거리</span>`;
-  }else{
-    const real = b>0;
-    ui.kv.di.textContent = `${fmt(b)} px ${real?sideOut:sideIn}  ≡  b`;
-    ui.kv.m.textContent  = `${fmt(m)} ${m>0?'(정립)':'(도치)'}`;
-    const mag = Math.abs(m)>1 ? '확대' : (Math.abs(m)<1 ? '축소' : '동일');
-    ui.kv.kind.innerHTML =
-      `<span class="badge ${real?'real':'virtual'}">${real?'실상':'허상'}</span>`+
-      `<span class="badge" style="background:#e8efff;border:1px solid #c7d7ff;color:#1e40af">`+(m>0?'정립':'도치')+`</span>`+
-      `<span class="badge" style="background:#f1f5f9;border:1px solid #e2e8f0;color:#334155">${mag}</span>`;
-  }
-}
-
-function drawHandles(){
-  push();
-  noStroke();
-  fill('#2563eb');
-  circle(objectX, axisY, 11);
-  circle(objectX, axisY - objectH, 11);
-  fill('#60a5fa');
-  rect(lensX-4, 18, 8, 22, 3);
-  pop();
-}
-
-/* ===== 드래그 ===== */
-function pointerPressed(px, py){
-  // 도전 게임 중에는 드래그로 값 변경 불가
-  if (lensGameOn) return;
-
-  if(px<0 || px>width || py<0 || py>height) return;
-
-  if(Math.abs(px - lensX) < 10){
-    dragging='lens'; dragOffsetX=px-lensX; return;
-  }
-  if(dist(px, py, objectX, axisY) < 12){
-    dragging='obj-base'; dragOffsetX=px-objectX; return;
-  }
-  if(dist(px, py, objectX, axisY - objectH) < 12){
-    dragging='obj-tip'; dragOffsetX=px-objectX; dragOffsetY=py-(axisY-objectH); return;
-  }
-}
-
-function pointerDragged(px, py){
-  if(!dragging) return;
-
-  if(dragging==='lens'){
-    lensX = constrain(px - dragOffsetX, 40, width-40);
-    if(Math.abs(lensX - objectX) < 10) lensX = (lensX > objectX) ? objectX + 10 : objectX - 10;
-  }else if(dragging==='obj-base'){
-    objectX = constrain(px - dragOffsetX, 20, width-20);
-    if(Math.abs(lensX - objectX) < 10) objectX = (objectX < lensX) ? lensX - 10 : lensX + 10;
-  }else if(dragging==='obj-tip'){
-    objectX = constrain(px - dragOffsetX, 20, width-20);
-    if(Math.abs(lensX - objectX) < 10) objectX = (objectX < lensX) ? lensX - 10 : lensX + 10;
-
-    const tipY = py - dragOffsetY;
-    const maxH = 240;
-    objectH = constrain(axisY - tipY, -maxH, maxH);
-  }
-}
-
-function pointerReleased(){
-  dragging = null;
-}
-
-/* --- 마우스 이벤트 --- */
-function mousePressed(){ pointerPressed(mouseX, mouseY); }
-function mouseDragged(){ pointerDragged(mouseX, mouseY); }
-function mouseReleased(){ pointerReleased(); }
-
-/* --- 터치 이벤트 --- */
-function isTouchOnUI(e){
-  if(!e || !e.target) return false;
-
-  // 오른쪽 설정 패널(.overlay), 도전패널(#lens-challenge), 힌트(.hint) 위에서는
-  // 브라우저가 기본적으로 "탭=클릭/셀렉트"를 처리하도록 맡긴다.
-  return !!(
-    e.target.closest('.overlay') ||
-    e.target.closest('#lens-challenge') ||
-    e.target.closest('.hint')
-  );
-}
-
-/* --- 터치 이벤트 --- */
-function touchStarted(e){
-  if (isTouchOnUI(e)) return true; // ✅ UI 터치는 p5가 가로채지 않음
-
-  if(touches && touches.length){
-    pointerPressed(touches[0].x, touches[0].y);
-  }
-  return false; // ✅ 캔버스 조작일 때만 스크롤 방지
-}
-
-function touchMoved(e){
-  if (isTouchOnUI(e)) return true; // ✅ UI에서 스와이프/탭 막지 않음
-
-  if(touches && touches.length){
-    pointerDragged(touches[0].x, touches[0].y);
-  }
-  return false;
-}
-
-function touchEnded(e){
-  if (isTouchOnUI(e)) return true;
-
-  pointerReleased();
-  return false;
-}</script>
-
-<!-- ===== 렌즈 도전 게임 로직 (점수/판정) ===== -->
-<script>
-(function(){
-  const elRound = document.getElementById('lens-round');
-  const elScore = document.getElementById('lens-score');
-  const elBest  = document.getElementById('lens-best');
-  const elMsg   = document.getElementById('lens-msg');
-  const btnStart  = document.getElementById('lens-start');
-  const kindButtons = document.querySelectorAll('.cb-opt-kind');
-  const sizeSection = document.querySelector('.cb-size-section');
-  const sizeButtons = document.querySelectorAll('.cb-opt-size');
-
-  let score = 0;
-  let bestScore = 0;
-  let answerKind = null;   // '도립실상' 등
-  let answerSize = null;   // '확대','동일','축소' (9~10라운드에서 사용)
-  let selectedKind = null;
-  let selectedSize = null;
-
-  function updateBestScoreUI(animate){
-    if(!elBest) return;
-    elBest.textContent = bestScore;
-    const badge = document.querySelector('#lens-challenge .best-badge');
-    if(animate && badge){
-      badge.classList.remove('best-bump');
-      void badge.offsetWidth;            // reflow
-      badge.classList.add('best-bump');  // 애니메이션
+      const applyKvVisibility = () => {
+        if (ui.showInfo.checked) ui.kvSection.classList.remove('hidden');
+        else ui.kvSection.classList.add('hidden');
+      };
+      ui.showInfo.addEventListener('change', applyKvVisibility);
+      applyKvVisibility(); // 초기 적용
     }
-  }
 
-  // Firebase에서 최고점수를 불러왔을 때 호출되는 콜백 (상대성이론 파일과 동일한 이름)
-  window.setBestScoreFromFirebase = function(scoreFromDb){
-    bestScore = Number(scoreFromDb) || 0;
-    updateBestScoreUI(false);
-  };
-
-  function selectKind(kind){
-    selectedKind = kind;
-    kindButtons.forEach(btn=>{
-      btn.classList.toggle('selected', btn.dataset.kind === kind);
-    });
-  }
-
-  function selectSize(size){
-    selectedSize = size;
-    sizeButtons.forEach(btn=>{
-      btn.classList.toggle('selected', btn.dataset.size === size);
-    });
-  }
-
-  function resetGame(){
-    score = 0;
-    lensGameOn = false;
-    lensGameRound = 0;
-    lensRoundLocked = false;
-    elRound.textContent = '-';
-    elScore.textContent = '0';
-    selectedKind = null;
-    selectedSize = null;
-    kindButtons.forEach(btn=>btn.classList.remove('selected'));
-    sizeButtons.forEach(btn=>btn.classList.remove('selected'));
-    sizeSection.style.display = 'none';
-    elMsg.innerHTML =
-      '도전 버튼을 눌러<br>렌즈 도전 게임을 시작하세요.'+
-      '<small>총 10라운드, 정답마다 +50점 · 오답은 0점</small>';
-  }
-  resetGame();
-
-  function randomBetween(min, max){
-    return min + Math.random() * (max - min);
-  }
-
-  // 현재 설정에서 상의 종류/크기 계산
-  function computeImageState(type, f, lensXNow, objectXNow, objectHNow){
-    const a = Math.abs(lensXNow - objectXNow);
-    if(a < 5) return {valid:false};
-    const denom = (1/f) - (1/a);
-    if(!isFinite(denom) || Math.abs(denom) < 1e-4){
-      return {valid:false, atInfinity:true};
+    function initLayout() {
+      W = windowWidth; H = windowHeight;
+      const rawAxis = H * 0.58;
+      axisY = Math.round(rawAxis / GRID) * GRID;
+      lensX = W * 0.5;
+      objectX = W * 0.25;
+      objectH = 120;
     }
-    const b = 1/denom;
-    const m = -b/a;
-    const isReal = (b > 0);
 
-    let kindLabel = null;
-    if (isReal && m < 0)      kindLabel = '도립실상';
-    else if (isReal && m > 0) kindLabel = '정립실상';
-    else if (!isReal && m < 0)kindLabel = '도립허상';
-    else if (!isReal && m > 0)kindLabel = '정립허상';
+    function windowResized() {
+      resizeCanvas(windowWidth, windowHeight);
+      W = windowWidth; H = windowHeight;
+      const rawAxis = H * 0.58;
+      axisY = Math.round(rawAxis / GRID) * GRID;
+      lensX = constrain(lensX, 40, W - 40);
+      objectX = constrain(objectX, 20, W - 20);
+    }
 
-    const mag = Math.abs(m);
-    const tol = 0.08;
-    let sizeLabel;
-    if (mag > 1 + tol)      sizeLabel = '확대';
-    else if (mag < 1 - tol) sizeLabel = '축소';
-    else                    sizeLabel = '동일';
+    function draw() {
+      clear();
+      noStroke(); fill(255, 255, 255, 230); rect(0, 0, width, height);
 
-    return {valid:true, atInfinity:false, kindLabel, sizeLabel, m};
-  }
+      const type = ui.lensType.value;
+      const fmag = parseFloat(ui.focal.value);
+      const f = (type === 'convex') ? +fmag : -fmag;
 
-  function setupRound(){
-    lensGameOn = true;
-    lensRoundLocked = false;
-    elScore.textContent = String(score);
-    elRound.textContent = lensGameRound + '/10';
+      if (ui.showGrid.checked) drawGrid();
 
-    selectedKind = null;
-    selectedSize = null;
-    kindButtons.forEach(btn=>btn.classList.remove('selected'));
-    sizeButtons.forEach(btn=>btn.classList.remove('selected'));
+      stroke('#2563eb'); strokeWeight(2.2);
+      line(0, axisY, width, axisY);
 
-    const requiresSize = lensGameRound >= 9;
-    sizeSection.style.display = requiresSize ? 'block' : 'none';
+      drawLensSilhouette(lensX, f, type);
 
-    // === 랜덤 파라미터 생성 (렌즈 종류, f, a, 물체 높이) ===
-    const type = (Math.random() < 0.5) ? 'convex' : 'concave';
-    ui.lensType.value = type;
+      const objTip = { x: objectX, y: axisY - objectH };
+      drawArrow(objectX, axisY, objTip.x, objTip.y, color(37, 99, 235), true);
 
-    const fmag = randomBetween(60, 260);
-    ui.focal.value = String(Math.round(fmag));
-    const fSign = (type === 'convex') ? +1 : -1;
-    const f = fSign * Math.round(fmag);
+      const incomingLeft = objectX < lensX;
+      const a = Math.abs(lensX - objectX);
+      const denom = (1 / f) - (1 / a);
+      let atInfinity = false, b, m;
 
-    const marginLeft = Math.max(40, W * 0.12);
-    const marginRightOfObject = 40;
-    const minObjectX = marginLeft;
-    const maxObjectX = lensX - marginRightOfObject;
-    const minH = 60;
-    const maxH = 180;
+      if (Math.abs(denom) < EPS) { atInfinity = true; b = Infinity; m = NaN; }
+      else { b = 1 / denom; m = -b / a; }
 
-    let trials = 0;
-    answerKind = null;
-    answerSize = null;
+      const imgX = atInfinity ? (incomingLeft ? width - 10 : 10)
+        : (incomingLeft ? lensX + b : lensX - b);
+      const imgH = atInfinity ? 0 : objectH * m;
+      const imgTip = { x: imgX, y: axisY - imgH };
+      const isReal = !atInfinity && (b > 0);
 
-    while(trials < 80){
-      objectX = randomBetween(minObjectX, maxObjectX);
-      objectH = (Math.random() < 0.5 ? 1 : -1) * randomBetween(minH, maxH);
-
-      // 물체 꼭짓점이 화면 밖으로 나가지 않도록 보정
-      let tipY = axisY - objectH;
-      if (tipY < 40)  objectH = axisY - 40;
-      if (tipY > H-40) objectH = axisY - (H-40);
-
-      const state = computeImageState(type, f, lensX, objectX, objectH);
-      if (!state.valid || state.atInfinity || !state.kindLabel) {
-        trials++;
-        continue;
+      if (ui.showRays.checked) {
+        drawPrincipalRays({ objTip, lensX, axisY, f, type, incomingLeft });
       }
-      // 9~10라운드에는 크기도 명확하게 구분되도록
-      if (requiresSize && !state.sizeLabel) {
-        trials++;
-        continue;
+
+      if (!atInfinity) {
+        const clr = isReal ? color(22, 163, 74) : color(239, 68, 68);
+        drawArrow(imgX, axisY, imgTip.x, imgTip.y, clr, isReal, !isReal);
+      } else {
+        push(); noStroke(); fill('#f59e0b'); textAlign(CENTER, BOTTOM); textSize(16);
+        text('a ≈ f  →  상이 무한 원거리(평행광)', width * 0.5, 26); pop();
       }
-      answerKind = state.kindLabel;
-      answerSize = requiresSize ? state.sizeLabel : null;
-      break;
+
+      // 허상 보조선: 9~10라운드에는 난이도 상승을 위해 숨김
+      if (ui.showGuide.checked && !atInfinity && !isReal && !(lensGameOn && lensGameRound >= 9)) {
+        const passPt = { x: lensX, y: objTip.y };
+        push();
+        stroke(100, 116, 139); strokeWeight(2);
+        drawingContext.setLineDash([7, 7]);
+        line(passPt.x, passPt.y, imgTip.x, imgTip.y);
+        drawingContext.setLineDash([]);
+        noStroke(); fill(100, 116, 139);
+        circle(passPt.x, passPt.y, 6);
+        circle(imgTip.x, imgTip.y, 6);
+        pop();
+      }
+
+      drawFoci(lensX, axisY, f);
+
+      // a, b 보조선: 9~10라운드에는 숨김
+      if (ui.showGuide.checked && !(lensGameOn && lensGameRound >= 9)) {
+        drawMeasureAB({ a, b, lensX, objectX, imgX, axisY, showB: !atInfinity });
+      }
+
+      drawHandles();
+
+      if (ui.showInfo.checked) {
+        updateKV(f, a, b, m, atInfinity, incomingLeft);
+      }
+
+      // === 6~10라운드: 렌즈 중심부터 오른쪽 모두 완전히 가리기 (불투명) ===
+      if (lensGameOn && lensGameRound >= 6 && lensGameRound <= 10) {
+        push();
+        noStroke();
+        fill(255);               // 완전 불투명
+        rect(lensX, 0, width - lensX, height);
+        pop();
+      }
     }
 
-    if(lensGameRound <= 5){
-      elMsg.innerHTML =
-        '왼쪽 물체와 렌즈에서 만들어진 오른쪽 상을 보고<br>'+
-        '<b>상이 도립/정립 & 실상/허상</b>이<br>어떤 조합인지 선택하세요.';
-    }else if(lensGameRound <= 8){
-      elMsg.innerHTML =
-        '렌즈 중심부터 오른쪽이 가려진 상태입니다.<br>'+
-        '광선 진행과 렌즈 공식을 떠올리며<br>'+
-        '<b>상이 도립/정립 & 실상/허상</b>을 추론해 보세요.';
-    }else{
-      elMsg.innerHTML =
-        '상이 도립/정립 & 실상/허상에 더해<br>'+
-        '<b>크기가 확대/동일/축소</b>인지까지 함께 맞춰 보세요.';
+    function drawGrid() {
+      push();
+      stroke('#e6eef9'); strokeWeight(1.2);
+      for (let x = 0; x <= width; x += GRID) line(x, 0, x, height);
+      for (let y = axisY; y <= height; y += GRID) line(0, y, width, y);
+      for (let y = axisY - GRID; y >= 0; y -= GRID) line(0, y, width, y);
+      pop();
     }
-  }
 
-  function startGame(){
-    score = 0;
-    elScore.textContent = '0';
-    lensGameRound = 1;
-    lensGameOn = true;
-    updateBestScoreUI(false);
-    setupRound();
-  }
+    /* ===== 렌즈 실루엣 ===== */
+    function drawLensSilhouette(x, f, type) {
+      const top = 24, bot = height - 24;
+      const h = bot - top;
+      const leftPts = [], rightPts = [];
+      const steps = 64;
 
-  function endGame(){
-    lensGameOn = false;
-    lensRoundLocked = false;
-    const finalScore = score;
-    lensGameRound = 0;
-    elRound.textContent = '-';
-    elMsg.innerHTML =
-      `게임이 끝났습니다.<br>최종 점수: <b>${finalScore}점</b>`;
-  }
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps, y = top + t * h, s = Math.sin(t * Math.PI);
+        let half;
+        if (type === 'convex') { half = 6 + 18 * s; } else { half = 18 - 12 * s; }
+        leftPts.push({ x: x - half, y }); rightPts.push({ x: x + half, y });
+      }
 
-  function handleResult(isCorrect){
-    lensRoundLocked = true;
+      push();
+      noStroke(); fill(37, 99, 235, 40);
+      beginShape();
+      for (const p of leftPts) vertex(p.x, p.y);
+      for (let i = rightPts.length - 1; i >= 0; i--) vertex(rightPts[i].x, rightPts[i].y);
+      endShape(CLOSE);
 
-    if(isCorrect){
-      score += 50;
-      elScore.textContent = String(score);
-      if(score > bestScore){
-        bestScore = score;
-        updateBestScoreUI(true);
-        if(window.saveBestScoreToFirebase){
-          window.saveBestScoreToFirebase(bestScore);
+      stroke('#2563eb'); strokeWeight(2.2); noFill();
+      beginShape(); for (const p of leftPts) vertex(p.x, p.y); endShape();
+      beginShape(); for (const p of rightPts) vertex(p.x, p.y); endShape();
+
+      stroke('#60a5fa'); strokeWeight(1.6);
+      line(x, top, x, bot);
+
+      noStroke(); fill('#475569'); textAlign(CENTER, TOP); textSize(16);
+      text((type === 'convex') ? '볼록렌즈' : '오목렌즈', x, 2);
+      pop();
+    }
+
+    function drawFoci(x, y, f) {
+      push();
+      stroke('#93c5fd'); strokeWeight(2);
+      line(x + f, y - 8, x + f, y + 8);
+      line(x - f, y - 8, x - f, y + 8);
+      noStroke(); fill('#64748b'); textAlign(CENTER, BOTTOM); textSize(16);
+      text('F', x + f, y - 10); text('F', x - f, y - 10);
+      pop();
+    }
+
+    function drawArrow(baseX, baseY, tipX, tipY, clr, solid = true, dashed = false) {
+      push();
+      stroke(clr); strokeWeight(3);
+      drawingContext.setLineDash(dashed ? [8, 7] : []);
+      line(baseX, baseY, tipX, tipY);
+      const ang = Math.atan2(tipY - baseY, tipX - baseX);
+      const ah = 13, a1 = ang + Math.PI * 0.9, a2 = ang - Math.PI * 0.9;
+      line(tipX, tipY, tipX + ah * Math.cos(a1), tipY + ah * Math.sin(a1));
+      line(tipX, tipY, tipX + ah * Math.cos(a2), tipY + ah * Math.sin(a2));
+      pop();
+    }
+
+    function drawPrincipalRays({ objTip, lensX, axisY, f, type, incomingLeft }) {
+      const F_left = { x: lensX - Math.abs(f), y: axisY };
+      const F_right = { x: lensX + Math.abs(f), y: axisY };
+      const F_in = incomingLeft ? F_left : F_right;
+      const F_out = incomingLeft ? F_right : F_left;
+      const center = { x: lensX, y: axisY };
+
+      push();
+      stroke(255, 193, 7, 230); strokeWeight(2.4);
+      line(objTip.x, objTip.y, lensX, objTip.y);
+      if (type === 'convex') {
+        extendFromThrough({ x: lensX, y: objTip.y }, F_out, incomingLeft ? +1 : -1);
+      } else {
+        const dir = { x: lensX - F_in.x, y: objTip.y - F_in.y };
+        extendFromDir({ x: lensX, y: objTip.y }, dir, incomingLeft ? +1 : -1);
+        drawingContext.setLineDash([6, 6]); stroke(255, 193, 7, 140);
+        extendFromDir({ x: lensX, y: objTip.y }, { x: -dir.x, y: -dir.y }, incomingLeft ? -1 : +1);
+        drawingContext.setLineDash([]);
+      }
+      pop();
+
+      push();
+      stroke(56, 189, 248, 230); strokeWeight(2.4);
+      line(objTip.x, objTip.y, center.x, center.y);
+      const dirC = { x: center.x - objTip.x, y: center.y - objTip.y };
+      extendFromDir(center, dirC, incomingLeft ? +1 : -1);
+      pop();
+
+      push();
+      stroke(168, 85, 247, 230); strokeWeight(2.4);
+      const hit2 = lineIntersectionWithX(objTip, F_in, lensX);
+      if (hit2) { line(objTip.x, objTip.y, hit2.x, hit2.y); extendHorizontal(hit2, incomingLeft ? +1 : -1); }
+      pop();
+    }
+
+    function extendFromThrough(P, Q, sideSign) { const dir = { x: Q.x - P.x, y: Q.y - P.y }; extendFromDir(P, dir, sideSign); }
+    function extendFromDir(P, dir, sideSign) {
+      let t;
+      if (sideSign > 0) {
+        if (Math.abs(dir.x) < 1e-6) { line(P.x, P.y, width, P.y); return; }
+        t = (width - P.x) / dir.x; line(P.x, P.y, width, P.y + dir.y * t);
+      } else {
+        if (Math.abs(dir.x) < 1e-6) { line(P.x, P.y, 0, P.y); return; }
+        t = (0 - P.x) / dir.x; line(P.x, P.y, 0, P.y + dir.y * t);
+      }
+    }
+    function extendHorizontal(P, sideSign) { if (sideSign > 0) line(P.x, P.y, width, P.y); else line(P.x, P.y, 0, P.y); }
+    function lineIntersectionWithX(A, B, xLine) {
+      const dx = B.x - A.x; if (Math.abs(dx) < 1e-6) return null;
+      const t = (xLine - A.x) / dx; return { x: xLine, y: A.y + (B.y - A.y) * t };
+    }
+
+    /* ===== 측정 화살표 a, b ===== */
+    function drawMeasureAB({ a, b, lensX, objectX, imgX, axisY, showB }) {
+      const yA = axisY + 30, yB = axisY + 58;
+      drawDoubleArrow(min(lensX, objectX), max(lensX, objectX), yA, '#64748b', 'a');
+      if (showB) drawDoubleArrow(min(lensX, imgX), max(lensX, imgX), yB, (b > 0 ? '#16a34a' : '#ef4444'), 'b');
+    }
+    function drawDoubleArrow(x1, x2, y, colorHex, label) {
+      push();
+      stroke(colorHex); strokeWeight(2.2);
+      line(x1, y, x2, y);
+      drawHead(x1, y, -1, colorHex); drawHead(x2, y, +1, colorHex);
+      noStroke(); fill(colorHex); textAlign(CENTER, BOTTOM); textSize(16);
+      text(label, (x1 + x2) / 2, y - 4);
+      pop();
+    }
+    function drawHead(x, y, dir, colorHex) {
+      const ah = 11; push(); stroke(colorHex); strokeWeight(2.2);
+      line(x, y, x + dir * ah, y - ah * 0.6);
+      line(x, y, x + dir * ah, y + ah * 0.6); pop();
+    }
+
+    function updateKV(f, a, b, m, atInf, incomingLeft) {
+      const fmt = (v) => (Number.isFinite(v) ? (Math.abs(v) > 9999 ? v.toExponential(2) : v.toFixed(2)) : '—');
+      const sideIn = incomingLeft ? '입사측(좌)' : '입사측(우)';
+      const sideOut = incomingLeft ? '출사측(우)' : '출사측(좌)';
+
+      ui.kv.f.textContent = `${fmt(f)} px  ${f > 0 ? '(볼록)' : '(오목)'}`;
+      ui.kv.do.textContent = `${fmt(a)} px ${sideIn}  ≡  a`;
+      if (atInf) {
+        ui.kv.di.textContent = '∞ (평행)  ≡  b';
+        ui.kv.m.textContent = '—';
+        ui.kv.kind.innerHTML = `a ≈ f  →  <span class="badge real">상이 무한 원거리</span>`;
+      } else {
+        const real = b > 0;
+        ui.kv.di.textContent = `${fmt(b)} px ${real ? sideOut : sideIn}  ≡  b`;
+        ui.kv.m.textContent = `${fmt(m)} ${m > 0 ? '(정립)' : '(도치)'}`;
+        const mag = Math.abs(m) > 1 ? '확대' : (Math.abs(m) < 1 ? '축소' : '동일');
+        ui.kv.kind.innerHTML =
+          `<span class="badge ${real ? 'real' : 'virtual'}">${real ? '실상' : '허상'}</span>` +
+          `<span class="badge" style="background:#e8efff;border:1px solid #c7d7ff;color:#1e40af">` + (m > 0 ? '정립' : '도치') + `</span>` +
+          `<span class="badge" style="background:#f1f5f9;border:1px solid #e2e8f0;color:#334155">${mag}</span>`;
+      }
+    }
+
+    function drawHandles() {
+      push();
+      noStroke();
+      fill('#2563eb');
+      circle(objectX, axisY, 11);
+      circle(objectX, axisY - objectH, 11);
+      fill('#60a5fa');
+      rect(lensX - 4, 18, 8, 22, 3);
+      pop();
+    }
+
+    /* ===== 드래그 ===== */
+    function pointerPressed(px, py) {
+      // 도전 게임 중에는 드래그로 값 변경 불가
+      if (lensGameOn) return;
+
+      if (px < 0 || px > width || py < 0 || py > height) return;
+
+      if (Math.abs(px - lensX) < 10) {
+        dragging = 'lens'; dragOffsetX = px - lensX; return;
+      }
+      if (dist(px, py, objectX, axisY) < 12) {
+        dragging = 'obj-base'; dragOffsetX = px - objectX; return;
+      }
+      if (dist(px, py, objectX, axisY - objectH) < 12) {
+        dragging = 'obj-tip'; dragOffsetX = px - objectX; dragOffsetY = py - (axisY - objectH); return;
+      }
+    }
+
+    function pointerDragged(px, py) {
+      if (!dragging) return;
+
+      if (dragging === 'lens') {
+        lensX = constrain(px - dragOffsetX, 40, width - 40);
+        if (Math.abs(lensX - objectX) < 10) lensX = (lensX > objectX) ? objectX + 10 : objectX - 10;
+      } else if (dragging === 'obj-base') {
+        objectX = constrain(px - dragOffsetX, 20, width - 20);
+        if (Math.abs(lensX - objectX) < 10) objectX = (objectX < lensX) ? lensX - 10 : lensX + 10;
+      } else if (dragging === 'obj-tip') {
+        objectX = constrain(px - dragOffsetX, 20, width - 20);
+        if (Math.abs(lensX - objectX) < 10) objectX = (objectX < lensX) ? lensX - 10 : lensX + 10;
+
+        const tipY = py - dragOffsetY;
+        const maxH = 240;
+        objectH = constrain(axisY - tipY, -maxH, maxH);
+      }
+    }
+
+    function pointerReleased() {
+      dragging = null;
+    }
+
+    /* --- 마우스 이벤트 --- */
+    function mousePressed() { pointerPressed(mouseX, mouseY); }
+    function mouseDragged() { pointerDragged(mouseX, mouseY); }
+    function mouseReleased() { pointerReleased(); }
+
+    /* --- 터치 이벤트 --- */
+    function isTouchOnUI(e) {
+      if (!e || !e.target) return false;
+
+      // 오른쪽 설정 패널(.overlay), 도전패널(#lens-challenge), 힌트(.hint) 위에서는
+      // 브라우저가 기본적으로 "탭=클릭/셀렉트"를 처리하도록 맡긴다.
+      return !!(
+        e.target.closest('.overlay') ||
+        e.target.closest('#lens-challenge') ||
+        e.target.closest('.hint')
+      );
+    }
+
+    /* --- 터치 이벤트 --- */
+    function touchStarted(e) {
+      if (isTouchOnUI(e)) return true; // ✅ UI 터치는 p5가 가로채지 않음
+
+      if (touches && touches.length) {
+        pointerPressed(touches[0].x, touches[0].y);
+      }
+      return false; // ✅ 캔버스 조작일 때만 스크롤 방지
+    }
+
+    function touchMoved(e) {
+      if (isTouchOnUI(e)) return true; // ✅ UI에서 스와이프/탭 막지 않음
+
+      if (touches && touches.length) {
+        pointerDragged(touches[0].x, touches[0].y);
+      }
+      return false;
+    }
+
+    function touchEnded(e) {
+      if (isTouchOnUI(e)) return true;
+
+      pointerReleased();
+      return false;
+    }</script>
+
+  <!-- ===== 렌즈 도전 게임 로직 (점수/판정) ===== -->
+  <script>
+    (function () {
+      const elRound = document.getElementById('lens-round');
+      const elScore = document.getElementById('lens-score');
+      const elBest = document.getElementById('lens-best');
+      const elMsg = document.getElementById('lens-msg');
+      const btnStart = document.getElementById('lens-start');
+      const kindButtons = document.querySelectorAll('.cb-opt-kind');
+      const sizeSection = document.querySelector('.cb-size-section');
+      const sizeButtons = document.querySelectorAll('.cb-opt-size');
+
+      let score = 0;
+      let bestScore = 0;
+      let answerKind = null;   // '도립실상' 등
+      let answerSize = null;   // '확대','동일','축소' (9~10라운드에서 사용)
+      let selectedKind = null;
+      let selectedSize = null;
+
+      function updateBestScoreUI(animate) {
+        if (!elBest) return;
+        elBest.textContent = bestScore;
+        const badge = document.querySelector('#lens-challenge .best-badge');
+        if (animate && badge) {
+          badge.classList.remove('best-bump');
+          void badge.offsetWidth;            // reflow
+          badge.classList.add('best-bump');  // 애니메이션
         }
-      }else{
+      }
+
+      // Firebase에서 최고점수를 불러왔을 때 호출되는 콜백 (상대성이론 파일과 동일한 이름)
+      window.setBestScoreFromFirebase = function (scoreFromDb) {
+        bestScore = Number(scoreFromDb) || 0;
         updateBestScoreUI(false);
-      }
-      elMsg.innerHTML =
-        '✅ 정답입니다! +50점<br><small>다음 라운드로 넘어갑니다.</small>';
-    }else{
-      elMsg.innerHTML =
-        '❌ 오답입니다. 이번 라운드는 0점입니다.<br><small>다음 라운드로 넘어갑니다.</small>';
-    }
+      };
 
-    if(lensGameRound >= 10){
-      setTimeout(()=>{
-        endGame();
-      }, 600);
-    }else{
-      setTimeout(()=>{
-        lensGameRound++;
-        setupRound();
-      }, 600);
-    }
-  }
-
-  function checkAnswerAndAdvance(){
-    if(!lensGameOn || lensGameRound === 0) return;
-    if(!answerKind){
-      elMsg.innerHTML = '라운드 세팅 중 오류가 발생했습니다. 다시 도전해 주세요.';
-      return;
-    }
-
-    const requiresSize = lensGameRound >= 9;
-    const correctKind = (selectedKind === answerKind);
-    let correctSize = true;
-
-    if(requiresSize){
-      if(!answerSize){
-        elMsg.innerHTML = '라운드 세팅 중 오류가 발생했습니다. 다시 도전해 주세요.';
-        return;
-      }
-      correctSize = (selectedSize === answerSize);
-    }
-
-    const isCorrect = correctKind && correctSize;
-    handleResult(isCorrect);
-  }
-
-  // 상의 종류 버튼: 1~8라운드는 이 버튼을 누르는 순간 바로 채점,
-  // 9~10라운드는 크기까지 선택한 뒤 (크기 버튼 클릭 시) 채점
-  kindButtons.forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      if (lensRoundLocked) return;
-      selectKind(btn.dataset.kind);
-
-      if(!lensGameOn || lensGameRound === 0){
-        elMsg.innerHTML = '먼저 <b>도전</b> 버튼을 눌러 라운드를 시작해 주세요.';
-        return;
+      function selectKind(kind) {
+        selectedKind = kind;
+        kindButtons.forEach(btn => {
+          btn.classList.toggle('selected', btn.dataset.kind === kind);
+        });
       }
 
-      if(lensGameRound <= 8){
-        // 1~8라운드는 상의 종류만으로 채점
-        checkAnswerAndAdvance();
-      }else{
-        // 9~10라운드는 크기도 필요 → 크기까지 선택되면 채점
-        if(selectedSize){
-          checkAnswerAndAdvance();
-        }else{
-          elMsg.innerHTML =
-            '이제 <b>크기(확대/동일/축소)</b>도 선택해 주세요.';
-        }
-      }
-    });
-  });
-
-  // 크기 버튼: 9~10라운드에서만 사용, 이 버튼을 누르는 순간 채점
-  sizeButtons.forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      if (lensRoundLocked) return;
-      selectSize(btn.dataset.size);
-
-      if(!lensGameOn || lensGameRound === 0){
-        elMsg.innerHTML = '먼저 <b>도전</b> 버튼을 눌러 라운드를 시작해 주세요.';
-        return;
+      function selectSize(size) {
+        selectedSize = size;
+        sizeButtons.forEach(btn => {
+          btn.classList.toggle('selected', btn.dataset.size === size);
+        });
       }
 
-      if(lensGameRound < 9){
-        elMsg.innerHTML = '9~10라운드에서만 크기를 함께 맞추는 문제입니다.';
-        return;
-      }
-
-      if(!selectedKind){
+      function resetGame() {
+        score = 0;
+        lensGameOn = false;
+        lensGameRound = 0;
+        lensRoundLocked = false;
+        elRound.textContent = '-';
+        elScore.textContent = '0';
+        selectedKind = null;
+        selectedSize = null;
+        kindButtons.forEach(btn => btn.classList.remove('selected'));
+        sizeButtons.forEach(btn => btn.classList.remove('selected'));
+        sizeSection.style.display = 'none';
         elMsg.innerHTML =
-          '<b>상의 종류</b>를 먼저 선택한 뒤 크기를 선택해 주세요.';
-        return;
+          '도전 버튼을 눌러<br>렌즈 도전 게임을 시작하세요.' +
+          '<small>총 10라운드, 정답마다 +50점 · 오답은 0점</small>';
+      }
+      resetGame();
+
+      function randomBetween(min, max) {
+        return min + Math.random() * (max - min);
       }
 
-      // 9~10라운드: 종류+크기 모두 선택되면 바로 채점
-      checkAnswerAndAdvance();
-    });
-  });
+      // 현재 설정에서 상의 종류/크기 계산
+      function computeImageState(type, f, lensXNow, objectXNow, objectHNow) {
+        const a = Math.abs(lensXNow - objectXNow);
+        if (a < 5) return { valid: false };
+        const denom = (1 / f) - (1 / a);
+        if (!isFinite(denom) || Math.abs(denom) < 1e-4) {
+          return { valid: false, atInfinity: true };
+        }
+        const b = 1 / denom;
+        const m = -b / a;
+        const isReal = (b > 0);
 
-  btnStart.addEventListener('click', startGame);
-})();
-</script>
+        let kindLabel = null;
+        if (isReal && m < 0) kindLabel = '도립실상';
+        else if (isReal && m > 0) kindLabel = '정립실상';
+        else if (!isReal && m < 0) kindLabel = '도립허상';
+        else if (!isReal && m > 0) kindLabel = '정립허상';
 
-<!-- ===== Firebase 점수 연동 (렌즈 도전 게임) ===== -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+        const mag = Math.abs(m);
+        const tol = 0.08;
+        let sizeLabel;
+        if (mag > 1 + tol) sizeLabel = '확대';
+        else if (mag < 1 - tol) sizeLabel = '축소';
+        else sizeLabel = '동일';
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
-    authDomain: "simulation-67cd3.firebaseapp.com",
-    projectId: "simulation-67cd3",
-    storageBucket: "simulation-67cd3.appspot.com",
-    messagingSenderId: "615983461615",
-    appId: "1:615983461615:web:002e07bcea878eb6d5571a",
-    measurementId: "G-9RGN7LYE5W"
-  };
+        return { valid: true, atInfinity: false, kindLabel, sizeLabel, m };
+      }
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+      function setupRound() {
+        lensGameOn = true;
+        lensRoundLocked = false;
+        elScore.textContent = String(score);
+        elRound.textContent = lensGameRound + '/10';
 
-  // 상대성이론 파일과 동일한 구조: users/{uid}/simulations/{SIM_ID} 에 score 필드 저장
-  const SIM_ID = "렌즈_굴절_도전게임";
-  let firebaseUser = null;
+        selectedKind = null;
+        selectedSize = null;
+        kindButtons.forEach(btn => btn.classList.remove('selected'));
+        sizeButtons.forEach(btn => btn.classList.remove('selected'));
 
-  async function saveBestScore(score) {
-    if (!firebaseUser) return;
-    try {
-      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
-      await setDoc(ref, { score: Number(score) || 0 }, { merge: true });
-    } catch (err) {
-      console.error("[렌즈 도전] 최고 점수 저장 오류:", err);
-    }
-  }
+        const requiresSize = lensGameRound >= 9;
+        sizeSection.style.display = requiresSize ? 'block' : 'none';
 
-  async function loadBestScore() {
-    if (!firebaseUser) return;
-    try {
-      const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        const data = snap.data();
-        const score = Number(data.score || 0) || 0;
-        if (window.setBestScoreFromFirebase) {
-          window.setBestScoreFromFirebase(score);
+        // === 랜덤 파라미터 생성 (렌즈 종류, f, a, 물체 높이) ===
+        const type = (Math.random() < 0.5) ? 'convex' : 'concave';
+        ui.lensType.value = type;
+
+        const fmag = randomBetween(60, 260);
+        ui.focal.value = String(Math.round(fmag));
+        const fSign = (type === 'convex') ? +1 : -1;
+        const f = fSign * Math.round(fmag);
+
+        const marginLeft = Math.max(40, W * 0.12);
+        const marginRightOfObject = 40;
+        const minObjectX = marginLeft;
+        const maxObjectX = lensX - marginRightOfObject;
+        const minH = 60;
+        const maxH = 180;
+
+        let trials = 0;
+        answerKind = null;
+        answerSize = null;
+
+        while (trials < 80) {
+          objectX = randomBetween(minObjectX, maxObjectX);
+          objectH = (Math.random() < 0.5 ? 1 : -1) * randomBetween(minH, maxH);
+
+          // 물체 꼭짓점이 화면 밖으로 나가지 않도록 보정
+          let tipY = axisY - objectH;
+          if (tipY < 40) objectH = axisY - 40;
+          if (tipY > H - 40) objectH = axisY - (H - 40);
+
+          const state = computeImageState(type, f, lensX, objectX, objectH);
+          if (!state.valid || state.atInfinity || !state.kindLabel) {
+            trials++;
+            continue;
+          }
+          // 9~10라운드에는 크기도 명확하게 구분되도록
+          if (requiresSize && !state.sizeLabel) {
+            trials++;
+            continue;
+          }
+          answerKind = state.kindLabel;
+          answerSize = requiresSize ? state.sizeLabel : null;
+          break;
+        }
+
+        if (lensGameRound <= 5) {
+          elMsg.innerHTML =
+            '왼쪽 물체와 렌즈에서 만들어진 오른쪽 상을 보고<br>' +
+            '<b>상이 도립/정립 & 실상/허상</b>이<br>어떤 조합인지 선택하세요.';
+        } else if (lensGameRound <= 8) {
+          elMsg.innerHTML =
+            '렌즈 중심부터 오른쪽이 가려진 상태입니다.<br>' +
+            '광선 진행과 렌즈 공식을 떠올리며<br>' +
+            '<b>상이 도립/정립 & 실상/허상</b>을 추론해 보세요.';
+        } else {
+          elMsg.innerHTML =
+            '상이 도립/정립 & 실상/허상에 더해<br>' +
+            '<b>크기가 확대/동일/축소</b>인지까지 함께 맞춰 보세요.';
         }
       }
-    } catch (err) {
-      console.error("[렌즈 도전] 최고 점수 불러오기 오류:", err);
-    }
-  }
 
-  // 상대성이론 파일과 동일한 전역 이름
-  window.saveBestScoreToFirebase = saveBestScore;
+      function startGame() {
+        score = 0;
+        elScore.textContent = '0';
+        lensGameRound = 1;
+        lensGameOn = true;
+        updateBestScoreUI(false);
+        setupRound();
+      }
 
-  onAuthStateChanged(auth, async (user) => {
-    firebaseUser = user;
-    if (user) {
-      await loadBestScore();
+      function endGame() {
+        lensGameOn = false;
+        lensRoundLocked = false;
+        const finalScore = score;
+        lensGameRound = 0;
+        elRound.textContent = '-';
+        elMsg.innerHTML =
+          `게임이 끝났습니다.<br>최종 점수: <b>${finalScore}점</b>`;
+      }
+
+      function handleResult(isCorrect) {
+        lensRoundLocked = true;
+
+        if (isCorrect) {
+          score += 50;
+          elScore.textContent = String(score);
+          if (score > bestScore) {
+            bestScore = score;
+            updateBestScoreUI(true);
+            if (window.saveBestScoreToFirebase) {
+              window.saveBestScoreToFirebase(bestScore);
+            }
+          } else {
+            updateBestScoreUI(false);
+          }
+          elMsg.innerHTML =
+            '✅ 정답입니다! +50점<br><small>다음 라운드로 넘어갑니다.</small>';
+        } else {
+          elMsg.innerHTML =
+            '❌ 오답입니다. 이번 라운드는 0점입니다.<br><small>다음 라운드로 넘어갑니다.</small>';
+        }
+
+        if (lensGameRound >= 10) {
+          setTimeout(() => {
+            endGame();
+          }, 600);
+        } else {
+          setTimeout(() => {
+            lensGameRound++;
+            setupRound();
+          }, 600);
+        }
+      }
+
+      function checkAnswerAndAdvance() {
+        if (!lensGameOn || lensGameRound === 0) return;
+        if (!answerKind) {
+          elMsg.innerHTML = '라운드 세팅 중 오류가 발생했습니다. 다시 도전해 주세요.';
+          return;
+        }
+
+        const requiresSize = lensGameRound >= 9;
+        const correctKind = (selectedKind === answerKind);
+        let correctSize = true;
+
+        if (requiresSize) {
+          if (!answerSize) {
+            elMsg.innerHTML = '라운드 세팅 중 오류가 발생했습니다. 다시 도전해 주세요.';
+            return;
+          }
+          correctSize = (selectedSize === answerSize);
+        }
+
+        const isCorrect = correctKind && correctSize;
+        handleResult(isCorrect);
+      }
+
+      // 상의 종류 버튼: 1~8라운드는 이 버튼을 누르는 순간 바로 채점,
+      // 9~10라운드는 크기까지 선택한 뒤 (크기 버튼 클릭 시) 채점
+      kindButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (lensRoundLocked) return;
+          selectKind(btn.dataset.kind);
+
+          if (!lensGameOn || lensGameRound === 0) {
+            elMsg.innerHTML = '먼저 <b>도전</b> 버튼을 눌러 라운드를 시작해 주세요.';
+            return;
+          }
+
+          if (lensGameRound <= 8) {
+            // 1~8라운드는 상의 종류만으로 채점
+            checkAnswerAndAdvance();
+          } else {
+            // 9~10라운드는 크기도 필요 → 크기까지 선택되면 채점
+            if (selectedSize) {
+              checkAnswerAndAdvance();
+            } else {
+              elMsg.innerHTML =
+                '이제 <b>크기(확대/동일/축소)</b>도 선택해 주세요.';
+            }
+          }
+        });
+      });
+
+      // 크기 버튼: 9~10라운드에서만 사용, 이 버튼을 누르는 순간 채점
+      sizeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (lensRoundLocked) return;
+          selectSize(btn.dataset.size);
+
+          if (!lensGameOn || lensGameRound === 0) {
+            elMsg.innerHTML = '먼저 <b>도전</b> 버튼을 눌러 라운드를 시작해 주세요.';
+            return;
+          }
+
+          if (lensGameRound < 9) {
+            elMsg.innerHTML = '9~10라운드에서만 크기를 함께 맞추는 문제입니다.';
+            return;
+          }
+
+          if (!selectedKind) {
+            elMsg.innerHTML =
+              '<b>상의 종류</b>를 먼저 선택한 뒤 크기를 선택해 주세요.';
+            return;
+          }
+
+          // 9~10라운드: 종류+크기 모두 선택되면 바로 채점
+          checkAnswerAndAdvance();
+        });
+      });
+
+      btnStart.addEventListener('click', startGame);
+    })();
+  </script>
+
+  <!-- ===== Firebase 점수 연동 (렌즈 도전 게임) ===== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
+      authDomain: "simulation-67cd3.firebaseapp.com",
+      projectId: "simulation-67cd3",
+      storageBucket: "simulation-67cd3.appspot.com",
+      messagingSenderId: "615983461615",
+      appId: "1:615983461615:web:002e07bcea878eb6d5571a",
+      measurementId: "G-9RGN7LYE5W"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // 상대성이론 파일과 동일한 구조: users/{uid}/simulations/{SIM_ID} 에 score 필드 저장
+    const SIM_ID = "렌즈_굴절_도전게임";
+    let firebaseUser = null;
+
+    async function saveBestScore(score) {
+      if (!firebaseUser) return;
+      try {
+        const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+        await setDoc(ref, { score: Number(score) || 0 }, { merge: true });
+      } catch (err) {
+        console.error("[렌즈 도전] 최고 점수 저장 오류:", err);
+      }
     }
-  });
-</script>
+
+    async function loadBestScore() {
+      if (!firebaseUser) return;
+      try {
+        const ref = doc(db, "users", firebaseUser.uid, "simulations", SIM_ID);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          const data = snap.data();
+          const score = Number(data.score || 0) || 0;
+          if (window.setBestScoreFromFirebase) {
+            window.setBestScoreFromFirebase(score);
+          }
+        }
+      } catch (err) {
+        console.error("[렌즈 도전] 최고 점수 불러오기 오류:", err);
+      }
+    }
+
+    // 상대성이론 파일과 동일한 전역 이름
+    window.saveBestScoreToFirebase = saveBestScore;
+
+    onAuthStateChanged(auth, async (user) => {
+      firebaseUser = user;
+      if (user) {
+        await loadBestScore();
+      }
+    });
+  </script>
 
 </body>
+
 </html>

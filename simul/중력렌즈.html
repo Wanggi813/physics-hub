@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>중력 렌즈 조절</title>
+    <title>중력 렌즈</title>
     <style>
         body {
             margin: 0;
@@ -90,7 +90,7 @@
         const scene = new THREE.Scene();
         const camera = new THREE.Camera();
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-        
+
         // 1. 픽셀 비율 설정
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -267,7 +267,7 @@
         `;
 
         const geometry = new THREE.PlaneGeometry(2, 2);
-        
+
         // 2. uniforms 수정 (dpr 반영)
         const uniforms = {
             iTime: { value: 0 },
@@ -308,7 +308,7 @@
             previousMousePosition = { x: e.clientX, y: e.clientY };
         });
         document.addEventListener('mouseup', () => isDragging = false);
-        
+
         // 3. 마우스 이동 이벤트 수정 (dpr 반영)
         document.addEventListener('mousemove', (e) => {
             if (isDragging) {
@@ -345,11 +345,11 @@
             if (e.touches.length === 1 && isDragging) {
                 const deltaX = e.touches[0].pageX - previousMousePosition.x;
                 const deltaY = e.touches[0].pageY - previousMousePosition.y;
-                
+
                 // 이동 속도 보정
                 uniforms.iMouse.value.x += deltaX * 2.0 * dpr;
                 uniforms.iMouse.value.y -= deltaY * 2.0 * dpr;
-                
+
                 previousMousePosition = { x: e.touches[0].pageX, y: e.touches[0].pageY };
             } else if (e.touches.length === 2 && initialPinchDistance) {
                 const dx = e.touches[0].pageX - e.touches[1].pageX;

@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
-    <title>Smart Rockets - Improved Evolution</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>유전자 모델 로켓</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <style>
         body {
             margin: 0;
@@ -24,7 +26,7 @@
         #top-panel {
             background: #2c3e50;
             padding: 10px 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
             z-index: 20;
             flex-shrink: 0;
             transition: all 0.3s ease;
@@ -37,24 +39,30 @@
         }
 
         #info-panel {
-            position: absolute; 
-            bottom: 20px; 
+            position: absolute;
+            bottom: 20px;
             right: 20px;
-            background: rgba(0, 0, 0, 0.7); 
+            background: rgba(0, 0, 0, 0.7);
             padding: 10px 20px;
-            border-radius: 20px; 
+            border-radius: 20px;
             display: flex;
-            flex-direction: column; 
+            flex-direction: column;
             gap: 4px;
-            align-items: flex-end; 
-            text-align: right; 
-            font-size: 0.8em; 
+            align-items: flex-end;
+            text-align: right;
+            font-size: 0.8em;
             color: #aaa;
             z-index: 15;
             pointer-events: none;
         }
-        #info-panel span { display: block; }
-        #info-panel span:nth-child(2n) { display: none; }
+
+        #info-panel span {
+            display: block;
+        }
+
+        #info-panel span:nth-child(2n) {
+            display: none;
+        }
 
         .btn {
             padding: 10px 15px;
@@ -66,43 +74,130 @@
             text-transform: uppercase;
             white-space: nowrap;
         }
-        .btn:active { transform: scale(0.95); }
-        #btn-challenge { background-color: #e74c3c; color: white; box-shadow: 0 4px 0 #c0392b; }
-        #btn-challenge.running { background-color: #f39c12; box-shadow: 0 4px 0 #d35400; }
-        #btn-clear { background-color: #444; color: #ccc; font-size: 0.8em; }
 
-        .stat-group { display: flex; flex-direction: column; align-items: center; min-width: 50px; }
-        .stat-label { font-size: 0.7em; color: #888; margin-bottom: 2px; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8em; }
-        .mode-setup { background: #555; color: #ccc; }
-        .mode-search { background: #ff4757; color: white; animation: pulse 1s infinite; }
-        .mode-opt { background: #1e90ff; color: white; }
-        
-        .divider { width: 1px; height: 30px; background: #555; margin: 0 5px; }
-        input[type=range] { width: 80px; cursor: pointer; }
+        .btn:active {
+            transform: scale(0.95);
+        }
 
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        #btn-challenge {
+            background-color: #e74c3c;
+            color: white;
+            box-shadow: 0 4px 0 #c0392b;
+        }
+
+        #btn-challenge.running {
+            background-color: #f39c12;
+            box-shadow: 0 4px 0 #d35400;
+        }
+
+        #btn-clear {
+            background-color: #444;
+            color: #ccc;
+            font-size: 0.8em;
+        }
+
+        .stat-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 50px;
+        }
+
+        .stat-label {
+            font-size: 0.7em;
+            color: #888;
+            margin-bottom: 2px;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8em;
+        }
+
+        .mode-setup {
+            background: #555;
+            color: #ccc;
+        }
+
+        .mode-search {
+            background: #ff4757;
+            color: white;
+            animation: pulse 1s infinite;
+        }
+
+        .mode-opt {
+            background: #1e90ff;
+            color: white;
+        }
+
+        .divider {
+            width: 1px;
+            height: 30px;
+            background: #555;
+            margin: 0 5px;
+        }
+
+        input[type=range] {
+            width: 80px;
+            cursor: pointer;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
 
         @media (max-width: 1024px) {
             body {
-                flex-direction: row; 
+                flex-direction: row;
                 align-items: center;
                 justify-content: center;
                 background-color: #111;
             }
+
             #top-panel {
-                width: 80px; 
+                width: 80px;
                 height: 90vh;
                 flex-direction: column;
                 justify-content: flex-start;
                 gap: 15px;
-                overflow-y: auto; 
+                overflow-y: auto;
                 margin: 0 10px 0 10px;
             }
-            .divider { width: 80%; height: 1px; margin: 5px 0; }
-            .btn { width: 90%; font-size: 0.7em; padding: 12px 2px; white-space: normal; line-height: 1.2; }
-            .stat-group { width: 100%; margin: 5px 0; }
-            input[type=range] { width: 60px; }
+
+            .divider {
+                width: 80%;
+                height: 1px;
+                margin: 5px 0;
+            }
+
+            .btn {
+                width: 90%;
+                font-size: 0.7em;
+                padding: 12px 2px;
+                white-space: normal;
+                line-height: 1.2;
+            }
+
+            .stat-group {
+                width: 100%;
+                margin: 5px 0;
+            }
+
+            input[type=range] {
+                width: 60px;
+            }
         }
 
         canvas {
@@ -111,25 +206,67 @@
             touch-action: none;
             border: 2px solid #555;
             border-radius: 4px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
         }
 
         #loading-overlay {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8); color: #00ff7f; padding: 20px 40px; border-radius: 8px;
-            font-size: 1.5em; display: none; z-index: 100; white-space: nowrap;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff7f;
+            padding: 20px 40px;
+            border-radius: 8px;
+            font-size: 1.5em;
+            display: none;
+            z-index: 100;
+            white-space: nowrap;
         }
+
         #orientation-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #1a1a1a; color: white; display: none;
-            flex-direction: column; justify-content: center; align-items: center;
-            z-index: 9999; text-align: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a;
+            color: white;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            text-align: center;
         }
-        #orientation-overlay h1 { font-size: 1.5rem; margin-bottom: 10px; }
-        .rotate-icon { font-size: 3rem; margin-bottom: 20px; animation: rotatePhone 2s infinite; }
-        @keyframes rotatePhone { 0% { transform: rotate(0deg); } 50% { transform: rotate(-90deg); } 100% { transform: rotate(0deg); } }
+
+        #orientation-overlay h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .rotate-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            animation: rotatePhone 2s infinite;
+        }
+
+        @keyframes rotatePhone {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            50% {
+                transform: rotate(-90deg);
+            }
+
+            100% {
+                transform: rotate(0deg);
+            }
+        }
     </style>
 </head>
+
 <body>
 
     <div id="orientation-overlay">
@@ -171,730 +308,731 @@
 
     <canvas id="canvas"></canvas>
 
-<script>
-class Vector {
-    constructor(x, y) { this.x = x; this.y = y; }
-    add(v) { this.x += v.x; this.y += v.y; return this; }
-    sub(v) { this.x -= v.x; this.y -= v.y; return this; }
-    mult(n) { this.x *= n; this.y *= n; return this; }
-    div(n) { if(n!==0) { this.x /= n; this.y /= n; } return this; }
-    mag() { return Math.sqrt(this.x * this.x + this.y * this.y); }
-    normalize() { let m = this.mag(); if (m !== 0) this.mult(1 / m); return this; }
-    limit(max) { if (this.mag() > max) { this.normalize(); this.mult(max); } return this; }
-    copy() { return new Vector(this.x, this.y); }
-    static dist(v1, v2) { return Math.sqrt((v1.x - v2.x) ** 2 + (v1.y - v2.y) ** 2); }
-    static random2D() {
-        let angle = Math.random() * Math.PI * 2;
-        return new Vector(Math.cos(angle), Math.sin(angle));
-    }
-}
-
-let width, height;
-const lifetime = 3000; 
-const popSize = 400; 
-const maxForce = 0.5; 
-const maxSpeed = 6;
-let brushSize = 20; 
-
-let planetSize = 100;
-let planetRadius = 50;
-let touchRadius = 60;
-
-let isChallengeRunning = false;
-let cycles = 1;
-let firstSuccessGeneration = null;
-let stagnationCounter = 0;
-let lastMaxFitness = 0;
-
-let spawnPoint, targetPoint;
-let population;
-let lifeCounter = 0;
-let successExists = false; 
-
-const gridRes = 4;
-let cols, rows;
-let obstacleGrid = [];
-let distanceMap = [];
-
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const btnChallenge = document.getElementById('btn-challenge');
-const modeBadge = document.getElementById('mode-badge');
-const genDisplay = document.getElementById('gen-count');
-const mutRateDisplay = document.getElementById('mut-rate');
-const firstSuccessDisplay = document.getElementById('first-success');
-const loadingOverlay = document.getElementById('loading-overlay');
-const timerDisplay = document.getElementById('timer-display');
-const orientationOverlay = document.getElementById('orientation-overlay');
-
-let currentMutationRate = 0.02;
-let currentMutationForce = 0.1;
-
-const earthImg = new Image();
-const marsImg = new Image();
-let earthLoaded = false;
-let marsLoaded = false;
-let dragTarget = null; 
-
-function calculateResponsiveValues(winW) {
-    if (winW <= 1024) {
-        planetSize = 60;       
-        planetRadius = 30;     
-        touchRadius = 45;      
-        if(!isChallengeRunning && document.getElementById('brush-slider').value == 20) {
-             brushSize = 15;
-             document.getElementById('brush-slider').value = 15;
+    <script>
+        class Vector {
+            constructor(x, y) { this.x = x; this.y = y; }
+            add(v) { this.x += v.x; this.y += v.y; return this; }
+            sub(v) { this.x -= v.x; this.y -= v.y; return this; }
+            mult(n) { this.x *= n; this.y *= n; return this; }
+            div(n) { if (n !== 0) { this.x /= n; this.y /= n; } return this; }
+            mag() { return Math.sqrt(this.x * this.x + this.y * this.y); }
+            normalize() { let m = this.mag(); if (m !== 0) this.mult(1 / m); return this; }
+            limit(max) { if (this.mag() > max) { this.normalize(); this.mult(max); } return this; }
+            copy() { return new Vector(this.x, this.y); }
+            static dist(v1, v2) { return Math.sqrt((v1.x - v2.x) ** 2 + (v1.y - v2.y) ** 2); }
+            static random2D() {
+                let angle = Math.random() * Math.PI * 2;
+                return new Vector(Math.cos(angle), Math.sin(angle));
+            }
         }
-    } else {
-        planetSize = 100;
-        planetRadius = 50;
-        touchRadius = 60;
-    }
-}
 
-function initScreen() {
-    const winW = window.innerWidth;
-    const winH = window.innerHeight;
+        let width, height;
+        const lifetime = 3000;
+        const popSize = 400;
+        const maxForce = 0.5;
+        const maxSpeed = 6;
+        let brushSize = 20;
 
-    if (winW < winH) {
-        orientationOverlay.style.display = 'flex';
-    } else {
-        orientationOverlay.style.display = 'none';
-    }
+        let planetSize = 100;
+        let planetRadius = 50;
+        let touchRadius = 60;
 
-    calculateResponsiveValues(winW);
+        let isChallengeRunning = false;
+        let cycles = 1;
+        let firstSuccessGeneration = null;
+        let stagnationCounter = 0;
+        let lastMaxFitness = 0;
 
-    let marginX = 20; 
-    let marginY = 20; 
+        let spawnPoint, targetPoint;
+        let population;
+        let lifeCounter = 0;
+        let successExists = false;
 
-    if (winW <= 1024) {
-        let sidebarWidth = 100; 
-        width = winW - sidebarWidth - marginX; 
-        height = winH - marginY; 
-    } else {
-        width = winW - (marginX * 2);
-        height = winH - 130 - marginY; 
-    }
-    
-    canvas.width = width;
-    canvas.height = height;
-    
-    cols = Math.ceil(width / gridRes);
-    rows = Math.ceil(height / gridRes);
+        const gridRes = 4;
+        let cols, rows;
+        let obstacleGrid = [];
+        let distanceMap = [];
 
-    initObstacleGrid();
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const btnChallenge = document.getElementById('btn-challenge');
+        const modeBadge = document.getElementById('mode-badge');
+        const genDisplay = document.getElementById('gen-count');
+        const mutRateDisplay = document.getElementById('mut-rate');
+        const firstSuccessDisplay = document.getElementById('first-success');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const timerDisplay = document.getElementById('timer-display');
+        const orientationOverlay = document.getElementById('orientation-overlay');
 
-    let safePadding = planetRadius + 40; 
-    if (!spawnPoint) spawnPoint = new Vector(width / 2, height - safePadding);
-    else { 
-        spawnPoint.x = Math.min(width - safePadding, Math.max(safePadding, spawnPoint.x));
-        spawnPoint.y = Math.min(height - safePadding, Math.max(safePadding, spawnPoint.y));
-    }
-    
-    if (!targetPoint) targetPoint = new Vector(width / 2, safePadding);
-    else {
-        targetPoint.x = Math.min(width - safePadding, Math.max(safePadding, targetPoint.x));
-        targetPoint.y = Math.min(height - safePadding, Math.max(safePadding, targetPoint.y));
-    }
+        let currentMutationRate = 0.02;
+        let currentMutationForce = 0.1;
 
-    return true;
-}
+        const earthImg = new Image();
+        const marsImg = new Image();
+        let earthLoaded = false;
+        let marsLoaded = false;
+        let dragTarget = null;
 
-window.onload = () => {
-    initScreen();
-    setupInput();
-
-    document.getElementById('speed-slider').addEventListener('input', e => cycles = parseInt(e.target.value));
-    document.getElementById('brush-slider').addEventListener('input', e => brushSize = parseInt(e.target.value));
-
-    earthImg.onload = () => { earthLoaded = true; };
-    marsImg.onload = () => { marsLoaded = true; };
-    earthImg.onerror = () => { };
-    marsImg.onerror = () => { };
-
-    earthImg.src = './image/earth.png'; 
-    marsImg.src = './image/mars.png';  
-    
-    requestAnimationFrame(drawLoop);
-};
-
-window.addEventListener('resize', () => {
-    const ready = initScreen();
-    if (ready && isChallengeRunning) {
-        toggleChallenge(); 
-    }
-});
-
-function generateDistanceMap() {
-    distanceMap = new Array(cols).fill(0).map(() => new Array(rows).fill(Infinity));
-    let targetX = Math.floor(targetPoint.x / gridRes);
-    let targetY = Math.floor(targetPoint.y / gridRes);
-    
-    if (targetX >= cols || targetY >= rows || targetX < 0 || targetY < 0) return false;
-    if (obstacleGrid[targetX][targetY]) return false;
-
-    let queue = [[targetX, targetY]];
-    distanceMap[targetX][targetY] = 0;
-    let dx = [1, -1, 0, 0, 1, 1, -1, -1];
-    let dy = [0, 0, 1, -1, 1, -1, 1, -1];
-    let cost = [1, 1, 1, 1, 1.4, 1.4, 1.4, 1.4]; 
-
-    while (queue.length > 0) {
-        let [x, y] = queue.shift();
-        let currentDist = distanceMap[x][y];
-        for (let i = 0; i < 8; i++) {
-            let nx = x + dx[i];
-            let ny = y + dy[i];
-            if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && !obstacleGrid[nx][ny]) {
-                let newDist = currentDist + cost[i];
-                if (newDist < distanceMap[nx][ny]) {
-                    distanceMap[nx][ny] = newDist;
-                    queue.push([nx, ny]);
+        function calculateResponsiveValues(winW) {
+            if (winW <= 1024) {
+                planetSize = 60;
+                planetRadius = 30;
+                touchRadius = 45;
+                if (!isChallengeRunning && document.getElementById('brush-slider').value == 20) {
+                    brushSize = 15;
+                    document.getElementById('brush-slider').value = 15;
                 }
+            } else {
+                planetSize = 100;
+                planetRadius = 50;
+                touchRadius = 60;
             }
         }
-    }
-    let startX = Math.floor(spawnPoint.x / gridRes);
-    let startY = Math.floor(spawnPoint.y / gridRes);
-    if (startX >= cols || startY >= rows || startX < 0 || startY < 0) return false;
-    if (distanceMap[startX][startY] === Infinity) return false;
-    return true;
-}
 
-function toggleChallenge() {
-    if (isChallengeRunning) {
-        isChallengeRunning = false;
-        btnChallenge.innerText = "🚀 시작";
-        btnChallenge.classList.remove('running');
-        modeBadge.innerText = "SETUP";
-        modeBadge.className = "badge mode-setup";
-        population = null;
-        lifeCounter = 0;
-        successExists = false;
-    } else {
-        loadingOverlay.style.display = 'block';
-        setTimeout(() => {
-            let success = generateDistanceMap();
-            loadingOverlay.style.display = 'none';
-            if (!success) { alert("목표 지점으로 가는 길이 막혀있습니다!"); return; }
-            isChallengeRunning = true;
-            btnChallenge.innerText = "⏹ 중지";
-            btnChallenge.classList.add('running');
-            population = new Population();
-            lifeCounter = 0;
-            firstSuccessGeneration = null;
-            firstSuccessDisplay.innerText = "-";
-            stagnationCounter = 0;
-            lastMaxFitness = 0;
-            successExists = false;
-        }, 50);
-    }
-}
+        function initScreen() {
+            const winW = window.innerWidth;
+            const winH = window.innerHeight;
 
-function initObstacleGrid() {
-    obstacleGrid = new Array(cols).fill(0).map(() => new Array(rows).fill(false));
-    
-    let wallThick = 3; 
-
-    for (let x = 0; x < cols; x++) {
-        for (let y = 0; y < rows; y++) {
-            if (x < wallThick || x >= cols - wallThick || y < wallThick || y >= rows - wallThick) {
-                obstacleGrid[x][y] = true;
-            }
-        }
-    }
-}
-
-function clearObstacles() {
-    if (!isChallengeRunning) initObstacleGrid();
-}
-
-// ========== 개선된 DNA 클래스 ==========
-class DNA {
-    constructor(genes) {
-        if (genes) {
-            this.genes = genes;
-        } else {
-            this.genes = [];
-            for (let i = 0; i < lifetime; i++) {
-                let v = Vector.random2D();
-                v.mult(Math.random() * maxForce);
-                this.genes[i] = v;
-            }
-        }
-    }
-    
-    copy() { 
-        return new DNA(this.genes.map(v => v.copy())); 
-    }
-
-    mutation(startFrame, isElite = false) {
-        let cutoff = startFrame || 0;
-        
-        // 1. 구간 정의
-        let halfLife = this.genes.length * 0.5; // 초반 보호 구간 (50%)
-        let endZone = this.genes.length * 0.8;  // 후반 탐색 구간 (80% 이후)
-
-        // 엘리트(상위 개체)는 기존 경로를 어느 정도 유지해야 하므로, 후반부 변이율을 낮게 설정
-        if (isElite) {
-            for (let i = cutoff; i < this.genes.length; i++) {
-                // 엘리트도 마지막 20% 구간에서는 약간의 탐색을 허용 (확률 5%)
-                if (i > endZone && Math.random() < 0.05) {
-                    let nudge = Vector.random2D();
-                    nudge.mult(currentMutationForce * 0.5);
-                    this.genes[i].add(nudge);
-                    this.genes[i].limit(maxForce);
-                } 
-                // 그 외 구간은 매우 보수적
-                else if (Math.random() < 0.01) {
-                    let nudge = Vector.random2D();
-                    nudge.mult(currentMutationForce * 0.2);
-                    this.genes[i].add(nudge);
-                    this.genes[i].limit(maxForce);
-                }
-            }
-            return;
-        }
-
-        // 일반 개체 변이
-        for (let i = 0; i < this.genes.length; i++) {
-            
-            // ✨ [핵심] 후반부 20% 구간: 과격한 탐색 (High Exploration)
-            if (i > endZone) {
-                // 20%의 높은 확률로 돌연변이 발생 (기존 유전자를 무시하고 새로운 움직임 시도)
-                if (Math.random() < 0.2) { 
-                    // 기존 방향에 큰 힘을 더함 (부모 경로 이탈 유도)
-                    let nudge = Vector.random2D();
-                    nudge.mult(maxForce); // 최대 힘으로 밀어버림
-                    this.genes[i].add(nudge);
-                    this.genes[i].limit(maxForce);
-                }
-                continue; // 후반부 처리를 했으므로 아래 로직 건너뜀
+            if (winW < winH) {
+                orientationOverlay.style.display = 'flex';
+            } else {
+                orientationOverlay.style.display = 'none';
             }
 
-            // --- 기존 로직 (초반 ~ 80% 구간) ---
+            calculateResponsiveValues(winW);
 
-            // 안정성 계수: 초반 50% 구간은 변이 힘을 억제
-            let stabilityMult = (i < halfLife) ? 0.2 : 1.0; 
+            let marginX = 20;
+            let marginY = 20;
 
-            // A. 부모가 갔던 길 (Cutoff 이전)
-            if (i < cutoff) {
-                if (Math.random() < 0.05) { // 5% 확률
-                    let nudge = Vector.random2D();
-                    nudge.mult(currentMutationForce * stabilityMult);
-                    this.genes[i].add(nudge);
-                    this.genes[i].limit(maxForce);
-                }
-            } 
-            // B. 새로운 길 (Cutoff 이후 ~ 80% 이전)
+            if (winW <= 1024) {
+                let sidebarWidth = 100;
+                width = winW - sidebarWidth - marginX;
+                height = winH - marginY;
+            } else {
+                width = winW - (marginX * 2);
+                height = winH - 130 - marginY;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            cols = Math.ceil(width / gridRes);
+            rows = Math.ceil(height / gridRes);
+
+            initObstacleGrid();
+
+            let safePadding = planetRadius + 40;
+            if (!spawnPoint) spawnPoint = new Vector(width / 2, height - safePadding);
             else {
-                if (Math.random() < currentMutationRate) {
-                    let nudge = Vector.random2D();
-                    nudge.mult(currentMutationForce * stabilityMult);
-                    this.genes[i].add(nudge);
-                    this.genes[i].limit(maxForce);
-                }
+                spawnPoint.x = Math.min(width - safePadding, Math.max(safePadding, spawnPoint.x));
+                spawnPoint.y = Math.min(height - safePadding, Math.max(safePadding, spawnPoint.y));
             }
-        }
-    }
-}// ========== 개선된 Rocket 클래스 ==========
-class Rocket {
-    constructor(dna, isBest = false) {
-        this.pos = spawnPoint.copy();
-        this.vel = new Vector(0, 0);
-        this.acc = new Vector(0, 0);
-        this.dna = dna || new DNA();
-        this.fitness = 0;
-        this.completed = false;
-        this.crashed = false;
-        this.finishTime = 0;
-        this.isBest = isBest;
-        this.recordMapDist = Infinity; 
-        this.frameAtBest = 0;
-        this.finalMapDist = Infinity;
-        
-        // ✨ [추가] 총 이동 거리를 기록할 변수
-        this.odometer = 0; 
-    }
-    
-    applyForce(force) { 
-        this.acc.add(force); 
-    }
-    
-    update() {
-        if (this.completed || this.crashed) return;
 
-        let d = Vector.dist(this.pos, targetPoint);
-        if (d < planetRadius) { 
-            this.completed = true;
-            this.pos = targetPoint.copy();
-            this.finishTime = lifeCounter;
-            this.recordMapDist = 0; 
-            this.finalMapDist = 0;
-            this.frameAtBest = lifeCounter;
+            if (!targetPoint) targetPoint = new Vector(width / 2, safePadding);
+            else {
+                targetPoint.x = Math.min(width - safePadding, Math.max(safePadding, targetPoint.x));
+                targetPoint.y = Math.min(height - safePadding, Math.max(safePadding, targetPoint.y));
+            }
+
+            return true;
         }
 
-        let gx = Math.floor(this.pos.x / gridRes);
-        let gy = Math.floor(this.pos.y / gridRes);
-        
-        if (this.pos.x < 0 || this.pos.x > width || this.pos.y < 0 || this.pos.y > height || 
-           (gx >= 0 && gx < cols && gy >= 0 && gy < rows && obstacleGrid[gx][gy])) {
-            this.crashed = true;
-        } else {
-            if (gx >= 0 && gx < cols && gy >= 0 && gy < rows) {
-                let currentMapDist = distanceMap[gx][gy];
-                if (currentMapDist < this.recordMapDist) {
-                    this.recordMapDist = currentMapDist;
-                    this.frameAtBest = lifeCounter; 
-                }
-                this.finalMapDist = currentMapDist;
-                
-                // 가이드 힘
-                let bestDir = new Vector(0,0);
-                let minDist = currentMapDist;
-                let dx = [1, -1, 0, 0, 1, 1, -1, -1]; 
-                let dy = [0, 0, 1, -1, 1, -1, 1, -1];
-                for(let k=0; k<8; k++) {
-                    let nx = gx + dx[k];
-                    let ny = gy + dy[k];
-                    if(nx >= 0 && nx < cols && ny >= 0 && ny < rows && distanceMap[nx][ny] < minDist) {
-                        minDist = distanceMap[nx][ny];
-                        bestDir = new Vector(dx[k], dy[k]);
+        window.onload = () => {
+            initScreen();
+            setupInput();
+
+            document.getElementById('speed-slider').addEventListener('input', e => cycles = parseInt(e.target.value));
+            document.getElementById('brush-slider').addEventListener('input', e => brushSize = parseInt(e.target.value));
+
+            earthImg.onload = () => { earthLoaded = true; };
+            marsImg.onload = () => { marsLoaded = true; };
+            earthImg.onerror = () => { };
+            marsImg.onerror = () => { };
+
+            earthImg.src = './image/earth.png';
+            marsImg.src = './image/mars.png';
+
+            requestAnimationFrame(drawLoop);
+        };
+
+        window.addEventListener('resize', () => {
+            const ready = initScreen();
+            if (ready && isChallengeRunning) {
+                toggleChallenge();
+            }
+        });
+
+        function generateDistanceMap() {
+            distanceMap = new Array(cols).fill(0).map(() => new Array(rows).fill(Infinity));
+            let targetX = Math.floor(targetPoint.x / gridRes);
+            let targetY = Math.floor(targetPoint.y / gridRes);
+
+            if (targetX >= cols || targetY >= rows || targetX < 0 || targetY < 0) return false;
+            if (obstacleGrid[targetX][targetY]) return false;
+
+            let queue = [[targetX, targetY]];
+            distanceMap[targetX][targetY] = 0;
+            let dx = [1, -1, 0, 0, 1, 1, -1, -1];
+            let dy = [0, 0, 1, -1, 1, -1, 1, -1];
+            let cost = [1, 1, 1, 1, 1.4, 1.4, 1.4, 1.4];
+
+            while (queue.length > 0) {
+                let [x, y] = queue.shift();
+                let currentDist = distanceMap[x][y];
+                for (let i = 0; i < 8; i++) {
+                    let nx = x + dx[i];
+                    let ny = y + dy[i];
+                    if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && !obstacleGrid[nx][ny]) {
+                        let newDist = currentDist + cost[i];
+                        if (newDist < distanceMap[nx][ny]) {
+                            distanceMap[nx][ny] = newDist;
+                            queue.push([nx, ny]);
+                        }
                     }
                 }
-                if(bestDir.mag() > 0) {
-                    bestDir.normalize().mult(maxForce * 0.2);
-                    this.applyForce(bestDir);
+            }
+            let startX = Math.floor(spawnPoint.x / gridRes);
+            let startY = Math.floor(spawnPoint.y / gridRes);
+            if (startX >= cols || startY >= rows || startX < 0 || startY < 0) return false;
+            if (distanceMap[startX][startY] === Infinity) return false;
+            return true;
+        }
+
+        function toggleChallenge() {
+            if (isChallengeRunning) {
+                isChallengeRunning = false;
+                btnChallenge.innerText = "🚀 시작";
+                btnChallenge.classList.remove('running');
+                modeBadge.innerText = "SETUP";
+                modeBadge.className = "badge mode-setup";
+                population = null;
+                lifeCounter = 0;
+                successExists = false;
+            } else {
+                loadingOverlay.style.display = 'block';
+                setTimeout(() => {
+                    let success = generateDistanceMap();
+                    loadingOverlay.style.display = 'none';
+                    if (!success) { alert("목표 지점으로 가는 길이 막혀있습니다!"); return; }
+                    isChallengeRunning = true;
+                    btnChallenge.innerText = "⏹ 중지";
+                    btnChallenge.classList.add('running');
+                    population = new Population();
+                    lifeCounter = 0;
+                    firstSuccessGeneration = null;
+                    firstSuccessDisplay.innerText = "-";
+                    stagnationCounter = 0;
+                    lastMaxFitness = 0;
+                    successExists = false;
+                }, 50);
+            }
+        }
+
+        function initObstacleGrid() {
+            obstacleGrid = new Array(cols).fill(0).map(() => new Array(rows).fill(false));
+
+            let wallThick = 3;
+
+            for (let x = 0; x < cols; x++) {
+                for (let y = 0; y < rows; y++) {
+                    if (x < wallThick || x >= cols - wallThick || y < wallThick || y >= rows - wallThick) {
+                        obstacleGrid[x][y] = true;
+                    }
                 }
             }
         }
-        
-        this.applyForce(this.dna.genes[lifeCounter]);
 
-        if (!this.completed && !this.crashed) {
-            this.vel.add(this.acc);
-            this.vel.mult(0.98); 
-            this.vel.limit(maxSpeed); 
-            this.pos.add(this.vel);
-
-            // ✨ [추가] 이번 프레임에 이동한 거리만큼 누적
-            this.odometer += this.vel.mag();
-
-            this.acc.mult(0);
-        }
-    }
-
-    // ✨ 개선된 fitness 함수 (이동 거리 효율성 반영)
-    calcFitness() {
-        if (this.recordMapDist === Infinity) { 
-            this.fitness = 0; 
-            return; 
+        function clearObstacles() {
+            if (!isChallengeRunning) initObstacleGrid();
         }
 
-        // 1. 기본 거리 점수
-        let distScore = 1 / (this.recordMapDist + 1);
-        this.fitness = Math.pow(distScore, 3);
+        // ========== 개선된 DNA 클래스 ==========
+        class DNA {
+            constructor(genes) {
+                if (genes) {
+                    this.genes = genes;
+                } else {
+                    this.genes = [];
+                    for (let i = 0; i < lifetime; i++) {
+                        let v = Vector.random2D();
+                        v.mult(Math.random() * maxForce);
+                        this.genes[i] = v;
+                    }
+                }
+            }
 
-        if (this.completed) {
-            // 성공 시: 시간 보너스
-            let timeBonus = (lifetime - this.finishTime) / lifetime;
-            this.fitness *= (1 + timeBonus * 10);
-            
-            // ✨ [추가] 효율성(이동 거리) 보너스
-            // 많이 움직였을수록(odometer가 클수록) 분모가 커져서 점수가 낮아짐
-            // 제곱(pow 2)을 해서 짧은 경로를 아주 강력하게 선호하도록 유도
-            let efficiency = 1 / (1 + this.odometer * 0.05); 
-            this.fitness *= Math.pow(efficiency, 2); 
+            copy() {
+                return new DNA(this.genes.map(v => v.copy()));
+            }
 
-        } else {
-            // 실패 시: 진행도와 안정성 평가
-            
-            // 2. 최고점에서 얼마나 버텼는지
-            let stayTime = lifetime - this.frameAtBest;
-            let stayPenalty = 1 / (1 + stayTime / 100);
-            this.fitness *= stayPenalty;
-            
-            // 3. 후퇴 페널티
-            let drift = Math.max(0, this.finalMapDist - this.recordMapDist);
-            this.fitness *= (1 / (1 + drift * 0.05));
-            
-        }
-    }
+            mutation(startFrame, isElite = false) {
+                let cutoff = startFrame || 0;
 
-    show() {
-        ctx.save();
-        ctx.translate(this.pos.x, this.pos.y);
-        let angle = Math.atan2(this.vel.y, this.vel.x);
-        ctx.rotate(angle + Math.PI / 2);
-        if (this.isBest) {
-            ctx.fillStyle = "#ffff00"; 
-            ctx.globalAlpha = 1.0; 
-            ctx.scale(1.5, 1.5);
-        } else if (this.completed) {
-            ctx.fillStyle = "#00ff7f"; 
-            ctx.globalAlpha = 0.8;
-        } else if (this.crashed) {
-            ctx.fillStyle = "#ff4757"; 
-            ctx.globalAlpha = 0.2;
-        } else {
-            ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-        }
-        ctx.beginPath();
-        ctx.moveTo(0, -10); 
-        ctx.lineTo(-5, 5); 
-        ctx.lineTo(5, 5);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-    }
-}
-// ========== 개선된 Population 클래스 ==========
-class Population {
-    constructor() {
-        this.rockets = [];
-        this.popSize = popSize;
-        this.generation = 1;
-        this.topDNAs = [];  // 상위 DNA 여러 개 저장
-        this.mutationCutoff = 0; 
-        
-        for (let i = 0; i < this.popSize; i++) {
-            this.rockets[i] = new Rocket();
-        }
-    }
-    
-    run() {
-        let allStopped = true;
-        for (let i = 0; i < this.popSize; i++) {
-            this.rockets[i].update();
-            this.rockets[i].show();
-            if (!this.rockets[i].completed && !this.rockets[i].crashed) {
-                allStopped = false;
+                // 1. 구간 정의
+                let halfLife = this.genes.length * 0.5; // 초반 보호 구간 (50%)
+                let endZone = this.genes.length * 0.8;  // 후반 탐색 구간 (80% 이후)
+
+                // 엘리트(상위 개체)는 기존 경로를 어느 정도 유지해야 하므로, 후반부 변이율을 낮게 설정
+                if (isElite) {
+                    for (let i = cutoff; i < this.genes.length; i++) {
+                        // 엘리트도 마지막 20% 구간에서는 약간의 탐색을 허용 (확률 5%)
+                        if (i > endZone && Math.random() < 0.05) {
+                            let nudge = Vector.random2D();
+                            nudge.mult(currentMutationForce * 0.5);
+                            this.genes[i].add(nudge);
+                            this.genes[i].limit(maxForce);
+                        }
+                        // 그 외 구간은 매우 보수적
+                        else if (Math.random() < 0.01) {
+                            let nudge = Vector.random2D();
+                            nudge.mult(currentMutationForce * 0.2);
+                            this.genes[i].add(nudge);
+                            this.genes[i].limit(maxForce);
+                        }
+                    }
+                    return;
+                }
+
+                // 일반 개체 변이
+                for (let i = 0; i < this.genes.length; i++) {
+
+                    // ✨ [핵심] 후반부 20% 구간: 과격한 탐색 (High Exploration)
+                    if (i > endZone) {
+                        // 20%의 높은 확률로 돌연변이 발생 (기존 유전자를 무시하고 새로운 움직임 시도)
+                        if (Math.random() < 0.2) {
+                            // 기존 방향에 큰 힘을 더함 (부모 경로 이탈 유도)
+                            let nudge = Vector.random2D();
+                            nudge.mult(maxForce); // 최대 힘으로 밀어버림
+                            this.genes[i].add(nudge);
+                            this.genes[i].limit(maxForce);
+                        }
+                        continue; // 후반부 처리를 했으므로 아래 로직 건너뜀
+                    }
+
+                    // --- 기존 로직 (초반 ~ 80% 구간) ---
+
+                    // 안정성 계수: 초반 50% 구간은 변이 힘을 억제
+                    let stabilityMult = (i < halfLife) ? 0.2 : 1.0;
+
+                    // A. 부모가 갔던 길 (Cutoff 이전)
+                    if (i < cutoff) {
+                        if (Math.random() < 0.05) { // 5% 확률
+                            let nudge = Vector.random2D();
+                            nudge.mult(currentMutationForce * stabilityMult);
+                            this.genes[i].add(nudge);
+                            this.genes[i].limit(maxForce);
+                        }
+                    }
+                    // B. 새로운 길 (Cutoff 이후 ~ 80% 이전)
+                    else {
+                        if (Math.random() < currentMutationRate) {
+                            let nudge = Vector.random2D();
+                            nudge.mult(currentMutationForce * stabilityMult);
+                            this.genes[i].add(nudge);
+                            this.genes[i].limit(maxForce);
+                        }
+                    }
+                }
+            }
+        }// ========== 개선된 Rocket 클래스 ==========
+        class Rocket {
+            constructor(dna, isBest = false) {
+                this.pos = spawnPoint.copy();
+                this.vel = new Vector(0, 0);
+                this.acc = new Vector(0, 0);
+                this.dna = dna || new DNA();
+                this.fitness = 0;
+                this.completed = false;
+                this.crashed = false;
+                this.finishTime = 0;
+                this.isBest = isBest;
+                this.recordMapDist = Infinity;
+                this.frameAtBest = 0;
+                this.finalMapDist = Infinity;
+
+                // ✨ [추가] 총 이동 거리를 기록할 변수
+                this.odometer = 0;
+            }
+
+            applyForce(force) {
+                this.acc.add(force);
+            }
+
+            update() {
+                if (this.completed || this.crashed) return;
+
+                let d = Vector.dist(this.pos, targetPoint);
+                if (d < planetRadius) {
+                    this.completed = true;
+                    this.pos = targetPoint.copy();
+                    this.finishTime = lifeCounter;
+                    this.recordMapDist = 0;
+                    this.finalMapDist = 0;
+                    this.frameAtBest = lifeCounter;
+                }
+
+                let gx = Math.floor(this.pos.x / gridRes);
+                let gy = Math.floor(this.pos.y / gridRes);
+
+                if (this.pos.x < 0 || this.pos.x > width || this.pos.y < 0 || this.pos.y > height ||
+                    (gx >= 0 && gx < cols && gy >= 0 && gy < rows && obstacleGrid[gx][gy])) {
+                    this.crashed = true;
+                } else {
+                    if (gx >= 0 && gx < cols && gy >= 0 && gy < rows) {
+                        let currentMapDist = distanceMap[gx][gy];
+                        if (currentMapDist < this.recordMapDist) {
+                            this.recordMapDist = currentMapDist;
+                            this.frameAtBest = lifeCounter;
+                        }
+                        this.finalMapDist = currentMapDist;
+
+                        // 가이드 힘
+                        let bestDir = new Vector(0, 0);
+                        let minDist = currentMapDist;
+                        let dx = [1, -1, 0, 0, 1, 1, -1, -1];
+                        let dy = [0, 0, 1, -1, 1, -1, 1, -1];
+                        for (let k = 0; k < 8; k++) {
+                            let nx = gx + dx[k];
+                            let ny = gy + dy[k];
+                            if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && distanceMap[nx][ny] < minDist) {
+                                minDist = distanceMap[nx][ny];
+                                bestDir = new Vector(dx[k], dy[k]);
+                            }
+                        }
+                        if (bestDir.mag() > 0) {
+                            bestDir.normalize().mult(maxForce * 0.2);
+                            this.applyForce(bestDir);
+                        }
+                    }
+                }
+
+                this.applyForce(this.dna.genes[lifeCounter]);
+
+                if (!this.completed && !this.crashed) {
+                    this.vel.add(this.acc);
+                    this.vel.mult(0.98);
+                    this.vel.limit(maxSpeed);
+                    this.pos.add(this.vel);
+
+                    // ✨ [추가] 이번 프레임에 이동한 거리만큼 누적
+                    this.odometer += this.vel.mag();
+
+                    this.acc.mult(0);
+                }
+            }
+
+            // ✨ 개선된 fitness 함수 (이동 거리 효율성 반영)
+            calcFitness() {
+                if (this.recordMapDist === Infinity) {
+                    this.fitness = 0;
+                    return;
+                }
+
+                // 1. 기본 거리 점수
+                let distScore = 1 / (this.recordMapDist + 1);
+                this.fitness = Math.pow(distScore, 3);
+
+                if (this.completed) {
+                    // 성공 시: 시간 보너스
+                    let timeBonus = (lifetime - this.finishTime) / lifetime;
+                    this.fitness *= (1 + timeBonus * 10);
+
+                    // ✨ [추가] 효율성(이동 거리) 보너스
+                    // 많이 움직였을수록(odometer가 클수록) 분모가 커져서 점수가 낮아짐
+                    // 제곱(pow 2)을 해서 짧은 경로를 아주 강력하게 선호하도록 유도
+                    let efficiency = 1 / (1 + this.odometer * 0.05);
+                    this.fitness *= Math.pow(efficiency, 2);
+
+                } else {
+                    // 실패 시: 진행도와 안정성 평가
+
+                    // 2. 최고점에서 얼마나 버텼는지
+                    let stayTime = lifetime - this.frameAtBest;
+                    let stayPenalty = 1 / (1 + stayTime / 100);
+                    this.fitness *= stayPenalty;
+
+                    // 3. 후퇴 페널티
+                    let drift = Math.max(0, this.finalMapDist - this.recordMapDist);
+                    this.fitness *= (1 / (1 + drift * 0.05));
+
+                }
+            }
+
+            show() {
+                ctx.save();
+                ctx.translate(this.pos.x, this.pos.y);
+                let angle = Math.atan2(this.vel.y, this.vel.x);
+                ctx.rotate(angle + Math.PI / 2);
+                if (this.isBest) {
+                    ctx.fillStyle = "#ffff00";
+                    ctx.globalAlpha = 1.0;
+                    ctx.scale(1.5, 1.5);
+                } else if (this.completed) {
+                    ctx.fillStyle = "#00ff7f";
+                    ctx.globalAlpha = 0.8;
+                } else if (this.crashed) {
+                    ctx.fillStyle = "#ff4757";
+                    ctx.globalAlpha = 0.2;
+                } else {
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+                }
+                ctx.beginPath();
+                ctx.moveTo(0, -10);
+                ctx.lineTo(-5, 5);
+                ctx.lineTo(5, 5);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
             }
         }
-        return allStopped;
-    }
-    
-    // ✨ 개선된 평가 및 selection 준비
-    evaluate() {
-        // 1. fitness 계산
-        for (let i = 0; i < this.popSize; i++) {
-            this.rockets[i].calcFitness();
-        }
-        
-        // 2. fitness 기준 정렬
-        let sorted = this.rockets.slice().sort((a, b) => b.fitness - a.fitness);
-        
-        // 3. 상위 10% 저장
-        let eliteCount = Math.floor(this.popSize * 0.1);
-        this.topDNAs = sorted.slice(0, eliteCount).map(r => ({
-            dna: r.dna.copy(),
-            cutoff: r.completed ? r.finishTime : r.frameAtBest
-        }));
-        
-        let maxFit = sorted[0].fitness;
-        let bestRocket = sorted[0];
-        let successCount = this.rockets.filter(r => r.completed).length;
-        
-        this.mutationCutoff = Math.floor(
-            bestRocket.completed ? bestRocket.finishTime : bestRocket.frameAtBest
-        );
+        // ========== 개선된 Population 클래스 ==========
+        class Population {
+            constructor() {
+                this.rockets = [];
+                this.popSize = popSize;
+                this.generation = 1;
+                this.topDNAs = [];  // 상위 DNA 여러 개 저장
+                this.mutationCutoff = 0;
 
-        // 4. 모드 및 mutation 파라미터 조정
-        if (successCount > 0) {
-            successExists = true; 
-            if (firstSuccessGeneration === null) {
-                firstSuccessGeneration = this.generation;
-                firstSuccessDisplay.innerText = `${this.generation} 세대`;
+                for (let i = 0; i < this.popSize; i++) {
+                    this.rockets[i] = new Rocket();
+                }
             }
-            modeBadge.innerText = "OPTIMIZING";
-            modeBadge.className = "badge mode-opt";
-            currentMutationRate = 0.01; 
-            currentMutationForce = 0.05;
-        } else {
-            successExists = false;
-            modeBadge.innerText = "SEARCHING";
-            modeBadge.className = "badge mode-search";
-            
-            // stagnation 감지
-            if (Math.abs(maxFit - lastMaxFitness) < 0.00001) {
-                stagnationCounter++;
+
+            run() {
+                let allStopped = true;
+                for (let i = 0; i < this.popSize; i++) {
+                    this.rockets[i].update();
+                    this.rockets[i].show();
+                    if (!this.rockets[i].completed && !this.rockets[i].crashed) {
+                        allStopped = false;
+                    }
+                }
+                return allStopped;
+            }
+
+            // ✨ 개선된 평가 및 selection 준비
+            evaluate() {
+                // 1. fitness 계산
+                for (let i = 0; i < this.popSize; i++) {
+                    this.rockets[i].calcFitness();
+                }
+
+                // 2. fitness 기준 정렬
+                let sorted = this.rockets.slice().sort((a, b) => b.fitness - a.fitness);
+
+                // 3. 상위 10% 저장
+                let eliteCount = Math.floor(this.popSize * 0.1);
+                this.topDNAs = sorted.slice(0, eliteCount).map(r => ({
+                    dna: r.dna.copy(),
+                    cutoff: r.completed ? r.finishTime : r.frameAtBest
+                }));
+
+                let maxFit = sorted[0].fitness;
+                let bestRocket = sorted[0];
+                let successCount = this.rockets.filter(r => r.completed).length;
+
+                this.mutationCutoff = Math.floor(
+                    bestRocket.completed ? bestRocket.finishTime : bestRocket.frameAtBest
+                );
+
+                // 4. 모드 및 mutation 파라미터 조정
+                if (successCount > 0) {
+                    successExists = true;
+                    if (firstSuccessGeneration === null) {
+                        firstSuccessGeneration = this.generation;
+                        firstSuccessDisplay.innerText = `${this.generation} 세대`;
+                    }
+                    modeBadge.innerText = "OPTIMIZING";
+                    modeBadge.className = "badge mode-opt";
+                    currentMutationRate = 0.01;
+                    currentMutationForce = 0.05;
+                } else {
+                    successExists = false;
+                    modeBadge.innerText = "SEARCHING";
+                    modeBadge.className = "badge mode-search";
+
+                    // stagnation 감지
+                    if (Math.abs(maxFit - lastMaxFitness) < 0.00001) {
+                        stagnationCounter++;
+                    } else {
+                        stagnationCounter = 0;
+                    }
+                    lastMaxFitness = maxFit;
+
+                    // 정체 시 mutation 증가
+                    currentMutationRate = Math.min(0.02 + (stagnationCounter * 0.01), 0.4);
+                    currentMutationForce = Math.min(0.1 + (stagnationCounter * 0.02), 0.5);
+                }
+
+                mutRateDisplay.innerText = (currentMutationRate * 100).toFixed(1) + "%";
+            }
+
+            // ✨ 개선된 selection: 룰렛 휠 + 엘리트 보존
+            selection() {
+                let newRockets = [];
+                let eliteCount = Math.floor(this.popSize * 0.05);  // 상위 5% 그대로 복제
+
+                // 1. 엘리트 보존 (약간의 변이만)
+                for (let i = 0; i < eliteCount && i < this.topDNAs.length; i++) {
+                    let dna = this.topDNAs[i].dna.copy();
+                    dna.mutation(this.topDNAs[i].cutoff, true);  // 엘리트 변이
+                    newRockets.push(new Rocket(dna, i === 0));
+                }
+
+                // 2. 룰렛 휠로 나머지 채우기
+                let totalFitness = this.rockets.reduce((sum, r) => sum + r.fitness, 0);
+
+                for (let i = eliteCount; i < this.popSize; i++) {
+                    let parentDNA;
+
+                    if (totalFitness === 0) {
+                        // fitness가 모두 0이면 랜덤 선택
+                        parentDNA = this.rockets[Math.floor(Math.random() * this.rockets.length)].dna.copy();
+                    } else {
+                        // 룰렛 휠 선택
+                        let rand = Math.random() * totalFitness;
+                        let sum = 0;
+                        for (let j = 0; j < this.rockets.length; j++) {
+                            sum += this.rockets[j].fitness;
+                            if (sum >= rand) {
+                                parentDNA = this.rockets[j].dna.copy();
+                                break;
+                            }
+                        }
+                    }
+
+                    parentDNA.mutation(this.mutationCutoff, false);
+                    newRockets.push(new Rocket(parentDNA));
+                }
+
+                this.rockets = newRockets;
+                this.generation++;
+                genDisplay.innerText = this.generation;
+            }
+        }
+
+        function drawMapElements() {
+            ctx.fillStyle = "#1a1a1a";
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.fillStyle = "white";
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    if (obstacleGrid[i][j]) ctx.fillRect(i * gridRes, j * gridRes, gridRes, gridRes);
+                }
+            }
+
+            if (marsLoaded) {
+                ctx.drawImage(marsImg, targetPoint.x - planetRadius, targetPoint.y - planetRadius, planetSize, planetSize);
             } else {
-                stagnationCounter = 0; 
+                ctx.beginPath();
+                ctx.arc(targetPoint.x, targetPoint.y, planetRadius, 0, Math.PI * 2);
+                ctx.fillStyle = "#2ecc71"; ctx.fill();
             }
-            lastMaxFitness = maxFit;
-            
-            // 정체 시 mutation 증가
-            currentMutationRate = Math.min(0.02 + (stagnationCounter * 0.01), 0.4);
-            currentMutationForce = Math.min(0.1 + (stagnationCounter * 0.02), 0.5);
-        }
-        
-        mutRateDisplay.innerText = (currentMutationRate * 100).toFixed(1) + "%";
-    }
-    
-    // ✨ 개선된 selection: 룰렛 휠 + 엘리트 보존
-    selection() {
-        let newRockets = [];
-        let eliteCount = Math.floor(this.popSize * 0.05);  // 상위 5% 그대로 복제
-        
-        // 1. 엘리트 보존 (약간의 변이만)
-        for (let i = 0; i < eliteCount && i < this.topDNAs.length; i++) {
-            let dna = this.topDNAs[i].dna.copy();
-            dna.mutation(this.topDNAs[i].cutoff, true);  // 엘리트 변이
-            newRockets.push(new Rocket(dna, i === 0));
-        }
-        
-        // 2. 룰렛 휠로 나머지 채우기
-        let totalFitness = this.rockets.reduce((sum, r) => sum + r.fitness, 0);
-        
-        for (let i = eliteCount; i < this.popSize; i++) {
-            let parentDNA;
-            
-            if (totalFitness === 0) {
-                // fitness가 모두 0이면 랜덤 선택
-                parentDNA = this.rockets[Math.floor(Math.random() * this.rockets.length)].dna.copy();
+
+            if (earthLoaded) {
+                ctx.drawImage(earthImg, spawnPoint.x - planetRadius, spawnPoint.y - planetRadius, planetSize, planetSize);
             } else {
-                // 룰렛 휠 선택
-                let rand = Math.random() * totalFitness;
-                let sum = 0;
-                for (let j = 0; j < this.rockets.length; j++) {
-                    sum += this.rockets[j].fitness;
-                    if (sum >= rand) {
-                        parentDNA = this.rockets[j].dna.copy();
+                ctx.beginPath();
+                ctx.rect(spawnPoint.x - planetRadius, spawnPoint.y - planetRadius, planetSize, planetSize);
+                ctx.fillStyle = "#3498db"; ctx.fill();
+            }
+        }
+
+        function drawLoop() {
+            drawMapElements();
+            if (isChallengeRunning && population) {
+                for (let n = 0; n < cycles; n++) {
+                    let allStopped = population.run();
+                    lifeCounter++;
+                    timerDisplay.innerText = lifeCounter;
+                    if (allStopped || lifeCounter >= lifetime) {
+                        population.evaluate();
+                        population.selection();
+                        lifeCounter = 0;
                         break;
                     }
                 }
             }
-            
-            parentDNA.mutation(this.mutationCutoff, false);
-            newRockets.push(new Rocket(parentDNA));
+            requestAnimationFrame(drawLoop);
         }
-        
-        this.rockets = newRockets;
-        this.generation++;
-        genDisplay.innerText = this.generation;
-    }
-}
 
-function drawMapElements() {
-    ctx.fillStyle = "#1a1a1a";
-    ctx.fillRect(0, 0, width, height);
+        function setupInput() {
+            canvas.addEventListener('mousedown', (e) => {
+                const { x, y } = getPos(e);
+                handleStart(x, y);
+            });
+            canvas.addEventListener('mousemove', (e) => {
+                const { x, y } = getPos(e);
+                handleMove(x, y);
+            });
+            window.addEventListener('mouseup', handleEnd);
 
-    ctx.fillStyle = "white";
-    for (let i = 0; i < cols; i++) {
-        for (let j = 0; j < rows; j++) {
-            if (obstacleGrid[i][j]) ctx.fillRect(i * gridRes, j * gridRes, gridRes, gridRes);
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const { x, y } = getPos(e.touches[0]);
+                handleStart(x, y);
+            }, { passive: false });
+
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const { x, y } = getPos(e.touches[0]);
+                handleMove(x, y);
+            }, { passive: false });
+
+            window.addEventListener('touchend', handleEnd);
         }
-    }
 
-    if (marsLoaded) {
-        ctx.drawImage(marsImg, targetPoint.x - planetRadius, targetPoint.y - planetRadius, planetSize, planetSize);
-    } else {
-        ctx.beginPath();
-        ctx.arc(targetPoint.x, targetPoint.y, planetRadius, 0, Math.PI*2);
-        ctx.fillStyle = "#2ecc71"; ctx.fill();
-    }
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        }
 
-    if (earthLoaded) {
-        ctx.drawImage(earthImg, spawnPoint.x - planetRadius, spawnPoint.y - planetRadius, planetSize, planetSize);
-    } else {
-        ctx.beginPath();
-        ctx.rect(spawnPoint.x - planetRadius, spawnPoint.y - planetRadius, planetSize, planetSize);
-        ctx.fillStyle = "#3498db"; ctx.fill();
-    }
-}
+        function handleStart(x, y) {
+            if (isChallengeRunning) return;
+            if (Vector.dist(new Vector(x, y), spawnPoint) < touchRadius) {
+                dragTarget = 'earth';
+                return;
+            }
+            if (Vector.dist(new Vector(x, y), targetPoint) < touchRadius) {
+                dragTarget = 'mars';
+                return;
+            }
+            dragTarget = 'wall';
+            addObstacle(x, y);
+        }
 
-function drawLoop() {
-    drawMapElements();
-    if (isChallengeRunning && population) {
-        for (let n = 0; n < cycles; n++) {
-            let allStopped = population.run();
-            lifeCounter++;
-            timerDisplay.innerText = lifeCounter; 
-            if (allStopped || lifeCounter >= lifetime) {
-                population.evaluate();
-                population.selection();
-                lifeCounter = 0;
-                break;
+        function handleMove(x, y) {
+            if (!dragTarget) return;
+            if (dragTarget === 'earth') {
+                spawnPoint.x = Math.max(planetRadius, Math.min(width - planetRadius, x));
+                spawnPoint.y = Math.max(planetRadius, Math.min(height - planetRadius, y));
+            } else if (dragTarget === 'mars') {
+                targetPoint.x = Math.max(planetRadius, Math.min(width - planetRadius, x));
+                targetPoint.y = Math.max(planetRadius, Math.min(height - planetRadius, y));
+            } else if (dragTarget === 'wall') {
+                addObstacle(x, y);
             }
         }
-    }
-    requestAnimationFrame(drawLoop);
-}
 
-function setupInput() {
-    canvas.addEventListener('mousedown', (e) => {
-        const {x, y} = getPos(e);
-        handleStart(x, y);
-    });
-    canvas.addEventListener('mousemove', (e) => {
-        const {x, y} = getPos(e);
-        handleMove(x, y);
-    });
-    window.addEventListener('mouseup', handleEnd);
+        function handleEnd() { dragTarget = null; }
 
-    canvas.addEventListener('touchstart', (e) => { 
-        e.preventDefault(); 
-        const {x, y} = getPos(e.touches[0]);
-        handleStart(x, y);
-    }, {passive: false});
-    
-    canvas.addEventListener('touchmove', (e) => { 
-        e.preventDefault(); 
-        const {x, y} = getPos(e.touches[0]);
-        handleMove(x, y);
-    }, {passive: false});
-
-    window.addEventListener('touchend', handleEnd);
-}
-
-function getPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-}
-
-function handleStart(x, y) {
-    if (isChallengeRunning) return;
-    if (Vector.dist(new Vector(x, y), spawnPoint) < touchRadius) {
-        dragTarget = 'earth';
-        return;
-    }
-    if (Vector.dist(new Vector(x, y), targetPoint) < touchRadius) {
-        dragTarget = 'mars';
-        return;
-    }
-    dragTarget = 'wall';
-    addObstacle(x, y);
-}
-
-function handleMove(x, y) {
-    if (!dragTarget) return;
-    if (dragTarget === 'earth') {
-        spawnPoint.x = Math.max(planetRadius, Math.min(width - planetRadius, x));
-        spawnPoint.y = Math.max(planetRadius, Math.min(height - planetRadius, y));
-    } else if (dragTarget === 'mars') {
-        targetPoint.x = Math.max(planetRadius, Math.min(width - planetRadius, x));
-        targetPoint.y = Math.max(planetRadius, Math.min(height - planetRadius, y));
-    } else if (dragTarget === 'wall') {
-        addObstacle(x, y);
-    }
-}
-
-function handleEnd() { dragTarget = null; }
-
-function addObstacle(x, y) {
-    let radius = brushSize / 2; 
-    let minGridX = Math.max(0, Math.floor((x - radius) / gridRes));
-    let maxGridX = Math.min(cols - 1, Math.floor((x + radius) / gridRes));
-    let minGridY = Math.max(0, Math.floor((y - radius) / gridRes));
-    let maxGridY = Math.min(rows - 1, Math.floor((y + radius) / gridRes));
-    for (let i = minGridX; i <= maxGridX; i++) {
-        for (let j = minGridY; j <= maxGridY; j++) {
-            let cx = i * gridRes + gridRes / 2;
-            let cy = j * gridRes + gridRes / 2;
-            if (Math.sqrt((cx - x) ** 2 + (cy - y) ** 2) < radius) obstacleGrid[i][j] = true;
+        function addObstacle(x, y) {
+            let radius = brushSize / 2;
+            let minGridX = Math.max(0, Math.floor((x - radius) / gridRes));
+            let maxGridX = Math.min(cols - 1, Math.floor((x + radius) / gridRes));
+            let minGridY = Math.max(0, Math.floor((y - radius) / gridRes));
+            let maxGridY = Math.min(rows - 1, Math.floor((y + radius) / gridRes));
+            for (let i = minGridX; i <= maxGridX; i++) {
+                for (let j = minGridY; j <= maxGridY; j++) {
+                    let cx = i * gridRes + gridRes / 2;
+                    let cy = j * gridRes + gridRes / 2;
+                    if (Math.sqrt((cx - x) ** 2 + (cy - y) ** 2) < radius) obstacleGrid[i][j] = true;
+                }
+            }
         }
-    }
-}
-</script>
+    </script>
 </body>
+
 </html>

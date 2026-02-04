@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
@@ -7,9 +8,14 @@
     <style>
         /* Pretendard 폰트 적용 */
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-        
-        body { margin: 0; overflow: hidden; background-color: #ffffff; font-family: 'Pretendard', sans-serif; }
-        
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #ffffff;
+            font-family: 'Pretendard', sans-serif;
+        }
+
         /* 3D 캔버스 스타일 (기본) */
         canvas#three-canvas {
             display: block;
@@ -21,7 +27,8 @@
         /* UI 패널 (PC 기본 스타일) */
         #ui-container {
             position: absolute;
-            top: 20px; left: 20px;
+            top: 20px;
+            left: 20px;
             width: 320px;
             padding: 25px;
             background: rgba(255, 255, 255, 0.95);
@@ -29,57 +36,135 @@
             border-radius: 16px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
             z-index: 100;
-            max-height: 90vh; /* PC에서도 너무 길면 스크롤 */
+            max-height: 90vh;
+            /* PC에서도 너무 길면 스크롤 */
             overflow-y: auto;
         }
 
         /* 스크롤바 커스텀 */
-        #ui-container::-webkit-scrollbar { width: 6px; }
-        #ui-container::-webkit-scrollbar-track { background: transparent; }
-        #ui-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-
-        h1 { margin: 0 0 5px 0; font-size: 1.3rem; color: #1e293b; text-align: center; font-weight: 800; letter-spacing: -0.5px;}
-        p.sub { margin: 0 0 20px 0; font-size: 0.9rem; color: #64748b; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; text-align: center;}
-        
-        .control-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-size: 0.95rem; color: #334155; font-weight: 700; }
-        
-        input[type=range] { 
-            width: 100%; cursor: pointer; accent-color: #475569; 
-            height: 6px; background: #e2e8f0; border-radius: 5px;
+        #ui-container::-webkit-scrollbar {
+            width: 6px;
         }
-        
+
+        #ui-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #ui-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        h1 {
+            margin: 0 0 5px 0;
+            font-size: 1.3rem;
+            color: #1e293b;
+            text-align: center;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        p.sub {
+            margin: 0 0 20px 0;
+            font-size: 0.9rem;
+            color: #64748b;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 15px;
+            text-align: center;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            color: #334155;
+            font-weight: 700;
+        }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: #475569;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 5px;
+        }
+
         /* 버튼 스타일 */
         .btn {
-            width: 100%; padding: 14px;
-            background: #f8fafc; border: 1px solid #cbd5e1; color: #334155;
-            border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.95rem;
+            width: 100%;
+            padding: 14px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.95rem;
             transition: all 0.2s ease;
-            display: flex; justify-content: center; align-items: center; gap: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
             font-family: 'Pretendard', sans-serif;
             margin-bottom: 8px;
         }
-        .btn:hover { background: #f1f5f9; }
-        .btn.active {
-            background: #334155; border-color: #1e293b; color: white;
-            box-shadow: 0 4px 10px rgba(0,0,0, 0.1);
+
+        .btn:hover {
+            background: #f1f5f9;
         }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; background: #f1f5f9; color: #94a3b8; }
+
+        .btn.active {
+            background: #334155;
+            border-color: #1e293b;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
+            background: #f1f5f9;
+            color: #94a3b8;
+        }
 
         .checkbox-wrapper {
-            display: gap: 10px; align-items: center; margin-bottom: 8px;
-            padding: 12px; background: #f8fafc; border-radius: 8px;
-            cursor: pointer; display: flex;
+            display: gap: 10px;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
             transition: background 0.2s;
         }
-        .checkbox-wrapper:hover { background: #f1f5f9; }
+
+        .checkbox-wrapper:hover {
+            background: #f1f5f9;
+        }
 
         .special-wrapper {
-            background-color: #eff6ff; 
+            background-color: #eff6ff;
             border: 1px solid #bfdbfe;
         }
-        .special-wrapper:hover { background-color: #dbeafe; }
-        .special-text { font-size: 0.8rem; color: #64748b; margin-top: -5px; padding-left: 5px; line-height: 1.4; }
+
+        .special-wrapper:hover {
+            background-color: #dbeafe;
+        }
+
+        .special-text {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: -5px;
+            padding-left: 5px;
+            line-height: 1.4;
+        }
 
         #graph-wrapper {
             background: #fff;
@@ -90,29 +175,38 @@
             display: flex;
             justify-content: center;
         }
-        
+
         /* 그래프 캔버스 반응형 처리 */
         #graphCanvas {
             width: 100%;
             height: auto;
-            max-width: 290px; 
+            max-width: 290px;
         }
 
         #instruction {
-            position: absolute; bottom: 30px; width: 100%; text-align: center;
-            color: #94a3b8; font-size: 0.85rem; pointer-events: none; font-weight: 500;
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            pointer-events: none;
+            font-weight: 500;
         }
 
         /* =========================================
            ★ 모바일 반응형 (Split View) 스타일 ★
            ========================================= */
         @media (max-width: 768px) {
+
             /* 3D Scene: 화면 상단 45% 고정 */
             canvas#three-canvas {
                 position: fixed !important;
-                top: 0; left: 0;
+                top: 0;
+                left: 0;
                 width: 100% !important;
-                height: 45vh !important; /* JS resize 로직과 일치해야 함 */
+                height: 45vh !important;
+                /* JS resize 로직과 일치해야 함 */
                 z-index: 0;
                 border-bottom: 1px solid #e2e8f0;
             }
@@ -120,34 +214,49 @@
             /* UI 패널: 화면 하단 55% 스크롤 영역 */
             #ui-container {
                 position: fixed !important;
-                top: 45vh !important; /* Scene 바로 아래 시작 */
+                top: 45vh !important;
+                /* Scene 바로 아래 시작 */
                 left: 0 !important;
                 width: 100% !important;
-                height: 55vh !important; /* 나머지 높이 */
+                height: 55vh !important;
+                /* 나머지 높이 */
                 max-height: none !important;
-                
-                box-sizing: border-box; /* 패딩 포함 크기 계산 */
-                border-radius: 20px 20px 0 0; /* 상단 모서리 둥글게 */
+
+                box-sizing: border-box;
+                /* 패딩 포함 크기 계산 */
+                border-radius: 20px 20px 0 0;
+                /* 상단 모서리 둥글게 */
                 border: none;
                 border-top: 1px solid #cbd5e1;
-                box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
-                
+                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+
                 padding: 20px;
                 overflow-y: auto;
                 background: #ffffff;
             }
 
             /* 모바일에서 불필요한 요소 숨김 */
-            #instruction { display: none; }
-            
-            h1 { font-size: 1.1rem; margin-top: 5px; }
-            p.sub { margin-bottom: 15px; padding-bottom: 10px; }
-            
+            #instruction {
+                display: none;
+            }
+
+            h1 {
+                font-size: 1.1rem;
+                margin-top: 5px;
+            }
+
+            p.sub {
+                margin-bottom: 15px;
+                padding-bottom: 10px;
+            }
+
             /* 그래프 꽉 차게 */
-            #graphCanvas { max-width: 100%; }
+            #graphCanvas {
+                max-width: 100%;
+            }
         }
     </style>
-    
+
     <script type="importmap">
         {
             "imports": {
@@ -157,363 +266,370 @@
         }
     </script>
 </head>
+
 <body>
 
-<canvas id="three-canvas"></canvas>
+    <canvas id="three-canvas"></canvas>
 
-<div id="ui-container">
-    <h1>편광 필름 실험실</h1>
-    <p class="sub">말뤼스 법칙과 필름의 밝기 변화</p>
-    
-    <div class="control-group">
-        <label style="display:flex; justify-content:space-between;">
-            제2 편광판 회전
-            <span id="angleVal" style="color:#0f172a; font-family:'Pretendard'; font-size:1.1rem;">0°</span>
-        </label>
-        <input type="range" id="angleSlider" min="0" max="90" value="0" step="1">
-    </div>
+    <div id="ui-container">
+        <h1>편광 필름 실험실</h1>
+        <p class="sub">말뤼스 법칙과 필름의 밝기 변화</p>
 
-    <div class="control-group">
-        <label>실생활 응용 (LCD)</label>
-        <div class="checkbox-wrapper">
-            <input type="checkbox" id="lcdCheck" style="width:18px; height:18px; accent-color:#334155; cursor:pointer;">
-            <span style="font-size:0.9rem; color:#475569; margin-left: 8px;" onclick="document.getElementById('lcdCheck').click()">액정 분자층 보기</span>
+        <div class="control-group">
+            <label style="display:flex; justify-content:space-between;">
+                제2 편광판 회전
+                <span id="angleVal" style="color:#0f172a; font-family:'Pretendard'; font-size:1.1rem;">0°</span>
+            </label>
+            <input type="range" id="angleSlider" min="0" max="90" value="0" step="1">
         </div>
-        <button id="voltageBtn" class="btn" disabled>
-            ⚡ 전압 스위치 (꺼짐)
-        </button>
-    </div>
 
-    <div class="control-group">
-        <label style="color:#2563eb;">심화 실험 (Vector)</label>
-        <div class="checkbox-wrapper special-wrapper">
-            <input type="checkbox" id="thirdPolCheck" style="width:18px; height:18px; accent-color:#2563eb; cursor:pointer;">
-            <span style="font-size:0.9rem; color:#2563eb; font-weight:bold; margin-left: 8px;" onclick="document.getElementById('thirdPolCheck').click()">제3의 편광판 (45°) 끼우기</span>
+        <div class="control-group">
+            <label>실생활 응용 (LCD)</label>
+            <div class="checkbox-wrapper">
+                <input type="checkbox" id="lcdCheck"
+                    style="width:18px; height:18px; accent-color:#334155; cursor:pointer;">
+                <span style="font-size:0.9rem; color:#475569; margin-left: 8px;"
+                    onclick="document.getElementById('lcdCheck').click()">액정 분자층 보기</span>
+            </div>
+            <button id="voltageBtn" class="btn" disabled>
+                ⚡ 전압 스위치 (꺼짐)
+            </button>
         </div>
-        <div class="special-text">
-            * 90°로 어두워진 상태에서 끼워보세요.<br>
-            빛이 다시 통과하는 것을 볼 수 있습니다.
+
+        <div class="control-group">
+            <label style="color:#2563eb;">심화 실험 (Vector)</label>
+            <div class="checkbox-wrapper special-wrapper">
+                <input type="checkbox" id="thirdPolCheck"
+                    style="width:18px; height:18px; accent-color:#2563eb; cursor:pointer;">
+                <span style="font-size:0.9rem; color:#2563eb; font-weight:bold; margin-left: 8px;"
+                    onclick="document.getElementById('thirdPolCheck').click()">제3의 편광판 (45°) 끼우기</span>
+            </div>
+            <div class="special-text">
+                * 90°로 어두워진 상태에서 끼워보세요.<br>
+                빛이 다시 통과하는 것을 볼 수 있습니다.
+            </div>
+        </div>
+
+        <div id="graph-wrapper">
+            <canvas id="graphCanvas" width="290" height="120"></canvas>
+        </div>
+
+        <div style="margin-top:20px; text-align:center; color:#94a3b8; font-size:0.8rem; display:none;"
+            class="mobile-hint">
+            화면 상단을 드래그하여 회전해보세요.
         </div>
     </div>
 
-    <div id="graph-wrapper">
-        <canvas id="graphCanvas" width="290" height="120"></canvas>
-    </div>
-    
-    <div style="margin-top:20px; text-align:center; color:#94a3b8; font-size:0.8rem; display:none;" class="mobile-hint">
-        화면 상단을 드래그하여 회전해보세요.
-    </div>
-</div>
+    <div id="instruction">마우스 드래그: 화면 회전 • 휠: 확대/축소</div>
 
-<div id="instruction">마우스 드래그: 화면 회전 • 휠: 확대/축소</div>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-<script type="module">
-    import * as THREE from 'three';
-    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        // --- 1. 기본 설정 ---
+        const canvasElement = document.querySelector('#three-canvas');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xffffff); // 깔끔한 흰색
 
-    // --- 1. 기본 설정 ---
-    const canvasElement = document.querySelector('#three-canvas');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xffffff); // 깔끔한 흰색
+        const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 3000);
+        camera.position.set(180, 80, 250);
 
-    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 3000);
-    camera.position.set(180, 80, 250); 
+        const renderer = new THREE.WebGLRenderer({
+            canvas: canvasElement, // HTML에 있는 캔버스 사용
+            antialias: true,
+            alpha: true
+        });
+        // 초기 사이즈 설정 (아래 handleResize에서 덮어씌워짐)
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 성능 최적화
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.0;
 
-    const renderer = new THREE.WebGLRenderer({ 
-        canvas: canvasElement, // HTML에 있는 캔버스 사용
-        antialias: true, 
-        alpha: true 
-    });
-    // 초기 사이즈 설정 (아래 handleResize에서 덮어씌워짐)
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 성능 최적화
-    renderer.outputColorSpace = THREE.SRGBColorSpace; 
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
+        // --- 2. 조명 (편안한 스튜디오 조명 세팅) ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
 
-    // --- 2. 조명 (편안한 스튜디오 조명 세팅) ---
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); 
-    scene.add(ambientLight);
-    
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(50, 200, 100);
-    scene.add(dirLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(50, 200, 100);
+        scene.add(dirLight);
 
-    const spotLight = new THREE.SpotLight(0xffffff, 500);
-    spotLight.position.set(0, 150, 50);
-    spotLight.angle = Math.PI / 3;
-    spotLight.penumbra = 0.5;
-    scene.add(spotLight);
+        const spotLight = new THREE.SpotLight(0xffffff, 500);
+        spotLight.position.set(0, 150, 50);
+        spotLight.angle = Math.PI / 3;
+        spotLight.penumbra = 0.5;
+        scene.add(spotLight);
 
 
-    // --- 3. 오브젝트 생성 ---
-    const X_START = -180, X_POL1 = -60, X_LCD_S = -40, X_LCD_E = 40, X_POL2 = 60, X_END = 180;
-    const WAVE_RES = 0.8, AMP = 18, FREQ = 0.15;
-    
-    const COLOR_SRC = 0xf59e0b; 
-    const COLOR_MID = 0x0ea5e9; 
-    const COLOR_END = 0x8b5cf6; 
-    const COLOR_FILM = 0xcfe8fc; 
-    const COLOR_MOL = 0xa78bfa; 
+        // --- 3. 오브젝트 생성 ---
+        const X_START = -180, X_POL1 = -60, X_LCD_S = -40, X_LCD_E = 40, X_POL2 = 60, X_END = 180;
+        const WAVE_RES = 0.8, AMP = 18, FREQ = 0.15;
 
-    const matMol = new THREE.MeshPhysicalMaterial({ 
-        color: COLOR_MOL,       
-        metalness: 0.1,        
-        roughness: 0.2,        
-        clearcoat: 1.0,        
-        clearcoatRoughness: 0.1,
-        transmission: 0.0,
-        opacity: 1.0,
-    });
+        const COLOR_SRC = 0xf59e0b;
+        const COLOR_MID = 0x0ea5e9;
+        const COLOR_END = 0x8b5cf6;
+        const COLOR_FILM = 0xcfe8fc;
+        const COLOR_MOL = 0xa78bfa;
 
-    function createPure2DFilm(xPos, colorHex = COLOR_FILM) {
-        const group = new THREE.Group();
-        group.position.x = xPos;
-
-        const filmGeo = new THREE.PlaneGeometry(86, 86);
-        const filmMat = new THREE.MeshPhysicalMaterial({ 
-            color: colorHex, 
-            transparent: true, 
-            opacity: 0.4,
-            side: THREE.DoubleSide, 
-            depthWrite: false,
+        const matMol = new THREE.MeshPhysicalMaterial({
+            color: COLOR_MOL,
+            metalness: 0.1,
             roughness: 0.2,
-            clearcoat: 0.5
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.1,
+            transmission: 0.0,
+            opacity: 1.0,
         });
-        const film = new THREE.Mesh(filmGeo, filmMat);
-        film.rotation.y = Math.PI / 2;
-        film.name = "filmMesh";
-        group.add(film);
 
-        const frameGeo = new THREE.EdgesGeometry(filmGeo);
-        const frameMat = new THREE.LineBasicMaterial({ color: 0x94a3b8, transparent:true, opacity:0.5 });
-        const frame = new THREE.LineSegments(frameGeo, frameMat);
-        frame.rotation.y = Math.PI/2;
-        group.add(frame);
+        function createPure2DFilm(xPos, colorHex = COLOR_FILM) {
+            const group = new THREE.Group();
+            group.position.x = xPos;
 
-        const lineGeo = new THREE.BufferGeometry();
-        const vertices = [];
-        const size = 42;
-        const step = 6; 
-        for(let z_loc = -size; z_loc <= size; z_loc += step) {
-            vertices.push(0.1, -size, z_loc); vertices.push(0.1, size, z_loc);
-            vertices.push(-0.1, -size, z_loc); vertices.push(-0.1, size, z_loc);
+            const filmGeo = new THREE.PlaneGeometry(86, 86);
+            const filmMat = new THREE.MeshPhysicalMaterial({
+                color: colorHex,
+                transparent: true,
+                opacity: 0.4,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+                roughness: 0.2,
+                clearcoat: 0.5
+            });
+            const film = new THREE.Mesh(filmGeo, filmMat);
+            film.rotation.y = Math.PI / 2;
+            film.name = "filmMesh";
+            group.add(film);
+
+            const frameGeo = new THREE.EdgesGeometry(filmGeo);
+            const frameMat = new THREE.LineBasicMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.5 });
+            const frame = new THREE.LineSegments(frameGeo, frameMat);
+            frame.rotation.y = Math.PI / 2;
+            group.add(frame);
+
+            const lineGeo = new THREE.BufferGeometry();
+            const vertices = [];
+            const size = 42;
+            const step = 6;
+            for (let z_loc = -size; z_loc <= size; z_loc += step) {
+                vertices.push(0.1, -size, z_loc); vertices.push(0.1, size, z_loc);
+                vertices.push(-0.1, -size, z_loc); vertices.push(-0.1, size, z_loc);
+            }
+            lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            const lineMat = new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.4 });
+            const lines = new THREE.LineSegments(lineGeo, lineMat);
+            group.add(lines);
+
+            scene.add(group);
+            return group;
         }
-        lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-        const lineMat = new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.4 });
-        const lines = new THREE.LineSegments(lineGeo, lineMat);
-        group.add(lines);
 
-        scene.add(group);
-        return group;
-    }
+        const bulbGroup = new THREE.Group();
+        bulbGroup.position.x = X_START;
+        const bulbLight = new THREE.PointLight(0xffb700, 1.5, 400, 1);
+        bulbGroup.add(bulbLight);
 
-    const bulbGroup = new THREE.Group();
-    bulbGroup.position.x = X_START;
-    const bulbLight = new THREE.PointLight(0xffb700, 1.5, 400, 1); 
-    bulbGroup.add(bulbLight);
+        const bulbGeo = new THREE.SphereGeometry(12, 32, 32);
+        const bulbMat = new THREE.MeshStandardMaterial({
+            color: 0xffeebb,
+            emissive: 0xffb700,
+            emissiveIntensity: 1.0,
+            transparent: true,
+            opacity: 0.9,
+            roughness: 0.3
+        });
+        const bulbMesh = new THREE.Mesh(bulbGeo, bulbMat);
+        bulbGroup.add(bulbMesh);
 
-    const bulbGeo = new THREE.SphereGeometry(12, 32, 32);
-    const bulbMat = new THREE.MeshStandardMaterial({
-        color: 0xffeebb,
-        emissive: 0xffb700, 
-        emissiveIntensity: 1.0,
-        transparent: true,
-        opacity: 0.9,
-        roughness: 0.3
-    });
-    const bulbMesh = new THREE.Mesh(bulbGeo, bulbMat);
-    bulbGroup.add(bulbMesh);
+        const socketGeo = new THREE.CylinderGeometry(6, 6, 10, 16);
+        const socketMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.5, roughness: 0.5 });
+        const socketMesh = new THREE.Mesh(socketGeo, socketMat);
+        socketMesh.rotation.z = Math.PI / 2;
+        socketMesh.position.x = -12;
+        bulbGroup.add(socketMesh);
+        scene.add(bulbGroup);
 
-    const socketGeo = new THREE.CylinderGeometry(6, 6, 10, 16);
-    const socketMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.5, roughness: 0.5 });
-    const socketMesh = new THREE.Mesh(socketGeo, socketMat);
-    socketMesh.rotation.z = Math.PI / 2;
-    socketMesh.position.x = -12; 
-    bulbGroup.add(socketMesh);
-    scene.add(bulbGroup);
+        const pol1 = createPure2DFilm(X_POL1);
+        const pol2 = createPure2DFilm(X_POL2);
+        const polMid = createPure2DFilm(0);
+        polMid.rotation.x = Math.PI / 4;
+        polMid.visible = false;
+        polMid.children[0].material.color.setHex(0xa7f3d0);
 
-    const pol1 = createPure2DFilm(X_POL1);
-    const pol2 = createPure2DFilm(X_POL2);
-    const polMid = createPure2DFilm(0);
-    polMid.rotation.x = Math.PI / 4; 
-    polMid.visible = false;
-    polMid.children[0].material.color.setHex(0xa7f3d0); 
+        const srcWaves = [];
+        const srcGroup = new THREE.Group();
+        scene.add(srcGroup);
+        for (let i = 0; i < 24; i++) {
+            const pts = [];
+            for (let x = X_START + 10; x <= X_POL1; x += WAVE_RES) pts.push(new THREE.Vector3(x, 0, 0));
+            const line = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints(pts),
+                new THREE.LineBasicMaterial({ color: COLOR_SRC, transparent: true, opacity: 0.7 })
+            );
+            line.rotation.x = (i / 24) * Math.PI * 2;
+            srcGroup.add(line);
+            srcWaves.push(line);
+        }
 
-    const srcWaves = [];
-    const srcGroup = new THREE.Group();
-    scene.add(srcGroup);
-    for(let i=0; i<24; i++) {
-        const pts = [];
-        for(let x=X_START+10; x<=X_POL1; x+=WAVE_RES) pts.push(new THREE.Vector3(x,0,0));
-        const line = new THREE.Line(
-            new THREE.BufferGeometry().setFromPoints(pts),
-            new THREE.LineBasicMaterial({ color: COLOR_SRC, transparent: true, opacity: 0.7 })
+        const midPts = [];
+        for (let x = X_POL1; x <= X_POL2; x += 0.5) {
+            midPts.push(new THREE.Vector3(x, 0, 0));
+        }
+        const midWave = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints(midPts),
+            new THREE.LineBasicMaterial({ color: COLOR_MID, linewidth: 2 })
         );
-        line.rotation.x = (i/24) * Math.PI * 2;
-        srcGroup.add(line);
-        srcWaves.push(line);
-    }
+        scene.add(midWave);
 
-    const midPts = [];
-    for(let x=X_POL1; x<=X_POL2; x+=0.5) {
-        midPts.push(new THREE.Vector3(x,0,0));
-    }
-    const midWave = new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(midPts),
-        new THREE.LineBasicMaterial({ color: COLOR_MID, linewidth: 2 })
-    );
-    scene.add(midWave);
+        const endPts = [];
+        for (let x = X_POL2; x <= X_END; x += WAVE_RES) endPts.push(new THREE.Vector3(x, 0, 0));
+        const endWave = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints(endPts),
+            new THREE.LineBasicMaterial({ color: COLOR_END, linewidth: 2.5, transparent: true, opacity: 1.0 })
+        );
+        scene.add(endWave);
 
-    const endPts = [];
-    for(let x=X_POL2; x<=X_END; x+=WAVE_RES) endPts.push(new THREE.Vector3(x,0,0));
-    const endWave = new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(endPts),
-        new THREE.LineBasicMaterial({ color: COLOR_END, linewidth: 2.5, transparent: true, opacity: 1.0 })
-    );
-    scene.add(endWave);
+        const lcdGroup = new THREE.Group();
+        scene.add(lcdGroup);
+        const mols = [];
+        const capGeo = new THREE.CapsuleGeometry(2, 10, 4, 8);
+        for (let i = 0; i < 15; i++) {
+            const m = new THREE.Mesh(capGeo, matMol);
+            const t = i / 14;
+            m.position.x = X_LCD_S + t * (X_LCD_E - X_LCD_S);
+            lcdGroup.add(m); mols.push({ mesh: m, t: t });
+        }
+        lcdGroup.visible = false;
 
-    const lcdGroup = new THREE.Group();
-    scene.add(lcdGroup);
-    const mols = [];
-    const capGeo = new THREE.CapsuleGeometry(2, 10, 4, 8);
-    for(let i=0; i<15; i++) {
-        const m = new THREE.Mesh(capGeo, matMol);
-        const t = i/14;
-        m.position.x = X_LCD_S + t * (X_LCD_E - X_LCD_S);
-        lcdGroup.add(m); mols.push({ mesh: m, t: t });
-    }
-    lcdGroup.visible = false;
+        // --- 5. 로직 ---
+        const clock = new THREE.Clock();
+        let simTime = 0;
+        const state = { angle: 0, lcd: false, voltTarget: 0.0, voltCurrent: 0.0, thirdPol: false };
 
-    // --- 5. 로직 ---
-    const clock = new THREE.Clock();
-    let simTime = 0;
-    const state = { angle: 0, lcd: false, voltTarget: 0.0, voltCurrent: 0.0, thirdPol: false };
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+            simTime += dt * 1.8;
 
-    function animate() {
-        requestAnimationFrame(animate);
-        const dt = clock.getDelta();
-        simTime += dt * 1.8; 
+            if (state.voltCurrent < state.voltTarget) state.voltCurrent = Math.min(state.voltTarget, state.voltCurrent + dt);
+            else if (state.voltCurrent > state.voltTarget) state.voltCurrent = Math.max(state.voltTarget, state.voltCurrent - dt);
 
-        if (state.voltCurrent < state.voltTarget) state.voltCurrent = Math.min(state.voltTarget, state.voltCurrent + dt);
-        else if (state.voltCurrent > state.voltTarget) state.voltCurrent = Math.max(state.voltTarget, state.voltCurrent - dt);
+            srcWaves.forEach(line => {
+                const pos = line.geometry.attributes.position.array;
+                for (let i = 0; i < pos.length / 3; i++) {
+                    const x = (X_START + 10) + i * WAVE_RES;
+                    pos[i * 3 + 1] = Math.sin(x * FREQ - simTime) * AMP;
+                }
+                line.geometry.attributes.position.needsUpdate = true;
+            });
 
-        srcWaves.forEach(line => {
-            const pos = line.geometry.attributes.position.array;
-            for(let i=0; i<pos.length/3; i++) {
-                const x = (X_START+10) + i*WAVE_RES;
-                pos[i*3+1] = Math.sin(x*FREQ - simTime) * AMP;
+            const twistRad = (1.0 - state.voltCurrent) * (Math.PI / 2);
+            if (state.lcd) { mols.forEach(m => { m.mesh.rotation.x = m.t * twistRad; m.mesh.position.y = Math.sin(simTime + m.t * 10) * 1; }); }
+
+            const midPos = midWave.geometry.attributes.position.array;
+            for (let i = 0; i < midPos.length / 3; i++) {
+                const x = X_POL1 + i * 0.5;
+                let currentAng = 0, currentAmp = AMP;
+                if (state.lcd) { if (x >= X_LCD_S && x <= X_LCD_E) { const t = (x - X_LCD_S) / (X_LCD_E - X_LCD_S); currentAng = t * twistRad; } else if (x > X_LCD_E) currentAng = twistRad; }
+                if (state.thirdPol && !state.lcd) { if (x > 0) { currentAng = Math.PI / 4; currentAmp = AMP * Math.cos(Math.PI / 4); } }
+
+                if (state.thirdPol && !state.lcd && Math.abs(x) < 0.3) {
+                    midPos[i * 3 + 1] = NaN; midPos[i * 3 + 2] = NaN;
+                } else {
+                    const disp = Math.sin(x * FREQ - simTime) * currentAmp;
+                    midPos[i * 3 + 1] = disp * Math.cos(currentAng);
+                    midPos[i * 3 + 2] = disp * Math.sin(currentAng);
+                }
             }
-            line.geometry.attributes.position.needsUpdate = true;
-        });
+            midWave.geometry.attributes.position.needsUpdate = true;
 
-        const twistRad = (1.0 - state.voltCurrent) * (Math.PI / 2);
-        if(state.lcd) { mols.forEach(m => { m.mesh.rotation.x = m.t * twistRad; m.mesh.position.y = Math.sin(simTime + m.t*10) * 1; }); }
+            const anaRad = state.angle * Math.PI / 180; pol2.rotation.x = anaRad;
+            let intensity = 0, incomingRad = state.lcd ? twistRad : 0;
+            if (state.thirdPol && !state.lcd) { intensity = 0.5 * Math.pow(Math.cos(anaRad - (Math.PI / 4)), 2); }
+            else { intensity = Math.pow(Math.cos(anaRad - incomingRad), 2); }
 
-        const midPos = midWave.geometry.attributes.position.array;
-        for(let i=0; i<midPos.length/3; i++) {
-            const x = X_POL1 + i*0.5;
-            let currentAng = 0, currentAmp = AMP;
-            if(state.lcd) { if(x >= X_LCD_S && x <= X_LCD_E) { const t = (x - X_LCD_S)/(X_LCD_E - X_LCD_S); currentAng = t * twistRad; } else if(x > X_LCD_E) currentAng = twistRad; }
-            if(state.thirdPol && !state.lcd) { if (x > 0) { currentAng = Math.PI / 4; currentAmp = AMP * Math.cos(Math.PI/4); } }
-            
-            if(state.thirdPol && !state.lcd && Math.abs(x) < 0.3) { 
-                midPos[i*3+1] = NaN; midPos[i*3+2] = NaN; 
+            const endPos = endWave.geometry.attributes.position.array;
+            for (let i = 0; i < endPos.length / 3; i++) {
+                const x = X_POL2 + i * WAVE_RES;
+                const disp = Math.sin(x * FREQ - simTime) * AMP * Math.sqrt(intensity); endPos[i * 3 + 1] = disp * Math.cos(anaRad); endPos[i * 3 + 2] = disp * Math.sin(anaRad);
+            }
+            endWave.geometry.attributes.position.needsUpdate = true;
+
+            const filmMesh = pol2.getObjectByName("filmMesh");
+            if (filmMesh) {
+                const filmColorClear = new THREE.Color(COLOR_FILM), filmColorDark = new THREE.Color(0x1e293b);
+                filmMesh.material.color.copy(filmColorDark).lerp(filmColorClear, intensity); filmMesh.material.opacity = 0.85 - (0.5 * intensity);
+            }
+
+            bulbMat.emissiveIntensity = 1.0 + Math.sin(simTime * 2) * 0.2;
+
+            updateGraph(intensity, state.angle);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- UI 이벤트 ---
+        const slider = document.getElementById('angleSlider');
+        const txtAngle = document.getElementById('angleVal');
+        const checkLcd = document.getElementById('lcdCheck');
+        const btnVolt = document.getElementById('voltageBtn');
+        const checkThird = document.getElementById('thirdPolCheck');
+
+        checkThird.addEventListener('change', e => { state.thirdPol = e.target.checked; polMid.visible = state.thirdPol; if (state.thirdPol && state.lcd) { checkLcd.click(); } });
+        slider.addEventListener('input', e => { state.angle = Number(e.target.value); txtAngle.textContent = state.angle + "°"; });
+        checkLcd.addEventListener('change', e => { state.lcd = e.target.checked; lcdGroup.visible = state.lcd; btnVolt.disabled = !state.lcd; if (state.lcd) { if (state.thirdPol) { checkThird.click(); } state.angle = 90; slider.value = 90; txtAngle.textContent = "90°"; state.voltTarget = 0.0; state.voltCurrent = 0.0; btnVolt.classList.remove('active'); btnVolt.innerText = "⚡ 전압 스위치 (꺼짐)"; } else { state.voltTarget = 0.0; state.voltCurrent = 0.0; } });
+        btnVolt.addEventListener('click', () => { if (state.voltTarget === 0.0) { state.voltTarget = 1.0; btnVolt.classList.add('active'); btnVolt.innerText = "⚡ 전압 스위치 (켜짐)"; } else { state.voltTarget = 0.0; btnVolt.classList.remove('active'); btnVolt.innerText = "⚡ 전압 스위치 (꺼짐)"; } });
+
+        // --- 그래프 ---
+        const gCanvas = document.getElementById('graphCanvas'); const ctx = gCanvas.getContext('2d');
+        function updateGraph(int, deg) {
+            const w = gCanvas.width, h = gCanvas.height; ctx.clearRect(0, 0, w, h);
+            ctx.strokeStyle = "#e2e8f0"; ctx.lineWidth = 1; ctx.beginPath(); for (let y = 20; y <= h - 20; y += 20) { ctx.moveTo(40, y); ctx.lineTo(w - 10, y); } ctx.stroke();
+            ctx.strokeStyle = "#cbd5e1"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(40, 15); ctx.lineTo(40, h - 20); ctx.lineTo(w - 10, h - 20); ctx.stroke();
+
+            ctx.beginPath(); ctx.strokeStyle = "#94a3b8"; ctx.setLineDash([4, 4]);
+            for (let x = 0; x <= w - 50; x++) { const r = (x / (w - 50)) * (Math.PI / 2); const y = (h - 20) - (Math.cos(r) ** 2) * (h - 30); if (x === 0) ctx.moveTo(40 + x, y); else ctx.lineTo(40 + x, y); } ctx.stroke(); ctx.setLineDash([]);
+
+            const clampDeg = Math.min(deg, 90); const px = 40 + (clampDeg / 90) * (w - 50); const py = (h - 20) - int * (h - 30);
+
+            const r = 139 + Math.floor(int * 50);
+            const g = 92 + Math.floor(int * 50);
+            const b = 246;
+            let barColor = `rgb(${r}, ${g}, ${b})`;
+
+            ctx.fillStyle = barColor; ctx.fillRect(40, py, px - 40, (h - 20) - py);
+            ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI * 2); ctx.fill();
+
+            ctx.fillStyle = "#64748b"; ctx.font = "12px Pretendard"; ctx.fillText("최대", 10, 22); ctx.fillText("0°", 35, h - 5); ctx.fillText("90°", w - 25, h - 5);
+            ctx.fillStyle = "#334155"; ctx.font = "bold 13px monospace"; ctx.fillText(`밝기: ${(int * 100).toFixed(0)}%`, w - 90, 20);
+        }
+
+        // --- ★ 모바일 반응형 리사이즈 로직 ★ ---
+        function handleResize() {
+            const w = window.innerWidth;
+            let h = window.innerHeight;
+
+            // 768px 이하 모바일 환경: 캔버스 높이 45% 고정
+            if (w <= 768) {
+                h = window.innerHeight * 0.45;
+                document.querySelector('.mobile-hint').style.display = 'block';
             } else {
-                const disp = Math.sin(x*FREQ - simTime) * currentAmp; 
-                midPos[i*3+1] = disp * Math.cos(currentAng); 
-                midPos[i*3+2] = disp * Math.sin(currentAng);
+                document.querySelector('.mobile-hint').style.display = 'none';
             }
-        }
-        midWave.geometry.attributes.position.needsUpdate = true;
 
-        const anaRad = state.angle * Math.PI/180; pol2.rotation.x = anaRad;
-        let intensity = 0, incomingRad = state.lcd ? twistRad : 0; 
-        if(state.thirdPol && !state.lcd) { intensity = 0.5 * Math.pow(Math.cos(anaRad - (Math.PI/4)), 2); } 
-        else { intensity = Math.pow(Math.cos(anaRad - incomingRad), 2); }
-
-        const endPos = endWave.geometry.attributes.position.array;
-        for(let i=0; i<endPos.length/3; i++) {
-            const x = X_POL2 + i*WAVE_RES;
-            const disp = Math.sin(x*FREQ - simTime) * AMP * Math.sqrt(intensity); endPos[i*3+1] = disp * Math.cos(anaRad); endPos[i*3+2] = disp * Math.sin(anaRad);
-        }
-        endWave.geometry.attributes.position.needsUpdate = true;
-
-        const filmMesh = pol2.getObjectByName("filmMesh");
-        if(filmMesh) {
-            const filmColorClear = new THREE.Color(COLOR_FILM), filmColorDark = new THREE.Color(0x1e293b);
-            filmMesh.material.color.copy(filmColorDark).lerp(filmColorClear, intensity); filmMesh.material.opacity = 0.85 - (0.5 * intensity);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
         }
 
-        bulbMat.emissiveIntensity = 1.0 + Math.sin(simTime * 2) * 0.2; 
+        window.addEventListener('resize', handleResize);
+        // 초기 로드 시 실행
+        handleResize();
 
-        updateGraph(intensity, state.angle); 
-        controls.update(); 
-        renderer.render(scene, camera);
-    }
-
-    // --- UI 이벤트 ---
-    const slider = document.getElementById('angleSlider');
-    const txtAngle = document.getElementById('angleVal');
-    const checkLcd = document.getElementById('lcdCheck');
-    const btnVolt = document.getElementById('voltageBtn');
-    const checkThird = document.getElementById('thirdPolCheck');
-
-    checkThird.addEventListener('change', e => { state.thirdPol = e.target.checked; polMid.visible = state.thirdPol; if(state.thirdPol && state.lcd) { checkLcd.click(); } });
-    slider.addEventListener('input', e => { state.angle = Number(e.target.value); txtAngle.textContent = state.angle + "°"; });
-    checkLcd.addEventListener('change', e => { state.lcd = e.target.checked; lcdGroup.visible = state.lcd; btnVolt.disabled = !state.lcd; if(state.lcd) { if(state.thirdPol) { checkThird.click(); } state.angle = 90; slider.value = 90; txtAngle.textContent = "90°"; state.voltTarget = 0.0; state.voltCurrent = 0.0; btnVolt.classList.remove('active'); btnVolt.innerText = "⚡ 전압 스위치 (꺼짐)"; } else { state.voltTarget = 0.0; state.voltCurrent = 0.0; } });
-    btnVolt.addEventListener('click', () => { if(state.voltTarget === 0.0) { state.voltTarget = 1.0; btnVolt.classList.add('active'); btnVolt.innerText = "⚡ 전압 스위치 (켜짐)"; } else { state.voltTarget = 0.0; btnVolt.classList.remove('active'); btnVolt.innerText = "⚡ 전압 스위치 (꺼짐)"; } });
-
-    // --- 그래프 ---
-    const gCanvas = document.getElementById('graphCanvas'); const ctx = gCanvas.getContext('2d');
-    function updateGraph(int, deg) {
-        const w = gCanvas.width, h = gCanvas.height; ctx.clearRect(0,0,w,h); 
-        ctx.strokeStyle = "#e2e8f0"; ctx.lineWidth=1; ctx.beginPath(); for(let y=20; y<=h-20; y+=20) { ctx.moveTo(40,y); ctx.lineTo(w-10,y); } ctx.stroke(); 
-        ctx.strokeStyle = "#cbd5e1"; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(40,15); ctx.lineTo(40,h-20); ctx.lineTo(w-10,h-20); ctx.stroke(); 
-        
-        ctx.beginPath(); ctx.strokeStyle = "#94a3b8"; ctx.setLineDash([4,4]); 
-        for(let x=0; x<=w-50; x++) { const r = (x/(w-50)) * (Math.PI/2); const y = (h-20) - (Math.cos(r)**2)*(h-30); if(x===0) ctx.moveTo(40+x,y); else ctx.lineTo(40+x,y); } ctx.stroke(); ctx.setLineDash([]); 
-        
-        const clampDeg = Math.min(deg, 90); const px = 40 + (clampDeg/90)*(w-50); const py = (h-20) - int*(h-30); 
-        
-        const r = 139 + Math.floor(int * 50);
-        const g = 92  + Math.floor(int * 50);
-        const b = 246; 
-        let barColor = `rgb(${r}, ${g}, ${b})`; 
-        
-        ctx.fillStyle = barColor; ctx.fillRect(40, py, px-40, (h-20)-py); 
-        ctx.beginPath(); ctx.arc(px,py,4,0,Math.PI*2); ctx.fill(); 
-        
-        ctx.fillStyle = "#64748b"; ctx.font = "12px Pretendard"; ctx.fillText("최대", 10, 22); ctx.fillText("0°", 35, h-5); ctx.fillText("90°", w-25, h-5); 
-        ctx.fillStyle = "#334155"; ctx.font = "bold 13px monospace"; ctx.fillText(`밝기: ${(int*100).toFixed(0)}%`, w-90, 20);
-    }
-    
-    // --- ★ 모바일 반응형 리사이즈 로직 ★ ---
-    function handleResize() {
-        const w = window.innerWidth;
-        let h = window.innerHeight;
-        
-        // 768px 이하 모바일 환경: 캔버스 높이 45% 고정
-        if(w <= 768) {
-            h = window.innerHeight * 0.45;
-            document.querySelector('.mobile-hint').style.display = 'block';
-        } else {
-             document.querySelector('.mobile-hint').style.display = 'none';
-        }
-
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
-        renderer.setSize(w, h);
-    }
-    
-    window.addEventListener('resize', handleResize);
-    // 초기 로드 시 실행
-    handleResize();
-
-    animate();
-</script>
+        animate();
+    </script>
 </body>
+
 </html>

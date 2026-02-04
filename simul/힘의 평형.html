@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,6 +15,7 @@
             background-color: #f0f2f5;
             color: #333;
         }
+
         #simulation-container {
             display: flex;
             flex-wrap: wrap;
@@ -21,57 +23,80 @@
             background-color: white;
             padding: 25px;
             border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
+
         #canvas-container {
             text-align: center;
         }
+
         canvas {
             border: 1px solid #ccc;
             background-color: #fdfdfd;
         }
+
         #controls-wrapper {
             width: 350px;
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
+
         .control-group {
             border: 1px solid #e0e0e0;
             padding: 15px;
             border-radius: 8px;
             position: relative;
         }
+
         .control-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
         }
-        h1, h2, h3 {
+
+        h1,
+        h2,
+        h3 {
             margin-top: 0;
             color: #1a73e8;
         }
-        h2 { font-size: 1.3em; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px; margin-bottom: 15px;}
-        h3 { font-size: 1.1em; margin-bottom: 0; }
+
+        h2 {
+            font-size: 1.3em;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+
+        h3 {
+            font-size: 1.1em;
+            margin-bottom: 0;
+        }
+
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: 500;
         }
+
         input[type="range"] {
             width: 100%;
             cursor: pointer;
         }
+
         span {
             font-weight: bold;
             color: #d93025;
             min-width: 40px;
             display: inline-block;
         }
+
         #results {
             background-color: #e8f5e9;
         }
+
         .info {
             margin-top: 15px;
             font-size: 0.9em;
@@ -82,6 +107,7 @@
             border-radius: 8px;
             border: 1px solid #ffe58f;
         }
+
         button {
             width: 100%;
             padding: 10px;
@@ -94,13 +120,16 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
+
         button:hover {
             background-color: #2c8e43;
         }
+
         button:disabled {
             background-color: #ccc;
             cursor: not-allowed;
         }
+
         .remove-btn {
             position: absolute;
             top: 5px;
@@ -117,222 +146,226 @@
             line-height: 24px;
             text-align: center;
         }
+
         .result-components {
             font-size: 0.9em;
             color: #5f6368;
         }
     </style>
 </head>
+
 <body>
 
-<div id="simulation-container">
-    <div id="canvas-container">
-        <h1>다중 힘 평형 시뮬레이션 🕹️</h1>
-        <canvas id="forceCanvas" width="550" height="550"></canvas>
-    </div>
-
-    <div id="controls-wrapper">
-        <h2>힘 조절 패널</h2>
-        <div id="force-controls-container"></div>
-        <button id="add-force-btn">힘 추가하기 (+)</button>
-        
-        <div id="results" class="control-group">
-            <h3>결과 분석</h3>
-            <p><strong>합력 (점선)</strong>: 모든 힘(F1, F2...)의 총합</p>
-            <p><strong>평형력 (초록색)</strong>: 모든 힘을 상쇄시키는 힘</p>
-            <hr>
-            <p>크기: <span id="resultMag">0</span> N</p>
-            <p>각도: <span id="resultAngle">0</span> °</p>
-            <p class="result-components">X성분: <span id="resultX">0</span>, Y성분: <span id="resultY">0</span></p>
+    <div id="simulation-container">
+        <div id="canvas-container">
+            <h1>다중 힘 평형 시뮬레이션 🕹️</h1>
+            <canvas id="forceCanvas" width="550" height="550"></canvas>
         </div>
 
-        <div class="info">
-            <p>💡 <strong>평형력</strong>은 모든 힘의 <strong>합력</strong>과 크기가 같고 방향이 180° 반대인지 확인해보세요. 즉, 평형력은 합력의 x, y 성분 부호를 뒤집은 값과 같습니다.</p>
+        <div id="controls-wrapper">
+            <h2>힘 조절 패널</h2>
+            <div id="force-controls-container"></div>
+            <button id="add-force-btn">힘 추가하기 (+)</button>
+
+            <div id="results" class="control-group">
+                <h3>결과 분석</h3>
+                <p><strong>합력 (점선)</strong>: 모든 힘(F1, F2...)의 총합</p>
+                <p><strong>평형력 (초록색)</strong>: 모든 힘을 상쇄시키는 힘</p>
+                <hr>
+                <p>크기: <span id="resultMag">0</span> N</p>
+                <p>각도: <span id="resultAngle">0</span> °</p>
+                <p class="result-components">X성분: <span id="resultX">0</span>, Y성분: <span id="resultY">0</span></p>
+            </div>
+
+            <div class="info">
+                <p>💡 <strong>평형력</strong>은 모든 힘의 <strong>합력</strong>과 크기가 같고 방향이 180° 반대인지 확인해보세요. 즉, 평형력은 합력의 x, y 성분
+                    부호를 뒤집은 값과 같습니다.</p>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    const canvas = document.getElementById('forceCanvas');
-    const ctx = canvas.getContext('2d');
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const SCALE = 2.0;
+    <script>
+        const canvas = document.getElementById('forceCanvas');
+        const ctx = canvas.getContext('2d');
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const SCALE = 2.0;
 
-    const forceControlsContainer = document.getElementById('force-controls-container');
-    const addForceBtn = document.getElementById('add-force-btn');
-    
-    const resultMag = document.getElementById('resultMag');
-    const resultAngle = document.getElementById('resultAngle');
-    const resultX = document.getElementById('resultX');
-    const resultY = document.getElementById('resultY');
-    
-    let forces = [];
-    let nextForceId = 1;
-    const forceColors = ['#4285F4', '#EA4335', '#FBBC05', '#34A853', '#673AB7'];
+        const forceControlsContainer = document.getElementById('force-controls-container');
+        const addForceBtn = document.getElementById('add-force-btn');
 
-    function createForceControls(force) {
-        const group = document.createElement('div');
-        group.className = 'control-group';
-        group.id = `group-${force.id}`;
-        
-        const header = document.createElement('div');
-        header.className = 'control-header';
+        const resultMag = document.getElementById('resultMag');
+        const resultAngle = document.getElementById('resultAngle');
+        const resultX = document.getElementById('resultX');
+        const resultY = document.getElementById('resultY');
 
-        const title = document.createElement('h3');
-        title.textContent = `힘 ${force.id} (F${force.id})`;
-        title.style.color = force.color;
+        let forces = [];
+        let nextForceId = 1;
+        const forceColors = ['#4285F4', '#EA4335', '#FBBC05', '#34A853', '#673AB7'];
 
-        header.appendChild(title);
+        function createForceControls(force) {
+            const group = document.createElement('div');
+            group.className = 'control-group';
+            group.id = `group-${force.id}`;
 
-        if (force.id > 2) {
-            const removeBtn = document.createElement('button');
-            removeBtn.textContent = 'X';
-            removeBtn.className = 'remove-btn';
-            removeBtn.onclick = () => removeForce(force.id);
-            header.appendChild(removeBtn);
-        }
+            const header = document.createElement('div');
+            header.className = 'control-header';
 
-        group.innerHTML += `
+            const title = document.createElement('h3');
+            title.textContent = `힘 ${force.id} (F${force.id})`;
+            title.style.color = force.color;
+
+            header.appendChild(title);
+
+            if (force.id > 2) {
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = 'X';
+                removeBtn.className = 'remove-btn';
+                removeBtn.onclick = () => removeForce(force.id);
+                header.appendChild(removeBtn);
+            }
+
+            group.innerHTML += `
             <label for="mag${force.id}">크기: <span id="mag-val-${force.id}">${force.mag}</span> N</label>
             <input type="range" id="mag${force.id}" min="10" max="150" value="${force.mag}">
             <label for="angle${force.id}">각도: <span id="angle-val-${force.id}">${force.angle}</span> °</label>
             <input type="range" id="angle${force.id}" min="0" max="360" value="${force.angle}">
         `;
-        group.insertBefore(header, group.firstChild);
+            group.insertBefore(header, group.firstChild);
 
-        forceControlsContainer.appendChild(group);
+            forceControlsContainer.appendChild(group);
 
-        document.getElementById(`mag${force.id}`).addEventListener('input', draw);
-        document.getElementById(`angle${force.id}`).addEventListener('input', draw);
-    }
-
-    function addForce() {
-        if (forces.length >= 5) return;
-
-        const newForce = {
-            id: nextForceId,
-            mag: 60,
-            angle: (nextForceId * 60) % 360,
-            color: forceColors[forces.length % forceColors.length]
-        };
-        forces.push(newForce);
-        createForceControls(newForce);
-        nextForceId++;
-        
-        addForceBtn.disabled = forces.length >= 5;
-        draw();
-    }
-    
-    function removeForce(id) {
-        forces = forces.filter(f => f.id !== id);
-        const groupToRemove = document.getElementById(`group-${id}`);
-        forceControlsContainer.removeChild(groupToRemove);
-        
-        addForceBtn.disabled = forces.length >= 5;
-        draw();
-    }
-
-    function drawVector(x, y, color, label, isDashed = false) {
-        const endX = centerX + x;
-        const endY = centerY - y;
-        
-        ctx.beginPath();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 3;
-        ctx.setLineDash(isDashed ? [6, 6] : []);
-        ctx.moveTo(centerX, centerY);
-        ctx.lineTo(endX, endY);
-        ctx.stroke();
-
-        const angle = Math.atan2(-y, x);
-        ctx.beginPath();
-        ctx.fillStyle = color;
-        ctx.moveTo(endX, endY);
-        ctx.lineTo(endX - 12 * Math.cos(angle - Math.PI / 6), endY - 12 * Math.sin(angle - Math.PI / 6));
-        ctx.lineTo(endX - 12 * Math.cos(angle + Math.PI / 6), endY - 12 * Math.sin(angle + Math.PI / 6));
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.fillStyle = 'black';
-        ctx.font = 'bold 14px sans-serif';
-        ctx.fillText(label, endX + 10, endY - 10);
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // 좌표축
-        ctx.beginPath();
-        ctx.strokeStyle = '#ccc';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([]);
-        ctx.moveTo(0, centerY); ctx.lineTo(canvas.width, centerY);
-        ctx.moveTo(centerX, 0); ctx.lineTo(centerX, canvas.height);
-        ctx.stroke();
-        
-        let totalRx = 0;
-        let totalRy = 0;
-
-        forces.forEach(force => {
-            const mag = parseFloat(document.getElementById(`mag${force.id}`).value);
-            const angle = parseFloat(document.getElementById(`angle${force.id}`).value);
-            
-            document.getElementById(`mag-val-${force.id}`).textContent = mag;
-            document.getElementById(`angle-val-${force.id}`).textContent = angle;
-            
-            force.mag = mag;
-            force.angle = angle;
-
-            const rad = angle * Math.PI / 180;
-            const fx = mag * Math.cos(rad);
-            const fy = mag * Math.sin(rad);
-
-            totalRx += fx;
-            totalRy += fy;
-
-            drawVector(fx * SCALE, fy * SCALE, force.color, `F${force.id}`);
-        });
-
-        const equilibrantX = -totalRx;
-        const equilibrantY = -totalRy;
-
-        const magResult = Math.sqrt(equilibrantX**2 + equilibrantY**2);
-        let angleResult = Math.atan2(equilibrantY, equilibrantX) * 180 / Math.PI;
-        angleResult = (angleResult < 0) ? angleResult + 360 : angleResult;
-        
-        resultMag.textContent = magResult.toFixed(1);
-        resultAngle.textContent = angleResult.toFixed(1);
-        resultX.textContent = equilibrantX.toFixed(1);
-        resultY.textContent = equilibrantY.toFixed(1);
-
-        // 합력(Resultant) 그리기
-        if (forces.length > 0) {
-            drawVector(totalRx * SCALE, totalRy * SCALE, '#6f42c1', '합력', true);
-            drawVector(equilibrantX * SCALE, equilibrantY * SCALE, '#28a745', '평형력');
+            document.getElementById(`mag${force.id}`).addEventListener('input', draw);
+            document.getElementById(`angle${force.id}`).addEventListener('input', draw);
         }
 
-        // 중앙점
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, 5, 0, 2 * Math.PI);
-        ctx.fillStyle = 'black';
-        ctx.fill();
-    }
-    
-    addForceBtn.addEventListener('click', addForce);
+        function addForce() {
+            if (forces.length >= 5) return;
 
-    // 초기 힘 2개 설정
-    function initialize() {
-        forces.push({id: 1, mag: 50, angle: 30, color: forceColors[0]});
-        forces.push({id: 2, mag: 70, angle: 120, color: forceColors[1]});
-        nextForceId = 3;
+            const newForce = {
+                id: nextForceId,
+                mag: 60,
+                angle: (nextForceId * 60) % 360,
+                color: forceColors[forces.length % forceColors.length]
+            };
+            forces.push(newForce);
+            createForceControls(newForce);
+            nextForceId++;
 
-        forces.forEach(createForceControls);
-        draw();
-    }
+            addForceBtn.disabled = forces.length >= 5;
+            draw();
+        }
 
-    window.onload = initialize;
-</script>
+        function removeForce(id) {
+            forces = forces.filter(f => f.id !== id);
+            const groupToRemove = document.getElementById(`group-${id}`);
+            forceControlsContainer.removeChild(groupToRemove);
+
+            addForceBtn.disabled = forces.length >= 5;
+            draw();
+        }
+
+        function drawVector(x, y, color, label, isDashed = false) {
+            const endX = centerX + x;
+            const endY = centerY - y;
+
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.setLineDash(isDashed ? [6, 6] : []);
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+
+            const angle = Math.atan2(-y, x);
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(endX - 12 * Math.cos(angle - Math.PI / 6), endY - 12 * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(endX - 12 * Math.cos(angle + Math.PI / 6), endY - 12 * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = 'black';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText(label, endX + 10, endY - 10);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 좌표축
+            ctx.beginPath();
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([]);
+            ctx.moveTo(0, centerY); ctx.lineTo(canvas.width, centerY);
+            ctx.moveTo(centerX, 0); ctx.lineTo(centerX, canvas.height);
+            ctx.stroke();
+
+            let totalRx = 0;
+            let totalRy = 0;
+
+            forces.forEach(force => {
+                const mag = parseFloat(document.getElementById(`mag${force.id}`).value);
+                const angle = parseFloat(document.getElementById(`angle${force.id}`).value);
+
+                document.getElementById(`mag-val-${force.id}`).textContent = mag;
+                document.getElementById(`angle-val-${force.id}`).textContent = angle;
+
+                force.mag = mag;
+                force.angle = angle;
+
+                const rad = angle * Math.PI / 180;
+                const fx = mag * Math.cos(rad);
+                const fy = mag * Math.sin(rad);
+
+                totalRx += fx;
+                totalRy += fy;
+
+                drawVector(fx * SCALE, fy * SCALE, force.color, `F${force.id}`);
+            });
+
+            const equilibrantX = -totalRx;
+            const equilibrantY = -totalRy;
+
+            const magResult = Math.sqrt(equilibrantX ** 2 + equilibrantY ** 2);
+            let angleResult = Math.atan2(equilibrantY, equilibrantX) * 180 / Math.PI;
+            angleResult = (angleResult < 0) ? angleResult + 360 : angleResult;
+
+            resultMag.textContent = magResult.toFixed(1);
+            resultAngle.textContent = angleResult.toFixed(1);
+            resultX.textContent = equilibrantX.toFixed(1);
+            resultY.textContent = equilibrantY.toFixed(1);
+
+            // 합력(Resultant) 그리기
+            if (forces.length > 0) {
+                drawVector(totalRx * SCALE, totalRy * SCALE, '#6f42c1', '합력', true);
+                drawVector(equilibrantX * SCALE, equilibrantY * SCALE, '#28a745', '평형력');
+            }
+
+            // 중앙점
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = 'black';
+            ctx.fill();
+        }
+
+        addForceBtn.addEventListener('click', addForce);
+
+        // 초기 힘 2개 설정
+        function initialize() {
+            forces.push({ id: 1, mag: 50, angle: 30, color: forceColors[0] });
+            forces.push({ id: 2, mag: 70, angle: 120, color: forceColors[1] });
+            nextForceId = 3;
+
+            forces.forEach(createForceControls);
+            draw();
+        }
+
+        window.onload = initialize;
+    </script>
 
 </body>
+
 </html>

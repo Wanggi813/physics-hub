@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>탈출속도 (우주틱 · 전체화면)</title>
+  <style>
+    :root {
+      --ink: #eaf2ff;
+      --muted: #a8b3c7;
+      --panel: rgba(18, 24, 44, 0.72);
+      --panel2: rgba(10, 14, 28, 0.55);
+      --stroke: rgba(255, 255, 255, 0.12);
+      --accent: #62a6ff;
+      --good: #2ecc71;
+      --bad: #ff5d5d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #060812;
+      color: var(--ink);
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, "Noto Sans KR", sans-serif;
+    }
+
+    /* --- Fullscreen stage --- */
+    .stage {
+      position: fixed;
+      inset: 0;
+      display: block;
+      background:
+        radial-gradient(1200px 900px at 70% 20%, rgba(90, 155, 255, 0.16), transparent 60%),
+        radial-gradient(900px 700px at 15% 70%, rgba(180, 80, 255, 0.12), transparent 60%),
+        radial-gradient(900px 700px at 85% 85%, rgba(60, 255, 210, 0.08), transparent 62%),
+        linear-gradient(180deg, #040512 0%, #070a18 50%, #050713 100%);
+    }
+
+    /* star layers */
+    .stars,
+    .stars2,
+    .vignette {
+      position: absolute;
+      inset: -60% -20%;
+      pointer-events: none;
+    }
+
+    .stars {
+      background-image:
+        radial-gradient(1px 1px at 35px 45px, rgba(255, 255, 255, .85), transparent),
+        radial-gradient(1px 1px at 95px 115px, rgba(255, 255, 255, .75), transparent),
+        radial-gradient(2px 2px at 240px 190px, rgba(255, 255, 255, .65), transparent),
+        radial-gradient(1px 1px at 310px 260px, rgba(255, 255, 255, .7), transparent);
+      background-size: 360px 360px;
+      opacity: .85;
+      animation: drift 36s linear infinite;
+      filter: drop-shadow(0 0 6px rgba(120, 180, 255, 0.15));
+    }
+
+    .stars2 {
+      inset: -80% -30%;
+      background-image:
+        radial-gradient(1px 1px at 25px 25px, rgba(255, 255, 255, .55), transparent),
+        radial-gradient(2px 2px at 170px 80px, rgba(255, 255, 255, .35), transparent),
+        radial-gradient(1px 1px at 260px 240px, rgba(255, 255, 255, .45), transparent);
+      background-size: 420px 420px;
+      opacity: .65;
+      animation: drift2 62s linear infinite;
+    }
+
+    .vignette {
+      inset: 0;
+      background: radial-gradient(80% 80% at 55% 50%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+      opacity: .9;
+    }
+
+    @keyframes drift {
+      0% {
+        transform: translate3d(0, 0, 0);
+      }
+
+      100% {
+        transform: translate3d(-140px, 220px, 0);
+      }
+    }
+
+    @keyframes drift2 {
+      0% {
+        transform: translate3d(0, 0, 0);
+      }
+
+      100% {
+        transform: translate3d(180px, 260px, 0);
+      }
+    }
+
+    /* --- World (planet + rocket) --- */
+    .sim {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    /* world gets scaled down when rocket would go out */
+    #world {
+      position: absolute;
+      inset: 0;
+      transform-origin: 16% 68%;
+      /* around the planet-ish */
+      will-change: transform, opacity;
+      opacity: 1;
+      transition: opacity 420ms ease;
+    }
+
+    #planet {
+      position: absolute;
+      left: 9vw;
+      top: 58vh;
+      width: 220px;
+      height: 220px;
+      transform: translate(-50%, -50%);
+      background-image: url('./image/earth.png');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 2px rgba(255, 255, 255, 0.08),
+        0 0 40px rgba(90, 155, 255, 0.22),
+        0 0 140px rgba(90, 155, 255, 0.10);
+      filter: saturate(1.05) contrast(1.05);
+      z-index: 5;
+    }
+
+    #rocket-container {
+      position: absolute;
+      width: 70px;
+      height: 40px;
+      z-index: 10;
+      left: calc(9vw + 160px);
+      /* just to the right of planet */
+      top: 58vh;
+      transform: translate(-50%, -50%);
+      will-change: transform, opacity;
+      opacity: 1;
+      transition: opacity 420ms ease;
+    }
+
+
+    #rocket-container.vanish {
+      opacity: 0;
+    }
+
+    #rocket-body {
+      width: 100%;
+      height: 100%;
+      display: block;
+      transform: scale(1.6);
+      transform-origin: 50% 50%;
+      filter: drop-shadow(0 12px 18px rgba(255, 120, 60, 0.22));
+    }
+
+    #flame {
+      position: absolute;
+      left: -18px;
+      top: 50%;
+      transform: translateY(-50%) rotate(180deg);
+      width: 0;
+      height: 0;
+      border-top: 9px solid transparent;
+      border-bottom: 9px solid transparent;
+      border-left: 22px solid #ffcc00;
+      filter: drop-shadow(0 6px 16px #ff8800);
+      display: none;
+      animation: flicker .08s infinite;
+    }
+
+    @keyframes flicker {
+      0% {
+        opacity: 1;
+        transform: translateY(-50%) rotate(180deg) scaleX(1) scaleY(1);
+      }
+
+      50% {
+        opacity: .8;
+        transform: translateY(-50%) rotate(180deg) scaleX(.85) scaleY(.85);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(-50%) rotate(180deg) scaleX(1.15) scaleY(1.05);
+      }
+    }
+
+    /* --- Top-left panel overlay --- */
+    .panel {
+      position: fixed;
+      left: 14px;
+      top: 14px;
+      width: min(420px, calc(100vw - 28px));
+      /* keep the panel from covering the main scene (planet/rocket) */
+      max-height: calc(100vh - 28px);
+      overflow: hidden;
+      padding: 16px 16px 14px;
+      background: linear-gradient(180deg, var(--panel), var(--panel2));
+      border: 1px solid var(--stroke);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+      z-index: 50;
+    }
+
+    .panel h2 {
+      font-size: 16px;
+      letter-spacing: .2px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      color: var(--ink);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(98, 166, 255, 0.14);
+      border: 1px solid rgba(98, 166, 255, 0.22);
+      color: rgba(210, 230, 255, 0.95);
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .group {
+      margin-bottom: 12px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 10px;
+      margin-bottom: 7px;
+    }
+
+    .control {
+      display: grid;
+      grid-template-columns: 92px 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .control label {
+      margin: 0;
+    }
+
+    .control .val {
+      white-space: nowrap;
+    }
+
+    .control input[type="range"] {
+      margin: 0;
+    }
+
+    label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .val {
+      font-size: 13px;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    button {
+      flex: 1;
+      padding: 11px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      background: rgba(98, 166, 255, 0.16);
+      color: var(--ink);
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .08s ease, background .15s ease, border-color .15s ease;
+    }
+
+    button:hover:not(:disabled) {
+      background: rgba(98, 166, 255, 0.24);
+      border-color: rgba(98, 166, 255, 0.32);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .out {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+    }
+
+    .out .line {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      padding: 6px 0;
+    }
+
+    .out .k {
+      color: var(--muted);
+    }
+
+    .result {
+      margin-top: 10px;
+      font-weight: 900;
+      font-size: 14px;
+      text-align: center;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .result.good {
+      background: rgba(46, 204, 113, 0.16);
+      border-color: rgba(46, 204, 113, 0.25);
+      color: rgba(225, 255, 238, 0.96);
+    }
+
+    .result.bad {
+      background: rgba(255, 93, 93, 0.16);
+      border-color: rgba(255, 93, 93, 0.25);
+      color: rgba(255, 235, 235, 0.96);
+    }
+
+    /* small hint text */
+    .hint {
+      margin-top: 10px;
+      font-size: 11px;
+      color: rgba(180, 196, 224, 0.75);
+      line-height: 1.35;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="stage">
+    <div class="stars"></div>
+    <div class="stars2"></div>
+
+    <div class="sim">
+      <div id="world">
+        <div id="planet"></div>
+
+        <div id="rocket-container" aria-hidden="true">
+          <!-- 우주선(인라인 SVG) -->
+          <svg id="rocket-body" viewBox="0 0 320 200" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="kps_flame" x1="0" x2="1">
+                <stop offset="0" stop-color="#fff59d" />
+                <stop offset="0.45" stop-color="#ffb74d" />
+                <stop offset="1" stop-color="#ff5252" />
+              </linearGradient>
+              <radialGradient id="kps_glass" cx="50%" cy="50%" r="50%">
+                <stop offset="0" stop-color="#cfe9ff" />
+                <stop offset="1" stop-color="#5aa0ff" />
+              </radialGradient>
+              <linearGradient id="kps_hull" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#eef2f9" />
+                <stop offset="1" stop-color="#d6dce8" />
+              </linearGradient>
+            </defs>
+            <g transform="translate(0,6)">
+              <path d="M16 100 L72 78 L72 122 Z" fill="url(#kps_flame)" opacity="0.95"></path>
+            </g>
+            <g transform="translate(40,12)">
+              <path d="M50,50 Q180,20 270,80 Q290,100 270,120 Q180,180 50,150 Q30,140 30,100 Q30,60 50,50 Z"
+                fill="url(#kps_hull)" stroke="#cfd6e6" stroke-width="4" />
+              <circle cx="160" cy="100" r="24" fill="url(#kps_glass)" stroke="#1c3d7a" stroke-width="6" />
+              <circle cx="168" cy="92" r="9" fill="#eaf6ff" opacity="0.9" />
+            </g>
+          </svg>
+
+          <div id="flame"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vignette"></div>
+  </div>
+
+  <!-- Top-left control panel -->
+  <div class="panel" role="region" aria-label="시뮬레이션 설정 패널">
+    <h2>🚀 탈출속도 <span class="badge">Full</span></h2>
+
+    <div class="group">
+      <div class="control">
+        <label for="planetMass">행성 질량</label>
+        <input type="range" id="planetMass" min="0.1" max="10" value="5.97" step="0.01" />
+        <div class="val"><span id="planetMassValue">5.97</span> ×10²⁴ kg</div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="control">
+        <label for="planetRadius">행성 반지름</label>
+        <input type="range" id="planetRadius" min="1000" max="10000" value="6371" step="1" />
+        <div class="val"><span id="planetRadiusValue">6371</span> km</div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="control">
+        <label for="initialVelocity">로켓 초기 속도</label>
+        <input type="range" id="initialVelocity" min="1" max="20" value="10" step="0.1" />
+        <div class="val"><span id="initialVelocityValue">10.0</span> km/s</div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="control">
+        <label for="simSpeed">시뮬레이션 속도</label>
+        <input type="range" id="simSpeed" min="1000" max="30000" value="10000" step="1000" />
+        <div class="val"><span id="simSpeedValue">10000</span>x</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="launchButton">발사</button>
+      <button id="resetViewButton" title="줌/화면을 초기화">뷰 초기화</button>
+    </div>
+
+    <div class="out">
+      <div class="line">
+        <div class="k">계산된 탈출속도</div>
+        <div><span id="escapeVelocity">0.00</span> km/s</div>
+      </div>
+      <div class="line">
+        <div class="k">상태</div>
+        <div id="status">대기 중</div>
+      </div>
+      <div class="line">
+        <div class="k">최고 고도</div>
+        <div><span id="maxAltitude">0</span> km</div>
+      </div>
+      <div class="line">
+        <div class="k">현재 속도</div>
+        <div><span id="currentVelocity">0.0</span> km/s</div>
+      </div>
+      <div id="result" class="result"></div>
+      <div class="hint">※ 로켓이 화면 밖으로 나가려 하면, 장면이 자동으로 “줌 아웃”되며 스케일이 변합니다.</div>
+    </div>
+  </div>
+
+  <script>
+    // --- Physics constants ---
+    const G = 6.67430e-11;
+
+    // --- Elements ---
+    const planetMassSlider = document.getElementById('planetMass');
+    const planetRadiusSlider = document.getElementById('planetRadius');
+    const initialVelocitySlider = document.getElementById('initialVelocity');
+    const simSpeedSlider = document.getElementById('simSpeed');
+    const launchButton = document.getElementById('launchButton');
+    const resetViewButton = document.getElementById('resetViewButton');
+
+    const planetMassValue = document.getElementById('planetMassValue');
+    const planetRadiusValue = document.getElementById('planetRadiusValue');
+    const initialVelocityValue = document.getElementById('initialVelocityValue');
+    const simSpeedValue = document.getElementById('simSpeedValue');
+
+    const escapeVelocityDisplay = document.getElementById('escapeVelocity');
+    const statusDisplay = document.getElementById('status');
+    const resultDisplay = document.getElementById('result');
+    const maxAltitudeDisplay = document.getElementById('maxAltitude');
+    const currentVelocityDisplay = document.getElementById('currentVelocity');
+
+    const planetElement = document.getElementById('planet');
+    const rocketContainer = document.getElementById('rocket-container');
+    const flameElement = document.getElementById('flame');
+    const world = document.getElementById('world');
+    const panelElement = document.querySelector('.panel');
+
+    // --- State ---
+    let animationFrameId = null;
+    let simInProgress = false;
+
+    // visual mapping
+    let baseScalePxPerM = 0; // recomputed on resize/update
+    let worldScale = 1;      // dynamic zoom-out
+    let rocketBaseX = 0;     // px (world coord)
+    let rocketBaseY = 0;     // px (world coord)
+    let planetCenterX = 0;
+    let planetCenterY = 0;
+
+    function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+    function applySafeLayout() {
+      // Make sure the top-left panel never covers the planet/rocket.
+      // If overlap would happen, push the planet/rocket downward just enough.
+      if (!panelElement) return;
+
+      const panelRect = panelElement.getBoundingClientRect();
+      const pad = 16;
+      const desiredMinTop = panelRect.bottom + pad;
+
+      const pr = planetElement.getBoundingClientRect();
+      const radius = pr.width / 2;
+
+      // default anchor: around lower-left area
+      const defaultY = window.innerHeight * 0.62;
+
+      // new center Y so the planet's top stays below the panel
+      const safeCenterY = Math.max(defaultY, desiredMinTop + radius);
+
+      planetElement.style.top = `${safeCenterY}px`;
+      rocketContainer.style.top = `${safeCenterY}px`;
+
+      // keep transform origin near the planet
+      world.style.transformOrigin = `16% ${Math.round((safeCenterY / window.innerHeight) * 100)}%`;
+    }
+
+    function measureAnchors() {
+      // planet center in viewport px
+      const pr = planetElement.getBoundingClientRect();
+      planetCenterX = pr.left + pr.width / 2;
+      planetCenterY = pr.top + pr.height / 2;
+
+      const rr = rocketContainer.getBoundingClientRect();
+      rocketBaseX = rr.left + rr.width / 2;
+      rocketBaseY = rr.top + rr.height / 2;
+    }
+
+    function setWorldScale(s) {
+      worldScale = s;
+      world.style.transform = `scale(${worldScale})`;
+    }
+
+    function resetView() {
+      setWorldScale(1);
+      // reset rocket position to start point
+      rocketContainer.style.transform = 'translate(-50%, -50%)';
+    }
+
+    function updateParameters() {
+      if (simInProgress) return;
+
+      const M = parseFloat(planetMassSlider.value) * 1e24;
+      const R = parseFloat(planetRadiusSlider.value) * 1000;
+
+      planetMassValue.textContent = parseFloat(planetMassSlider.value).toFixed(2);
+      planetRadiusValue.textContent = parseFloat(planetRadiusSlider.value).toFixed(0);
+
+      const ve = Math.sqrt((2 * G * M) / R);
+      escapeVelocityDisplay.textContent = (ve / 1000).toFixed(2);
+
+      // planet size: keep reasonable on any screen
+      // (R = 6371km -> about 220px baseline; scaled with R but clamped)
+      const baseline = Math.min(window.innerWidth, window.innerHeight);
+      const target = (R / (6.371e6)) * (baseline * 0.22);
+      const diam = clamp(target, 140, 320);
+      planetElement.style.width = `${diam}px`;
+      planetElement.style.height = `${diam}px`;
+
+      // rocket size a bit responsive
+      const rW = clamp(baseline * 0.06, 54, 90);
+      rocketContainer.style.width = `${rW}px`;
+      rocketContainer.style.height = `${rW * 0.57}px`;
+
+      // base scale for mapping altitude to horizontal travel
+      // Use 2R to fill ~55% of screen width as "visual range".
+      baseScalePxPerM = (window.innerWidth * 0.55) / (2 * R);
+
+      resetView();
+      resetSimulationState();
+      // measure after layout (also ensures safe layout)
+      requestAnimationFrame(() => {
+        applySafeLayout();
+        measureAnchors();
+      });
+    }
+
+    function resetSimulationState() {
+      statusDisplay.textContent = '대기 중';
+      resultDisplay.textContent = '';
+      resultDisplay.className = 'result';
+      maxAltitudeDisplay.textContent = '0';
+      currentVelocityDisplay.textContent = parseFloat(initialVelocitySlider.value).toFixed(1);
+      flameElement.style.display = 'none';
+      rocketContainer.classList.remove('vanish');
+      rocketContainer.style.display = 'block';
+    }
+
+    function startSimulation() {
+      if (simInProgress) return;
+      simInProgress = true;
+      launchButton.disabled = true;
+      launchButton.textContent = '진행 중…';
+      resetSimulationState();
+
+      statusDisplay.textContent = '발사!';
+      flameElement.style.display = 'block';
+
+      const M = parseFloat(planetMassSlider.value) * 1e24;
+      const R = parseFloat(planetRadiusSlider.value) * 1000;
+      let v = parseFloat(initialVelocitySlider.value) * 1000;
+      let h = 0;
+      let max_h = 0;
+      const timeScale = parseFloat(simSpeedSlider.value);
+      const escapeAltitude = R * 20;
+
+      let lastTime = null;
+      measureAnchors();
+
+      function animate(t) {
+        if (!lastTime) { lastTime = t; animationFrameId = requestAnimationFrame(animate); return; }
+        const dt = ((t - lastTime) / 1000) * timeScale;
+        lastTime = t;
+
+        const r = R + h;
+        const g_h = (G * M) / (r * r);
+        const a = -g_h;
+        v += a * dt;
+        h += v * dt;
+        if (h > max_h) max_h = h;
+
+        // ---- Visual mapping (horizontal launch) ----
+        // raw desired x displacement in px (world coords)
+        const dx = h * baseScalePxPerM;
+
+        // keep rocket inside screen: if dx would push it out, zoom out the whole world
+        const margin = 70; // px
+        const maxX = window.innerWidth - margin;
+        const rocketX = rocketBaseX + dx;
+        let desiredScale = 1;
+        if (rocketX > maxX) {
+          desiredScale = clamp(maxX / rocketX, 0.25, 1);
+        }
+        // smooth scaling
+        const smooth = 0.14;
+        setWorldScale(worldScale + (desiredScale - worldScale) * smooth);
+
+        // small curvature for "natural" motion
+        const curve = -Math.sin(clamp(dx / (window.innerWidth * 0.45), 0, 1) * Math.PI) * 22;
+
+        rocketContainer.style.transform = `translate(-50%, -50%) translate(${dx}px, ${curve}px)`;
+
+        // gentle parallax: planet glow a bit stronger at speed
+        const glow = clamp(Math.abs(v / 1000) / 15, 0, 1);
+        planetElement.style.boxShadow =
+          `0 0 0 2px rgba(255,255,255,0.08), 0 0 40px rgba(90,155,255,${0.18 + glow * 0.18}), 0 0 140px rgba(90,155,255,${0.08 + glow * 0.10})`;
+
+        maxAltitudeDisplay.textContent = (max_h / 1000).toFixed(0);
+        currentVelocityDisplay.textContent = (v / 1000).toFixed(1);
+
+        if (h < 0) {
+          statusDisplay.textContent = '행성으로 낙하';
+          resultDisplay.textContent = '탈출 실패';
+          resultDisplay.className = 'result bad';
+          endSimulation();
+          return;
+        }
+
+        if (h > escapeAltitude) {
+          statusDisplay.textContent = '중력권 탈출';
+          resultDisplay.textContent = '탈출 성공!';
+          resultDisplay.className = 'result good';
+          // stop physics loop immediately (avoid multiple triggers)
+          if (animationFrameId) cancelAnimationFrame(animationFrameId);
+          animationFrameId = null;
+          simInProgress = false;
+          // 우주선은 중력권을 벗어나는 순간 화면에서 사라지게
+          rocketContainer.classList.add('vanish');
+          setTimeout(() => {
+            rocketContainer.style.display = 'none';
+            endSimulation();
+          }, 430);
+          return;
+        }
+
+        animationFrameId = requestAnimationFrame(animate);
+      }
+
+      animationFrameId = requestAnimationFrame(animate);
+    }
+
+    function endSimulation() {
+      simInProgress = false;
+      launchButton.disabled = false;
+      launchButton.textContent = '다시 발사';
+      flameElement.style.display = 'none';
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      animationFrameId = null;
+    }
+
+    // --- Listeners ---
+    planetMassSlider.addEventListener('input', updateParameters);
+    planetRadiusSlider.addEventListener('input', updateParameters);
+    initialVelocitySlider.addEventListener('input', () => {
+      initialVelocityValue.textContent = parseFloat(initialVelocitySlider.value).toFixed(1);
+      if (!simInProgress) resetSimulationState();
+    });
+    simSpeedSlider.addEventListener('input', () => {
+      simSpeedValue.textContent = `${simSpeedSlider.value}x`;
+    });
+    launchButton.addEventListener('click', startSimulation);
+    resetViewButton.addEventListener('click', () => {
+      resetView();
+      requestAnimationFrame(measureAnchors);
+    });
+
+    window.addEventListener('resize', () => {
+      // recompute mapping & layout
+      const wasRunning = simInProgress;
+      if (wasRunning) {
+        // stop safely; user can re-launch
+        endSimulation();
+      }
+      updateParameters();
+    });
+
+    // --- init ---
+    initialVelocityValue.textContent = parseFloat(initialVelocitySlider.value).toFixed(1);
+    simSpeedValue.textContent = `${simSpeedSlider.value}x`;
+    updateParameters();
+    // extra safety on first paint
+    requestAnimationFrame(() => {
+      applySafeLayout();
+      measureAnchors();
+    });
+  </script>
+</body>
+
+</html>

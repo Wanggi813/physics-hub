@@ -1,659 +1,937 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>우주 물리 실험실 v13.0: 위치 고정</title>
+    <title>우주 물리 실험실(운동량)</title>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    
+
     <style>
-        body { margin: 0; background: #000; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; display: flex; touch-action: none; user-select: none; -webkit-user-select: none; }
-        
-        #game-container { position: relative; width: 70vw; height: 100vh; background: radial-gradient(circle at center, #1b2735 0%, #000000 100%); overflow: hidden; cursor: crosshair; }
-        canvas { display: block; width: 100%; height: 100%; }
+        body {
+            margin: 0;
+            background: #000;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+            display: flex;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 70vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, #1b2735 0%, #000000 100%);
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
 
         /* 산소 부족 효과 */
         #danger-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             box-shadow: inset 0 0 50px rgba(255, 0, 0, 0);
-            pointer-events: none; z-index: 5; transition: box-shadow 0.5s;
+            pointer-events: none;
+            z-index: 5;
+            transition: box-shadow 0.5s;
         }
-        .low-o2 { animation: heartbeat 1s infinite; }
+
+        .low-o2 {
+            animation: heartbeat 1s infinite;
+        }
+
         @keyframes heartbeat {
-            0% { box-shadow: inset 0 0 50px rgba(255, 0, 0, 0); }
-            50% { box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.6); }
-            100% { box-shadow: inset 0 0 50px rgba(255, 0, 0, 0); }
+            0% {
+                box-shadow: inset 0 0 50px rgba(255, 0, 0, 0);
+            }
+
+            50% {
+                box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.6);
+            }
+
+            100% {
+                box-shadow: inset 0 0 50px rgba(255, 0, 0, 0);
+            }
         }
 
         /* 반응형 */
         @media (max-width: 768px) {
-            #game-container { width: 100vw; height: 100vh; }
-            #physics-panel { display: none; } 
+            #game-container {
+                width: 100vw;
+                height: 100vh;
+            }
+
+            #physics-panel {
+                display: none;
+            }
         }
 
-        #physics-panel { 
-            width: 30vw; height: 100vh; background: #111; border-left: 1px solid #333; 
-            display: flex; flex-direction: column; padding: 25px; box-sizing: border-box; z-index: 5;
-            box-shadow: -5px 0 15px rgba(0,0,0,0.5); font-family: 'Segoe UI', sans-serif;
+        #physics-panel {
+            width: 30vw;
+            height: 100vh;
+            background: #111;
+            border-left: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+            box-sizing: border-box;
+            z-index: 5;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
+            font-family: 'Segoe UI', sans-serif;
         }
-        h2 { color: #00f2ff; margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-        
-        .calc-box { background: #0a0a0a; border: 1px solid #444; border-radius: 8px; padding: 15px; margin-bottom: 20px; font-family: 'Courier New', monospace; }
-        .calc-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 1.1rem; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-        
-        #log-container { flex-grow: 1; overflow-y: auto; border: 1px solid #333; background: #050505; padding: 10px; font-size: 0.85rem; font-family: 'Courier New', monospace; border-radius: 4px; }
-        .log-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #222; color: #ddd; }
 
-        #tutorial-modal, #orientation-lock { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; display: flex; justify-content: center; align-items: center; }
-        #orientation-lock { z-index: 200; display: none; flex-direction: column; }
-        .modal-content { background: #1a1a1a; border: 1px solid #00f2ff; padding: 30px; border-radius: 15px; max-width: 800px; width: 80%; text-align: left; box-shadow: 0 0 50px rgba(0, 242, 255, 0.1); }
-        .math-display { background: #000; padding: 15px; border-radius: 8px; border: 1px solid #333; text-align: center; margin: 15px 0; font-size: 1.2rem; color: #44ff44; }
+        h2 {
+            color: #00f2ff;
+            margin-top: 0;
+            font-size: 1.2rem;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
 
-        #ui-overlay { position: absolute; top: 10px; left: 10px; pointer-events: none; z-index: 10; text-shadow: 1px 1px 2px black; }
-        .stat-box { margin-bottom: 5px; font-weight: bold; font-size: 1rem; }
-        .bar-bg { width: 150px; height: 8px; background: #333; border-radius: 4px; overflow: hidden; margin-top: 5px; }
-        #o2-bar { height: 100%; width: 100%; background: linear-gradient(90deg, #ff4444, #44ff44); transition: width 0.1s; }
-        
-        #slow-mo-indicator { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); font-size: 1.2rem; color: #ffff00; font-weight: bold; display: none; text-shadow: 0 0 10px orange; pointer-events: none; }
-        
-        #msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; display: none; pointer-events: auto; z-index: 20; background: rgba(10,10,10,0.95); padding: 30px; border: 2px solid #ff4444; border-radius: 12px; min-width: 280px; }
-        button { padding: 12px 30px; cursor: pointer; background: #2196F3; color: white; border: none; font-size: 1rem; margin-top: 15px; border-radius: 6px; font-weight: bold; transition: 0.2s; }
-        .start-btn { background: #00f2ff; color: #000; width: 100%; font-size: 1.2rem; }
-        #loading-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #00f2ff; font-size: 1.5rem; z-index: 200; }
+        .calc-box {
+            background: #0a0a0a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+        }
 
-        #mobile-controls { position: absolute; bottom: 30px; right: 30px; z-index: 50; display: none; }
-        #boost-btn { width: 90px; height: 90px; border-radius: 50%; background: rgba(255, 68, 0, 0.6); border: 3px solid orange; color: white; font-weight: bold; font-size: 16px; display: flex; align-items: center; justify-content: center; touch-action: none; box-shadow: 0 0 15px orange; }
-        #boost-btn:active { background: rgba(255, 68, 0, 0.9); transform: scale(0.95); }
+        .calc-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
 
-        .rotate-icon { font-size: 50px; margin-bottom: 20px; animation: rotatePhone 2s infinite; }
-        @keyframes rotatePhone { 0% { transform: rotate(0deg); } 25% { transform: rotate(90deg); } 100% { transform: rotate(90deg); } }
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
 
-        @media (pointer: coarse) { #mobile-controls { display: block; } }
+        #log-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            border: 1px solid #333;
+            background: #050505;
+            padding: 10px;
+            font-size: 0.85rem;
+            font-family: 'Courier New', monospace;
+            border-radius: 4px;
+        }
+
+        .log-item {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #222;
+            color: #ddd;
+        }
+
+        #tutorial-modal,
+        #orientation-lock {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #orientation-lock {
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            border: 1px solid #00f2ff;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 800px;
+            width: 80%;
+            text-align: left;
+            box-shadow: 0 0 50px rgba(0, 242, 255, 0.1);
+        }
+
+        .math-display {
+            background: #000;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            text-align: center;
+            margin: 15px 0;
+            font-size: 1.2rem;
+            color: #44ff44;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        .stat-box {
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .bar-bg {
+            width: 150px;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        #o2-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #ff4444, #44ff44);
+            transition: width 0.1s;
+        }
+
+        #slow-mo-indicator {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.2rem;
+            color: #ffff00;
+            font-weight: bold;
+            display: none;
+            text-shadow: 0 0 10px orange;
+            pointer-events: none;
+        }
+
+        #msg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            display: none;
+            pointer-events: auto;
+            z-index: 20;
+            background: rgba(10, 10, 10, 0.95);
+            padding: 30px;
+            border: 2px solid #ff4444;
+            border-radius: 12px;
+            min-width: 280px;
+        }
+
+        button {
+            padding: 12px 30px;
+            cursor: pointer;
+            background: #2196F3;
+            color: white;
+            border: none;
+            font-size: 1rem;
+            margin-top: 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .start-btn {
+            background: #00f2ff;
+            color: #000;
+            width: 100%;
+            font-size: 1.2rem;
+        }
+
+        #loading-msg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00f2ff;
+            font-size: 1.5rem;
+            z-index: 200;
+        }
+
+        #mobile-controls {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            z-index: 50;
+            display: none;
+        }
+
+        #boost-btn {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: rgba(255, 68, 0, 0.6);
+            border: 3px solid orange;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
+            box-shadow: 0 0 15px orange;
+        }
+
+        #boost-btn:active {
+            background: rgba(255, 68, 0, 0.9);
+            transform: scale(0.95);
+        }
+
+        .rotate-icon {
+            font-size: 50px;
+            margin-bottom: 20px;
+            animation: rotatePhone 2s infinite;
+        }
+
+        @keyframes rotatePhone {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            25% {
+                transform: rotate(90deg);
+            }
+
+            100% {
+                transform: rotate(90deg);
+            }
+        }
+
+        @media (pointer: coarse) {
+            #mobile-controls {
+                display: block;
+            }
+        }
     </style>
 </head>
+
 <body>
 
-<div id="loading-msg">에셋 로딩 중...</div>
-<div id="danger-overlay"></div>
+    <div id="loading-msg">에셋 로딩 중...</div>
+    <div id="danger-overlay"></div>
 
-<div id="orientation-lock">
-    <div class="rotate-icon">📱</div>
-    <h2>가로 모드 권장</h2>
-    <p>화면을 돌려주세요.</p>
-</div>
+    <div id="orientation-lock">
+        <div class="rotate-icon">📱</div>
+        <h2>가로 모드 권장</h2>
+        <p>화면을 돌려주세요.</p>
+    </div>
 
-<div id="tutorial-modal" style="display:none;">
-    <div class="modal-content">
-        <h1 style="color:#00f2ff; text-align:center;">📐 운동량 보존 법칙</h1>
-        <div style="margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:15px;">
-            <h3>1. 학습 목표</h3>
-            <p>우주인이 앞으로 나아가기 위해선 스패너를 반대로 던져야 합니다.<br>산소가 떨어지면 우주 미아가 됩니다!</p>
+    <div id="tutorial-modal" style="display:none;">
+        <div class="modal-content">
+            <h1 style="color:#00f2ff; text-align:center;">📐 운동량 보존 법칙</h1>
+            <div style="margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:15px;">
+                <h3>1. 학습 목표</h3>
+                <p>우주인이 앞으로 나아가기 위해선 스패너를 반대로 던져야 합니다.<br>산소가 떨어지면 우주 미아가 됩니다!</p>
+            </div>
+            <div>
+                <h3>2. 핵심 공식</h3>
+                <div class="math-display">$$ m_1v_1 + m_2v_2 = m_1v_1' + m_2v_2' $$</div>
+                <p style="text-align:center; color:#888; font-size:0.9rem;">(충격량 = 운동량의 변화량)</p>
+            </div>
+            <button class="start-btn" onclick="startGame()">실험 시작</button>
         </div>
-        <div>
-            <h3>2. 핵심 공식</h3>
-            <div class="math-display">$$ m_1v_1 + m_2v_2 = m_1v_1' + m_2v_2' $$</div>
-            <p style="text-align:center; color:#888; font-size:0.9rem;">(충격량 = 운동량의 변화량)</p>
+    </div>
+
+    <div id="game-container">
+        <div id="ui-overlay">
+            <div class="stat-box">LEVEL <span id="lv" style="color:#00f2ff">1</span></div>
+            <div class="stat-box">🔧 <span id="tools">10</span></div>
+            <div class="stat-box">🫧 <div class="bar-bg">
+                    <div id="o2-bar"></div>
+                </div>
+            </div>
         </div>
-        <button class="start-btn" onclick="startGame()">실험 시작</button>
-    </div>
-</div>
 
-<div id="game-container">
-    <div id="ui-overlay">
-        <div class="stat-box">LEVEL <span id="lv" style="color:#00f2ff">1</span></div>
-        <div class="stat-box">🔧 <span id="tools">10</span></div>
-        <div class="stat-box">🫧 <div class="bar-bg"><div id="o2-bar"></div></div></div>
-    </div>
-    
-    <div id="slow-mo-indicator">⏱️ SLOW MOTION</div>
+        <div id="slow-mo-indicator">⏱️ SLOW MOTION</div>
 
-    <div id="msg">
-        <h1 id="msg-title" style="margin:0 0 20px 0; color:#ff4444;">실험 실패</h1>
-        <div id="crash-report" style="color:#ccc; margin-bottom:20px;"></div>
-        <button id="retry-btn" onclick="resetLevel()">재시도</button>
-        <button id="next-btn" onclick="nextLevel()" style="display:none; background:#4CAF50;">다음 단계</button>
+        <div id="msg">
+            <h1 id="msg-title" style="margin:0 0 20px 0; color:#ff4444;">실험 실패</h1>
+            <div id="crash-report" style="color:#ccc; margin-bottom:20px;"></div>
+            <button id="retry-btn" onclick="resetLevel()">재시도</button>
+            <button id="next-btn" onclick="nextLevel()" style="display:none; background:#4CAF50;">다음 단계</button>
+        </div>
+
+        <div id="mobile-controls">
+            <div id="boost-btn">BOOST</div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
     </div>
 
-    <div id="mobile-controls"><div id="boost-btn">BOOST</div></div>
-    <canvas id="gameCanvas"></canvas>
-</div>
-
-<div id="physics-panel">
-    <h2>📊 실시간 운동량 계산기</h2>
-    <div class="calc-box">
-        <div class="calc-header">$$ \vec{P}_{new} = \vec{P}_{old} + \vec{I}_{tool} $$</div>
-        <div class="calc-row"><div class="calc-label">📐 각도</div><div id="val-angle">0°</div></div>
-        <div class="calc-row"><div class="calc-label"><span class="dot" style="background:#2ecc71"></span>$P_{old}$</div><div id="val-p-old" style="color:#2ecc71">0.0</div></div>
-        <div class="calc-row"><div class="calc-label"><span class="dot" style="background:#ff4444"></span>Impulse</div><div id="val-impulse" style="color:#ff4444">0.0</div></div>
-        <div class="calc-row result"><div class="calc-label"><span class="dot" style="background:#ffff00;"></span>$P_{new}$</div><div id="val-p-new" style="color:#ffff00">0.0</div></div>
+    <div id="physics-panel">
+        <h2>📊 실시간 운동량 계산기</h2>
+        <div class="calc-box">
+            <div class="calc-header">$$ \vec{P}_{new} = \vec{P}_{old} + \vec{I}_{tool} $$</div>
+            <div class="calc-row">
+                <div class="calc-label">📐 각도</div>
+                <div id="val-angle">0°</div>
+            </div>
+            <div class="calc-row">
+                <div class="calc-label"><span class="dot" style="background:#2ecc71"></span>$P_{old}$</div>
+                <div id="val-p-old" style="color:#2ecc71">0.0</div>
+            </div>
+            <div class="calc-row">
+                <div class="calc-label"><span class="dot" style="background:#ff4444"></span>Impulse</div>
+                <div id="val-impulse" style="color:#ff4444">0.0</div>
+            </div>
+            <div class="calc-row result">
+                <div class="calc-label"><span class="dot" style="background:#ffff00;"></span>$P_{new}$</div>
+                <div id="val-p-new" style="color:#ffff00">0.0</div>
+            </div>
+        </div>
+        <h2>📝 데이터 로그</h2>
+        <div id="log-container"></div>
     </div>
-    <h2>📝 데이터 로그</h2>
-    <div id="log-container"></div>
-</div>
 
-<script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const logContainer = document.getElementById('log-container');
-const slowMoIndicator = document.getElementById('slow-mo-indicator');
-const loadingMsg = document.getElementById('loading-msg');
-const tutorialModal = document.getElementById('tutorial-modal');
-const orientationLock = document.getElementById('orientation-lock');
-const boostBtn = document.getElementById('boost-btn');
-const dangerOverlay = document.getElementById('danger-overlay');
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const logContainer = document.getElementById('log-container');
+        const slowMoIndicator = document.getElementById('slow-mo-indicator');
+        const loadingMsg = document.getElementById('loading-msg');
+        const tutorialModal = document.getElementById('tutorial-modal');
+        const orientationLock = document.getElementById('orientation-lock');
+        const boostBtn = document.getElementById('boost-btn');
+        const dangerOverlay = document.getElementById('danger-overlay');
 
-// UI Elements
-const valAngle = document.getElementById('val-angle');
-const valPOld = document.getElementById('val-p-old');
-const valImpulse = document.getElementById('val-impulse');
-const valPNew = document.getElementById('val-p-new');
+        // UI Elements
+        const valAngle = document.getElementById('val-angle');
+        const valPOld = document.getElementById('val-p-old');
+        const valImpulse = document.getElementById('val-impulse');
+        const valPNew = document.getElementById('val-p-new');
 
-const images = {};
-let assetsLoaded = 0;
-const ASSET_SOURCES = {
-    ship: '.\\image\\우주선.png',
-    asteroid: '.\\image\\소행성.png',
-    spanner: '.\\image\\스패너.png'
-};
-const totalAssets = Object.keys(ASSET_SOURCES).length;
+        const images = {};
+        let assetsLoaded = 0;
+        const ASSET_SOURCES = {
+            ship: '.\\image\\우주선.png',
+            asteroid: '.\\image\\소행성.png',
+            spanner: '.\\image\\스패너.png'
+        };
+        const totalAssets = Object.keys(ASSET_SOURCES).length;
 
-function loadAssets(callback) {
-    for(let key in ASSET_SOURCES) {
-        const img = new Image();
-        img.onload = () => { assetsLoaded++; if(assetsLoaded === totalAssets) callback(); };
-        img.onerror = () => { alert(`이미지 로드 실패: ${ASSET_SOURCES[key]}`); };
-        img.src = ASSET_SOURCES[key];
-        images[key] = img;
-    }
-}
+        function loadAssets(callback) {
+            for (let key in ASSET_SOURCES) {
+                const img = new Image();
+                img.onload = () => { assetsLoaded++; if (assetsLoaded === totalAssets) callback(); };
+                img.onerror = () => { alert(`이미지 로드 실패: ${ASSET_SOURCES[key]}`); };
+                img.src = ASSET_SOURCES[key];
+                images[key] = img;
+            }
+        }
 
-// 스케일링 관련
-let scaleFactor = 1.0;
-const BASE_WIDTH = 1280;
+        // 스케일링 관련
+        let scaleFactor = 1.0;
+        const BASE_WIDTH = 1280;
 
-const BASE_CONSTANTS = {
-    PLAYER_RADIUS: 15,
-    SPANNER_WIDTH: 12,
-    GOAL_SIZE: 60,
-    ASTEROID_MIN: 15,
-    ASTEROID_MAX: 35,
-    MAX_THROW_SPEED: 25,
-    BOOST_ACCEL: 0.05,
-    O2_IDLE_COST: 0.03,
-    O2_BOOST_COST: 0.48
-};
-let CONSTANTS = {};
+        const BASE_CONSTANTS = {
+            PLAYER_RADIUS: 15,
+            SPANNER_WIDTH: 12,
+            GOAL_SIZE: 60,
+            ASTEROID_MIN: 15,
+            ASTEROID_MAX: 35,
+            MAX_THROW_SPEED: 25,
+            BOOST_ACCEL: 0.05,
+            O2_IDLE_COST: 0.03,
+            O2_BOOST_COST: 0.48
+        };
+        let CONSTANTS = {};
 
-let level = 1;
-let gameRunning = false;
-let gameOver = false;
-let isDying = false;
-let deathAnimTimer = 0;
-let mouse = { x: 0, y: 0, isLeftDown: false, isRightDown: false };
-let charge = 0;
-let timeScale = 1.0;
+        let level = 1;
+        let gameRunning = false;
+        let gameOver = false;
+        let isDying = false;
+        let deathAnimTimer = 0;
+        let mouse = { x: 0, y: 0, isLeftDown: false, isRightDown: false };
+        let charge = 0;
+        let timeScale = 1.0;
 
-let player = { x: 0, y: 0, vx: 0, vy: 0, radius: 0, tools: 10, o2: 100, angle: 0, opacity: 1.0 };
-let goal = { x: 0, y: 0, size: 0, angle: 0 };
-let projectiles = [];
-let obstacles = [];
-let stars = [];
+        let player = { x: 0, y: 0, vx: 0, vy: 0, radius: 0, tools: 10, o2: 100, angle: 0, opacity: 1.0 };
+        let goal = { x: 0, y: 0, size: 0, angle: 0 };
+        let projectiles = [];
+        let obstacles = [];
+        let stars = [];
 
-function checkOrientation() {
-    if (window.innerWidth < window.innerHeight && window.innerWidth < 768) {
-        orientationLock.style.display = 'flex';
-    } else {
-        orientationLock.style.display = 'none';
-    }
-}
+        function checkOrientation() {
+            if (window.innerWidth < window.innerHeight && window.innerWidth < 768) {
+                orientationLock.style.display = 'flex';
+            } else {
+                orientationLock.style.display = 'none';
+            }
+        }
 
-function resize() {
-    const container = document.getElementById('game-container');
-    
-    // 1. 변경 전 화면 크기 저장 (비례 계산용)
-    const oldW = canvas.width;
-    const oldH = canvas.height;
+        function resize() {
+            const container = document.getElementById('game-container');
 
-    // 2. 화면 크기 재설정
-    if (window.innerWidth <= 768) {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    } else {
-        canvas.width = container.clientWidth;
-        canvas.height = container.clientHeight;
-    }
+            // 1. 변경 전 화면 크기 저장 (비례 계산용)
+            const oldW = canvas.width;
+            const oldH = canvas.height;
 
-    // 3. 스케일 팩터 및 상수 업데이트
-    scaleFactor = Math.min(canvas.width / BASE_WIDTH, 1.5);
-    if (canvas.width < 600) scaleFactor = canvas.width / 800;
+            // 2. 화면 크기 재설정
+            if (window.innerWidth <= 768) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            } else {
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+            }
 
-    CONSTANTS.PLAYER_RADIUS = BASE_CONSTANTS.PLAYER_RADIUS * scaleFactor;
-    CONSTANTS.SPANNER_WIDTH = BASE_CONSTANTS.SPANNER_WIDTH * scaleFactor;
-    CONSTANTS.GOAL_SIZE = BASE_CONSTANTS.GOAL_SIZE * scaleFactor;
-    CONSTANTS.MAX_THROW_SPEED = BASE_CONSTANTS.MAX_THROW_SPEED * scaleFactor;
-    CONSTANTS.BOOST_ACCEL = BASE_CONSTANTS.BOOST_ACCEL * scaleFactor;
-    CONSTANTS.O2_IDLE_COST = BASE_CONSTANTS.O2_IDLE_COST;
-    CONSTANTS.O2_BOOST_COST = BASE_CONSTANTS.O2_BOOST_COST;
+            // 3. 스케일 팩터 및 상수 업데이트
+            scaleFactor = Math.min(canvas.width / BASE_WIDTH, 1.5);
+            if (canvas.width < 600) scaleFactor = canvas.width / 800;
 
-    // 4. 기존 객체들 위치 재배치 (비례식 적용)
-    // oldW가 0인 경우(초기 로딩) 제외
-    if (oldW > 0 && oldH > 0) {
-        const ratioX = canvas.width / oldW;
-        const ratioY = canvas.height / oldH;
+            CONSTANTS.PLAYER_RADIUS = BASE_CONSTANTS.PLAYER_RADIUS * scaleFactor;
+            CONSTANTS.SPANNER_WIDTH = BASE_CONSTANTS.SPANNER_WIDTH * scaleFactor;
+            CONSTANTS.GOAL_SIZE = BASE_CONSTANTS.GOAL_SIZE * scaleFactor;
+            CONSTANTS.MAX_THROW_SPEED = BASE_CONSTANTS.MAX_THROW_SPEED * scaleFactor;
+            CONSTANTS.BOOST_ACCEL = BASE_CONSTANTS.BOOST_ACCEL * scaleFactor;
+            CONSTANTS.O2_IDLE_COST = BASE_CONSTANTS.O2_IDLE_COST;
+            CONSTANTS.O2_BOOST_COST = BASE_CONSTANTS.O2_BOOST_COST;
 
-        // 플레이어 & 목표
-        player.x *= ratioX;
-        player.y *= ratioY;
-        goal.x *= ratioX;
-        goal.y *= ratioY;
+            // 4. 기존 객체들 위치 재배치 (비례식 적용)
+            // oldW가 0인 경우(초기 로딩) 제외
+            if (oldW > 0 && oldH > 0) {
+                const ratioX = canvas.width / oldW;
+                const ratioY = canvas.height / oldH;
 
-        // 장애물들도 함께 이동
-        obstacles.forEach(obs => {
-            obs.x *= ratioX;
-            obs.y *= ratioY;
-            // 크기 업데이트 (옵션)
-            if(obs.baseW) obs.w = obs.baseW * scaleFactor;
+                // 플레이어 & 목표
+                player.x *= ratioX;
+                player.y *= ratioY;
+                goal.x *= ratioX;
+                goal.y *= ratioY;
+
+                // 장애물들도 함께 이동
+                obstacles.forEach(obs => {
+                    obs.x *= ratioX;
+                    obs.y *= ratioY;
+                    // 크기 업데이트 (옵션)
+                    if (obs.baseW) obs.w = obs.baseW * scaleFactor;
+                });
+
+                // 발사된 투사체들도 이동
+                projectiles.forEach(p => {
+                    p.x *= ratioX;
+                    p.y *= ratioY;
+                });
+            }
+
+            // 크기 업데이트
+            player.radius = CONSTANTS.PLAYER_RADIUS;
+            goal.size = CONSTANTS.GOAL_SIZE;
+
+            initStars();
+            checkOrientation();
+        }
+        window.addEventListener('resize', resize);
+        window.addEventListener('orientationchange', () => setTimeout(resize, 200));
+
+        function initStars() {
+            stars = [];
+            for (let i = 0; i < 80; i++) stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, s: Math.random() * 2 * scaleFactor });
+        }
+
+        function startGame() {
+            tutorialModal.style.display = 'none';
+            gameRunning = true;
+            addLog('system', '시뮬레이션 시작');
+        }
+
+        function initLevel(lv) {
+            // 레벨 초기화 시에는 리사이즈를 호출하지 않고, 현재 캔버스 크기 기준으로 배치
+            if (canvas.width === 0) resize(); // 안전장치
+
+            gameOver = false;
+            isDying = false;
+            deathAnimTimer = 0;
+            dangerOverlay.className = '';
+            document.getElementById('msg').style.display = 'none';
+
+            player.x = canvas.width * 0.1;
+            player.y = canvas.height / 2;
+            player.vx = 0; player.vy = 0;
+            player.tools = 10; player.o2 = 100;
+            player.opacity = 1.0;
+            charge = 0;
+
+            projectiles = []; obstacles = [];
+            logContainer.innerHTML = '';
+
+            goal.x = canvas.width * 0.9;
+            goal.y = canvas.height / 2;
+
+            const cw = canvas.width;
+            const ch = canvas.height;
+
+            // 장애물 생성 시 baseW(기준 너비)를 저장해둠 (리사이즈 시 스케일링 위해)
+            if (lv === 2) obstacles.push(createWall(cw / 2, ch / 2, 20, ch * 0.6, 0, 0.02));
+            if (lv === 3) for (let i = 0; i < 6; i++) obstacles.push(createAsteroid(3));
+            if (lv === 4) {
+                obstacles.push(createWall(cw * 0.6, ch * 0.5, 20, ch * 0.5, 0, -0.02));
+                for (let i = 0; i < 6; i++) obstacles.push(createAsteroid(4));
+            }
+            if (lv === 5) {
+                obstacles.push(createWall(cw * 0.4, 0, 30, ch * 0.7, 0, 0.03));
+                obstacles.push(createWall(cw * 0.7, ch, 30, ch * 0.7, 0, 0.03));
+                for (let i = 0; i < 10; i++) obstacles.push(createAsteroid(5));
+            }
+            updateUI();
+        }
+
+        function createWall(x, y, wBase, h, angle, va) {
+            return {
+                type: 'wall', x: x, y: y,
+                baseW: wBase, w: wBase * scaleFactor,
+                h: h, // 높이는 화면 비율에 따라 이미 조정된 좌표를 받음
+                angle: angle, va: va
+            };
+        }
+
+        function createAsteroid(speedMult) {
+            const baseW = BASE_CONSTANTS.ASTEROID_MIN + Math.random() * (BASE_CONSTANTS.ASTEROID_MAX - BASE_CONSTANTS.ASTEROID_MIN);
+            return {
+                type: 'asteroid',
+                x: canvas.width * 0.3 + Math.random() * (canvas.width * 0.5),
+                y: Math.random() * canvas.height,
+                baseW: baseW, // 기준 너비 저장
+                w: baseW * scaleFactor, // 현재 스케일 적용
+                vx: (Math.random() - 0.5) * speedMult,
+                vy: (Math.random() - 0.5) * speedMult,
+                angle: Math.random() * Math.PI * 2,
+                va: (Math.random() - 0.5) * 0.05
+            };
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            if (isDying) {
+                deathAnimTimer++;
+                player.angle += 0.2;
+                player.opacity -= 0.01;
+                player.radius *= 0.99;
+                if (deathAnimTimer > 120) failGame("산소 고갈!", "우주 공간에서 질식했습니다.");
+                return;
+            }
+
+            if (gameOver) return;
+
+            player.angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+
+            if (mouse.isLeftDown && player.tools > 0) {
+                timeScale = 0.1;
+                slowMoIndicator.style.display = 'block';
+                charge += 0.5 * scaleFactor;
+                if (charge > CONSTANTS.MAX_THROW_SPEED) charge = CONSTANTS.MAX_THROW_SPEED;
+            } else {
+                timeScale = 1.0;
+                slowMoIndicator.style.display = 'none';
+            }
+
+            player.o2 -= CONSTANTS.O2_IDLE_COST * timeScale;
+
+            if (mouse.isRightDown && player.o2 > 0) {
+                player.vx += Math.cos(player.angle) * CONSTANTS.BOOST_ACCEL * timeScale;
+                player.vy += Math.sin(player.angle) * CONSTANTS.BOOST_ACCEL * timeScale;
+                player.o2 -= CONSTANTS.O2_BOOST_COST * timeScale;
+            }
+
+            if (player.o2 <= 30) dangerOverlay.className = 'low-o2';
+            else dangerOverlay.className = '';
+
+            if (player.o2 <= 0) {
+                player.o2 = 0;
+                startDeathSequence();
+            }
+
+            player.x += player.vx * timeScale;
+            player.y += player.vy * timeScale;
+            goal.angle += 0.005 * timeScale;
+
+            obstacles.forEach(obs => {
+                if (obs.type === 'asteroid') {
+                    obs.x += obs.vx * timeScale; obs.y += obs.vy * timeScale;
+                    obs.angle += obs.va * timeScale;
+                    if (obs.x < 0 || obs.x > canvas.width) obs.vx *= -1;
+                    if (obs.y < 0 || obs.y > canvas.height) obs.vy *= -1;
+                } else if (obs.type === 'wall') obs.angle += obs.va * timeScale;
+            });
+
+            projectiles.forEach((p, i) => {
+                p.x += p.vx * timeScale; p.y += p.vy * timeScale; p.r += 0.3 * timeScale;
+                if (p.x < -100 || p.x > canvas.width + 100 || p.y < -100 || p.y > canvas.height + 100) projectiles.splice(i, 1);
+            });
+
+            checkCollisions();
+            updateUI();
+        }
+
+        function startDeathSequence() {
+            isDying = true;
+            dangerOverlay.className = '';
+            addLog('warning', '생명 유지 장치 정지...');
+        }
+
+        function checkCollisions() {
+            if (player.x < 0 || player.x > canvas.width || player.y < 0 || player.y > canvas.height) failGame("궤도 이탈", "심우주로 떠내려갔습니다.");
+
+            for (let obs of obstacles) {
+                let hit = false;
+                if (obs.type === 'asteroid') {
+                    if (Math.hypot(player.x - obs.x, player.y - obs.y) < (player.radius + obs.w / 2) * 0.8) hit = true;
+                } else if (obs.type === 'wall') {
+                    let dx = player.x - obs.x, dy = player.y - obs.y;
+                    let lx = dx * Math.cos(obs.angle) + dy * Math.sin(obs.angle);
+                    let ly = -dx * Math.sin(obs.angle) + dy * Math.cos(obs.angle);
+                    if (Math.abs(lx) < obs.w / 2 + player.radius && Math.abs(ly) < obs.h / 2 + player.radius) hit = true;
+                }
+                if (hit) { failGame("충돌!", "우주복이 파손되었습니다."); return; }
+            }
+
+            if (Math.hypot(player.x - goal.x, player.y - goal.y) < goal.size * 0.7) winGame();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "white";
+            stars.forEach(s => { ctx.globalAlpha = Math.random() * 0.5; ctx.fillRect(s.x, s.y, s.s, s.s); });
+            ctx.globalAlpha = 1;
+
+            drawGoal();
+            drawObstacles();
+            drawProjectiles();
+            drawPlayer();
+
+            if (mouse.isLeftDown && player.tools > 0 && !isDying) drawVectors();
+            requestAnimationFrame(() => { update(); draw(); });
+        }
+
+        function drawVectors() {
+            const px = player.x; const py = player.y;
+            const vScale = 30;
+
+            if (Math.hypot(player.vx, player.vy) > 0.1) {
+                drawArrow(px, py, px + player.vx * vScale, py + player.vy * vScale, "#2ecc71", 3);
+            }
+            const dv = (2 / 20) * charge;
+            drawArrow(px, py, px + Math.cos(player.angle) * dv * vScale, py + Math.sin(player.angle) * dv * vScale, "#ff4444", 3);
+        }
+
+        function drawArrow(x1, y1, x2, y2, color, width) {
+            if (Math.hypot(x2 - x1, y2 - y1) < 1) return;
+            ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width * scaleFactor;
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+            const ang = Math.atan2(y2 - y1, x2 - x1);
+            const head = 10 * scaleFactor;
+            ctx.beginPath(); ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - head * Math.cos(ang - Math.PI / 6), y2 - head * Math.sin(ang - Math.PI / 6));
+            ctx.lineTo(x2 - head * Math.cos(ang + Math.PI / 6), y2 - head * Math.sin(ang + Math.PI / 6));
+            ctx.fill();
+        }
+
+        function drawPlayer() {
+            ctx.save(); ctx.translate(player.x, player.y);
+            ctx.rotate(player.angle);
+            ctx.globalAlpha = player.opacity;
+
+            if (mouse.isLeftDown && !isDying) {
+                ctx.beginPath(); ctx.arc(0, 0, player.radius * 1.5, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 68, 68, ${charge / CONSTANTS.MAX_THROW_SPEED})`;
+                ctx.lineWidth = 2; ctx.stroke();
+            }
+
+            ctx.fillStyle = isDying ? "#555" : "#ecf0f1";
+            ctx.beginPath(); ctx.arc(0, 0, player.radius, 0, Math.PI * 2); ctx.fill();
+
+            if (!isDying) {
+                ctx.fillStyle = "#3498db"; ctx.fillRect(player.radius * 0.3, -player.radius * 0.5, player.radius * 0.8, player.radius);
+            } else {
+                ctx.strokeStyle = "black"; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(0, -5); ctx.lineTo(10, 5); ctx.moveTo(10, -5); ctx.lineTo(0, 5); ctx.stroke();
+            }
+
+            if (mouse.isRightDown && player.o2 > 0 && !isDying) {
+                ctx.fillStyle = "orange"; ctx.beginPath(); ctx.moveTo(-player.radius, -5); ctx.lineTo(-player.radius * 2.5, -8); ctx.lineTo(-player.radius * 2.5, 8); ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        function drawGoal() {
+            ctx.save(); ctx.translate(goal.x, goal.y); ctx.rotate(goal.angle);
+            const w = goal.size * 2;
+            const h = w * (images.ship.naturalHeight / images.ship.naturalWidth);
+            ctx.drawImage(images.ship, -w / 2, -h / 2, w, h);
+            ctx.restore();
+            ctx.font = `${12 * scaleFactor}px Arial`;
+            ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.fillText("TARGET", goal.x, goal.y + h / 2 + 20 * scaleFactor);
+        }
+
+        function drawObstacles() {
+            obstacles.forEach(obs => {
+                ctx.save(); ctx.translate(obs.x, obs.y); ctx.rotate(obs.angle);
+                if (obs.type === 'wall') {
+                    ctx.fillStyle = "#777"; ctx.fillRect(-obs.w / 2, -obs.h / 2, obs.w, obs.h);
+                    ctx.strokeStyle = "#aaa"; ctx.lineWidth = 2; ctx.strokeRect(-obs.w / 2, -obs.h / 2, obs.w, obs.h);
+                } else {
+                    const w = obs.w;
+                    const h = w * (images.asteroid.naturalHeight / images.asteroid.naturalWidth);
+                    ctx.drawImage(images.asteroid, -w / 2, -h / 2, w, h);
+                }
+                ctx.restore();
+            });
+        }
+
+        function drawProjectiles() {
+            projectiles.forEach(p => {
+                ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+                const w = CONSTANTS.SPANNER_WIDTH;
+                const h = w * (images.spanner.naturalHeight / images.spanner.naturalWidth);
+                ctx.drawImage(images.spanner, -w / 2, -h / 2, w, h);
+                ctx.restore();
+            });
+        }
+
+        function handleStart(x, y) {
+            if (!gameRunning || gameOver || isDying) return;
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = x - rect.left; mouse.y = y - rect.top;
+            mouse.isLeftDown = true;
+            charge = 1 * scaleFactor;
+        }
+        function handleMove(x, y) {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = x - rect.left; mouse.y = y - rect.top;
+        }
+        function handleEnd() {
+            if (mouse.isLeftDown) { mouse.isLeftDown = false; throwTool(); }
+        }
+
+        canvas.addEventListener('mousedown', e => { if (e.button === 0) handleStart(e.clientX, e.clientY); if (e.button === 2) mouse.isRightDown = true; });
+        canvas.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
+        canvas.addEventListener('mouseup', e => { if (e.button === 0) handleEnd(); if (e.button === 2) mouse.isRightDown = false; });
+
+        canvas.addEventListener('touchstart', e => { e.preventDefault(); handleStart(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+        canvas.addEventListener('touchmove', e => { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+        canvas.addEventListener('touchend', e => { e.preventDefault(); handleEnd(); }, { passive: false });
+
+        boostBtn.addEventListener('touchstart', (e) => { e.preventDefault(); mouse.isRightDown = true; });
+        boostBtn.addEventListener('touchend', (e) => { e.preventDefault(); mouse.isRightDown = false; });
+
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+        function throwTool() {
+            if (gameOver || player.tools <= 0 || isDying) return;
+            const spannerSpeed = charge;
+            const angle = player.angle;
+            const dvMag = (2 / 20) * spannerSpeed;
+
+            player.vx += Math.cos(angle) * dvMag;
+            player.vy += Math.sin(angle) * dvMag;
+
+            projectiles.push({
+                x: player.x, y: player.y,
+                vx: Math.cos(angle + Math.PI) * spannerSpeed,
+                vy: Math.sin(angle + Math.PI) * spannerSpeed,
+                r: angle + Math.PI
+            });
+
+            const pChange = 20 * dvMag;
+            addLog(`$\\|\\Delta \\vec{P}\\|$: ${pChange.toFixed(1)}`);
+            player.tools--; charge = 0; updateUI();
+        }
+
+        function addLog(msg) {
+            const div = document.createElement('div');
+            div.className = 'log-item'; div.innerHTML = msg;
+            logContainer.prepend(div);
+            if (window.MathJax) MathJax.typesetPromise([div]);
+        }
+
+        function updateUI() {
+            document.getElementById('tools').innerText = player.tools;
+            document.getElementById('lv').innerText = level;
+            document.getElementById('o2-bar').style.width = Math.max(0, player.o2) + '%';
+
+            let deg = player.angle * 180 / Math.PI; if (deg < 0) deg += 360;
+            if (valAngle) valAngle.innerText = `${deg.toFixed(1)}°`;
+
+            if (window.innerWidth > 768) {
+                const pOld = Math.hypot(player.vx, player.vy) * 20;
+                let impulse = 0;
+                let pNew = pOld;
+                if (mouse.isLeftDown) {
+                    const dvMag = (2 / 20) * charge;
+                    impulse = 20 * dvMag;
+                    const curPx = player.vx * 20; const curPy = player.vy * 20;
+                    const addPx = Math.cos(player.angle) * impulse; const addPy = Math.sin(player.angle) * impulse;
+                    pNew = Math.hypot(curPx + addPx, curPy + addPy);
+                }
+                if (valPOld) valPOld.innerText = pOld.toFixed(1);
+                if (valImpulse) valImpulse.innerText = impulse.toFixed(1);
+                if (valPNew) valPNew.innerText = pNew.toFixed(1);
+            }
+        }
+
+        function failGame(title, desc) {
+            gameOver = true;
+            document.getElementById('msg-title').innerText = title;
+            document.getElementById('crash-report').innerText = desc;
+            document.getElementById('msg').style.display = 'block';
+            document.getElementById('next-btn').style.display = 'none';
+        }
+
+        function winGame() {
+            gameOver = true;
+            document.getElementById('msg-title').innerText = "도킹 성공!";
+            document.getElementById('msg-title').style.color = "#4CAF50";
+            document.getElementById('msg').style.display = 'block';
+            if (level === 5) {
+                document.getElementById('crash-report').innerText = "모든 훈련 수료!";
+                document.getElementById('next-btn').style.display = 'none';
+                document.getElementById('retry-btn').innerText = "처음부터 다시";
+                document.getElementById('retry-btn').onclick = function () { location.reload(); };
+            } else {
+                document.getElementById('crash-report').innerText = "다음 단계로 이동";
+                document.getElementById('next-btn').style.display = 'inline-block';
+            }
+        }
+
+        function resetLevel() { initLevel(level); }
+        function nextLevel() { if (level < 5) { level++; initLevel(level); } }
+
+        loadAssets(() => {
+            loadingMsg.style.display = 'none';
+            tutorialModal.style.display = 'flex';
+            resize();
+            initLevel(1);
+            draw();
         });
-
-        // 발사된 투사체들도 이동
-        projectiles.forEach(p => {
-            p.x *= ratioX;
-            p.y *= ratioY;
-        });
-    }
-
-    // 크기 업데이트
-    player.radius = CONSTANTS.PLAYER_RADIUS;
-    goal.size = CONSTANTS.GOAL_SIZE;
-
-    initStars();
-    checkOrientation();
-}
-window.addEventListener('resize', resize);
-window.addEventListener('orientationchange', () => setTimeout(resize, 200));
-
-function initStars() {
-    stars = [];
-    for(let i=0; i<80; i++) stars.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2*scaleFactor});
-}
-
-function startGame() {
-    tutorialModal.style.display = 'none';
-    gameRunning = true;
-    addLog('system', '시뮬레이션 시작');
-}
-
-function initLevel(lv) {
-    // 레벨 초기화 시에는 리사이즈를 호출하지 않고, 현재 캔버스 크기 기준으로 배치
-    if(canvas.width === 0) resize(); // 안전장치
-
-    gameOver = false;
-    isDying = false;
-    deathAnimTimer = 0;
-    dangerOverlay.className = '';
-    document.getElementById('msg').style.display = 'none';
-    
-    player.x = canvas.width * 0.1; 
-    player.y = canvas.height / 2;
-    player.vx = 0; player.vy = 0;
-    player.tools = 10; player.o2 = 100;
-    player.opacity = 1.0;
-    charge = 0;
-    
-    projectiles = []; obstacles = [];
-    logContainer.innerHTML = '';
-    
-    goal.x = canvas.width * 0.9; 
-    goal.y = canvas.height / 2;
-
-    const cw = canvas.width;
-    const ch = canvas.height;
-
-    // 장애물 생성 시 baseW(기준 너비)를 저장해둠 (리사이즈 시 스케일링 위해)
-    if (lv === 2) obstacles.push(createWall(cw/2, ch/2, 20, ch*0.6, 0, 0.02));
-    if (lv === 3) for(let i=0; i<6; i++) obstacles.push(createAsteroid(3));
-    if (lv === 4) {
-        obstacles.push(createWall(cw*0.6, ch*0.5, 20, ch*0.5, 0, -0.02));
-        for(let i=0; i<6; i++) obstacles.push(createAsteroid(4));
-    }
-    if (lv === 5) {
-        obstacles.push(createWall(cw*0.4, 0, 30, ch*0.7, 0, 0.03));
-        obstacles.push(createWall(cw*0.7, ch, 30, ch*0.7, 0, 0.03));
-        for(let i=0; i<10; i++) obstacles.push(createAsteroid(5));
-    }
-    updateUI();
-}
-
-function createWall(x, y, wBase, h, angle, va) {
-    return {
-        type: 'wall', x: x, y: y, 
-        baseW: wBase, w: wBase * scaleFactor, 
-        h: h, // 높이는 화면 비율에 따라 이미 조정된 좌표를 받음
-        angle: angle, va: va 
-    };
-}
-
-function createAsteroid(speedMult) {
-    const baseW = BASE_CONSTANTS.ASTEROID_MIN + Math.random() * (BASE_CONSTANTS.ASTEROID_MAX - BASE_CONSTANTS.ASTEROID_MIN);
-    return {
-        type: 'asteroid',
-        x: canvas.width * 0.3 + Math.random()*(canvas.width * 0.5),
-        y: Math.random()*canvas.height,
-        baseW: baseW, // 기준 너비 저장
-        w: baseW * scaleFactor, // 현재 스케일 적용
-        vx: (Math.random()-0.5)*speedMult,
-        vy: (Math.random()-0.5)*speedMult,
-        angle: Math.random() * Math.PI * 2,
-        va: (Math.random()-0.5) * 0.05
-    };
-}
-
-function update() {
-    if (!gameRunning) return;
-
-    if (isDying) {
-        deathAnimTimer++;
-        player.angle += 0.2; 
-        player.opacity -= 0.01;
-        player.radius *= 0.99;
-        if (deathAnimTimer > 120) failGame("산소 고갈!", "우주 공간에서 질식했습니다.");
-        return;
-    }
-
-    if (gameOver) return;
-
-    player.angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
-
-    if (mouse.isLeftDown && player.tools > 0) {
-        timeScale = 0.1;
-        slowMoIndicator.style.display = 'block';
-        charge += 0.5 * scaleFactor; 
-        if(charge > CONSTANTS.MAX_THROW_SPEED) charge = CONSTANTS.MAX_THROW_SPEED;
-    } else {
-        timeScale = 1.0;
-        slowMoIndicator.style.display = 'none';
-    }
-
-    player.o2 -= CONSTANTS.O2_IDLE_COST * timeScale;
-    
-    if (mouse.isRightDown && player.o2 > 0) {
-        player.vx += Math.cos(player.angle) * CONSTANTS.BOOST_ACCEL * timeScale;
-        player.vy += Math.sin(player.angle) * CONSTANTS.BOOST_ACCEL * timeScale;
-        player.o2 -= CONSTANTS.O2_BOOST_COST * timeScale;
-    }
-
-    if (player.o2 <= 30) dangerOverlay.className = 'low-o2';
-    else dangerOverlay.className = '';
-
-    if (player.o2 <= 0) {
-        player.o2 = 0;
-        startDeathSequence();
-    }
-
-    player.x += player.vx * timeScale; 
-    player.y += player.vy * timeScale;
-    goal.angle += 0.005 * timeScale;
-
-    obstacles.forEach(obs => {
-        if(obs.type === 'asteroid') {
-            obs.x += obs.vx * timeScale; obs.y += obs.vy * timeScale;
-            obs.angle += obs.va * timeScale;
-            if(obs.x<0 || obs.x>canvas.width) obs.vx*=-1;
-            if(obs.y<0 || obs.y>canvas.height) obs.vy*=-1;
-        } else if (obs.type === 'wall') obs.angle += obs.va * timeScale;
-    });
-
-    projectiles.forEach((p, i) => {
-        p.x += p.vx * timeScale; p.y += p.vy * timeScale; p.r += 0.3 * timeScale;
-        if(p.x < -100 || p.x > canvas.width+100 || p.y < -100 || p.y > canvas.height+100) projectiles.splice(i,1);
-    });
-
-    checkCollisions();
-    updateUI();
-}
-
-function startDeathSequence() {
-    isDying = true;
-    dangerOverlay.className = '';
-    addLog('warning', '생명 유지 장치 정지...');
-}
-
-function checkCollisions() {
-    if (player.x < 0 || player.x > canvas.width || player.y < 0 || player.y > canvas.height) failGame("궤도 이탈", "심우주로 떠내려갔습니다.");
-
-    for (let obs of obstacles) {
-        let hit = false;
-        if (obs.type === 'asteroid') {
-            if (Math.hypot(player.x - obs.x, player.y - obs.y) < (player.radius + obs.w/2) * 0.8) hit = true;
-        } else if (obs.type === 'wall') {
-            let dx = player.x - obs.x, dy = player.y - obs.y;
-            let lx = dx * Math.cos(obs.angle) + dy * Math.sin(obs.angle);
-            let ly = -dx * Math.sin(obs.angle) + dy * Math.cos(obs.angle);
-            if (Math.abs(lx) < obs.w/2 + player.radius && Math.abs(ly) < obs.h/2 + player.radius) hit = true;
-        }
-        if (hit) { failGame("충돌!", "우주복이 파손되었습니다."); return; }
-    }
-
-    if (Math.hypot(player.x - goal.x, player.y - goal.y) < goal.size * 0.7) winGame();
-}
-
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "white";
-    stars.forEach(s => { ctx.globalAlpha=Math.random()*0.5; ctx.fillRect(s.x, s.y, s.s, s.s); });
-    ctx.globalAlpha=1;
-
-    drawGoal();
-    drawObstacles();
-    drawProjectiles();
-    drawPlayer();
-
-    if (mouse.isLeftDown && player.tools > 0 && !isDying) drawVectors();
-    requestAnimationFrame(() => { update(); draw(); });
-}
-
-function drawVectors() {
-    const px = player.x; const py = player.y;
-    const vScale = 30; 
-    
-    if(Math.hypot(player.vx, player.vy) > 0.1) {
-        drawArrow(px, py, px + player.vx * vScale, py + player.vy * vScale, "#2ecc71", 3);
-    }
-    const dv = (2 / 20) * charge; 
-    drawArrow(px, py, px + Math.cos(player.angle)*dv*vScale, py + Math.sin(player.angle)*dv*vScale, "#ff4444", 3);
-}
-
-function drawArrow(x1, y1, x2, y2, color, width) {
-    if(Math.hypot(x2-x1, y2-y1) < 1) return;
-    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width * scaleFactor;
-    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    const ang = Math.atan2(y2-y1, x2-x1);
-    const head = 10 * scaleFactor;
-    ctx.beginPath(); ctx.moveTo(x2, y2);
-    ctx.lineTo(x2 - head*Math.cos(ang - Math.PI/6), y2 - head*Math.sin(ang - Math.PI/6));
-    ctx.lineTo(x2 - head*Math.cos(ang + Math.PI/6), y2 - head*Math.sin(ang + Math.PI/6));
-    ctx.fill();
-}
-
-function drawPlayer() {
-    ctx.save(); ctx.translate(player.x, player.y);
-    ctx.rotate(player.angle);
-    ctx.globalAlpha = player.opacity;
-    
-    if(mouse.isLeftDown && !isDying) {
-        ctx.beginPath(); ctx.arc(0, 0, player.radius * 1.5, 0, Math.PI*2);
-        ctx.strokeStyle = `rgba(255, 68, 68, ${charge/CONSTANTS.MAX_THROW_SPEED})`;
-        ctx.lineWidth = 2; ctx.stroke();
-    }
-    
-    ctx.fillStyle = isDying ? "#555" : "#ecf0f1"; 
-    ctx.beginPath(); ctx.arc(0,0,player.radius,0,Math.PI*2); ctx.fill();
-    
-    if (!isDying) {
-        ctx.fillStyle = "#3498db"; ctx.fillRect(player.radius*0.3, -player.radius*0.5, player.radius*0.8, player.radius); 
-    } else {
-        ctx.strokeStyle = "black"; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(0, -5); ctx.lineTo(10, 5); ctx.moveTo(10, -5); ctx.lineTo(0, 5); ctx.stroke();
-    }
-
-    if(mouse.isRightDown && player.o2 > 0 && !isDying) {
-        ctx.fillStyle = "orange"; ctx.beginPath(); ctx.moveTo(-player.radius, -5); ctx.lineTo(-player.radius*2.5, -8); ctx.lineTo(-player.radius*2.5, 8); ctx.fill();
-    }
-    ctx.restore();
-}
-
-function drawGoal() {
-    ctx.save(); ctx.translate(goal.x, goal.y); ctx.rotate(goal.angle);
-    const w = goal.size * 2;
-    const h = w * (images.ship.naturalHeight / images.ship.naturalWidth);
-    ctx.drawImage(images.ship, -w/2, -h/2, w, h);
-    ctx.restore();
-    ctx.font = `${12 * scaleFactor}px Arial`;
-    ctx.fillStyle = "white"; ctx.textAlign="center"; ctx.fillText("TARGET", goal.x, goal.y + h/2 + 20*scaleFactor);
-}
-
-function drawObstacles() {
-    obstacles.forEach(obs => {
-        ctx.save(); ctx.translate(obs.x, obs.y); ctx.rotate(obs.angle);
-        if(obs.type === 'wall') {
-            ctx.fillStyle = "#777"; ctx.fillRect(-obs.w/2, -obs.h/2, obs.w, obs.h);
-            ctx.strokeStyle = "#aaa"; ctx.lineWidth=2; ctx.strokeRect(-obs.w/2, -obs.h/2, obs.w, obs.h);
-        } else {
-            const w = obs.w;
-            const h = w * (images.asteroid.naturalHeight / images.asteroid.naturalWidth);
-            ctx.drawImage(images.asteroid, -w/2, -h/2, w, h);
-        }
-        ctx.restore();
-    });
-}
-
-function drawProjectiles() {
-    projectiles.forEach(p => {
-        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
-        const w = CONSTANTS.SPANNER_WIDTH;
-        const h = w * (images.spanner.naturalHeight / images.spanner.naturalWidth);
-        ctx.drawImage(images.spanner, -w/2, -h/2, w, h);
-        ctx.restore();
-    });
-}
-
-function handleStart(x, y) {
-    if(!gameRunning || gameOver || isDying) return;
-    const rect = canvas.getBoundingClientRect();
-    mouse.x = x - rect.left; mouse.y = y - rect.top;
-    mouse.isLeftDown = true;
-    charge = 1 * scaleFactor;
-}
-function handleMove(x, y) {
-    const rect = canvas.getBoundingClientRect();
-    mouse.x = x - rect.left; mouse.y = y - rect.top;
-}
-function handleEnd() {
-    if(mouse.isLeftDown) { mouse.isLeftDown = false; throwTool(); }
-}
-
-canvas.addEventListener('mousedown', e => { if(e.button===0) handleStart(e.clientX, e.clientY); if(e.button===2) mouse.isRightDown=true; });
-canvas.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
-canvas.addEventListener('mouseup', e => { if(e.button===0) handleEnd(); if(e.button===2) mouse.isRightDown=false; });
-
-canvas.addEventListener('touchstart', e => { e.preventDefault(); handleStart(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
-canvas.addEventListener('touchmove', e => { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
-canvas.addEventListener('touchend', e => { e.preventDefault(); handleEnd(); }, {passive: false});
-
-boostBtn.addEventListener('touchstart', (e) => { e.preventDefault(); mouse.isRightDown = true; });
-boostBtn.addEventListener('touchend', (e) => { e.preventDefault(); mouse.isRightDown = false; });
-
-canvas.addEventListener('contextmenu', e => e.preventDefault());
-
-function throwTool() {
-    if(gameOver || player.tools <= 0 || isDying) return;
-    const spannerSpeed = charge;
-    const angle = player.angle;
-    const dvMag = (2 / 20) * spannerSpeed;
-    
-    player.vx += Math.cos(angle) * dvMag;
-    player.vy += Math.sin(angle) * dvMag;
-
-    projectiles.push({
-        x: player.x, y: player.y,
-        vx: Math.cos(angle + Math.PI) * spannerSpeed,
-        vy: Math.sin(angle + Math.PI) * spannerSpeed,
-        r: angle + Math.PI
-    });
-
-    const pChange = 20 * dvMag;
-    addLog(`$\\|\\Delta \\vec{P}\\|$: ${pChange.toFixed(1)}`);
-    player.tools--; charge = 0; updateUI();
-}
-
-function addLog(msg) {
-    const div = document.createElement('div');
-    div.className = 'log-item'; div.innerHTML = msg;
-    logContainer.prepend(div);
-    if(window.MathJax) MathJax.typesetPromise([div]);
-}
-
-function updateUI() {
-    document.getElementById('tools').innerText = player.tools;
-    document.getElementById('lv').innerText = level;
-    document.getElementById('o2-bar').style.width = Math.max(0, player.o2) + '%';
-    
-    let deg = player.angle * 180 / Math.PI; if(deg<0) deg+=360;
-    if(valAngle) valAngle.innerText = `${deg.toFixed(1)}°`;
-
-    if(window.innerWidth > 768) {
-        const pOld = Math.hypot(player.vx, player.vy) * 20;
-        let impulse = 0;
-        let pNew = pOld;
-        if(mouse.isLeftDown) {
-            const dvMag = (2/20) * charge;
-            impulse = 20 * dvMag;
-            const curPx = player.vx*20; const curPy = player.vy*20;
-            const addPx = Math.cos(player.angle)*impulse; const addPy = Math.sin(player.angle)*impulse;
-            pNew = Math.hypot(curPx+addPx, curPy+addPy);
-        }
-        if(valPOld) valPOld.innerText = pOld.toFixed(1);
-        if(valImpulse) valImpulse.innerText = impulse.toFixed(1);
-        if(valPNew) valPNew.innerText = pNew.toFixed(1);
-    }
-}
-
-function failGame(title, desc) {
-    gameOver = true;
-    document.getElementById('msg-title').innerText = title;
-    document.getElementById('crash-report').innerText = desc;
-    document.getElementById('msg').style.display = 'block';
-    document.getElementById('next-btn').style.display = 'none';
-}
-
-function winGame() {
-    gameOver = true;
-    document.getElementById('msg-title').innerText = "도킹 성공!";
-    document.getElementById('msg-title').style.color = "#4CAF50";
-    document.getElementById('msg').style.display = 'block';
-    if(level===5) {
-        document.getElementById('crash-report').innerText = "모든 훈련 수료!";
-        document.getElementById('next-btn').style.display = 'none';
-        document.getElementById('retry-btn').innerText = "처음부터 다시";
-        document.getElementById('retry-btn').onclick = function() { location.reload(); };
-    } else {
-        document.getElementById('crash-report').innerText = "다음 단계로 이동";
-        document.getElementById('next-btn').style.display = 'inline-block';
-    }
-}
-
-function resetLevel() { initLevel(level); }
-function nextLevel() { if(level<5) { level++; initLevel(level); } }
-
-loadAssets(() => {
-    loadingMsg.style.display = 'none';
-    tutorialModal.style.display = 'flex';
-    resize();
-    initLevel(1);
-    draw();
-});
-</script>
+    </script>
 </body>
+
 </html>

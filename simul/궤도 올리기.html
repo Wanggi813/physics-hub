@@ -1,145 +1,234 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>나만의 위성 쏘아 올리기</title>
   <style>
-    :root{
-      --ink:#eaf2ff;
-      --muted:#a8b3c7;
+    :root {
+      --ink: #eaf2ff;
+      --muted: #a8b3c7;
       --panel: rgba(18, 24, 44, 0.72);
       --panel2: rgba(10, 14, 28, 0.55);
-      --stroke: rgba(255,255,255,0.12);
-      --accent:#62a6ff;
-      --good:#2ecc71;
-      --bad:#ff5d5d;
-      --warn:#ffcc66;
+      --stroke: rgba(255, 255, 255, 0.12);
+      --accent: #62a6ff;
+      --good: #2ecc71;
+      --bad: #ff5d5d;
+      --warn: #ffcc66;
 
-      --vk: rgba(98,166,255,0.95); /* velocity vector */
-      --fg: rgba(255,93,93,0.90);  /* gravity vector */
-      --ek: rgba(98,166,255,0.85);
-      --ep: rgba(255,170,80,0.75);
-      --et: rgba(255,255,255,0.65);
+      --vk: rgba(98, 166, 255, 0.95);
+      /* velocity vector */
+      --fg: rgba(255, 93, 93, 0.90);
+      /* gravity vector */
+      --ek: rgba(98, 166, 255, 0.85);
+      --ep: rgba(255, 170, 80, 0.75);
+      --et: rgba(255, 255, 255, 0.65);
     }
-    *{ box-sizing:border-box; margin:0; padding:0; }
-    html, body{ width:100%; height:100%; overflow:hidden; background:#060812; color:var(--ink); }
-    body{ font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,"Noto Sans KR",sans-serif; }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #060812;
+      color: var(--ink);
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, "Noto Sans KR", sans-serif;
+    }
 
     /* === 시뮬레이션 영역 (.stage) === */
-    .stage{
-      position:fixed; 
-      top: 0; left: 0; width: 100%; height: 100%; /* 데스크탑 기본: 전체 화면 */
-      display:block;
+    .stage {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      /* 데스크탑 기본: 전체 화면 */
+      display: block;
       background:
-        radial-gradient(1200px 900px at 70% 20%, rgba(90,155,255,0.16), transparent 60%),
-        radial-gradient(900px 700px at 15% 70%, rgba(180,80,255,0.12), transparent 60%),
-        radial-gradient(900px 700px at 85% 85%, rgba(60,255,210,0.08), transparent 62%),
+        radial-gradient(1200px 900px at 70% 20%, rgba(90, 155, 255, 0.16), transparent 60%),
+        radial-gradient(900px 700px at 15% 70%, rgba(180, 80, 255, 0.12), transparent 60%),
+        radial-gradient(900px 700px at 85% 85%, rgba(60, 255, 210, 0.08), transparent 62%),
         linear-gradient(180deg, #040512 0%, #070a18 50%, #050713 100%);
       overflow: hidden;
       z-index: 0;
     }
 
-    .stars, .stars2, .vignette{
-      position:absolute; inset:-60% -20%;
-      pointer-events:none;
+    .stars,
+    .stars2,
+    .vignette {
+      position: absolute;
+      inset: -60% -20%;
+      pointer-events: none;
     }
-    .stars{
+
+    .stars {
       background-image:
-        radial-gradient(1px 1px at 35px 45px, rgba(255,255,255,.85), transparent),
-        radial-gradient(1px 1px at 95px 115px, rgba(255,255,255,.75), transparent),
-        radial-gradient(2px 2px at 240px 190px, rgba(255,255,255,.65), transparent),
-        radial-gradient(1px 1px at 310px 260px, rgba(255,255,255,.7), transparent);
+        radial-gradient(1px 1px at 35px 45px, rgba(255, 255, 255, .85), transparent),
+        radial-gradient(1px 1px at 95px 115px, rgba(255, 255, 255, .75), transparent),
+        radial-gradient(2px 2px at 240px 190px, rgba(255, 255, 255, .65), transparent),
+        radial-gradient(1px 1px at 310px 260px, rgba(255, 255, 255, .7), transparent);
       background-size: 360px 360px;
-      opacity:.85;
+      opacity: .85;
       animation: drift 36s linear infinite;
-      filter: drop-shadow(0 0 6px rgba(120,180,255,0.15));
+      filter: drop-shadow(0 0 6px rgba(120, 180, 255, 0.15));
     }
-    .stars2{
-      inset:-80% -30%;
+
+    .stars2 {
+      inset: -80% -30%;
       background-image:
-        radial-gradient(1px 1px at 25px 25px, rgba(255,255,255,.55), transparent),
-        radial-gradient(2px 2px at 170px 80px, rgba(255,255,255,.35), transparent),
-        radial-gradient(1px 1px at 260px 240px, rgba(255,255,255,.45), transparent);
+        radial-gradient(1px 1px at 25px 25px, rgba(255, 255, 255, .55), transparent),
+        radial-gradient(2px 2px at 170px 80px, rgba(255, 255, 255, .35), transparent),
+        radial-gradient(1px 1px at 260px 240px, rgba(255, 255, 255, .45), transparent);
       background-size: 420px 420px;
-      opacity:.65;
+      opacity: .65;
       animation: drift2 62s linear infinite;
     }
-    .vignette{
-      inset:0;
-      background: radial-gradient(80% 80% at 55% 50%, transparent 55%, rgba(0,0,0,0.55) 100%);
-      opacity:.9;
-      pointer-events:none;
-    }
-    @keyframes drift{ 0%{transform:translate3d(0,0,0)} 100%{transform:translate3d(-140px,220px,0)} }
-    @keyframes drift2{ 0%{transform:translate3d(0,0,0)} 100%{transform:translate3d(180px,260px,0)} }
 
-    .sim{ position:absolute; inset:0; overflow:hidden; }
-    #world{ position:absolute; inset:0; transform-origin: 50% 50%; will-change: transform; }
-    #overlay{ position:absolute; inset:0; width:100%; height:100%; z-index: 8; pointer-events:none; }
+    .vignette {
+      inset: 0;
+      background: radial-gradient(80% 80% at 55% 50%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+      opacity: .9;
+      pointer-events: none;
+    }
+
+    @keyframes drift {
+      0% {
+        transform: translate3d(0, 0, 0)
+      }
+
+      100% {
+        transform: translate3d(-140px, 220px, 0)
+      }
+    }
+
+    @keyframes drift2 {
+      0% {
+        transform: translate3d(0, 0, 0)
+      }
+
+      100% {
+        transform: translate3d(180px, 260px, 0)
+      }
+    }
+
+    .sim {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    #world {
+      position: absolute;
+      inset: 0;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+
+    #overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 8;
+      pointer-events: none;
+    }
 
     /* 행성: 화면 정가운데 */
-    #planet{
-      position:absolute;
-      left: 50%; top: 50%; /* %로 변경하여 부모(.stage) 기준 중앙 정렬 */
+    #planet {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      /* %로 변경하여 부모(.stage) 기준 중앙 정렬 */
       width: 240px;
       height: 240px;
       transform: translate(-50%, -50%);
-      background-image: url('./image/earth.png'); /* 이미지 유지 */
+      background-image: url('./image/earth.png');
+      /* 이미지 유지 */
       background-size: cover;
-      background-repeat:no-repeat;
-      background-position:center;
+      background-repeat: no-repeat;
+      background-position: center;
       border-radius: 50%;
       box-shadow:
-        0 0 0 2px rgba(255,255,255,0.08),
-        0 0 40px rgba(90,155,255,0.22),
-        0 0 140px rgba(90,155,255,0.10);
+        0 0 0 2px rgba(255, 255, 255, 0.08),
+        0 0 40px rgba(90, 155, 255, 0.22),
+        0 0 140px rgba(90, 155, 255, 0.10);
       filter: saturate(1.05) contrast(1.05);
       z-index: 5;
     }
 
     /* 우주선 (SVG 스타일 유지) */
-    #rocket-container{
-      position:absolute;
+    #rocket-container {
+      position: absolute;
       width: 76px;
       height: 44px;
       z-index: 10;
-      left: 50%; top: 50%; /* %로 변경 */
+      left: 50%;
+      top: 50%;
+      /* %로 변경 */
       transform: translate(-50%, -50%);
       will-change: transform, opacity;
-      opacity:1;
+      opacity: 1;
       transition: opacity 420ms ease;
     }
-    #rocket-container.vanish{ opacity:0; }
-    #rocket-body{
-      width:100%; height:100%;
-      display:block;
+
+    #rocket-container.vanish {
+      opacity: 0;
+    }
+
+    #rocket-body {
+      width: 100%;
+      height: 100%;
+      display: block;
       transform: scale(1.55);
       transform-origin: 50% 50%;
-      filter: drop-shadow(0 12px 18px rgba(255,120,60,0.22));
+      filter: drop-shadow(0 12px 18px rgba(255, 120, 60, 0.22));
     }
-    #flame{
-      position:absolute;
+
+    #flame {
+      position: absolute;
       left: -18px;
       top: 50%;
       transform: translateY(-50%) rotate(180deg);
-      width:0; height:0;
+      width: 0;
+      height: 0;
       border-top: 9px solid transparent;
       border-bottom: 9px solid transparent;
       border-left: 22px solid #ffcc00;
       filter: drop-shadow(0 6px 16px #ff8800);
-      display:none;
+      display: none;
       animation: flicker .08s infinite;
     }
-    @keyframes flicker{
-      0%{ opacity:1; transform: translateY(-50%) rotate(180deg) scaleX(1) scaleY(1); }
-      50%{ opacity:.8; transform: translateY(-50%) rotate(180deg) scaleX(.85) scaleY(.85); }
-      100%{ opacity:1; transform: translateY(-50%) rotate(180deg) scaleX(1.15) scaleY(1.05); }
+
+    @keyframes flicker {
+      0% {
+        opacity: 1;
+        transform: translateY(-50%) rotate(180deg) scaleX(1) scaleY(1);
+      }
+
+      50% {
+        opacity: .8;
+        transform: translateY(-50%) rotate(180deg) scaleX(.85) scaleY(.85);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(-50%) rotate(180deg) scaleX(1.15) scaleY(1.05);
+      }
     }
 
     /* Panel (기본 데스크탑) */
-    .panel{
-      position:fixed;
+    .panel {
+      position: fixed;
       left: 14px;
       top: 14px;
       width: min(460px, calc(100vw - 28px));
@@ -150,112 +239,260 @@
       border: 1px solid var(--stroke);
       border-radius: 16px;
       backdrop-filter: blur(10px);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
       z-index: 50;
     }
-    .panel h2{
+
+    .panel h2 {
       font-size: 16px;
       letter-spacing: .2px;
-      display:flex;
-      align-items:center;
-      gap:10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
       margin-bottom: 12px;
       color: var(--ink);
     }
-    .badge{
-      display:inline-flex; align-items:center; justify-content:center;
-      padding: 3px 10px; border-radius: 999px;
-      background: rgba(98,166,255,0.14); border: 1px solid rgba(98,166,255,0.22);
-      color: rgba(210,230,255,0.95); font-weight: 700; font-size: 12px; white-space:nowrap;
-    }
-    label{ font-size: 12px; color: var(--muted); }
-    .val{ font-size: 13px; color: var(--ink); font-weight: 800; white-space:nowrap; }
-    input[type="range"]{ width:100%; cursor:pointer; }
 
-    .group{ margin-bottom: 10px; }
-    .control{ display:grid; grid-template-columns: 92px 1fr auto; gap: 10px; align-items:center; }
-
-    .planetBtns{ display:flex; gap:8px; flex-wrap:wrap; margin-top: 6px; }
-    .pbtn{
-      padding: 8px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.06); color: var(--ink); font-weight: 900; cursor:pointer;
-      transition: transform .08s ease, background .15s ease, border-color .15s ease; user-select:none;
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(98, 166, 255, 0.14);
+      border: 1px solid rgba(98, 166, 255, 0.22);
+      color: rgba(210, 230, 255, 0.95);
+      font-weight: 700;
+      font-size: 12px;
+      white-space: nowrap;
     }
-    .pbtn:hover{ background: rgba(98,166,255,0.12); border-color: rgba(98,166,255,0.22); }
-    .pbtn:active{ transform: translateY(1px); }
-    .pbtn.on{ background: rgba(98,166,255,0.18); border-color: rgba(98,166,255,0.35); }
 
-    .chips{ display:flex; gap:8px; flex-wrap:wrap; margin-top: 8px; }
-    .chip{
-      padding: 7px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.06); font-weight: 900; font-size: 12px; cursor:pointer;
-      color: var(--ink); user-select:none;
+    label {
+      font-size: 12px;
+      color: var(--muted);
     }
-    .chip.on{ background: rgba(98,166,255,0.18); border-color: rgba(98,166,255,0.35); }
 
-    .actions{ display:flex; gap:10px; margin-top: 10px; flex-wrap:wrap; }
-    button.action{
-      flex:1; padding: 11px 12px; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
-      background: rgba(98,166,255,0.16); color: var(--ink); font-weight: 900; cursor: pointer;
-      transition: transform .08s ease, background .15s ease, border-color .15s ease; min-width: 100px;
+    .val {
+      font-size: 13px;
+      color: var(--ink);
+      font-weight: 800;
+      white-space: nowrap;
     }
-    button.action:hover:not(:disabled){ background: rgba(98,166,255,0.24); border-color: rgba(98,166,255,0.32); }
-    button.action:active:not(:disabled){ transform: translateY(1px); }
-    button.action:disabled{ opacity:.55; cursor:not-allowed; }
 
-    .out{
-      margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.18);
-      border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;
+    input[type="range"] {
+      width: 100%;
+      cursor: pointer;
     }
-    .out .line{ display:flex; justify-content:space-between; gap:12px; font-size: 13px; padding: 6px 0; }
-    .out .k{ color: var(--muted); }
-    .result{
-      margin-top: 10px; font-weight: 950; font-size: 14px; text-align:center;
-      padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.10);
-      background: rgba(255,255,255,0.06); line-height:1.35;
-    }
-    .result.good{ background: rgba(46,204,113,0.16); border-color: rgba(46,204,113,0.25); }
-    .result.bad{ background: rgba(255,93,93,0.16); border-color: rgba(255,93,93,0.25); }
-    .result.warn{ background: rgba(255,204,102,0.14); border-color: rgba(255,204,102,0.22); }
 
-    .hint{ margin-top: 10px; font-size: 11px; color: rgba(180,196,224,0.75); line-height: 1.35; }
+    .group {
+      margin-bottom: 10px;
+    }
+
+    .control {
+      display: grid;
+      grid-template-columns: 92px 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .planetBtns {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
+    .pbtn {
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--ink);
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .08s ease, background .15s ease, border-color .15s ease;
+      user-select: none;
+    }
+
+    .pbtn:hover {
+      background: rgba(98, 166, 255, 0.12);
+      border-color: rgba(98, 166, 255, 0.22);
+    }
+
+    .pbtn:active {
+      transform: translateY(1px);
+    }
+
+    .pbtn.on {
+      background: rgba(98, 166, 255, 0.18);
+      border-color: rgba(98, 166, 255, 0.35);
+    }
+
+    .chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .chip {
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      font-weight: 900;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--ink);
+      user-select: none;
+    }
+
+    .chip.on {
+      background: rgba(98, 166, 255, 0.18);
+      border-color: rgba(98, 166, 255, 0.35);
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    button.action {
+      flex: 1;
+      padding: 11px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      background: rgba(98, 166, 255, 0.16);
+      color: var(--ink);
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .08s ease, background .15s ease, border-color .15s ease;
+      min-width: 100px;
+    }
+
+    button.action:hover:not(:disabled) {
+      background: rgba(98, 166, 255, 0.24);
+      border-color: rgba(98, 166, 255, 0.32);
+    }
+
+    button.action:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    button.action:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .out {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+    }
+
+    .out .line {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      padding: 6px 0;
+    }
+
+    .out .k {
+      color: var(--muted);
+    }
+
+    .result {
+      margin-top: 10px;
+      font-weight: 950;
+      font-size: 14px;
+      text-align: center;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      background: rgba(255, 255, 255, 0.06);
+      line-height: 1.35;
+    }
+
+    .result.good {
+      background: rgba(46, 204, 113, 0.16);
+      border-color: rgba(46, 204, 113, 0.25);
+    }
+
+    .result.bad {
+      background: rgba(255, 93, 93, 0.16);
+      border-color: rgba(255, 93, 93, 0.25);
+    }
+
+    .result.warn {
+      background: rgba(255, 204, 102, 0.14);
+      border-color: rgba(255, 204, 102, 0.22);
+    }
+
+    .hint {
+      margin-top: 10px;
+      font-size: 11px;
+      color: rgba(180, 196, 224, 0.75);
+      line-height: 1.35;
+    }
 
     /* =================================================
        ★ 모바일 최적화 (Split View) CSS 추가 ★
        ================================================= */
     @media (max-width: 768px) {
+
       /* 1. 상단: 시뮬레이션 영역 (45%) */
       .stage {
-        height: 45vh; /* 화면의 45% */
-        bottom: auto; /* 전체 덮기 해제 */
-        border-bottom: 1px solid rgba(255,255,255,0.15);
+        height: 45vh;
+        /* 화면의 45% */
+        bottom: auto;
+        /* 전체 덮기 해제 */
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
         z-index: 10;
       }
+
       /* 행성 크기 살짝 조정 */
-      #planet { width: 180px; height: 180px; }
+      #planet {
+        width: 180px;
+        height: 180px;
+      }
 
       /* 2. 하단: 컨트롤 패널 영역 (55%) */
       .panel {
         position: fixed;
-        top: 45vh; /* 시뮬레이션 바로 아래 */
+        top: 45vh;
+        /* 시뮬레이션 바로 아래 */
         left: 0;
         width: 100%;
         height: 55vh;
         max-height: none;
         border-radius: 0;
         border: none;
-        border-top: 1px solid rgba(255,255,255,0.1);
-        padding-bottom: 40px; /* 하단 여백 */
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 40px;
+        /* 하단 여백 */
         z-index: 20;
-        background: rgba(10, 14, 28, 0.98); /* 배경 불투명하게 */
+        background: rgba(10, 14, 28, 0.98);
+        /* 배경 불투명하게 */
       }
-      
+
       /* 모바일 패널 내부 간격 조정 */
-      .control { grid-template-columns: 80px 1fr auto; }
-      .actions button.action { padding: 12px 8px; font-size: 13px; }
+      .control {
+        grid-template-columns: 80px 1fr auto;
+      }
+
+      .actions button.action {
+        padding: 12px 8px;
+        font-size: 13px;
+      }
     }
   </style>
 </head>
+
 <body>
 
   <div class="stage">
@@ -270,17 +507,17 @@
           <svg id="rocket-body" viewBox="0 0 320 200" preserveAspectRatio="xMidYMid meet">
             <defs>
               <linearGradient id="kps_flame" x1="0" x2="1">
-                <stop offset="0" stop-color="#fff59d"/>
-                <stop offset="0.45" stop-color="#ffb74d"/>
-                <stop offset="1" stop-color="#ff5252"/>
+                <stop offset="0" stop-color="#fff59d" />
+                <stop offset="0.45" stop-color="#ffb74d" />
+                <stop offset="1" stop-color="#ff5252" />
               </linearGradient>
               <radialGradient id="kps_glass" cx="50%" cy="50%" r="50%">
-                <stop offset="0" stop-color="#cfe9ff"/>
-                <stop offset="1" stop-color="#5aa0ff"/>
+                <stop offset="0" stop-color="#cfe9ff" />
+                <stop offset="1" stop-color="#5aa0ff" />
               </radialGradient>
               <linearGradient id="kps_hull" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#eef2f9"/>
-                <stop offset="1" stop-color="#d6dce8"/>
+                <stop offset="0" stop-color="#eef2f9" />
+                <stop offset="1" stop-color="#d6dce8" />
               </linearGradient>
             </defs>
             <g transform="translate(0,6)">
@@ -288,9 +525,9 @@
             </g>
             <g transform="translate(40,12)">
               <path d="M50,50 Q180,20 270,80 Q290,100 270,120 Q180,180 50,150 Q30,140 30,100 Q30,60 50,50 Z"
-                    fill="url(#kps_hull)" stroke="#cfd6e6" stroke-width="4"/>
-              <circle cx="160" cy="100" r="24" fill="url(#kps_glass)" stroke="#1c3d7a" stroke-width="6"/>
-              <circle cx="168" cy="92" r="9" fill="#eaf6ff" opacity="0.9"/>
+                fill="url(#kps_hull)" stroke="#cfd6e6" stroke-width="4" />
+              <circle cx="160" cy="100" r="24" fill="url(#kps_glass)" stroke="#1c3d7a" stroke-width="6" />
+              <circle cx="168" cy="92" r="9" fill="#eaf6ff" opacity="0.9" />
             </g>
           </svg>
           <div id="flame"></div>
@@ -328,7 +565,7 @@
       </div>
       <div class="hint">θ는 <b>지표면 접선(수평)</b> 기준입니다. (0°=수평 발사, 90°=수직 발사)</div>
     </div>
-    
+
     <div class="group">
       <div class="control">
         <label for="launchAlt">출발 궤도 고도 h</label>
@@ -352,17 +589,35 @@
     </div>
 
     <div class="out">
-      <div class="line"><div class="k">제1우주속도 v₁</div><div><span id="v1">0.00</span> km/s</div></div>
-      <div class="line"><div class="k">탈출속도 vₑ</div><div><span id="ve">0.00</span> km/s</div></div>
+      <div class="line">
+        <div class="k">제1우주속도 v₁</div>
+        <div><span id="v1">0.00</span> km/s</div>
+      </div>
+      <div class="line">
+        <div class="k">탈출속도 vₑ</div>
+        <div><span id="ve">0.00</span> km/s</div>
+      </div>
 
-      <div class="line"><div class="k">상태</div><div id="status">대기 중</div></div>
-      <div class="line"><div class="k">최고 고도</div><div><span id="maxAltitude">0</span> km</div></div>
-      <div class="line"><div class="k">현재 속도</div><div><span id="currentVelocity">0.0</span> km/s</div></div>
-      <div class="line"><div class="k">총 에너지(단위질량)</div><div><span id="specificEnergy">0.0</span> MJ/kg</div></div>
+      <div class="line">
+        <div class="k">상태</div>
+        <div id="status">대기 중</div>
+      </div>
+      <div class="line">
+        <div class="k">최고 고도</div>
+        <div><span id="maxAltitude">0</span> km</div>
+      </div>
+      <div class="line">
+        <div class="k">현재 속도</div>
+        <div><span id="currentVelocity">0.0</span> km/s</div>
+      </div>
+      <div class="line">
+        <div class="k">총 에너지(단위질량)</div>
+        <div><span id="specificEnergy">0.0</span> MJ/kg</div>
+      </div>
 
       <div id="result" class="result warn">속도·각도를 조절한 뒤 발사해 보세요.</div>
       <div class="hint">
-        • 파란 화살표: 속도 벡터 v &nbsp;|&nbsp; 빨간 화살표: 중력(가속도) 벡터 g<br/>
+        • 파란 화살표: 속도 벡터 v &nbsp;|&nbsp; 빨간 화살표: 중력(가속도) 벡터 g<br />
         • 시뮬 속도는 <b>고정</b>되어 있습니다. (안정성/가독성 우선)
       </div>
     </div>
@@ -405,57 +660,57 @@
     const clearTrailsButton = document.getElementById('clearTrailsButton');
 
     const chipVectors = document.getElementById('chipVectors');
-    const chipEnergy  = document.getElementById('chipEnergy');
-    const chipTrails  = document.getElementById('chipTrails');
+    const chipEnergy = document.getElementById('chipEnergy');
+    const chipTrails = document.getElementById('chipTrails');
 
     // ★ 1. 이미지 파일 경로가 있는 원본 데이터 복구 ★
     const PLANETS = {
-      earth: { name:'지구', M:5.972e24,  R:6371e3,   img:'./image/earth.png', glow:[90,155,255] },
-      moon:  { name:'달',  M:7.342e22,  R:1737.4e3, img:'./image/moon.png',  glow:[210,210,230] },
-      mars:  { name:'화성',M:6.4171e23, R:3389.5e3, img:'./image/mars.png',  glow:[255,140,110] }
+      earth: { name: '지구', M: 5.972e24, R: 6371e3, img: './image/earth.png', glow: [90, 155, 255] },
+      moon: { name: '달', M: 7.342e22, R: 1737.4e3, img: './image/moon.png', glow: [210, 210, 230] },
+      mars: { name: '화성', M: 6.4171e23, R: 3389.5e3, img: './image/mars.png', glow: [255, 140, 110] }
     };
 
     let showVectors = true;
     let showEnergy = true;
     let keepTrails = true;
 
-    function setChip(el, on){ el.classList.toggle('on', !!on); }
-    chipVectors.addEventListener('click', ()=>{ showVectors=!showVectors; setChip(chipVectors, showVectors); drawOverlay(); });
-    chipEnergy .addEventListener('click', ()=>{ showEnergy=!showEnergy; setChip(chipEnergy, showEnergy); drawOverlay(); });
-    chipTrails .addEventListener('click', ()=>{
-      keepTrails=!keepTrails;
+    function setChip(el, on) { el.classList.toggle('on', !!on); }
+    chipVectors.addEventListener('click', () => { showVectors = !showVectors; setChip(chipVectors, showVectors); drawOverlay(); });
+    chipEnergy.addEventListener('click', () => { showEnergy = !showEnergy; setChip(chipEnergy, showEnergy); drawOverlay(); });
+    chipTrails.addEventListener('click', () => {
+      keepTrails = !keepTrails;
       setChip(chipTrails, keepTrails);
-      if(!keepTrails) trails.length = 0;
+      if (!keepTrails) trails.length = 0;
       drawOverlay();
     });
 
-    function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+    function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
     // ★ 2. 모바일/데스크탑 중심점 계산 로직 수정 ★
-    let planetCenter = {x:0,y:0};
+    let planetCenter = { x: 0, y: 0 };
 
-    function updatePlanetCenter(){
+    function updatePlanetCenter() {
       const w = window.innerWidth;
       let h = window.innerHeight;
       // 모바일(폭 768px 이하)이면 상단 45%가 시뮬레이션 영역임
-      if(w <= 768) {
+      if (w <= 768) {
         h = h * 0.45;
       }
-      planetCenter = { x: w/2, y: h/2 };
+      planetCenter = { x: w / 2, y: h / 2 };
     }
 
-    function resizeOverlay(){
+    function resizeOverlay() {
       const w = window.innerWidth;
       // 모바일이면 캔버스 높이도 45%로 제한
       let h = window.innerHeight;
-      if(w <= 768) h = h * 0.45;
+      if (w <= 768) h = h * 0.45;
 
       overlay.width = Math.floor(w * devicePixelRatio);
       overlay.height = Math.floor(h * devicePixelRatio);
       overlay.style.width = w + 'px';
       overlay.style.height = h + 'px';
-      octx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
-      
+      octx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+
       updatePlanetCenter();
     }
 
@@ -468,13 +723,13 @@
     let raf = null;
     let lastT = null;
 
-    let r = {x:0,y:0};
-    let v = {x:0,y:0};
+    let r = { x: 0, y: 0 };
+    let v = { x: 0, y: 0 };
     let maxAlt = 0;
     let pxPerM = 0;
     let worldScale = 1;
 
-    function setWorldScale(s){
+    function setWorldScale(s) {
       worldScale = s;
       worldEl.style.transform = `scale(${worldScale})`;
       // 줌인/아웃의 중심점도 모바일 환경에 맞춰 변경
@@ -482,78 +737,78 @@
     }
 
     const trails = [];
-    const MAX_PTS = 120000; 
-    const minStep = 0; 
-    const TIME_SCALE = 1800; 
-    const GRAVITY_LIMIT_MULT = 20; 
-    const MAX_STEPS = 20; 
+    const MAX_PTS = 120000;
+    const minStep = 0;
+    const TIME_SCALE = 1800;
+    const GRAVITY_LIMIT_MULT = 20;
+    const MAX_STEPS = 20;
 
-    function computeScale(){
+    function computeScale() {
       // 현재 행성 엘리먼트의 크기를 기준으로 스케일 계산
       const pr = planetEl.getBoundingClientRect();
       // scale() 트랜스폼 영향 받을 수 있으므로 초기값(CSS width) 사용 권장하나, 여기선 rect 사용
       // 모바일/데스크탑 width가 다르므로 getBoundingClientRect()가 안전
-      const radiusPx = pr.width/2; 
+      const radiusPx = pr.width / 2;
       pxPerM = radiusPx / planet.R;
     }
 
-    function launchOffsetM(){
+    function launchOffsetM() {
       const rr = rocketContainer.getBoundingClientRect();
-      const offsetPx = rr.height * 0.45;     
+      const offsetPx = rr.height * 0.45;
       return offsetPx / (pxPerM * worldScale); // 현재 스케일 반영
     }
-    
-    function worldToScreen(w){
+
+    function worldToScreen(w) {
       return {
         x: planetCenter.x + w.x * pxPerM,
         y: planetCenter.y - w.y * pxPerM
       };
     }
 
-    function accel(pos){
+    function accel(pos) {
       const mu = G * planet.M;
-      const r2 = pos.x*pos.x + pos.y*pos.y;
+      const r2 = pos.x * pos.x + pos.y * pos.y;
       const rmag = Math.sqrt(r2);
-      const inv = 1.0 / (rmag*rmag*rmag + 1e-18);
+      const inv = 1.0 / (rmag * rmag * rmag + 1e-18);
       return { x: -mu * pos.x * inv, y: -mu * pos.y * inv };
     }
 
-    function step(dt){
+    function step(dt) {
       const a0 = accel(r);
-      r.x += v.x*dt + 0.5*a0.x*dt*dt;
-      r.y += v.y*dt + 0.5*a0.y*dt*dt;
+      r.x += v.x * dt + 0.5 * a0.x * dt * dt;
+      r.y += v.y * dt + 0.5 * a0.y * dt * dt;
 
       const a1 = accel(r);
-      v.x += 0.5*(a0.x + a1.x)*dt;
-      v.y += 0.5*(a0.y + a1.y)*dt;
+      v.x += 0.5 * (a0.x + a1.x) * dt;
+      v.y += 0.5 * (a0.y + a1.y) * dt;
 
-      const rmag = Math.hypot(r.x,r.y);
+      const rmag = Math.hypot(r.x, r.y);
       const alt = Math.max(0, rmag - planet.R);
-      if(alt > maxAlt) maxAlt = alt;
+      if (alt > maxAlt) maxAlt = alt;
 
-      const tr = trails[trails.length-1];
-      if(tr && tr.pts.length < MAX_PTS){
-        const last = tr.pts[tr.pts.length-1];
+      const tr = trails[trails.length - 1];
+      if (tr && tr.pts.length < MAX_PTS) {
+        const last = tr.pts[tr.pts.length - 1];
         const dx = r.x - last.x, dy = r.y - last.y;
-        if(dx*dx + dy*dy > (minStep*minStep)) tr.pts.push({x:r.x,y:r.y});
+        if (dx * dx + dy * dy > (minStep * minStep)) tr.pts.push({ x: r.x, y: r.y });
       }
 
-      if(rmag <= planet.R){
+      if (rmag <= planet.R) {
         finish('행성에 재충돌 (낙하)', 'bad');
         return;
       }
 
-      const mu = G*planet.M;
-      const vmag = Math.hypot(v.x,v.y);
-      const eps = 0.5*vmag*vmag - mu/rmag;
-      const vr = (r.x*v.x + r.y*v.y) / (rmag + 1e-12);
-      if(rmag > planet.R*GRAVITY_LIMIT_MULT && eps >= 0 && vr > 0){
+      const mu = G * planet.M;
+      const vmag = Math.hypot(v.x, v.y);
+      const eps = 0.5 * vmag * vmag - mu / rmag;
+      const vr = (r.x * v.x + r.y * v.y) / (rmag + 1e-12);
+      if (rmag > planet.R * GRAVITY_LIMIT_MULT && eps >= 0 && vr > 0) {
         finish('중력권 탈출 (E ≥ 0)', 'good', true);
         return;
       }
     }
 
-    function finish(msg, cls, vanishRocket=false){
+    function finish(msg, cls, vanishRocket = false) {
       running = false;
       paused = false;
       lastT = null;
@@ -563,54 +818,54 @@
       launchButton.textContent = '다시 발사';
       flameEl.style.display = 'none';
 
-      statusEl.textContent = cls==='good' ? '탈출' : '종료';
-      resultEl.className = 'result ' + (cls==='good' ? 'good' : (cls==='bad' ? 'bad' : 'warn'));
+      statusEl.textContent = cls === 'good' ? '탈출' : '종료';
+      resultEl.className = 'result ' + (cls === 'good' ? 'good' : (cls === 'bad' ? 'bad' : 'warn'));
       resultEl.textContent = msg;
 
-      if(vanishRocket){
+      if (vanishRocket) {
         rocketContainer.classList.add('vanish');
-        setTimeout(()=>{ rocketContainer.style.display='none'; }, 430);
+        setTimeout(() => { rocketContainer.style.display = 'none'; }, 430);
       }
     }
 
-    function updateDerivedSpeeds(){
+    function updateDerivedSpeeds() {
       const mu = G * planet.M;
       const v1 = Math.sqrt(mu / planet.R);
       const ve = Math.sqrt(2 * mu / planet.R);
-      v1El.textContent = (v1/1000).toFixed(2);
-      veEl.textContent = (ve/1000).toFixed(2);
+      v1El.textContent = (v1 / 1000).toFixed(2);
+      veEl.textContent = (ve / 1000).toFixed(2);
     }
 
-    function updateStageBadgeByV0(){
+    function updateStageBadgeByV0() {
       const mu = G * planet.M;
       const v1 = Math.sqrt(mu / planet.R);
       const ve = Math.sqrt(2 * mu / planet.R);
       const vv = parseFloat(vSlider.value) * 1000;
-      if(vv < v1*0.98) stageBadge.textContent = '단계 1';
-      else if(vv < ve*0.999) stageBadge.textContent = '단계 2';
+      if (vv < v1 * 0.98) stageBadge.textContent = '단계 1';
+      else if (vv < ve * 0.999) stageBadge.textContent = '단계 2';
       else stageBadge.textContent = '단계 3';
     }
 
-    function updatePreviewPose(){
+    function updatePreviewPose() {
       computeScale();
       const h0 = parseFloat(altSlider.value) * 1000;
-      const np = worldToScreen({x:0, y: planet.R + h0});
+      const np = worldToScreen({ x: 0, y: planet.R + h0 });
       const v0 = parseFloat(vSlider.value) * 1000;
-      const th = parseFloat(thSlider.value) * Math.PI/180;
+      const th = parseFloat(thSlider.value) * Math.PI / 180;
       const vel = { x: v0 * Math.cos(th), y: v0 * Math.sin(th) };
       const ang = Math.atan2(-vel.y, vel.x);
-      
+
       rocketContainer.style.left = np.x + 'px';
-      rocketContainer.style.top  = np.y + 'px';
+      rocketContainer.style.top = np.y + 'px';
       rocketContainer.style.transform = `translate(-50%, -50%) rotate(${ang}rad)`;
     }
 
-    function placeRocketAtNorthPolePreview(){
+    function placeRocketAtNorthPolePreview() {
       updatePreviewPose();
     }
 
-    function hardReset(clearAll=true){
-      if(raf) cancelAnimationFrame(raf);
+    function hardReset(clearAll = true) {
+      if (raf) cancelAnimationFrame(raf);
       raf = null;
       running = false;
       paused = false;
@@ -635,11 +890,11 @@
       resultEl.textContent = '속도·각도를 조절한 뒤 발사해 보세요.';
       stageBadge.textContent = '대기';
 
-      if(clearAll) trails.length = 0;
+      if (clearAll) trails.length = 0;
 
       setWorldScale(1);
       updatePlanetCenter();
-      
+
       // 행성 위치 초기화 (모바일에서 중앙 정렬을 위해)
       planetEl.style.left = '50%';
       planetEl.style.top = '50%';
@@ -650,18 +905,18 @@
       updateStageBadgeByV0();
     }
 
-    function setPlanet(key){
+    function setPlanet(key) {
       planetKey = key;
       planet = PLANETS[key];
 
-      btnEarth.classList.toggle('on', key==='earth');
-      btnMoon.classList.toggle('on', key==='moon');
-      btnMars.classList.toggle('on', key==='mars');
+      btnEarth.classList.toggle('on', key === 'earth');
+      btnMoon.classList.toggle('on', key === 'moon');
+      btnMars.classList.toggle('on', key === 'mars');
 
       // ★ 3. 이미지 파일 로딩 복구 ★
       planetEl.style.backgroundImage = `url('${planet.img}')`;
 
-      const [R,G,B] = planet.glow;
+      const [R, G, B] = planet.glow;
       planetEl.style.boxShadow =
         `0 0 0 2px rgba(255,255,255,0.08),
          0 0 40px rgba(${R},${G},${B},0.22),
@@ -672,24 +927,24 @@
       hardReset(true);
     }
 
-    function start(){
-      if(running) return;
+    function start() {
+      if (running) return;
 
       rocketContainer.classList.remove('vanish');
       rocketContainer.style.display = 'block';
 
       const h0 = parseFloat(altSlider.value) * 1000;
-      r = { x: 0, y: planet.R + h0 + Math.max(1, launchOffsetM()*0.15) };
+      r = { x: 0, y: planet.R + h0 + Math.max(1, launchOffsetM() * 0.15) };
       const v0 = parseFloat(vSlider.value) * 1000;
-      const th = parseFloat(thSlider.value) * Math.PI/180;
+      const th = parseFloat(thSlider.value) * Math.PI / 180;
       v = { x: v0 * Math.cos(th), y: v0 * Math.sin(th) };
 
       maxAlt = 0;
 
-      if(!keepTrails) trails.length = 0;
+      if (!keepTrails) trails.length = 0;
       const tint = planet.glow;
-      const c = `rgba(${clamp(tint[0]+(Math.random()*30-15),0,255)},${clamp(tint[1]+(Math.random()*30-15),0,255)},${clamp(tint[2]+(Math.random()*30-15),0,255)},0.65)`;
-      trails.push({ pts:[{x:r.x,y:r.y}], color:c });
+      const c = `rgba(${clamp(tint[0] + (Math.random() * 30 - 15), 0, 255)},${clamp(tint[1] + (Math.random() * 30 - 15), 0, 255)},${clamp(tint[2] + (Math.random() * 30 - 15), 0, 255)},0.65)`;
+      trails.push({ pts: [{ x: r.x, y: r.y }], color: c });
 
       running = true;
       paused = false;
@@ -709,42 +964,42 @@
       tick(performance.now(), true);
     }
 
-    function togglePause(){
-      if(!running) return;
+    function togglePause() {
+      if (!running) return;
       paused = !paused;
       pauseButton.textContent = paused ? '재개' : '일시정지';
       statusEl.textContent = paused ? '일시정지' : '진행 중';
       flameEl.style.display = paused ? 'none' : 'block';
-      if(!paused){
+      if (!paused) {
         lastT = null;
         raf = requestAnimationFrame(tick);
       }
     }
 
-    function drawArrow(x0,y0,x1,y1,color,width){
+    function drawArrow(x0, y0, x1, y1, color, width) {
       octx.save();
       octx.strokeStyle = color;
       octx.fillStyle = color;
       octx.lineWidth = width;
       octx.lineCap = 'round';
       octx.beginPath();
-      octx.moveTo(x0,y0);
-      octx.lineTo(x1,y1);
+      octx.moveTo(x0, y0);
+      octx.lineTo(x1, y1);
       octx.stroke();
 
-      const dx=x1-x0, dy=y1-y0;
-      const a=Math.atan2(dy,dx);
-      const head=10;
+      const dx = x1 - x0, dy = y1 - y0;
+      const a = Math.atan2(dy, dx);
+      const head = 10;
       octx.beginPath();
-      octx.moveTo(x1,y1);
-      octx.lineTo(x1-head*Math.cos(a-0.45), y1-head*Math.sin(a-0.45));
-      octx.lineTo(x1-head*Math.cos(a+0.45), y1-head*Math.sin(a+0.45));
+      octx.moveTo(x1, y1);
+      octx.lineTo(x1 - head * Math.cos(a - 0.45), y1 - head * Math.sin(a - 0.45));
+      octx.lineTo(x1 - head * Math.cos(a + 0.45), y1 - head * Math.sin(a + 0.45));
       octx.closePath();
       octx.fill();
       octx.restore();
     }
 
-    function drawEnergyBars(Ek, Ep, E){
+    function drawEnergyBars(Ek, Ep, E) {
       // 에너지바 위치: 모바일인지 체크해서 위치/크기 조정
       const isMobile = window.innerWidth <= 768;
       const pad = 14;
@@ -758,162 +1013,162 @@
       octx.strokeStyle = 'rgba(255,255,255,0.10)';
       octx.lineWidth = 1;
       octx.beginPath();
-      octx.roundRect(x,y,w,h,14);
+      octx.roundRect(x, y, w, h, 14);
       octx.fill();
       octx.stroke();
 
       octx.fillStyle = 'rgba(225,235,255,0.9)';
       octx.font = isMobile ? '11px sans-serif' : '12px system-ui, -apple-system, Segoe UI, Roboto';
-      octx.fillText('에너지(단위질량)', x+12, y+18);
+      octx.fillText('에너지(단위질량)', x + 12, y + 18);
 
-      const bx = x+16, by = y+28;
-      const bw = w-32, bh = h-48;
-      const mid = by + bh*0.55;
+      const bx = x + 16, by = y + 28;
+      const bw = w - 32, bh = h - 48;
+      const mid = by + bh * 0.55;
 
-      const mu = G*planet.M;
-      const Ep0 = Math.abs(-mu/planet.R);
-      const EkVe = mu/planet.R;
+      const mu = G * planet.M;
+      const Ep0 = Math.abs(-mu / planet.R);
+      const EkVe = mu / planet.R;
       const scale = Math.max(Ep0, EkVe) * 1.15;
 
       octx.strokeStyle = 'rgba(255,255,255,0.10)';
       octx.beginPath();
       octx.moveTo(bx, mid);
-      octx.lineTo(bx+bw, mid);
+      octx.lineTo(bx + bw, mid);
       octx.stroke();
 
-      const EkMag = clamp(Ek/scale, 0, 1) * (bh*0.40);
+      const EkMag = clamp(Ek / scale, 0, 1) * (bh * 0.40);
       octx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--ek');
-      octx.fillRect(bx, mid - EkMag, bw*0.33, EkMag);
+      octx.fillRect(bx, mid - EkMag, bw * 0.33, EkMag);
 
-      const EpMag = clamp(Math.abs(Ep)/scale, 0, 1) * (bh*0.40);
+      const EpMag = clamp(Math.abs(Ep) / scale, 0, 1) * (bh * 0.40);
       octx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--ep');
-      if(Ep >= 0) octx.fillRect(bx + bw*0.37, mid - EpMag, bw*0.33, EpMag);
-      else        octx.fillRect(bx + bw*0.37, mid,        bw*0.33, EpMag);
+      if (Ep >= 0) octx.fillRect(bx + bw * 0.37, mid - EpMag, bw * 0.33, EpMag);
+      else octx.fillRect(bx + bw * 0.37, mid, bw * 0.33, EpMag);
 
-      const Emag = clamp(Math.abs(E)/scale, 0, 1) * (bh*0.40);
+      const Emag = clamp(Math.abs(E) / scale, 0, 1) * (bh * 0.40);
       octx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--et');
-      if(E >= 0) octx.fillRect(bx + bw*0.74, mid - Emag, bw*0.26, Emag);
-      else       octx.fillRect(bx + bw*0.74, mid,        bw*0.26, Emag);
+      if (E >= 0) octx.fillRect(bx + bw * 0.74, mid - Emag, bw * 0.26, Emag);
+      else octx.fillRect(bx + bw * 0.74, mid, bw * 0.26, Emag);
 
       octx.fillStyle = 'rgba(225,235,255,0.88)';
-      octx.fillText('Ek', bx+2, y+h-12);
-      octx.fillText('Ep', bx + bw*0.37 + 2, y+h-12);
-      octx.fillText('E',  bx + bw*0.74 + 2, y+h-12);
+      octx.fillText('Ek', bx + 2, y + h - 12);
+      octx.fillText('Ep', bx + bw * 0.37 + 2, y + h - 12);
+      octx.fillText('E', bx + bw * 0.74 + 2, y + h - 12);
 
-      if(E >= 0){
+      if (E >= 0) {
         octx.strokeStyle = 'rgba(46,204,113,0.50)';
         octx.lineWidth = 2;
         octx.beginPath();
-        octx.roundRect(x+8,y+8,w-16,h-16,12);
+        octx.roundRect(x + 8, y + 8, w - 16, h - 16, 12);
         octx.stroke();
       }
       octx.restore();
     }
 
-    function drawOverlay(){
+    function drawOverlay() {
       // 캔버스 크기 맞춤 (resizeOverlay에서 이미 처리됨)
       // w, h는 resizeOverlay에서 설정된 값을 사용
       const w = overlay.width / devicePixelRatio;
       const h = overlay.height / devicePixelRatio;
-      
-      octx.clearRect(0,0,w, h);
 
-      for(const tr of trails){
-        if(tr.pts.length < 2) continue;
+      octx.clearRect(0, 0, w, h);
+
+      for (const tr of trails) {
+        if (tr.pts.length < 2) continue;
         octx.save();
         octx.strokeStyle = tr.color;
         octx.lineWidth = 1.6;
         octx.beginPath();
         let p0 = worldToScreen(tr.pts[0]);
         octx.moveTo(p0.x, p0.y);
-        for(let i=1;i<tr.pts.length;i++){
+        for (let i = 1; i < tr.pts.length; i++) {
           const p = worldToScreen(tr.pts[i]);
-          octx.lineTo(p.x,p.y);
+          octx.lineTo(p.x, p.y);
         }
         octx.stroke();
         octx.restore();
       }
 
-      const pos = running ? r : {x:0, y:planet.R + launchOffsetM()};
+      const pos = running ? r : { x: 0, y: planet.R + launchOffsetM() };
       const vel = running ? v : (() => {
-        const v0 = parseFloat(vSlider.value)*1000;
-        const th = parseFloat(thSlider.value)*Math.PI/180;
-        return {x: v0*Math.cos(th), y: v0*Math.sin(th)};
+        const v0 = parseFloat(vSlider.value) * 1000;
+        const th = parseFloat(thSlider.value) * Math.PI / 180;
+        return { x: v0 * Math.cos(th), y: v0 * Math.sin(th) };
       })();
 
       const sp = worldToScreen(pos);
       const vmag = Math.hypot(vel.x, vel.y);
       const rmag = Math.hypot(pos.x, pos.y);
 
-      const mu = G*planet.M;
-      const eps = 0.5*vmag*vmag - mu/rmag;
-      epsEl.textContent = (eps/1e6).toFixed(1);
+      const mu = G * planet.M;
+      const eps = 0.5 * vmag * vmag - mu / rmag;
+      epsEl.textContent = (eps / 1e6).toFixed(1);
 
-      if(showVectors){
+      if (showVectors) {
         const a = accel(pos);
-        const amag = Math.hypot(a.x,a.y);
+        const amag = Math.hypot(a.x, a.y);
 
         const vScale = 120 / Math.max(3000, vmag);
         const aScale = 120 / Math.max(2, amag);
 
-        const vp = worldToScreen({x: pos.x + vel.x*vScale, y: pos.y + vel.y*vScale});
-        const ap = worldToScreen({x: pos.x + a.x*aScale, y: pos.y + a.y*aScale});
+        const vp = worldToScreen({ x: pos.x + vel.x * vScale, y: pos.y + vel.y * vScale });
+        const ap = worldToScreen({ x: pos.x + a.x * aScale, y: pos.y + a.y * aScale });
 
         drawArrow(sp.x, sp.y, vp.x, vp.y, getComputedStyle(document.documentElement).getPropertyValue('--vk'), 3);
         drawArrow(sp.x, sp.y, ap.x, ap.y, getComputedStyle(document.documentElement).getPropertyValue('--fg'), 3);
       }
 
-      if(showEnergy){
-        const Ek = 0.5*vmag*vmag;
-        const Ep = -mu/rmag;
-        const E  = Ek + Ep;
+      if (showEnergy) {
+        const Ek = 0.5 * vmag * vmag;
+        const Ep = -mu / rmag;
+        const E = Ek + Ep;
         drawEnergyBars(Ek, Ep, E);
       }
     }
 
-    function tick(t, first=false){
-      if(!running || paused){
+    function tick(t, first = false) {
+      if (!running || paused) {
         drawOverlay();
         return;
       }
 
-      if(!lastT || first) lastT = t;
-      
-      const dtReal = (t - lastT)/1000;
+      if (!lastT || first) lastT = t;
+
+      const dtReal = (t - lastT) / 1000;
       lastT = t;
 
-      const dtRealClamped = Math.min(dtReal, 0.04); 
-      const simDt = dtRealClamped * TIME_SCALE;    
+      const dtRealClamped = Math.min(dtReal, 0.04);
+      const simDt = dtRealClamped * TIME_SCALE;
 
-      const h = 0.01; 
+      const h = 0.01;
       let n = Math.ceil(simDt / h);
       n = clamp(n, 1, MAX_STEPS);
 
       const dt = simDt / n;
-      for(let i=0;i<n;i++){
+      for (let i = 0; i < n; i++) {
         step(dt);
-        if(!running) break;
+        if (!running) break;
       }
 
       const sp = worldToScreen(r);
       const ang = Math.atan2(-v.y, v.x);
       rocketContainer.style.left = sp.x + 'px';
-      rocketContainer.style.top  = sp.y + 'px';
+      rocketContainer.style.top = sp.y + 'px';
       rocketContainer.style.transform = `translate(-50%, -50%) rotate(${ang}rad)`;
 
       // 자동 줌아웃 (모바일 화면 크기 고려)
       const distPx = Math.hypot(sp.x - planetCenter.x, sp.y - planetCenter.y);
       const isMobile = window.innerWidth <= 768;
       const viewSize = isMobile ? window.innerHeight * 0.45 : Math.min(window.innerWidth, window.innerHeight);
-      const maxPx  = viewSize * 0.42;
+      const maxPx = viewSize * 0.42;
       let desiredScale = 1;
 
-      if (distPx > maxPx){
+      if (distPx > maxPx) {
         desiredScale = clamp(maxPx / (distPx + 1e-6), 0.16, 1);
       }
 
       const rmagNow = Math.hypot(r.x, r.y);
-      if (rmagNow >= planet.R * GRAVITY_LIMIT_MULT){
+      if (rmagNow >= planet.R * GRAVITY_LIMIT_MULT) {
         desiredScale = Math.min(desiredScale, 0.16);
       }
 
@@ -922,29 +1177,29 @@
       // auto zoom-out (margin check)
       const margin = 80;
       const rx = sp.x, ry = sp.y;
-      
+
       // 화면 밖으로 나가면 줌아웃
       const screenW = overlay.width / devicePixelRatio;
       const screenH = overlay.height / devicePixelRatio;
-      
-      if(rx > screenW - margin || rx < margin || ry < margin || ry > screenH - margin){
-         const d = Math.hypot(rx - planetCenter.x, ry - planetCenter.y);
-         const limit = Math.min(screenW, screenH) * 0.44;
-         const scale2 = clamp(limit / (d + 1e-6), 0.18, 1);
-         if(scale2 < desiredScale) desiredScale = scale2;
+
+      if (rx > screenW - margin || rx < margin || ry < margin || ry > screenH - margin) {
+        const d = Math.hypot(rx - planetCenter.x, ry - planetCenter.y);
+        const limit = Math.min(screenW, screenH) * 0.44;
+        const scale2 = clamp(limit / (d + 1e-6), 0.18, 1);
+        if (scale2 < desiredScale) desiredScale = scale2;
       }
-       setWorldScale(worldScale + (desiredScale - worldScale) * 0.10);
+      setWorldScale(worldScale + (desiredScale - worldScale) * 0.10);
 
 
-      const vmag = Math.hypot(v.x,v.y);
-      curVEl.textContent = (vmag/1000).toFixed(1);
-      maxAltEl.textContent = (maxAlt/1000).toFixed(0);
+      const vmag = Math.hypot(v.x, v.y);
+      curVEl.textContent = (vmag / 1000).toFixed(1);
+      maxAltEl.textContent = (maxAlt / 1000).toFixed(0);
 
-      const mu = G*planet.M;
+      const mu = G * planet.M;
       const v1 = Math.sqrt(mu / planet.R);
       const ve = Math.sqrt(2 * mu / planet.R);
-      if(vmag < v1*0.98) stageBadge.textContent = '단계 1';
-      else if(vmag < ve*0.999) stageBadge.textContent = '단계 2';
+      if (vmag < v1 * 0.98) stageBadge.textContent = '단계 1';
+      else if (vmag < ve * 0.999) stageBadge.textContent = '단계 2';
       else stageBadge.textContent = '단계 3';
 
       drawOverlay();
@@ -952,22 +1207,22 @@
     }
 
     // ---- UI events ----
-    vSlider.addEventListener('input', ()=>{
+    vSlider.addEventListener('input', () => {
       vVal.textContent = parseFloat(vSlider.value).toFixed(1);
-      if(!running) { curVEl.textContent = parseFloat(vSlider.value).toFixed(1); updateStageBadgeByV0(); updatePreviewPose(); drawOverlay(); }
+      if (!running) { curVEl.textContent = parseFloat(vSlider.value).toFixed(1); updateStageBadgeByV0(); updatePreviewPose(); drawOverlay(); }
     });
-    altSlider.addEventListener('input', ()=>{
-      altVal.textContent = parseInt(altSlider.value,10);
-      if(!running) { updatePreviewPose(); drawOverlay(); }
-    });
-    thSlider.addEventListener('input', ()=>{
-      thVal.textContent = parseInt(thSlider.value,10);
+    altSlider.addEventListener('input', () => {
       altVal.textContent = parseInt(altSlider.value, 10);
-      if(!running) { updatePreviewPose(); drawOverlay(); }
+      if (!running) { updatePreviewPose(); drawOverlay(); }
+    });
+    thSlider.addEventListener('input', () => {
+      thVal.textContent = parseInt(thSlider.value, 10);
+      altVal.textContent = parseInt(altSlider.value, 10);
+      if (!running) { updatePreviewPose(); drawOverlay(); }
     });
 
-    launchButton.addEventListener('click', ()=>{
-      if(running) return;
+    launchButton.addEventListener('click', () => {
+      if (running) return;
       launchButton.disabled = true;
       launchButton.textContent = '진행 중…';
       pauseButton.disabled = false;
@@ -982,15 +1237,15 @@
     });
 
     pauseButton.addEventListener('click', togglePause);
-    resetButton.addEventListener('click', ()=> hardReset(true));
-    clearTrailsButton.addEventListener('click', ()=> { trails.length = 0; drawOverlay(); });
+    resetButton.addEventListener('click', () => hardReset(true));
+    clearTrailsButton.addEventListener('click', () => { trails.length = 0; drawOverlay(); });
 
-    btnEarth.addEventListener('click', ()=> setPlanet('earth'));
-    btnMoon .addEventListener('click', ()=> setPlanet('moon'));
-    btnMars .addEventListener('click', ()=> setPlanet('mars'));
+    btnEarth.addEventListener('click', () => setPlanet('earth'));
+    btnMoon.addEventListener('click', () => setPlanet('moon'));
+    btnMars.addEventListener('click', () => setPlanet('mars'));
 
-    window.addEventListener('resize', ()=>{
-      if(raf) cancelAnimationFrame(raf);
+    window.addEventListener('resize', () => {
+      if (raf) cancelAnimationFrame(raf);
       raf = null;
       setWorldScale(1);
       resizeOverlay();
@@ -1000,42 +1255,42 @@
     });
 
     // ★ 4. preload 함수 복구 ★
-    function ensureRoundRect(){
-      if(!CanvasRenderingContext2D.prototype.roundRect){
-        CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){
-          const rr = Math.min(r, w/2, h/2);
+    function ensureRoundRect() {
+      if (!CanvasRenderingContext2D.prototype.roundRect) {
+        CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+          const rr = Math.min(r, w / 2, h / 2);
           this.beginPath();
-          this.moveTo(x+rr, y);
-          this.arcTo(x+w, y, x+w, y+h, rr);
-          this.arcTo(x+w, y+h, x, y+h, rr);
-          this.arcTo(x, y+h, x, y, rr);
-          this.arcTo(x, y, x+w, y, rr);
+          this.moveTo(x + rr, y);
+          this.arcTo(x + w, y, x + w, y + h, rr);
+          this.arcTo(x + w, y + h, x, y + h, rr);
+          this.arcTo(x, y + h, x, y, rr);
+          this.arcTo(x, y, x + w, y, rr);
           this.closePath();
           return this;
         };
       }
     }
 
-    function preload(){
-      ['earth','moon','mars'].forEach(k=>{
+    function preload() {
+      ['earth', 'moon', 'mars'].forEach(k => {
         const img = new Image();
         img.src = PLANETS[k].img;
       });
     }
 
-    function init(){
+    function init() {
       ensureRoundRect();
       preload();
 
       vVal.textContent = parseFloat(vSlider.value).toFixed(1);
-      thVal.textContent = parseInt(thSlider.value,10);
+      thVal.textContent = parseInt(thSlider.value, 10);
 
       resizeOverlay();
       updatePlanetCenter();
       computeScale();
       setPlanet('earth');
 
-      requestAnimationFrame(()=>{
+      requestAnimationFrame(() => {
         updatePlanetCenter();
         updatePreviewPose();
         drawOverlay();
@@ -1045,4 +1300,5 @@
     init();
   </script>
 </body>
+
 </html>

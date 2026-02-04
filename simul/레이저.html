@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -13,136 +14,256 @@
         }
 
         body {
-            margin: 0; padding: 0;
+            margin: 0;
+            padding: 0;
             background-color: var(--bg-color);
             color: var(--text-main);
             font-family: 'Pretendard', sans-serif;
-            width: 100vw; height: 100vh;
+            width: 100vw;
+            height: 100vh;
             overflow: hidden;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             touch-action: none;
         }
 
         /* 세로 모드 경고창 */
         #portrait-warning {
             display: none;
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 9999;
-            flex-direction: column; align-items: center; justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             text-align: center;
         }
-        .rotate-icon { font-size: 3rem; margin-bottom: 20px; animation: rotate-phone 2s infinite ease-in-out; }
-        @keyframes rotate-phone {
-            0%, 10% { transform: rotate(0deg); }
-            40%, 60% { transform: rotate(-90deg); }
-            90%, 100% { transform: rotate(0deg); }
+
+        .rotate-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            animation: rotate-phone 2s infinite ease-in-out;
         }
+
+        @keyframes rotate-phone {
+
+            0%,
+            10% {
+                transform: rotate(0deg);
+            }
+
+            40%,
+            60% {
+                transform: rotate(-90deg);
+            }
+
+            90%,
+            100% {
+                transform: rotate(0deg);
+            }
+        }
+
         @media screen and (orientation: portrait) {
-            #portrait-warning { display: flex; }
-            #app-scaler { display: none !important; }
+            #portrait-warning {
+                display: flex;
+            }
+
+            #app-scaler {
+                display: none !important;
+            }
         }
 
         /* 앱 스케일러 */
         #app-scaler {
-            width: 1024px; height: 768px;
-            position: relative; transform-origin: center center;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 1024px;
+            height: 768px;
+            position: relative;
+            transform-origin: center center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         /* 네비게이션 */
         .nav-bar {
-            position: absolute; top: 20px; z-index: 100;
-            display: flex; gap: 15px;
+            position: absolute;
+            top: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 15px;
             background: rgba(30, 30, 30, 0.8);
-            padding: 8px 20px; border-radius: 30px;
-            backdrop-filter: blur(5px); border: 1px solid #444;
+            padding: 8px 20px;
+            border-radius: 30px;
+            backdrop-filter: blur(5px);
+            border: 1px solid #444;
         }
+
         .nav-btn {
-            background: transparent; border: none; color: #888;
-            font-size: 1.1rem; font-weight: bold; cursor: pointer;
-            padding: 10px 25px; border-radius: 20px; transition: 0.3s;
+            background: transparent;
+            border: none;
+            color: #888;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 10px 25px;
+            border-radius: 20px;
+            transition: 0.3s;
         }
-        .nav-btn.active { background: #eee; color: #111; box-shadow: 0 0 15px rgba(255,255,255,0.2); }
+
+        .nav-btn.active {
+            background: #eee;
+            color: #111;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        }
 
         .screen-container {
-            display: none; width: 100%; height: 100%;
-            justify-content: center; align-items: center;
+            display: none;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
         }
-        .screen-container.active { display: flex; }
+
+        .screen-container.active {
+            display: flex;
+        }
 
         /* ====================
            MODE 1: THEORY CSS
            ==================== */
         .theory-layout {
-            display: flex; gap: 50px; align-items: center; justify-content: center;
-            width: 90%; height: 80%;
+            display: flex;
+            gap: 50px;
+            align-items: center;
+            justify-content: center;
+            width: 90%;
+            height: 80%;
         }
 
         .controls-left {
-            display: flex; flex-direction: column; align-items: center; gap: 20px;
-            width: 120px; /* 너비 확보 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 120px;
+            /* 너비 확보 */
         }
 
         /* 슬라이더 디자인 */
         .energy-wrapper {
-            position: relative; width: 70px; height: 380px;
-            background: #1a1a1a; border-radius: 35px; border: 2px solid #444;
-            display: flex; align-items: center; justify-content: center;
+            position: relative;
+            width: 70px;
+            height: 380px;
+            background: #1a1a1a;
+            border-radius: 35px;
+            border: 2px solid #444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+
         .spectrum-bar {
-            width: 14px; height: 330px;
+            width: 14px;
+            height: 330px;
             background: linear-gradient(to top, #ff0000 0%, #ffff00 25%, #00ff00 50%, #00ffff 75%, #0000ff 100%);
-            border-radius: 7px; opacity: 0.6; pointer-events: none;
+            border-radius: 7px;
+            opacity: 0.6;
+            pointer-events: none;
         }
+
         input[type=range].v-slider {
-            position: absolute; width: 330px; height: 50px;
-            background: transparent; -webkit-appearance: none; cursor: grab;
-            transform: rotate(-90deg); margin: 0; padding: 0; z-index: 10;
+            position: absolute;
+            width: 330px;
+            height: 50px;
+            background: transparent;
+            -webkit-appearance: none;
+            cursor: grab;
+            transform: rotate(-90deg);
+            margin: 0;
+            padding: 0;
+            z-index: 10;
         }
+
         input[type=range].v-slider::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 34px; height: 34px; background: #fff;
-            border-radius: 50%; border: 4px solid #333; box-shadow: 0 0 10px rgba(255,255,255,0.8);
+            -webkit-appearance: none;
+            width: 34px;
+            height: 34px;
+            background: #fff;
+            border-radius: 50%;
+            border: 4px solid #333;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
             margin-top: -2px;
         }
 
         /* --- [수정됨] 버튼 스타일 --- */
         .fire-btn {
-            width: 160px; /* 고정 너비 */
-            padding: 18px 0; /* 상하 패딩 */
-            font-size: 1.2rem; font-weight: bold;
+            width: 160px;
+            /* 고정 너비 */
+            padding: 18px 0;
+            /* 상하 패딩 */
+            font-size: 1.2rem;
+            font-weight: bold;
             color: #fff;
-            background: linear-gradient(135deg, #444, #222); /* 그라데이션 */
+            background: linear-gradient(135deg, #444, #222);
+            /* 그라데이션 */
             border: 1px solid #666;
             border-radius: 50px;
-            cursor: pointer; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            white-space: nowrap; /* 줄바꿈 방지 (핵심) */
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            white-space: nowrap;
+            /* 줄바꿈 방지 (핵심) */
             text-align: center;
             transition: all 0.1s;
             margin-top: 10px;
         }
-        .fire-btn:active { 
-            transform: scale(0.95); 
+
+        .fire-btn:active {
+            transform: scale(0.95);
             background: linear-gradient(135deg, #222, #111);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
             color: #ccc;
         }
 
         /* 캔버스 박스 */
         .atom-box {
-            position: relative; width: 800px; height: 600px;
+            position: relative;
+            width: 800px;
+            height: 600px;
             background: radial-gradient(circle at center, #1b1b1b 0%, #000 70%);
-            border: 2px solid #444; border-radius: 20px;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            border: 2px solid #444;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
         }
+
         .hud-text {
-            position: absolute; bottom: 20px; width: 100%; text-align: center;
-            font-size: 1.2rem; color: #aaa; pointer-events: none;
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 1.2rem;
+            color: #aaa;
+            pointer-events: none;
         }
+
         .status-badge {
-            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.6); padding: 10px 25px; border-radius: 20px;
-            border: 1px solid #444; color: #fff; font-size: 1.1rem; white-space: nowrap;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 25px;
+            border-radius: 20px;
+            border: 1px solid #444;
+            color: #fff;
+            font-size: 1.1rem;
+            white-space: nowrap;
         }
 
 
@@ -151,63 +272,127 @@
            ==================== */
         .lab-layout {
             position: relative;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
         }
 
         .pointer-device {
-            display: flex; align-items: center;
-            width: 800px; height: 160px;
+            display: flex;
+            align-items: center;
+            width: 800px;
+            height: 160px;
             background: linear-gradient(to bottom, #3a3a3a, #111, #3a3a3a);
             border-radius: 15px 60px 60px 15px;
             border: 3px solid #555;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
-            position: relative; z-index: 10; padding: 10px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+            position: relative;
+            z-index: 10;
+            padding: 10px;
         }
 
         .battery-pack {
-            width: 160px; height: 90%; background: #080808; border: 1px solid #444;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            border-radius: 8px; margin-left: 10px;
+            width: 160px;
+            height: 90%;
+            background: #080808;
+            border: 1px solid #444;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            margin-left: 10px;
         }
-        .ptr-slider { width: 120px; margin: 15px 0; cursor: pointer; height: 30px; }
-        
-        .trigger-wrap { width: 80px; height: 100%; position: relative; display: flex; justify-content: center; }
+
+        .ptr-slider {
+            width: 120px;
+            margin: 15px 0;
+            cursor: pointer;
+            height: 30px;
+        }
+
+        .trigger-wrap {
+            width: 80px;
+            height: 100%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+
         .red-trigger {
-            position: absolute; top: -25px; width: 60px; height: 45px;
-            background: #d32f2f; border-radius: 8px 8px 0 0; border: 3px solid #880000;
-            cursor: pointer; transition: top 0.1s;
+            position: absolute;
+            top: -25px;
+            width: 60px;
+            height: 45px;
+            background: #d32f2f;
+            border-radius: 8px 8px 0 0;
+            border: 3px solid #880000;
+            cursor: pointer;
+            transition: top 0.1s;
         }
-        .red-trigger:active { top: -10px; }
+
+        .red-trigger:active {
+            top: -10px;
+        }
 
         .chamber {
-            flex-grow: 1; height: 130px; background: #000;
-            border: 2px solid #666; margin: 0 15px; border-radius: 4px;
-            position: relative; overflow: hidden;
+            flex-grow: 1;
+            height: 130px;
+            background: #000;
+            border: 2px solid #666;
+            margin: 0 15px;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
         }
 
         .laser-beam-outer {
             position: absolute;
-            left: 50%; margin-left: 360px;
-            top: 50%; transform: translateY(-50%);
-            height: 40px; width: 0;
+            left: 50%;
+            margin-left: 360px;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 40px;
+            width: 0;
             background: #fff;
             box-shadow: 0 0 20px var(--beam-glow), 0 0 50px var(--beam-glow);
             border-radius: 0 20px 20px 0;
-            z-index: 5; pointer-events: none; transition: width 0.05s linear;
+            z-index: 5;
+            pointer-events: none;
+            transition: width 0.05s linear;
         }
 
         .lab-controls {
-            margin-top: 60px; display: flex; gap: 15px;
-            background: #222; padding: 20px 40px; border-radius: 15px;
+            margin-top: 60px;
+            display: flex;
+            gap: 15px;
+            background: #222;
+            padding: 20px 40px;
+            border-radius: 15px;
         }
+
         .mat-btn {
-            background: #333; border: 1px solid #555; color: #aaa;
-            padding: 15px 30px; border-radius: 10px; cursor: pointer; font-size: 1.1rem;
+            background: #333;
+            border: 1px solid #555;
+            color: #aaa;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
         }
-        .mat-btn.active { color: #fff; border-color: #fff; font-weight: bold; background: #444; }
+
+        .mat-btn.active {
+            color: #fff;
+            border-color: #fff;
+            font-weight: bold;
+            background: #444;
+        }
     </style>
 </head>
+
 <body>
 
     <div id="portrait-warning">
@@ -217,7 +402,7 @@
     </div>
 
     <div id="app-scaler">
-        
+
         <div class="nav-bar">
             <button class="nav-btn active" onclick="switchMode('theory')">1. 에너지 띠 이론 (Theory)</button>
             <button class="nav-btn" onclick="switchMode('pointer')">2. 레이저 실험 (Experiment)</button>
@@ -232,7 +417,7 @@
                         <input type="range" class="v-slider" id="energySlider" min="0" max="100" value="20">
                     </div>
                     <div style="font-weight:bold; color:#aaa; font-size:1.1rem;">Low Energy<br>(Red)</div>
-                    
+
                     <button class="fire-btn" onclick="theoryAction()">⚡ 광자 발사</button>
                 </div>
 
@@ -240,7 +425,9 @@
                     <div class="status-badge" id="theoryStatus">대기 상태 (광자를 쏘세요)</div>
                     <canvas id="theoryCanvas" width="800" height="600"></canvas>
                     <div class="hud-text" id="theoryInfo">
-                        파장: 700nm <span style="display:inline-block; width:15px; height:15px; background:red; border-radius:50%; vertical-align:middle;" id="colorDot"></span>
+                        파장: 700nm <span
+                            style="display:inline-block; width:15px; height:15px; background:red; border-radius:50%; vertical-align:middle;"
+                            id="colorDot"></span>
                     </div>
                 </div>
             </div>
@@ -267,238 +454,243 @@
                 </div>
 
                 <div class="lab-controls">
-                    <div style="color:#fff; display:flex; align-items:center; margin-right:10px; font-size:1.2rem;">매질 선택:</div>
-                    <button class="mat-btn active" onclick="setMaterial('ruby', this)" style="color:#ff5555;">루비 (Red)</button>
-                    <button class="mat-btn" onclick="setMaterial('emerald', this)" style="color:#00ff41;">에메랄드 (Green)</button>
-                    <button class="mat-btn" onclick="setMaterial('sapphire', this)" style="color:#0088ff;">사파이어 (Blue)</button>
+                    <div style="color:#fff; display:flex; align-items:center; margin-right:10px; font-size:1.2rem;">매질
+                        선택:</div>
+                    <button class="mat-btn active" onclick="setMaterial('ruby', this)" style="color:#ff5555;">루비
+                        (Red)</button>
+                    <button class="mat-btn" onclick="setMaterial('emerald', this)" style="color:#00ff41;">에메랄드
+                        (Green)</button>
+                    <button class="mat-btn" onclick="setMaterial('sapphire', this)" style="color:#0088ff;">사파이어
+                        (Blue)</button>
                 </div>
             </div>
         </div>
     </div>
 
-<script>
-    // --- 화면 스케일링 ---
-    const scaler = document.getElementById('app-scaler');
-    const baseWidth = 1024;
-    const baseHeight = 768;
-    function resizeApp() {
-        const winW = window.innerWidth;
-        const winH = window.innerHeight;
-        const scale = Math.min(winW / baseWidth, winH / baseHeight);
-        scaler.style.transform = `scale(${scale})`;
-    }
-    window.addEventListener('resize', resizeApp);
-    window.addEventListener('load', resizeApp);
+    <script>
+        // --- 화면 스케일링 ---
+        const scaler = document.getElementById('app-scaler');
+        const baseWidth = 1024;
+        const baseHeight = 768;
+        function resizeApp() {
+            const winW = window.innerWidth;
+            const winH = window.innerHeight;
+            const scale = Math.min(winW / baseWidth, winH / baseHeight);
+            scaler.style.transform = `scale(${scale})`;
+        }
+        window.addEventListener('resize', resizeApp);
+        window.addEventListener('load', resizeApp);
 
-    // --- 공통 함수 ---
-    function getProps(energy) {
-        const hue = (energy / 100) * 250; 
-        const wavelength = Math.round(700 - (energy/100)*300);
-        return { color: `hsl(${hue}, 100%, 50%)`, hue: hue, nm: wavelength };
-    }
+        // --- 공통 함수 ---
+        function getProps(energy) {
+            const hue = (energy / 100) * 250;
+            const wavelength = Math.round(700 - (energy / 100) * 300);
+            return { color: `hsl(${hue}, 100%, 50%)`, hue: hue, nm: wavelength };
+        }
 
-    let currentMode = 'theory';
-    function switchMode(mode) {
-        currentMode = mode;
-        document.querySelectorAll('.screen-container').forEach(el => el.classList.remove('active'));
-        document.getElementById(mode+'-screen').classList.add('active');
-        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-        event.target.classList.add('active');
-        if(mode === 'theory') startTheoryLoop();
-        if(mode === 'pointer') startPointerLoop();
-    }
+        let currentMode = 'theory';
+        function switchMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.screen-container').forEach(el => el.classList.remove('active'));
+            document.getElementById(mode + '-screen').classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            if (mode === 'theory') startTheoryLoop();
+            if (mode === 'pointer') startPointerLoop();
+        }
 
-    // --- 이론 모드 ---
-    const tCanvas = document.getElementById('theoryCanvas');
-    const tCtx = tCanvas.getContext('2d');
-    const eSlider = document.getElementById('energySlider');
-    const tStatus = document.getElementById('theoryStatus');
-    const tInfo = document.getElementById('theoryInfo');
-    
-    let atom = { state: 'ground', timer: 0, r1: 80, r2: 130 };
-    let tPhotons = [];
+        // --- 이론 모드 ---
+        const tCanvas = document.getElementById('theoryCanvas');
+        const tCtx = tCanvas.getContext('2d');
+        const eSlider = document.getElementById('energySlider');
+        const tStatus = document.getElementById('theoryStatus');
+        const tInfo = document.getElementById('theoryInfo');
 
-    eSlider.addEventListener('input', () => {
-        const val = parseInt(eSlider.value);
-        atom.r2 = 80 + 50 + (val * 0.8); 
-        const props = getProps(val);
-        tInfo.innerHTML = `파장: ${props.nm}nm <span style="display:inline-block; width:15px; height:15px; background:${props.color}; border-radius:50%; vertical-align:middle;"></span>`;
-    });
+        let atom = { state: 'ground', timer: 0, r1: 80, r2: 130 };
+        let tPhotons = [];
 
-    function theoryAction() {
-        const val = parseInt(eSlider.value);
-        const props = getProps(val);
-        const cy = 300;
-        const targetOrbit = (atom.state === 'excited') ? atom.r2 : atom.r1;
-        
-        tPhotons.push({
-            x: 0, y: cy + targetOrbit, vx: 6, color: props.color,
-            type: 'incident', energy: val
+        eSlider.addEventListener('input', () => {
+            const val = parseInt(eSlider.value);
+            atom.r2 = 80 + 50 + (val * 0.8);
+            const props = getProps(val);
+            tInfo.innerHTML = `파장: ${props.nm}nm <span style="display:inline-block; width:15px; height:15px; background:${props.color}; border-radius:50%; vertical-align:middle;"></span>`;
         });
 
-        if(atom.state === 'ground') {
-            tStatus.innerText = "광자 입사 중... (흡수 예정)"; tStatus.style.color = "#fff";
-        } else {
-            tStatus.innerText = "광자 입사 중... (유도 방출 예정)"; tStatus.style.color = "#00ff41";
-        }
-    }
+        function theoryAction() {
+            const val = parseInt(eSlider.value);
+            const props = getProps(val);
+            const cy = 300;
+            const targetOrbit = (atom.state === 'excited') ? atom.r2 : atom.r1;
 
-    function startTheoryLoop() {
-        atom.state = 'ground'; tPhotons = []; loopTheory();
-    }
+            tPhotons.push({
+                x: 0, y: cy + targetOrbit, vx: 6, color: props.color,
+                type: 'incident', energy: val
+            });
 
-    function loopTheory() {
-        if(currentMode !== 'theory') return;
-        tCtx.fillStyle = '#000'; tCtx.fillRect(0,0,800,600);
-        const cx = 400, cy = 300;
-
-        // 궤도
-        tCtx.beginPath(); tCtx.arc(cx, cy, atom.r1, 0, Math.PI*2);
-        tCtx.strokeStyle = '#444'; tCtx.lineWidth = 2; tCtx.stroke(); 
-        tCtx.fillStyle = '#666'; tCtx.fillText("E1", cx-30, cy+atom.r1+20);
-
-        tCtx.beginPath(); tCtx.arc(cx, cy, atom.r2, 0, Math.PI*2);
-        tCtx.strokeStyle = '#aaa'; tCtx.setLineDash([5,5]); tCtx.stroke(); tCtx.setLineDash([]); 
-        tCtx.fillStyle = '#aaa'; tCtx.fillText("E2", cx-30, cy+atom.r2+20);
-
-        // 핵 & 전자
-        tCtx.beginPath(); tCtx.arc(cx, cy, 20, 0, Math.PI*2); tCtx.fillStyle = '#ff3333'; tCtx.fill();
-        const currentR = atom.state === 'excited' ? atom.r2 : atom.r1;
-        tCtx.beginPath(); tCtx.arc(cx, cy + currentR, 12, 0, Math.PI*2); tCtx.fillStyle = '#00f3ff'; tCtx.fill();
-
-        // 자발 방출
-        if(atom.state === 'excited') {
-            atom.timer--;
-            tCtx.fillStyle = '#fff'; tCtx.fillRect(cx-30, cy-10, 60, 4);
-            tCtx.fillStyle = 'orange'; tCtx.fillRect(cx-30, cy-10, 60 * (atom.timer/300), 4);
-            if(atom.timer <= 0) {
-                atom.state = 'ground';
-                tStatus.innerText = "[자연 방출] 노이즈 발생"; tStatus.style.color = "orange";
-                const ang = Math.random() * Math.PI*2;
-                tPhotons.push({ x: cx, y: cy+atom.r1, vx: Math.cos(ang)*4, vy: Math.sin(ang)*4, color: 'orange', type: 'noise' });
-            }
-        }
-
-        // 광자
-        for(let i=tPhotons.length-1; i>=0; i--) {
-            let p = tPhotons[i];
-            if(p.type==='noise'){
-                p.x+=p.vx; p.y+=p.vy; 
-                tCtx.beginPath(); tCtx.arc(p.x, p.y, 4, 0, Math.PI*2); tCtx.fillStyle=p.color; tCtx.fill();
+            if (atom.state === 'ground') {
+                tStatus.innerText = "광자 입사 중... (흡수 예정)"; tStatus.style.color = "#fff";
             } else {
-                p.x += p.vx;
-                tCtx.beginPath(); tCtx.strokeStyle = p.color; tCtx.lineWidth = 3;
-                for(let j=0; j<40; j++) {
-                    let wy = p.y + Math.sin((p.x-j)*0.3)*10;
-                    if(j===0) tCtx.moveTo(p.x-j, wy); else tCtx.lineTo(p.x-j, wy);
+                tStatus.innerText = "광자 입사 중... (유도 방출 예정)"; tStatus.style.color = "#00ff41";
+            }
+        }
+
+        function startTheoryLoop() {
+            atom.state = 'ground'; tPhotons = []; loopTheory();
+        }
+
+        function loopTheory() {
+            if (currentMode !== 'theory') return;
+            tCtx.fillStyle = '#000'; tCtx.fillRect(0, 0, 800, 600);
+            const cx = 400, cy = 300;
+
+            // 궤도
+            tCtx.beginPath(); tCtx.arc(cx, cy, atom.r1, 0, Math.PI * 2);
+            tCtx.strokeStyle = '#444'; tCtx.lineWidth = 2; tCtx.stroke();
+            tCtx.fillStyle = '#666'; tCtx.fillText("E1", cx - 30, cy + atom.r1 + 20);
+
+            tCtx.beginPath(); tCtx.arc(cx, cy, atom.r2, 0, Math.PI * 2);
+            tCtx.strokeStyle = '#aaa'; tCtx.setLineDash([5, 5]); tCtx.stroke(); tCtx.setLineDash([]);
+            tCtx.fillStyle = '#aaa'; tCtx.fillText("E2", cx - 30, cy + atom.r2 + 20);
+
+            // 핵 & 전자
+            tCtx.beginPath(); tCtx.arc(cx, cy, 20, 0, Math.PI * 2); tCtx.fillStyle = '#ff3333'; tCtx.fill();
+            const currentR = atom.state === 'excited' ? atom.r2 : atom.r1;
+            tCtx.beginPath(); tCtx.arc(cx, cy + currentR, 12, 0, Math.PI * 2); tCtx.fillStyle = '#00f3ff'; tCtx.fill();
+
+            // 자발 방출
+            if (atom.state === 'excited') {
+                atom.timer--;
+                tCtx.fillStyle = '#fff'; tCtx.fillRect(cx - 30, cy - 10, 60, 4);
+                tCtx.fillStyle = 'orange'; tCtx.fillRect(cx - 30, cy - 10, 60 * (atom.timer / 300), 4);
+                if (atom.timer <= 0) {
+                    atom.state = 'ground';
+                    tStatus.innerText = "[자연 방출] 노이즈 발생"; tStatus.style.color = "orange";
+                    const ang = Math.random() * Math.PI * 2;
+                    tPhotons.push({ x: cx, y: cy + atom.r1, vx: Math.cos(ang) * 4, vy: Math.sin(ang) * 4, color: 'orange', type: 'noise' });
                 }
-                tCtx.stroke();
-                
-                if(p.type==='incident' && Math.abs(p.x-cx)<10) {
-                    if(atom.state==='ground') {
-                        if(Math.abs(p.y-(cy+atom.r1))<30) {
-                            atom.state='excited'; atom.timer=300; 
-                            tStatus.innerText="[흡수] 들뜬 상태로 전이"; tStatus.style.color=p.color;
-                            tPhotons.splice(i,1); continue;
+            }
+
+            // 광자
+            for (let i = tPhotons.length - 1; i >= 0; i--) {
+                let p = tPhotons[i];
+                if (p.type === 'noise') {
+                    p.x += p.vx; p.y += p.vy;
+                    tCtx.beginPath(); tCtx.arc(p.x, p.y, 4, 0, Math.PI * 2); tCtx.fillStyle = p.color; tCtx.fill();
+                } else {
+                    p.x += p.vx;
+                    tCtx.beginPath(); tCtx.strokeStyle = p.color; tCtx.lineWidth = 3;
+                    for (let j = 0; j < 40; j++) {
+                        let wy = p.y + Math.sin((p.x - j) * 0.3) * 10;
+                        if (j === 0) tCtx.moveTo(p.x - j, wy); else tCtx.lineTo(p.x - j, wy);
+                    }
+                    tCtx.stroke();
+
+                    if (p.type === 'incident' && Math.abs(p.x - cx) < 10) {
+                        if (atom.state === 'ground') {
+                            if (Math.abs(p.y - (cy + atom.r1)) < 30) {
+                                atom.state = 'excited'; atom.timer = 300;
+                                tStatus.innerText = "[흡수] 들뜬 상태로 전이"; tStatus.style.color = p.color;
+                                tPhotons.splice(i, 1); continue;
+                            }
+                        } else if (atom.state === 'excited') {
+                            if (Math.abs(p.y - (cy + atom.r2)) < 30) {
+                                atom.state = 'ground';
+                                tStatus.innerText = "[유도 방출] 증폭 성공!"; tStatus.style.color = "#00ff41";
+                                p.type = 'outgoing';
+                                tPhotons.push({ x: cx, y: p.y - 30, vx: p.vx, color: p.color, type: 'outgoing', energy: p.energy });
+                                p.y += 15;
+                            }
                         }
-                    } else if(atom.state==='excited') {
-                         if(Math.abs(p.y-(cy+atom.r2))<30) {
-                            atom.state='ground';
-                            tStatus.innerText="[유도 방출] 증폭 성공!"; tStatus.style.color="#00ff41";
-                            p.type='outgoing';
-                            tPhotons.push({x:cx, y:p.y-30, vx:p.vx, color:p.color, type:'outgoing', energy:p.energy});
-                            p.y+=15;
-                         }
                     }
                 }
+                if (p.x > 900 || p.x < -100 || p.y < -100 || p.y > 700) tPhotons.splice(i, 1);
             }
-            if(p.x>900 || p.x<-100 || p.y<-100 || p.y>700) tPhotons.splice(i,1);
-        }
-        requestAnimationFrame(loopTheory);
-    }
-
-    // --- 실험 모드 ---
-    const pCanvas = document.getElementById('ptrCanvas');
-    const pCtx = pCanvas.getContext('2d');
-    const ptrVolt = document.getElementById('ptrVolt');
-    const voltText = document.getElementById('voltText');
-    const ptrBtn = document.getElementById('ptrBtn');
-    const megaBeam = document.getElementById('megaBeam');
-
-    let pState = { material: 'ruby', energy: 0, color: 'hsl(0, 100%, 50%)', voltage: 0, isPressed: false, atoms: [], photons: [] };
-
-    function setMaterial(type, btn) {
-        document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        pState.material = type;
-        let e = (type === 'ruby') ? 0 : (type === 'emerald') ? 45 : 85;
-        pState.color = getProps(e).color;
-        pState.atoms.forEach(a => a.excited = false);
-    }
-
-    function startPointerLoop() {
-        const box = pCanvas.parentElement;
-        pCanvas.width = box.clientWidth;
-        pCanvas.height = box.clientHeight;
-        pState.atoms = [];
-        for(let i=0; i<500; i++) pState.atoms.push({ x: Math.random()*pCanvas.width, y: Math.random()*pCanvas.height, excited: false, timer: 0 });
-        loopPointer();
-    }
-
-    function loopPointer() {
-        if(currentMode !== 'pointer') return;
-        pCtx.fillStyle = 'rgba(0,0,0,0.8)'; pCtx.fillRect(0,0,pCanvas.width, pCanvas.height);
-        const pumpRate = pState.isPressed ? (pState.voltage/100) : 0;
-        
-        pState.atoms.forEach(a => {
-            if(!a.excited && Math.random() < pumpRate * 0.15) { a.excited = true; a.timer = 30+Math.random()*50; }
-            if(a.excited) {
-                a.timer -= pState.isPressed ? 1 : 15;
-                if(a.timer <= 0) a.excited = false;
-                else { pCtx.beginPath(); pCtx.fillStyle = pState.color; pCtx.arc(a.x, a.y, 2, 0, Math.PI*2); pCtx.fill(); }
-            }
-        });
-
-        if(pState.isPressed && pState.voltage > 10 && Math.random() < 0.6) {
-            pState.photons.push({ x: 10, y: pCanvas.height/2+(Math.random()-0.5)*20, vx: 15, vy: (Math.random()-0.5), life: 60, isLaser: true });
+            requestAnimationFrame(loopTheory);
         }
 
-        for(let i=pState.photons.length-1; i>=0; i--) {
-            let p = pState.photons[i];
-            p.x += p.vx; p.y += p.vy;
-            p.life -= !pState.isPressed ? 20 : 1; 
-            if(p.life <= 0) { pState.photons.splice(i,1); continue; }
-            if(p.x<0) { p.x=0; p.vx=Math.abs(p.vx); }
-            if(p.x>pCanvas.width) {
-                if(p.isLaser && Math.random()<0.2) { pState.photons.splice(i,1); continue; }
-                else { p.x=pCanvas.width; p.vx=-Math.abs(p.vx); }
+        // --- 실험 모드 ---
+        const pCanvas = document.getElementById('ptrCanvas');
+        const pCtx = pCanvas.getContext('2d');
+        const ptrVolt = document.getElementById('ptrVolt');
+        const voltText = document.getElementById('voltText');
+        const ptrBtn = document.getElementById('ptrBtn');
+        const megaBeam = document.getElementById('megaBeam');
+
+        let pState = { material: 'ruby', energy: 0, color: 'hsl(0, 100%, 50%)', voltage: 0, isPressed: false, atoms: [], photons: [] };
+
+        function setMaterial(type, btn) {
+            document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            pState.material = type;
+            let e = (type === 'ruby') ? 0 : (type === 'emerald') ? 45 : 85;
+            pState.color = getProps(e).color;
+            pState.atoms.forEach(a => a.excited = false);
+        }
+
+        function startPointerLoop() {
+            const box = pCanvas.parentElement;
+            pCanvas.width = box.clientWidth;
+            pCanvas.height = box.clientHeight;
+            pState.atoms = [];
+            for (let i = 0; i < 500; i++) pState.atoms.push({ x: Math.random() * pCanvas.width, y: Math.random() * pCanvas.height, excited: false, timer: 0 });
+            loopPointer();
+        }
+
+        function loopPointer() {
+            if (currentMode !== 'pointer') return;
+            pCtx.fillStyle = 'rgba(0,0,0,0.8)'; pCtx.fillRect(0, 0, pCanvas.width, pCanvas.height);
+            const pumpRate = pState.isPressed ? (pState.voltage / 100) : 0;
+
+            pState.atoms.forEach(a => {
+                if (!a.excited && Math.random() < pumpRate * 0.15) { a.excited = true; a.timer = 30 + Math.random() * 50; }
+                if (a.excited) {
+                    a.timer -= pState.isPressed ? 1 : 15;
+                    if (a.timer <= 0) a.excited = false;
+                    else { pCtx.beginPath(); pCtx.fillStyle = pState.color; pCtx.arc(a.x, a.y, 2, 0, Math.PI * 2); pCtx.fill(); }
+                }
+            });
+
+            if (pState.isPressed && pState.voltage > 10 && Math.random() < 0.6) {
+                pState.photons.push({ x: 10, y: pCanvas.height / 2 + (Math.random() - 0.5) * 20, vx: 15, vy: (Math.random() - 0.5), life: 60, isLaser: true });
             }
-            if(pState.isPressed) { 
-                for(let a of pState.atoms) {
-                    if(a.excited && Math.abs(a.x-p.x)<15 && Math.abs(a.y-p.y)<8) {
-                        a.excited=false; pState.photons.push({ x:a.x, y:a.y, vx:p.vx, vy:p.vy, life:60, isLaser:true }); break; 
+
+            for (let i = pState.photons.length - 1; i >= 0; i--) {
+                let p = pState.photons[i];
+                p.x += p.vx; p.y += p.vy;
+                p.life -= !pState.isPressed ? 20 : 1;
+                if (p.life <= 0) { pState.photons.splice(i, 1); continue; }
+                if (p.x < 0) { p.x = 0; p.vx = Math.abs(p.vx); }
+                if (p.x > pCanvas.width) {
+                    if (p.isLaser && Math.random() < 0.2) { pState.photons.splice(i, 1); continue; }
+                    else { p.x = pCanvas.width; p.vx = -Math.abs(p.vx); }
+                }
+                if (pState.isPressed) {
+                    for (let a of pState.atoms) {
+                        if (a.excited && Math.abs(a.x - p.x) < 15 && Math.abs(a.y - p.y) < 8) {
+                            a.excited = false; pState.photons.push({ x: a.x, y: a.y, vx: p.vx, vy: p.vy, life: 60, isLaser: true }); break;
+                        }
                     }
                 }
+                pCtx.beginPath(); pCtx.strokeStyle = pState.color; pCtx.lineWidth = 2; pCtx.moveTo(p.x, p.y); pCtx.lineTo(p.x - p.vx * 1.5, p.y - p.vy * 1.5); pCtx.stroke();
             }
-            pCtx.beginPath(); pCtx.strokeStyle=pState.color; pCtx.lineWidth=2; pCtx.moveTo(p.x, p.y); pCtx.lineTo(p.x-p.vx*1.5, p.y-p.vy*1.5); pCtx.stroke();
+
+            if (pState.isPressed && pState.photons.length > 30) {
+                megaBeam.style.width = "2000px";
+                document.documentElement.style.setProperty('--beam-glow', pState.color);
+            } else {
+                megaBeam.style.width = "0";
+            }
+            requestAnimationFrame(loopPointer);
         }
 
-        if(pState.isPressed && pState.photons.length > 30) {
-            megaBeam.style.width = "2000px";
-            document.documentElement.style.setProperty('--beam-glow', pState.color);
-        } else {
-            megaBeam.style.width = "0";
-        }
-        requestAnimationFrame(loopPointer);
-    }
+        ptrVolt.addEventListener('input', (e) => { pState.voltage = e.target.value; voltText.innerText = e.target.value + "%"; });
+        const btnDown = () => pState.isPressed = true;
+        const btnUp = () => pState.isPressed = false;
+        ptrBtn.addEventListener('mousedown', btnDown); ptrBtn.addEventListener('mouseup', btnUp); ptrBtn.addEventListener('mouseleave', btnUp);
+        ptrBtn.addEventListener('touchstart', (e) => { e.preventDefault(); btnDown(); }); ptrBtn.addEventListener('touchend', (e) => { e.preventDefault(); btnUp(); });
 
-    ptrVolt.addEventListener('input', (e) => { pState.voltage = e.target.value; voltText.innerText = e.target.value + "%"; });
-    const btnDown = () => pState.isPressed = true;
-    const btnUp = () => pState.isPressed = false;
-    ptrBtn.addEventListener('mousedown', btnDown); ptrBtn.addEventListener('mouseup', btnUp); ptrBtn.addEventListener('mouseleave', btnUp);
-    ptrBtn.addEventListener('touchstart', (e)=>{e.preventDefault(); btnDown();}); ptrBtn.addEventListener('touchend', (e)=>{e.preventDefault(); btnUp();});
-    
-    startTheoryLoop();
-</script>
+        startTheoryLoop();
+    </script>
 </body>
+
 </html>
