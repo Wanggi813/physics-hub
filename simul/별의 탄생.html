@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>별의 탄생: 통합 시뮬레이션 (수정됨)</title>
+    <style>
+        :root {
+            --bg-color: #050508;
+            --hud-bg: rgba(20, 20, 30, 0.6);
+            --text-color: #eee;
+            --accent-color: #00d2ff;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Pretendard', sans-serif;
+            touch-action: none;
+            user-select: none;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* UI 레이어 */
+        #ui-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .top-hud {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            /* 패딩 약간 줄임 */
+            pointer-events: auto;
+            gap: 10px;
+            /* 박스 간 간격 */
+            flex-wrap: wrap;
+            /* 화면 좁으면 줄바꿈 */
+        }
+
+        /* 모바일에서 박스가 너무 크지 않게 조정 */
+        .hud-box {
+            flex: 1;
+            /* 공간 균등 분배 */
+            min-width: 100px;
+            /* 최소 너비 줄임 (140px -> 100px) */
+            text-align: center;
+            /* 텍스트 가운데 정렬 */
+        }
+
+        .hud-box {
+            background: var(--hud-bg);
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            min-width: 140px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .hud-label {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .hud-value {
+            font-size: 20px;
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        .bottom-hud {
+            padding: 30px 20px;
+            pointer-events: auto;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            max-width: 500px;
+            justify-content: center;
+        }
+
+        button {
+            border: none;
+            padding: 16px 24px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            transition: transform 0.1s, filter 0.1s;
+        }
+
+        button:active,
+        button.pressed {
+            transform: scale(0.96);
+            filter: brightness(0.8);
+        }
+
+        #btn-inject {
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+            flex: 2;
+        }
+
+        #btn-end {
+            background: linear-gradient(135deg, #ff9f43, #ee5253);
+            flex: 1;
+        }
+
+        #btn-reset {
+            background: #444;
+            flex: none;
+            display: none;
+        }
+
+        /* 결과 메시지 오버레이 */
+        #msg-overlay {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1s;
+            text-shadow: 0 0 20px black;
+        }
+
+        #msg-title {
+            font-size: 3rem;
+            font-weight: 900;
+            margin: 0;
+        }
+
+        #msg-desc {
+            font-size: 1.2rem;
+            color: #ddd;
+            margin-top: 10px;
+        }
+
+        /* 게이지 배경 (어두운 회색) */
+        .gauge-track {
+            width: 100%;
+            height: 12px;
+            background: #333;
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 내부 채움 (그라데이션) */
+        /* 왼쪽(빨강: 중력)에서 시작해서 오른쪽(파랑: 압력)으로 이어지는 배경 */
+        .gauge-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 50%;
+            /* 초기값 50% (평형) */
+            background: linear-gradient(to right, #ff4757, #ff9f43 90%);
+            transition: width 0.2s ease-out;
+            /* 부드러운 움직임 */
+            border-right: 2px solid #fff;
+            /* 끝부분 하얀 선 */
+        }
+
+        /* 오른쪽 파란색 배경을 만들기 위해 track 자체 배경을 파란색으로 하고 fill을 덮어씌우는 방식도 있지만,
+   여기서는 fill이 중력의 영역을 나타내도록 설정함. 
+   나머지 빈 공간은 CSS로 처리하거나 간단하게 배경색으로 처리 */
+
+        .gauge-track {
+            background: #00d2ff;
+            /* 기본 배경을 파란색(압력)으로 설정 */
+        }
+
+        /* 정중앙 기준선 */
+        .gauge-center {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 2px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: translateX(-50%);
+            z-index: 5;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="ui-layer">
+        <div class="top-hud">
+            <div class="hud-box">
+                <div class="hud-label">Mass (질량)</div>
+                <div class="hud-value" id="val-mass">0.05 M☉</div>
+            </div>
+
+            <div class="hud-box" style="text-align: right;">
+                <div class="hud-label">Temp (표면온도)</div>
+                <div class="hud-value" id="val-temp" style="color:var(--accent-color)">0 K</div>
+            </div>
+
+            <div class="hud-box">
+                <div class="hud-label">Core Press (압력)</div>
+                <div class="hud-value" id="val-press" style="color:#ffcc00">0 GPa</div>
+            </div>
+
+            <div class="hud-box" style="flex-grow: 2; display: flex; flex-direction: column; justify-content: center;">
+                <div
+                    style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; color: #aaa;">
+                    <span style="color: #ff4757;">▼ 중력 (수축)</span>
+                    <span style="color: #00d2ff;">압력 (팽창) ▲</span>
+                </div>
+
+                <div class="gauge-track">
+                    <div id="gauge-bar" class="gauge-fill"></div>
+                    <div class="gauge-center"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <div id="msg-overlay">
+            <h1 id="msg-title">RESULT</h1>
+            <p id="msg-desc">Description</p>
+        </div>
+
+        <div class="bottom-hud">
+            <div class="btn-group">
+                <button id="btn-inject" oncontextmenu="return false;">⚡ 가스 주입 (꾹 누르기)</button>
+                <button id="btn-end">⏹ 결과 보기</button>
+                <button id="btn-reset">↺ 처음으로</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // ==========================================
+        // 1. 초기 설정 (Setup)
+        // ==========================================
+
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050508, 0.002);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 50;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.enablePan = false;
+
+        // 후처리 (Bloom 효과)
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0;
+        bloomPass.strength = 1.5;
+        bloomPass.radius = 0.5;
+
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // ==========================================
+        // 2. 쉐이더 및 텍스처 (Assets)
+        // ==========================================
+
+        function createCircleTexture() {
+            const c = document.createElement('canvas'); c.width = 64; c.height = 64;
+            const ctx = c.getContext('2d');
+            const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
+            g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = g; ctx.fillRect(0, 0, 64, 64);
+            return new THREE.CanvasTexture(c);
+        }
+        function createBeamTexture() {
+            const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+            const ctx = c.getContext('2d');
+            const g = ctx.createRadialGradient(64, 128, 0, 64, 128, 100);
+            g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.5, 'rgba(255,255,255,0.5)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
+            return new THREE.CanvasTexture(c);
+        }
+        const circleTex = createCircleTexture();
+        const beamTex = createBeamTexture();
+
+        // [수정됨] 별(Star) 쉐이더: 노이즈 강도를 0.3 -> 0.02로 대폭 낮춤
+        const starVertShader = `
+            varying vec2 vUv; varying vec3 vNormal; uniform float time;
+            // Simplex Noise Function (축약됨)
+            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+            vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+            float snoise(vec3 v) {
+                const vec2 C = vec2(1.0/6.0, 1.0/3.0); const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+                vec3 i = floor(v + dot(v, C.yyy)); vec3 x0 = v - i + dot(i, C.xxx);
+                vec3 g = step(x0.yzx, x0.xyz); vec3 l = 1.0 - g;
+                vec3 i1 = min(g.xyz, l.zxy); vec3 i2 = max(g.xyz, l.zxy);
+                vec3 x1 = x0 - i1 + C.xxx; vec3 x2 = x0 - i2 + C.yyy; vec3 x3 = x0 - D.yyy;
+                i = mod289(i);
+                vec4 p = permute(permute(permute(i.z + vec4(0.0,i1.z,i2.z,1.0)) + i.y + vec4(0.0,i1.y,i2.y,1.0)) + i.x + vec4(0.0,i1.x,i2.x,1.0));
+                float n_ = 0.142857142857; vec3 ns = n_ * D.wyz - D.xzx;
+                vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+                vec4 x_ = floor(j * ns.z); vec4 y_ = floor(j - 7.0 * x_);
+                vec4 x = x_ * ns.x + ns.yyyy; vec4 y = y_ * ns.x + ns.yyyy;
+                vec4 h = 1.0 - abs(x) - abs(y);
+                vec4 b0 = vec4(x.xy, y.xy); vec4 b1 = vec4(x.zw, y.zw);
+                vec4 s0 = floor(b0)*2.0 + 1.0; vec4 s1 = floor(b1)*2.0 + 1.0;
+                vec4 sh = -step(h, vec4(0.0));
+                vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy; vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+                vec3 p0 = vec3(a0.xy, h.x); vec3 p1 = vec3(a0.zw, h.y); vec3 p2 = vec3(a1.xy, h.z); vec3 p3 = vec3(a1.zw, h.w);
+                vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+                p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+                vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+                m = m * m;
+                return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+            }
+            void main() {
+                vUv = uv; vNormal = normal;
+                float noise = snoise(position * 0.8 + time * 0.3);
+                // [수정됨] noise * 0.3 에서 noise * 0.02로 변경하여 거의 정지한 듯한 구체 표현
+                vec3 newPos = position + normal * noise * 0.02; 
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
+            }
+        `;
+        const starFragShader = `
+            varying vec3 vNormal; uniform float time; uniform vec3 baseColor; uniform vec3 coreColor;
+            void main() {
+                float intensity = pow(0.6 - dot(vNormal, vec3(0, 0, 1.0)), 3.0);
+                vec3 glow = baseColor * intensity * 1.5;
+                gl_FragColor = vec4(glow + coreColor, 1.0);
+            }
+        `;
+
+        const bhFragShader = `
+            precision highp float;
+            uniform float iTime;
+            uniform vec2 iResolution;
+            uniform float uBhMass;
+
+            #define MAX_STEPS 100
+            #define MAX_DIST 100.0
+            
+            float hash21(vec2 p) {
+                p = fract(p * vec2(123.34, 456.21));
+                p += dot(p, p + 45.32);
+                return fract(p.x * p.y);
+            }
+
+            vec3 getBackground(vec3 dir) {
+                vec3 bgCol = vec3(0.001, 0.001, 0.005);
+                float stars = pow(hash21(dir.xy * 200.0 + dir.z * 100.0), 300.0) * 1.5;
+                return bgCol + vec3(stars);
+            }
+
+            void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+                vec2 uv = (fragCoord - 0.5 * iResolution.xy) / iResolution.y;
+                vec3 ro = vec3(0.0, 2.0, -12.0);
+                vec3 rd = normalize(vec3(uv, 1.5));
+                float t = iTime * 0.1;
+                mat2 rot = mat2(cos(t), -sin(t), sin(t), cos(t));
+                ro.xz *= rot; rd.xz *= rot;
+
+                vec3 col = vec3(0.0);
+                vec3 p = ro;
+                vec3 dir = rd;
+                
+                float totDist = 0.0;
+                bool hitBH = false;
+                vec3 diskGlow = vec3(0.0);
+                vec3 bhPos = vec3(0.0);
+                float bhMass = uBhMass * 0.5; 
+
+                for(int i = 0; i < MAX_STEPS; i++) {
+                    float dBH = length(p - bhPos);
+                    if(dBH < 1.0) { hitBH = true; break; }
+
+                    if (bhMass > 0.0) {
+                        float distToPlane = abs(p.y);
+                        float r = length(p.xz);
+                        if (r > 2.5 && r < 8.0) {
+                            float density = exp(-distToPlane * 4.0);
+                            float noise = hash21(vec2(r*10.0 - iTime*2.0, atan(p.z, p.x)));
+                            vec3 diskCol = mix(vec3(1.0, 0.3, 0.1), vec3(0.1, 0.5, 1.0), r/8.0);
+                            diskGlow += diskCol * density * 0.05 * (0.5 + 0.5*noise) / (r*r*0.1);
+                        }
+                    }
+
+                    if (bhMass > 0.0) {
+                        vec3 gravDir = normalize(bhPos - p);
+                        float force = bhMass / (dBH * dBH);
+                        dir = normalize(dir + gravDir * force * 0.2);
+                    }
+
+                    float stepSize = max(0.1, dBH * 0.1);
+                    p += dir * stepSize;
+                    totDist += stepSize;
+                    if(totDist > MAX_DIST) break;
+                }
+
+                if(hitBH) col = vec3(0.0);
+                else col = getBackground(dir);
+
+                col += diskGlow; 
+                col = col / (col + vec3(1.0));
+                col = pow(col, vec3(0.4545)); 
+                fragColor = vec4(col, 1.0);
+            }
+            void main() { mainImage(gl_FragColor, gl_FragCoord.xy); }
+        `;
+
+
+        // ==========================================
+        // 3. 3D 객체 생성
+        // ==========================================
+
+        const objects = {
+            nebula: null,
+            star: null,
+            particles: null,
+            pulsar: null,
+            blackholePlane: null
+        };
+
+        // 3-1. 성간 가스
+        {
+            const count = 3000;
+            const pos = [], cols = [];
+            const geo = new THREE.BufferGeometry();
+            for (let i = 0; i < count; i++) {
+                const u = Math.random(), v = Math.random();
+                const theta = 2 * Math.PI * u;
+                const phi = Math.acos(2 * v - 1);
+                let r = 25 + 15 * Math.random();
+                r *= (1 + 0.5 * Math.sin(theta * 2) * Math.cos(phi * 3));
+
+                pos.push(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
+
+                if (Math.random() < 0.5) cols.push(0.1, 0.1, 0.6);
+                else cols.push(0.5, 0.0, 0.6);
+            }
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+            geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+            const mat = new THREE.PointsMaterial({
+                size: 2.0, map: circleTex, vertexColors: true,
+                blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.4
+            });
+            objects.nebula = new THREE.Points(geo, mat);
+            scene.add(objects.nebula);
+        }
+
+        // 3-2. 별
+        {
+            const geo = new THREE.SphereGeometry(1, 64, 64);
+            const mat = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 },
+                    baseColor: { value: new THREE.Color(0xff3300) },
+                    coreColor: { value: new THREE.Color(0xffaa00) }
+                },
+                vertexShader: starVertShader,
+                fragmentShader: starFragShader
+            });
+            objects.star = new THREE.Mesh(geo, mat);
+            objects.star.scale.set(0.1, 0.1, 0.1);
+            objects.star.visible = false;
+            scene.add(objects.star);
+        }
+
+        // 3-3. 폭발 파티클
+        {
+            const pCount = 1000;
+            const geo = new THREE.BufferGeometry();
+            const pos = new Float32Array(pCount * 3);
+            const vels = [];
+            for (let i = 0; i < pCount * 3; i++) pos[i] = 0;
+            for (let i = 0; i < pCount; i++) {
+                const spd = Math.random() * 0.8 + 0.2;
+                const theta = Math.random() * Math.PI * 2, phi = Math.acos(Math.random() * 2 - 1);
+                vels.push({
+                    x: spd * Math.sin(phi) * Math.cos(theta),
+                    y: spd * Math.sin(phi) * Math.sin(theta),
+                    z: spd * Math.cos(phi)
+                });
+            }
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            const mat = new THREE.PointsMaterial({
+                size: 0.8, color: 0xffddaa, map: circleTex,
+                blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0
+            });
+            objects.particles = new THREE.Points(geo, mat);
+            objects.particles.userData = { vels: vels };
+            scene.add(objects.particles);
+        }
+
+        // 3-4. 펄사 빔
+        {
+            const grp = new THREE.Group();
+            const beamGeo = new THREE.CylinderGeometry(1.5, 0.1, 15, 32, 1, true);
+            beamGeo.translate(0, 7.5, 0);
+            const beamMat = new THREE.MeshBasicMaterial({
+                map: beamTex, color: 0x88ccff, transparent: true, opacity: 0,
+                blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false
+            });
+            const b1 = new THREE.Mesh(beamGeo, beamMat);
+            const b2 = new THREE.Mesh(beamGeo, beamMat);
+            b2.rotation.x = Math.PI;
+            grp.add(b1); grp.add(b2);
+            objects.pulsar = grp;
+            scene.add(objects.pulsar);
+        }
+
+        // 3-5. 블랙홀
+        {
+            const geo = new THREE.PlaneGeometry(2, 2);
+            const mat = new THREE.ShaderMaterial({
+                fragmentShader: bhFragShader,
+                vertexShader: `void main() { gl_Position = vec4(position, 1.0); }`,
+                uniforms: {
+                    iTime: { value: 0 },
+                    iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+                    uBhMass: { value: 2.0 }
+                },
+                depthTest: false,
+                depthWrite: false
+            });
+            objects.blackholePlane = new THREE.Mesh(geo, mat);
+            objects.blackholePlane.renderOrder = 999;
+            objects.blackholePlane.visible = false;
+            scene.add(objects.blackholePlane);
+        }
+
+        // ==========================================
+        // 4. 게임 로직
+        // ==========================================
+
+        const C = { FUSION: 0.08, NEUTRON: 8.0, BLACKHOLE: 25.0 };
+
+        let state = {
+            mass: 0.05,
+            temp: 0,
+            isInjecting: false,
+            phase: 'PROTO',
+            remnant: null,
+            simTime: 0
+        };
+
+        const ui = {
+            mass: document.getElementById('val-mass'),
+            temp: document.getElementById('val-temp'),
+            press: document.getElementById('val-press'),
+            gauge: document.getElementById('gauge-bar'),    // [추가] 게이지 바 연결
+            overlay: document.getElementById('msg-overlay'),
+            title: document.getElementById('msg-title'),
+            desc: document.getElementById('msg-desc'),
+            btnInject: document.getElementById('btn-inject'),
+            btnEnd: document.getElementById('btn-end'),
+            btnReset: document.getElementById('btn-reset')
+        };
+
+        function getStarColor(t) {
+            if (t < 2000) return new THREE.Color(0.8, 0.2, 0.2);
+            if (t < 3500) return new THREE.Color(1.0, 0.4, 0.2);
+            if (t < 6000) return new THREE.Color(1.0, 0.9, 0.5);
+            if (t < 10000) return new THREE.Color(0.8, 0.9, 1.0);
+            return new THREE.Color(0.4, 0.6, 1.0);
+        }
+
+        // [이 함수 전체를 교체하세요]
+        function updateLogic() {
+            if (state.phase === 'ENDED') return;
+
+            // 1. 질량 증가
+            if (state.isInjecting) {
+                state.mass += 0.05;
+            }
+
+            // 2. 온도 및 상태 계산
+            let maxTemp = 3000 + (Math.pow(state.mass, 0.6) * 3000);
+            if (maxTemp > 50000) maxTemp = 50000;
+
+            if (state.mass < C.FUSION) {
+                // [성간 가스 단계]
+                state.temp = 100 + (state.mass * 20000);
+                objects.nebula.visible = true;
+                objects.star.visible = false;
+
+                const scale = Math.max(0.2, 1.0 - (state.mass / C.FUSION));
+                objects.nebula.scale.setScalar(scale);
+                objects.nebula.rotation.y += 0.002;
+            } else {
+                // [별 단계]
+                state.phase = 'MAIN';
+                objects.nebula.visible = false;
+                objects.star.visible = true;
+
+                if (state.isInjecting) {
+                    // 주입 중: 온도 상승
+                    state.temp += (maxTemp - state.temp) * 0.1; // 반응 속도 약간 올림
+                } else {
+                    // 대기 중: 식어감 (온도가 뚝뚝 떨어짐)
+                    // 질량이 클수록 더 빨리 식게 하면 난이도 조절 가능 (현재는 고정값)
+                    if (state.temp > 0) state.temp -= 30; // 식는 속도 15 -> 30으로 증가
+                }
+
+                // [핵심 1] 별 크기 계산 (더 극적으로 수축하도록 변경)
+                let thermalRatio = state.temp / maxTemp;
+                let baseScale = Math.pow(state.mass, 0.4) * 5.0;
+                if (baseScale > 15) baseScale = 15 + (state.mass - 25) * 0.1;
+
+                // 기존 0.8(80%) -> 0.4(40%)까지 쪼그라들게 변경
+                // 온도가 0이 되면 원래 크기의 40%만 남음
+                let currentScale = baseScale * (0.4 + 0.6 * thermalRatio);
+
+                objects.star.scale.lerp(new THREE.Vector3(currentScale, currentScale, currentScale), 0.1);
+
+                const col = getStarColor(state.temp);
+                objects.star.material.uniforms.baseColor.value.lerp(col, 0.1);
+                objects.star.material.uniforms.coreColor.value.setScalar(state.temp / 50000);
+
+                // [핵심 2] 자동 사망 트리거 (중력 붕괴)
+                // 온도가 최고 온도의 15% 미만으로 떨어지면 (너무 식으면)
+                // 사용자가 손을 놓아서 별이 죽은 것으로 간주
+                if (thermalRatio < 0.15 && state.mass > C.FUSION) {
+                    finishLife(); // 자동으로 결과 화면으로 넘어감
+                }
+            }
+
+            // 3. UI 업데이트
+            ui.mass.innerText = `${state.mass.toFixed(2)} M☉`;
+            ui.temp.innerText = `${Math.floor(state.temp)} K`;
+
+            // 4. 게이지 로직
+            let targetPercent = 50;
+            if (state.isInjecting) {
+                targetPercent = 70 + (Math.sin(state.simTime * 15) * 3);
+            } else {
+                if (state.phase === 'MAIN') {
+                    // 식으면 게이지가 왼쪽 끝(0%)으로 향함
+                    targetPercent = 10 + (40 * (state.temp / maxTemp));
+                }
+            }
+            ui.gauge.style.width = `${targetPercent}%`;
+        }
+
+        function finishLife() {
+            if (state.phase === 'ENDED') return;
+            state.phase = 'ENDED';
+            state.isInjecting = false;
+
+            const m = state.mass;
+            let title, desc, colorType;
+
+            if (m < C.FUSION) {
+                state.remnant = 'BROWN';
+                title = "실패한 별 (갈색왜성)";
+                desc = "질량이 부족하여 핵융합을 시작하지 못했습니다.";
+                colorType = "#cd8455";
+                triggerBrownDwarfCollapse();
+            } else if (m < C.NEUTRON) {
+                state.remnant = 'WHITE';
+                title = "백색 왜성";
+                desc = "적색 거성을 거쳐 평온하게 생을 마감했습니다.";
+                colorType = "#fff";
+                triggerExplosion(false);
+            } else if (m < C.BLACKHOLE) {
+                state.remnant = 'NEUTRON';
+                title = "중성자별";
+                desc = "초신성 폭발 후 남은 초고밀도 별입니다.";
+                colorType = "#00d2ff";
+                triggerExplosion(true);
+            } else {
+                state.remnant = 'BLACKHOLE';
+                title = "블랙홀";
+                desc = "중력이 시공간마저 삼켜버렸습니다.";
+                colorType = "#ff4757";
+                triggerExplosion(true);
+            }
+            function triggerBrownDwarfCollapse() {
+                // 1. 갈색왜성(별) 본체 설정 및 표시
+                objects.star.visible = true;
+                objects.star.scale.set(2, 2, 2);
+                objects.star.material.uniforms.baseColor.value.set(0x552200);
+                objects.star.material.uniforms.coreColor.value.set(0x220000);
+
+                // 2. 가스(Nebula) 수축 애니메이션
+                function animateCollapse() {
+                    if (state.phase !== 'ENDED') return; // 리셋되면 중단
+
+                    // 가스를 중심으로 모으기 (크기 축소)
+                    objects.nebula.scale.multiplyScalar(0.96); // 매 프레임 4%씩 작아짐
+                    objects.nebula.rotation.y += 0.05;         // 회전하며 빨려들어감
+
+                    // 완전히 작아지면 숨김
+                    if (objects.nebula.scale.x < 0.01) {
+                        objects.nebula.visible = false;
+                    } else {
+                        requestAnimationFrame(animateCollapse);
+                    }
+                }
+                animateCollapse();
+            }
+
+            ui.title.innerText = title;
+            ui.desc.innerText = desc;
+            ui.title.style.color = colorType;
+            ui.overlay.style.opacity = 1;
+            ui.btnInject.style.display = 'none';
+            ui.btnEnd.style.display = 'none';
+            ui.btnReset.style.display = 'block';
+        }
+
+        function triggerExplosion(isSupernova) {
+            triggerRemnantEffect(true);
+
+            objects.particles.material.opacity = 1;
+            const positions = objects.particles.geometry.attributes.position.array;
+            const vels = objects.particles.userData.vels;
+
+            const speedScale = isSupernova ? 1.5 : 0.5;
+
+            let explTime = 0;
+            function animateExplosion() {
+                if (state.phase !== 'ENDED') return;
+                explTime += 0.02;
+
+                for (let i = 0; i < vels.length; i++) {
+                    positions[i * 3] += vels[i].x * speedScale;
+                    positions[i * 3 + 1] += vels[i].y * speedScale;
+                    positions[i * 3 + 2] += vels[i].z * speedScale;
+                }
+                objects.particles.geometry.attributes.position.needsUpdate = true;
+
+                if (objects.particles.material.opacity > 0) {
+                    objects.particles.material.opacity -= 0.005;
+                    requestAnimationFrame(animateExplosion);
+                } else {
+
+                }
+            }
+            animateExplosion();
+        }
+
+        function triggerRemnantEffect(afterExplosion) {
+            if (state.remnant === 'WHITE') {
+                objects.star.visible = true;
+                objects.star.scale.set(1, 1, 1);
+                objects.star.material.uniforms.baseColor.value.set(0xffffff);
+                objects.star.material.uniforms.coreColor.value.set(0xaaaaff);
+            }
+            else if (state.remnant === 'NEUTRON') {
+                objects.star.visible = true;
+                objects.star.scale.set(0.5, 0.5, 0.5);
+                objects.star.material.uniforms.baseColor.value.set(0x0000ff);
+                objects.star.material.uniforms.coreColor.value.set(0xffffff);
+
+                const beamMat = objects.pulsar.children[0].material;
+                beamMat.opacity = 0.8;
+            }
+            else if (state.remnant === 'BLACKHOLE') {
+                objects.star.visible = false;
+                objects.nebula.visible = false;
+                objects.blackholePlane.visible = true;
+            }
+            else if (state.remnant === 'BROWN') {
+                objects.star.visible = true;
+                objects.star.scale.set(2, 2, 2);
+                objects.star.material.uniforms.baseColor.value.set(0x552200);
+                objects.star.material.uniforms.coreColor.value.set(0x220000);
+            }
+        }
+
+        function resetSim() {
+            state.mass = 0.05;
+            state.temp = 0;
+            state.phase = 'PROTO';
+            state.remnant = null;
+
+            objects.nebula.visible = true;
+            objects.nebula.scale.set(1, 1, 1);
+            objects.star.visible = false;
+            objects.blackholePlane.visible = false;
+
+            const positions = objects.particles.geometry.attributes.position.array;
+            for (let i = 0; i < positions.length; i++) positions[i] = 0;
+            objects.particles.geometry.attributes.position.needsUpdate = true;
+            objects.particles.material.opacity = 0;
+
+            objects.pulsar.children[0].material.opacity = 0;
+
+            ui.overlay.style.opacity = 0;
+            ui.btnInject.style.display = 'block';
+            ui.btnEnd.style.display = 'block';
+            ui.btnReset.style.display = 'none';
+        }
+
+        const startInj = (e) => { e.preventDefault(); state.isInjecting = true; ui.btnInject.classList.add('pressed'); };
+        const stopInj = (e) => { e.preventDefault(); state.isInjecting = false; ui.btnInject.classList.remove('pressed'); };
+
+        ui.btnInject.addEventListener('mousedown', startInj);
+        ui.btnInject.addEventListener('mouseup', stopInj);
+        ui.btnInject.addEventListener('mouseleave', stopInj);
+        ui.btnInject.addEventListener('touchstart', startInj);
+        ui.btnInject.addEventListener('touchend', stopInj);
+
+        ui.btnEnd.addEventListener('click', finishLife);
+        ui.btnReset.addEventListener('click', resetSim);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+            objects.blackholePlane.material.uniforms.iResolution.value.set(window.innerWidth, window.innerHeight);
+        });
+
+        function animate(time) {
+            requestAnimationFrame(animate);
+            state.simTime = time * 0.001;
+
+            updateLogic();
+
+            objects.star.material.uniforms.time.value = state.simTime;
+            objects.blackholePlane.material.uniforms.iTime.value = state.simTime;
+
+            if (state.remnant === 'NEUTRON') {
+                objects.pulsar.rotation.z += 0.05;
+                objects.pulsar.rotation.x = Math.sin(state.simTime) * 0.2;
+                objects.star.rotation.y += 0.02;
+            }
+
+            controls.update();
+            composer.render();
+        }
+
+        animate(0);
+
+    </script>
+</body>
+
+</html>
