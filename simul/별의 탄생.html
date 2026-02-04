@@ -47,24 +47,27 @@
 
         .top-hud {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
+            /* 가운데 정렬 (원하면 space-between 등 사용) */
             padding: 15px;
-            /* 패딩 약간 줄임 */
             pointer-events: auto;
             gap: 10px;
-            /* 박스 간 간격 */
             flex-wrap: wrap;
-            /* 화면 좁으면 줄바꿈 */
         }
 
         /* 모바일에서 박스가 너무 크지 않게 조정 */
         .hud-box {
-            flex: 1;
-            /* 공간 균등 분배 */
-            min-width: 100px;
-            /* 최소 너비 줄임 (140px -> 100px) */
+            flex: 0 0 auto;
+            /* 늘어나지 않고(0), 줄어들지 않으며(0), 내용물 크기만큼만(auto) 차지 */
+            min-width: auto;
+            /* 최소 너비 제한 해제 */
             text-align: center;
-            /* 텍스트 가운데 정렬 */
+            background: var(--hud-bg);
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
         }
 
         .hud-box {
@@ -260,32 +263,25 @@
                 <div class="hud-value" id="val-temp" style="color:var(--accent-color)">0 K</div>
             </div>
 
-            <div class="hud-box">
-                <div class="hud-label">Core Press (압력)</div>
-                <div class="hud-value" id="val-press" style="color:#ffcc00">0 GPa</div>
-            </div>
-
-            <div class="hud-box" style="flex-grow: 2; display: flex; flex-direction: column; justify-content: center;">
+            <div class="hud-box" style="width: 220px; display: flex; flex-direction: column; justify-content: center;">
                 <div
                     style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; color: #aaa;">
-                    <span style="color: #ff4757;">▼ 중력 (수축)</span>
-                    <span style="color: #00d2ff;">압력 (팽창) ▲</span>
+                    <span style="color: #ff4757;">▼ 중력</span>
+                    <span style="color: #00d2ff;">압력 ▲</span>
                 </div>
-
                 <div class="gauge-track">
                     <div id="gauge-bar" class="gauge-fill"></div>
                     <div class="gauge-center"></div>
                 </div>
             </div>
-            <div class="hud-box" style="flex-grow: 1; min-width: 160px; text-align: left;">
+
+            <div class="hud-box" style="min-width: 140px; text-align: left;">
                 <div class="hud-label">Class (분광형)</div>
                 <div class="hud-value" id="val-class" style="color:#fff; font-size: 18px;">-</div>
-
                 <div style="height: 5px;"></div>
                 <div class="hud-label">Fusion (핵융합 반응)</div>
                 <div class="hud-value" id="val-fusion" style="color:#aaa; font-size: 14px;">None</div>
             </div>
-
         </div>
 
         <div id="msg-overlay">
@@ -621,6 +617,71 @@
             scene.add(objects.blackholePlane);
         }
 
+        // 3-6. 배경 별 (Background Star Field) - [수정됨]
+        {
+            const bgStarCount = 10000;
+            const bgGeo = new THREE.BufferGeometry();
+            const bgPos = [];
+            const bgCols = [];
+            const bgSizes = [];
+
+            const colorHelper = new THREE.Color();
+
+            for (let i = 0; i < bgStarCount; i++) {
+                const r = 200 + Math.random() * 800;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random() * 2 - 1);
+
+                bgPos.push(
+                    r * Math.sin(phi) * Math.cos(theta),
+                    r * Math.sin(phi) * Math.sin(theta),
+                    r * Math.cos(phi)
+                );
+
+                colorHelper.setHSL(Math.random(), 0.8, 0.5 + Math.random() * 0.5);
+                bgCols.push(colorHelper.r, colorHelper.g, colorHelper.b);
+
+                // 랜덤 크기
+                bgSizes.push(Math.random() * 2.0 + 0.5);
+            }
+
+            bgGeo.setAttribute('position', new THREE.Float32BufferAttribute(bgPos, 3));
+            bgGeo.setAttribute('color', new THREE.Float32BufferAttribute(bgCols, 3));
+
+            // [수정 포인트 1] 속성 이름을 'size' -> 'aScale'로 변경 (충돌 방지)
+            bgGeo.setAttribute('aScale', new THREE.Float32BufferAttribute(bgSizes, 1));
+
+            const bgMat = new THREE.PointsMaterial({
+                size: 1.0,
+                vertexColors: true,
+                map: circleTex,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                depthWrite: false,
+                sizeAttenuation: true
+            });
+
+            // [수정 포인트 2] 쉐이더 수정 로직 변경
+            bgMat.onBeforeCompile = (shader) => {
+                // 'size' 대신 'aScale' 선언
+                shader.vertexShader = `
+                    attribute float aScale;
+                ` + shader.vertexShader;
+
+                // 기존 'gl_PointSize = size;'를 찾아서 'size * aScale'로 교체
+                // Three.js 내부에서 sizeAttenuation 계산은 이 코드 뒤에 자동으로 붙으므로
+                // 우리가 직접 곱할 필요가 없습니다.
+                shader.vertexShader = shader.vertexShader.replace(
+                    'gl_PointSize = size;',
+                    'gl_PointSize = size * aScale;'
+                );
+            };
+
+            const bgStars = new THREE.Points(bgGeo, bgMat);
+            bgStars.renderOrder = -1;
+            scene.add(bgStars);
+            objects.bgStars = bgStars;
+        }
         // ==========================================
         // 4. 게임 로직
         // ==========================================
@@ -722,6 +783,8 @@
             // 5. 주계열성 (Main Sequence) - 아직 팽창하지 않은 상태
             if (mass >= 1.5) return "CNO Cycle (H -> He)<br>(탄소-질소-산소 순환)";
             return "p-p Chain (H -> He)<br>(양성자-양성자 연쇄)";
+
+
         }
 
         // [이 함수 전체를 교체하세요]
@@ -997,8 +1060,7 @@
                 objects.star.scale.set(1, 1, 1);
                 objects.star.material.uniforms.baseColor.value.set(0xffffff);
                 objects.star.material.uniforms.coreColor.value.set(0xaaaaff);
-            }
-            else if (state.remnant === 'NEUTRON') {
+            } else if (state.remnant === 'NEUTRON') {
                 objects.star.visible = true;
                 objects.star.scale.set(0.5, 0.5, 0.5);
                 objects.star.material.uniforms.baseColor.value.set(0x0000ff);
@@ -1006,13 +1068,13 @@
 
                 const beamMat = objects.pulsar.children[0].material;
                 beamMat.opacity = 0.8;
-            }
-            else if (state.remnant === 'BLACKHOLE') {
+            } else if (state.remnant === 'BLACKHOLE') {
                 objects.star.visible = false;
                 objects.nebula.visible = false;
                 objects.blackholePlane.visible = true;
-            }
-            else if (state.remnant === 'BROWN') {
+                // [추가됨] 블랙홀이 나타나면 3D 배경 별을 숨깁니다.
+                if (objects.bgStars) objects.bgStars.visible = false;
+            } else if (state.remnant === 'BROWN') {
                 objects.star.visible = true;
                 objects.star.scale.set(2, 2, 2);
                 objects.star.material.uniforms.baseColor.value.set(0x552200);
@@ -1025,13 +1087,15 @@
             state.temp = 0;
             state.phase = 'PROTO';
             state.remnant = null;
-            state.wrTimer = 0; // [추가] 타이머 초기화
+            state.wrTimer = 0;
 
-            // ... (기존 초기화 코드들) ...
             objects.nebula.visible = true;
             objects.nebula.scale.set(1, 1, 1);
             objects.star.visible = false;
             objects.blackholePlane.visible = false;
+
+            // [추가됨] 리셋 시 배경 별을 다시 보이게 합니다.
+            if (objects.bgStars) objects.bgStars.visible = true;
 
             const positions = objects.particles.geometry.attributes.position.array;
             for (let i = 0; i < positions.length; i++) positions[i] = 0;
