@@ -161,12 +161,25 @@
             font-size: 3rem;
             font-weight: 900;
             margin: 0;
+            /* 글자 테두리 효과 (검은색으로 진하게) */
+            text-shadow:
+                2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000,
+                1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000,
+                0 0 30px rgba(0, 0, 0, 0.8);
+            /* 배경 분리용 부드러운 그림자 추가 */
         }
 
         #msg-desc {
             font-size: 1.2rem;
-            color: #ddd;
+            color: #fff;
+            /* 밝은 흰색으로 변경 */
             margin-top: 10px;
+            font-weight: bold;
+            /* 가독성을 위해 굵게 */
+            /* 설명글도 얇은 테두리 추가 */
+            text-shadow:
+                1px 0 0 #000, -1px 0 0 #000, 0 1px 0 #000, 0 -1px 0 #000,
+                0 0 10px black;
         }
 
         /* 게이지 배경 (어두운 회색) */
@@ -216,6 +229,20 @@
             transform: translateX(-50%);
             z-index: 5;
         }
+
+        @keyframes blink {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 
@@ -249,6 +276,14 @@
                     <div id="gauge-bar" class="gauge-fill"></div>
                     <div class="gauge-center"></div>
                 </div>
+            </div>
+            <div class="hud-box" style="flex-grow: 1; min-width: 160px; text-align: left;">
+                <div class="hud-label">Class (분광형)</div>
+                <div class="hud-value" id="val-class" style="color:#fff; font-size: 18px;">-</div>
+
+                <div style="height: 5px;"></div>
+                <div class="hud-label">Fusion (핵융합 반응)</div>
+                <div class="hud-value" id="val-fusion" style="color:#aaa; font-size: 14px;">None</div>
             </div>
 
         </div>
@@ -573,7 +608,8 @@
                 vertexShader: `void main() { gl_Position = vec4(position, 1.0); }`,
                 uniforms: {
                     iTime: { value: 0 },
-                    iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+                    // [수정됨] 픽셀 비율(dpr)을 곱해서 고해상도 모바일 화면 보정
+                    iResolution: { value: new THREE.Vector2(window.innerWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio()) },
                     uBhMass: { value: 2.0 }
                 },
                 depthTest: false,
@@ -589,7 +625,13 @@
         // 4. 게임 로직
         // ==========================================
 
-        const C = { FUSION: 0.08, NEUTRON: 8.0, BLACKHOLE: 25.0 };
+        const C = {
+            FUSION: 0.08,        // 별이 되는 최소 질량
+            RED_DWARF_MAX: 0.5,  // 적색왜성 구간 끝
+            SUN_LIMIT: 8.0,      // 적색거성 -> 백색왜성 구간 끝
+            NEUTRON_LIMIT: 25.0  // 초거성 -> 중성자별 구간 끝
+            // 25.0 이상은 볼프-레이에 -> 블랙홀
+        };
 
         let state = {
             mass: 0.05,
@@ -597,7 +639,8 @@
             isInjecting: false,
             phase: 'PROTO',
             remnant: null,
-            simTime: 0
+            simTime: 0,
+            wrTimer: 0
         };
 
         const ui = {
@@ -606,6 +649,8 @@
             press: document.getElementById('val-press'),
             gauge: document.getElementById('gauge-bar'),    // [추가] 게이지 바 연결
             overlay: document.getElementById('msg-overlay'),
+            class: document.getElementById('val-class'),   // [추가] 분광형
+            fusion: document.getElementById('val-fusion'), // [추가] 핵융합
             title: document.getElementById('msg-title'),
             desc: document.getElementById('msg-desc'),
             btnInject: document.getElementById('btn-inject'),
@@ -621,81 +666,221 @@
             return new THREE.Color(0.4, 0.6, 1.0);
         }
 
+        function getSpectralType(temp, mass) {
+            // 볼프-레이에 별은 온도가 떨어져도(게임 로직상) 표기는 WR로 유지
+            if (mass > 25.0) return "WR (Wolf-Rayet)";
+
+            if (temp >= 30000) return "O (Blue)";
+            if (temp >= 10000) return "B (Blue-White)";
+            if (temp >= 7500) return "A (White)";
+            if (temp >= 6000) return "F (Yellow-White)";
+            if (temp >= 5200) return "G (Yellow)";
+            if (temp >= 3700) return "K (Orange)";
+            if (temp > 0) return "M (Red)";
+            return "-";
+        }
+
+        // [새로 추가] 핵융합 반응 단계 계산
+        function getFusionProcess(mass, temp, phase, ratio) {
+            // 1. 탄생 및 죽음 단계 처리
+            if (phase === 'PROTO') return "Gravitational Contraction<br>(중력 수축)";
+            if (ratio < 0.15) return "Shell Burning / Collapse<br>(껍질 연소 / 붕괴 직전)";
+
+            // 2. 볼프-레이에 & 초대질량 별 (Mass > 25.0)
+            if (mass > 25.0) {
+                // 아주 뜨거울 때 (주계열 ~ WR 초기)
+                if (ratio >= 0.9) return "CNO Cycle (Extreme)<br>(강력한 CNO 순환)";
+                // 식어가며 붕괴 직전 (규소, 철 생성)
+                return "Silicon/Iron Production<br>(규소/철 핵융합)";
+            }
+
+            // 3. 초거성 구간 (Mass > 8.0)
+            // 이 구간이 "CNO 순환"으로 퉁쳐지던 문제를 해결
+            if (mass > 8.0) {
+                // 주계열성 단계 (아직 팽창 안 함, 수소 연소)
+                if (ratio >= 0.9) {
+                    return "CNO Cycle (H -> He)<br>(수소 핵융합)";
+                }
+                // 팽창/냉각 단계 (적색/청색 초거성 진입) -> 무거운 원소 연소
+                else if (ratio >= 0.6) {
+                    return "Helium Burning (Triple-α)<br>(헬륨 핵융합)";
+                }
+                else if (ratio >= 0.3) {
+                    return "Carbon Burning (C + C)<br>(탄소 핵융합)";
+                }
+                else {
+                    return "Neon/Oxygen Burning<br>(네온/산소 핵융합)";
+                }
+            }
+
+            // 4. 적색거성 구간 (0.5 < Mass <= 8.0)
+            // 태양급 별이 팽창할 때 (ratio < 0.8)
+            if (mass > 0.5 && ratio < 0.8) {
+                return "Triple-alpha (He -> C)<br>(헬륨 핵융합)";
+            }
+
+            // 5. 주계열성 (Main Sequence) - 아직 팽창하지 않은 상태
+            if (mass >= 1.5) return "CNO Cycle (H -> He)<br>(탄소-질소-산소 순환)";
+            return "p-p Chain (H -> He)<br>(양성자-양성자 연쇄)";
+        }
+
         // [이 함수 전체를 교체하세요]
+        // [수정됨] updateLogic 함수
         function updateLogic() {
             if (state.phase === 'ENDED') return;
 
             // 1. 질량 증가
             if (state.isInjecting) {
                 state.mass += 0.05;
+                state.wrTimer = 0; // 주입 중엔 타이머 리셋
             }
 
-            // 2. 온도 및 상태 계산
+            // 2. 목표 온도 계산
             let maxTemp = 3000 + (Math.pow(state.mass, 0.6) * 3000);
             if (maxTemp > 50000) maxTemp = 50000;
 
             if (state.mass < C.FUSION) {
-                // [성간 가스 단계]
+                // [성간 가스]
                 state.temp = 100 + (state.mass * 20000);
                 objects.nebula.visible = true;
                 objects.star.visible = false;
-
                 const scale = Math.max(0.2, 1.0 - (state.mass / C.FUSION));
                 objects.nebula.scale.setScalar(scale);
                 objects.nebula.rotation.y += 0.002;
+                ui.gauge.style.width = '50%';
+
             } else {
-                // [별 단계]
+                // [별]
                 state.phase = 'MAIN';
                 objects.nebula.visible = false;
                 objects.star.visible = true;
 
+                // --- 온도 변화 ---
                 if (state.isInjecting) {
-                    // 주입 중: 온도 상승
-                    state.temp += (maxTemp - state.temp) * 0.1; // 반응 속도 약간 올림
+                    state.temp += (maxTemp - state.temp) * 0.1;
                 } else {
-                    // 대기 중: 식어감 (온도가 뚝뚝 떨어짐)
-                    // 질량이 클수록 더 빨리 식게 하면 난이도 조절 가능 (현재는 고정값)
-                    if (state.temp > 0) state.temp -= 30; // 식는 속도 15 -> 30으로 증가
+                    // WR 별이 아니면 식어감
+                    if (state.mass <= 25.0 && state.temp > 0) state.temp -= 30;
                 }
 
-                // [핵심 1] 별 크기 계산 (더 극적으로 수축하도록 변경)
+                // --- 시각 효과 변수들 ---
+                let currentScale = 1.0;
+                let targetColor = getStarColor(state.temp);
+                let targetCoreColor = new THREE.Color().setScalar(state.temp / 50000);
                 let thermalRatio = state.temp / maxTemp;
                 let baseScale = Math.pow(state.mass, 0.4) * 5.0;
                 if (baseScale > 15) baseScale = 15 + (state.mass - 25) * 0.1;
 
-                // 기존 0.8(80%) -> 0.4(40%)까지 쪼그라들게 변경
-                // 온도가 0이 되면 원래 크기의 40%만 남음
-                let currentScale = baseScale * (0.4 + 0.6 * thermalRatio);
+                // ----------------------------------------------------
+                // [핵심 수정] 질량별 분기 처리
+                // ----------------------------------------------------
 
+                // Case A: 볼프-레이에 별 (초대질량)
+                if (state.mass > 25.0) {
+                    // 색상 강제: 진한 보라색 & 핑크 코어
+                    targetColor = new THREE.Color(0.6, 0.0, 1.0);
+                    targetCoreColor = new THREE.Color(1.0, 0.0, 0.8);
+
+                    if (state.isInjecting) {
+                        // 주입 중: 약간의 떨림
+                        currentScale = baseScale * 1.05 + Math.sin(state.simTime * 30) * 0.1;
+                    } else {
+                        // [붕괴 시퀀스] 주입 멈춤 -> 카운트다운 시작
+                        state.wrTimer += 0.005; // 붕괴 속도 조절 (작을수록 천천히 붕괴)
+
+                        // 점점 심해지는 진동
+                        let shake = Math.sin(state.simTime * 100) * (0.2 + state.wrTimer * 0.5);
+
+                        // 크기는 유지되거나 약간 수축하며 떨림
+                        currentScale = baseScale + shake;
+
+                        // 붕괴 직전 색상 변화 (더 붉고 어두운 보라색)
+                        targetColor.lerp(new THREE.Color(1.0, 0.0, 0.0), state.wrTimer);
+
+                        // 타이머가 다 되면 사망
+                        if (state.wrTimer >= 1.0) {
+                            finishLife();
+                        }
+                    }
+
+                    // WR 별은 온도 표시 조작 (식지 않은 것처럼 보임)
+                    let fakeTemp = 50000 + Math.random() * 5000;
+                    ui.temp.innerText = `${Math.floor(fakeTemp)} K`;
+                }
+                // Case B: 일반 별 (적색거성 등)
+                else {
+                    if (state.mass <= C.RED_DWARF_MAX) {
+                        currentScale = baseScale * (0.4 + 0.6 * thermalRatio);
+                    }
+                    else if (state.mass <= C.SUN_LIMIT) {
+                        if (thermalRatio < 0.8) {
+                            let expansion = (0.8 - thermalRatio) * 5.0;
+                            currentScale = baseScale * (1.0 + expansion);
+                            targetColor = new THREE.Color(1.0, 0.1, 0.0);
+                            targetCoreColor = new THREE.Color(1.0, 0.5, 0.2);
+                        } else {
+                            currentScale = baseScale;
+                        }
+                    }
+                    else { // 청색거성
+                        currentScale = baseScale * (0.5 + 0.5 * thermalRatio);
+                    }
+
+                    // 일반 별 자동 사망 트리거 (식으면 죽음)
+                    if (thermalRatio < 0.1) finishLife();
+
+                    ui.temp.innerText = `${Math.floor(state.temp)} K`;
+                }
+
+                // 적용
                 objects.star.scale.lerp(new THREE.Vector3(currentScale, currentScale, currentScale), 0.1);
+                objects.star.material.uniforms.baseColor.value.lerp(targetColor, 0.2);
+                objects.star.material.uniforms.coreColor.value.lerp(targetCoreColor, 0.2);
 
-                const col = getStarColor(state.temp);
-                objects.star.material.uniforms.baseColor.value.lerp(col, 0.1);
-                objects.star.material.uniforms.coreColor.value.setScalar(state.temp / 50000);
-
-                // [핵심 2] 자동 사망 트리거 (중력 붕괴)
-                // 온도가 최고 온도의 15% 미만으로 떨어지면 (너무 식으면)
-                // 사용자가 손을 놓아서 별이 죽은 것으로 간주
-                if (thermalRatio < 0.15 && state.mass > C.FUSION) {
-                    finishLife(); // 자동으로 결과 화면으로 넘어감
+                // --- 게이지 ---
+                let targetPercent = 50;
+                if (state.isInjecting) targetPercent = 70 + (Math.sin(state.simTime * 15) * 3);
+                else {
+                    if (state.mass > 25.0) targetPercent = 95 + Math.random() * 5; // WR은 압력 폭주 상태
+                    else if (state.mass > C.RED_DWARF_MAX && state.mass <= C.SUN_LIMIT) targetPercent = 80;
+                    else targetPercent = 20;
                 }
+                ui.gauge.style.width = `${targetPercent}%`;
             }
 
-            // 3. UI 업데이트
             ui.mass.innerText = `${state.mass.toFixed(2)} M☉`;
-            ui.temp.innerText = `${Math.floor(state.temp)} K`;
+            updateInfoPanel();
+        }
 
-            // 4. 게이지 로직
-            let targetPercent = 50;
-            if (state.isInjecting) {
-                targetPercent = 70 + (Math.sin(state.simTime * 15) * 3);
-            } else {
-                if (state.phase === 'MAIN') {
-                    // 식으면 게이지가 왼쪽 끝(0%)으로 향함
-                    targetPercent = 10 + (40 * (state.temp / maxTemp));
+        // [수정됨] 정보 패널 업데이트 (철 생성 경고 로직 추가)
+        function updateInfoPanel() {
+            let sType = getSpectralType(state.temp, state.mass);
+            let tRatio = state.temp / 50000;
+
+            let fProcess = "Unknown";
+
+            if (state.mass < C.FUSION) {
+                fProcess = "Gravitational Contraction<br>(중력 수축)";
+            }
+            // [핵심] 볼프-레이에 별 붕괴 시퀀스 텍스트
+            else if (state.mass > 25.0) {
+                if (state.isInjecting) {
+                    fProcess = "CNO Cycle (Extreme)<br>(강력한 CNO 순환)";
+                } else {
+                    // 손을 떼면 즉시 이 메시지가 뜸
+                    fProcess = "<span style='color:#ff4757; font-weight:bold; animation: blink 0.1s infinite;'>⚠ Iron Production (Fe) ⚠<br>(철 생성 - 붕괴 임박!)</span>";
                 }
             }
-            ui.gauge.style.width = `${targetPercent}%`;
+            else if (!state.isInjecting && state.mass > 8.0) fProcess = "Carbon/Oxygen Burning<br>(탄소/산소 핵융합)";
+            else if (!state.isInjecting && state.mass > 0.5) fProcess = "Helium Burning (Triple-α)<br>(헬륨 핵융합)";
+            else if (state.mass > 1.5) fProcess = "CNO Cycle (H -> He)<br>(CNO 순환)";
+            else fProcess = "p-p Chain (H -> He)<br>(양성자 연쇄 반응)";
+
+            ui.class.innerText = sType;
+            if (state.mass > 25.0) ui.class.style.color = "#d0f";
+            else ui.class.style.color = objects.star.material.uniforms.baseColor.value.getStyle();
+
+            ui.fusion.innerHTML = fProcess;
         }
 
         function finishLife() {
@@ -708,63 +893,73 @@
 
             if (m < C.FUSION) {
                 state.remnant = 'BROWN';
-                title = "실패한 별 (갈색왜성)";
-                desc = "질량이 부족하여 핵융합을 시작하지 못했습니다.";
+                title = "갈색왜성 (Brown Dwarf)";
+                desc = "수소 핵융합을 지속할 질량이 부족해 식어버린 별입니다.";
                 colorType = "#cd8455";
                 triggerBrownDwarfCollapse();
-            } else if (m < C.NEUTRON) {
+            }
+            else if (m <= C.RED_DWARF_MAX) {
                 state.remnant = 'WHITE';
-                title = "백색 왜성";
-                desc = "적색 거성을 거쳐 평온하게 생을 마감했습니다.";
-                colorType = "#fff";
+                title = "헬륨 백색왜성"; // 적색왜성은 헬륨 백색왜성이 됨
+                desc = "적색왜성이 수조 년에 걸쳐 천천히 식어 만들어졌습니다.";
+                colorType = "#aaddff";
+                triggerRemnantEffect(false);
+            }
+            else if (m <= C.SUN_LIMIT) {
+                // [용어 수정] 행성상 성운 -> 백색왜성
+                state.remnant = 'WHITE';
+                title = "백색왜성 (White Dwarf)";
+                desc = "적색거성이 외피를 방출하여 행성상 성운을 만들고, 중심핵만 남았습니다.";
+                colorType = "#ffffff";
                 triggerExplosion(false);
-            } else if (m < C.BLACKHOLE) {
+            }
+            else if (m <= C.NEUTRON_LIMIT) {
                 state.remnant = 'NEUTRON';
-                title = "중성자별";
-                desc = "초신성 폭발 후 남은 초고밀도 별입니다.";
+                title = "중성자별 (Neutron Star)";
+                desc = "초신성 폭발 후, 태양 질량의 1.4배 이상이 뭉친 초고밀도 천체입니다.";
                 colorType = "#00d2ff";
                 triggerExplosion(true);
-            } else {
+            }
+            else {
                 state.remnant = 'BLACKHOLE';
-                title = "블랙홀";
-                desc = "중력이 시공간마저 삼켜버렸습니다.";
+                title = "블랙홀 (Black Hole)";
+                desc = "중력 붕괴를 막을 힘이 없어 시공간 자체가 닫혀버렸습니다.";
                 colorType = "#ff4757";
                 triggerExplosion(true);
-            }
-            function triggerBrownDwarfCollapse() {
-                // 1. 갈색왜성(별) 본체 설정 및 표시
-                objects.star.visible = true;
-                objects.star.scale.set(2, 2, 2);
-                objects.star.material.uniforms.baseColor.value.set(0x552200);
-                objects.star.material.uniforms.coreColor.value.set(0x220000);
-
-                // 2. 가스(Nebula) 수축 애니메이션
-                function animateCollapse() {
-                    if (state.phase !== 'ENDED') return; // 리셋되면 중단
-
-                    // 가스를 중심으로 모으기 (크기 축소)
-                    objects.nebula.scale.multiplyScalar(0.96); // 매 프레임 4%씩 작아짐
-                    objects.nebula.rotation.y += 0.05;         // 회전하며 빨려들어감
-
-                    // 완전히 작아지면 숨김
-                    if (objects.nebula.scale.x < 0.01) {
-                        objects.nebula.visible = false;
-                    } else {
-                        requestAnimationFrame(animateCollapse);
-                    }
-                }
-                animateCollapse();
             }
 
             ui.title.innerText = title;
             ui.desc.innerText = desc;
             ui.title.style.color = colorType;
             ui.overlay.style.opacity = 1;
+
             ui.btnInject.style.display = 'none';
             ui.btnEnd.style.display = 'none';
             ui.btnReset.style.display = 'block';
         }
+        function triggerBrownDwarfCollapse() {
+            // 1. 갈색왜성(별) 본체 설정 및 표시
+            objects.star.visible = true;
+            objects.star.scale.set(2, 2, 2);
+            objects.star.material.uniforms.baseColor.value.set(0x552200);
+            objects.star.material.uniforms.coreColor.value.set(0x220000);
 
+            // 2. 가스(Nebula) 수축 애니메이션
+            function animateCollapse() {
+                if (state.phase !== 'ENDED') return;
+
+                // 가스를 중심으로 모으기
+                objects.nebula.scale.multiplyScalar(0.96);
+                objects.nebula.rotation.y += 0.05;
+
+                if (objects.nebula.scale.x < 0.01) {
+                    objects.nebula.visible = false;
+                } else {
+                    requestAnimationFrame(animateCollapse);
+                }
+            }
+            animateCollapse();
+        }
         function triggerExplosion(isSupernova) {
             triggerRemnantEffect(true);
 
@@ -830,7 +1025,9 @@
             state.temp = 0;
             state.phase = 'PROTO';
             state.remnant = null;
+            state.wrTimer = 0; // [추가] 타이머 초기화
 
+            // ... (기존 초기화 코드들) ...
             objects.nebula.visible = true;
             objects.nebula.scale.set(1, 1, 1);
             objects.star.visible = false;
@@ -866,7 +1063,8 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
             composer.setSize(window.innerWidth, window.innerHeight);
-            objects.blackholePlane.material.uniforms.iResolution.value.set(window.innerWidth, window.innerHeight);
+            const dpr = renderer.getPixelRatio();
+            objects.blackholePlane.material.uniforms.iResolution.value.set(window.innerWidth * dpr, window.innerHeight * dpr);
         });
 
         function animate(time) {
