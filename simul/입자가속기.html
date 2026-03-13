@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phy-Simul: 미니 입자 충돌기 (Standard Model)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0B0C10;
+            --panel-bg: #11151C;
+            --primary-text: #C5C6C7;
+            --accent-color: #66FCF1;
+
+            /* 표준모형 색상표 */
+            --quark-color: #9B59B6;
+            --lepton-color: #2ECC71;
+            --gauge-color: #E74C3C;
+            --scalar-color: #F1C40F;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            color: var(--primary-text);
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #simulation-container {
+            flex-grow: 1;
+            height: 100%;
+            position: relative;
+            background: radial-gradient(circle at center, #1a1e29 0%, #0B0C10 70%, #000 100%);
+        }
+
+        /* 우측 대시보드 레이아웃 */
+        #dashboard {
+            width: 380px;
+            height: 100%;
+            background: linear-gradient(180deg, #171c28 0%, #0f121b 100%);
+            border-left: 2px solid rgba(102, 252, 241, 0.2);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 10;
+            box-shadow: -5px 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        /* 컨트롤 영역 */
+        .control-group {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .slider-row span {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        input[type=range] {
+            flex-grow: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--accent-color);
+        }
+
+        #btn-collide {
+            width: 100%;
+            background-color: rgba(102, 252, 241, 0.1);
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #btn-collide:hover {
+            background-color: var(--accent-color);
+            color: #000;
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.5);
+        }
+
+        /* 표준모형 그리드 (4x4) */
+        .sm-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-bottom: 20px;
+        }
+
+        .particle-card {
+            aspect-ratio: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            opacity: 0.3;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .particle-card.discovered {
+            opacity: 1;
+            box-shadow: 0 0 10px inset rgba(0, 0, 0, 0.5);
+        }
+
+        .card-symbol {
+            font-size: 20px;
+            font-weight: bold;
+            font-family: serif;
+        }
+
+        .card-name {
+            font-size: 10px;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        .quark.discovered {
+            border-color: var(--quark-color);
+            background: rgba(155, 89, 182, 0.15);
+            color: #D2B4DE;
+        }
+
+        .lepton.discovered {
+            border-color: var(--lepton-color);
+            background: rgba(46, 204, 113, 0.15);
+            color: #ABEBC6;
+        }
+
+        .gauge.discovered {
+            border-color: var(--gauge-color);
+            background: rgba(231, 76, 60, 0.15);
+            color: #F5B7B1;
+        }
+
+        .scalar.discovered {
+            border-color: var(--scalar-color);
+            background: rgba(241, 196, 15, 0.15);
+            color: #F9E79F;
+        }
+
+        /* 이벤트 로그 */
+        #event-log {
+            flex-grow: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 12px;
+            font-family: monospace;
+            overflow-y: auto;
+            color: #A8B8D0;
+            line-height: 1.5;
+        }
+
+        .log-highlight {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .log-rare {
+            color: var(--scalar-color);
+            font-weight: bold;
+        }
+
+        /* 미션(Quest) 보드 스타일 */
+        #quest-board {
+            background: rgba(102, 252, 241, 0.1);
+            border: 1px solid var(--accent-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .quest-title {
+            font-size: 12px;
+            color: var(--accent-color);
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .quest-desc {
+            font-size: 14px;
+            color: #fff;
+            line-height: 1.4;
+        }
+
+        /* 입자 정보 팝업(Tooltip) 스타일 */
+        .tooltip {
+            position: absolute;
+            background: rgba(15, 18, 27, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            width: 220px;
+            color: #fff;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.8);
+            z-index: 100;
+        }
+
+        .tooltip-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+        }
+
+        .tooltip-name {
+            font-weight: bold;
+            font-size: 14px;
+            color: var(--accent-color);
+        }
+
+        .tooltip-stat {
+            margin-bottom: 4px;
+            color: #A8B8D0;
+        }
+
+        .tooltip-stat span {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        /* [추가] 역추적 분석 팝업 모달 스타일 */
+        #reconstruction-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(180deg, #171c28 0%, #0f121b 100%);
+            border: 2px solid var(--accent-color);
+            border-radius: 12px;
+            padding: 30px;
+            width: 500px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(102, 252, 241, 0.3);
+        }
+
+        #recon-title {
+            color: var(--accent-color);
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 15px;
+        }
+
+        #recon-desc {
+            color: #C5C6C7;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        #recon-svg {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        #btn-close-modal {
+            background: var(--accent-color);
+            color: #000;
+            font-weight: bold;
+            font-size: 16px;
+            padding: 10px 30px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        #btn-close-modal:hover {
+            box-shadow: 0 0 15px var(--accent-color);
+            transform: translateY(-2px);
+        }
+
+        .hist-label {
+            font-size: 9px;
+            color: #666;
+            position: absolute;
+            bottom: -15px;
+        }
+
+        #mass-histogram {
+            width: 100%;
+            height: 100px;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: flex-end;
+            /* 막대기가 바닥에서 위로 솟게 함 */
+            gap: 1px;
+            padding: 5px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(102, 252, 241, 0.2);
+        }
+
+        .histogram-bar {
+            flex: 1;
+            background: rgba(102, 252, 241, 0.5);
+            /* 기본 막대 색상 */
+            min-height: 1px;
+            /* 데이터가 없을 때도 위치는 표시 */
+            transition: height 0.3s ease;
+            /* 부드럽게 솟아오름 */
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="simulation-container"></div>
+
+    <div id="dashboard">
+        <div class="section-title">LHC Collision Control</div>
+        <div id="quest-board">
+            <div class="quest-title">🎯 현재 미션 (Level 1)</div>
+            <div id="quest-desc" class="quest-desc">충돌 에너지를 0.5 TeV 이상으로 올려서 2세대 입자인 '뮤온(μ)'을 관측하세요!</div>
+        </div>
+        <div class="control-group">
+            <div class="slider-row">
+                <span>에너지: </span>
+                <input type="range" id="energy-slider" min="0.1" max="14.0" step="0.1" value="1.0">
+                <span id="energy-val" style="color: var(--accent-color); width: 60px; text-align: right;">1.0 TeV</span>
+            </div>
+            <div class="slider-row">
+                <span>자기장 ($B$): </span>
+                <input type="range" id="bfield-slider" min="0.5" max="5.0" step="0.1" value="2.0">
+                <span id="bfield-val" style="color: var(--accent-color); width: 60px; text-align: right;">2.0 T</span>
+            </div>
+            <button id="btn-collide">💥 양성자 충돌 (Collide!)</button>
+        </div>
+
+        <div class="section-title">표준모형 도감 (Standard Model)</div>
+        <div class="sm-grid" id="sm-grid"></div>
+        <div class="section-title">불변 질량 분포 (Mass Plot)</div>
+        <div id="mass-histogram"></div>
+        <div class="section-title">충돌 이벤트 로그</div>
+        <div id="event-log">대기 중... (충돌 에너지를 설정하고 버튼을 누르세요)</div>
+    </div>
+
+    <div id="reconstruction-modal">
+        <div class="modal-content">
+            <div id="recon-title">🔍 [분석 완료] 입자 역추적</div>
+            <div id="recon-svg">
+            </div>
+            <div id="recon-desc">설명 텍스트</div>
+            <button id="btn-close-modal" onclick="closeReconstruction()">시뮬레이션 재개</button>
+        </div>
+    </div>
+
+    <script>
+        const STANDARD_MODEL = [
+            { id: 'u', name: '업 쿼크', type: 'quark', symbol: 'u', mass: '2.2 MeV', charge: '+2/3', spin: '1/2', desc: '양성자와 중성자를 이루는 가장 가볍고 흔한 쿼크입니다.', discovered: true },
+            { id: 'd', name: '다운 쿼크', type: 'quark', symbol: 'd', mass: '4.7 MeV', charge: '-1/3', spin: '1/2', desc: '업 쿼크와 함께 원자핵을 구성하는 기본 블록입니다.', discovered: true },
+            { id: 'e', name: '전자', type: 'lepton', symbol: 'e', mass: '0.511 MeV', charge: '-1', spin: '1/2', desc: '우리가 아는 모든 화학 반응과 전기를 만들어내는 친숙한 입자입니다.', discovered: true },
+            { id: 've', name: '전자 중성미자', type: 'lepton', symbol: 'ν<sub>e</sub>', mass: '< 1 eV', charge: '0', spin: '1/2', desc: '질량이 거의 없고 물질과 상호작용하지 않아 유령 입자로 불립니다.', discovered: true },
+
+            { id: 'c', name: '참 쿼크', type: 'quark', symbol: 'c', mass: '1.28 GeV', charge: '+2/3', spin: '1/2', desc: 'J/ψ 중간자를 구성하며 11월 혁명을 이끈 매력적인 쿼크입니다.', discovered: false },
+            { id: 's', name: '기묘 쿼크', type: 'quark', symbol: 's', mass: '96 MeV', charge: '-1/3', spin: '1/2', desc: '우주선(Cosmic Ray)에서 기묘하게 긴 수명을 가진 입자들에서 처음 발견되었습니다.', discovered: false },
+            { id: 'mu', name: '뮤온', type: 'lepton', symbol: 'μ', mass: '105.7 MeV', charge: '-1', spin: '1/2', desc: '전자보다 약 200배 무거운 뚱뚱한 전자입니다. 지표면에서도 관측됩니다.', discovered: false },
+            { id: 'vmu', name: '뮤온 중성미자', type: 'lepton', symbol: 'ν<sub>μ</sub>', mass: '< 0.17 MeV', charge: '0', spin: '1/2', desc: '파이온이 붕괴할 때 뮤온과 함께 튀어나오는 중성미자입니다.', discovered: false },
+
+            { id: 't', name: '톱 쿼크', type: 'quark', symbol: 't', mass: '173.1 GeV', charge: '+2/3', spin: '1/2', desc: '금(Au) 원자 하나만큼 무거운, 가장 무겁고 가장 늦게 발견된 쿼크입니다.', discovered: false },
+            { id: 'b', name: '바텀 쿼크', type: 'quark', symbol: 'b', mass: '4.18 GeV', charge: '-1/3', spin: '1/2', desc: '힉스 보손이 붕괴할 때 가장 자주 만들어지는 중요한 쿼크입니다.', discovered: false },
+            { id: 'tau', name: '타우', type: 'lepton', symbol: 'τ', mass: '1.77 GeV', charge: '-1', spin: '1/2', desc: '전자보다 3400배 무거워 너무 불안정해 순식간에 다른 입자로 붕괴합니다.', discovered: false },
+            { id: 'vtau', name: '타우 중성미자', type: 'lepton', symbol: 'ν<sub>τ</sub>', mass: '< 18.2 MeV', charge: '0', spin: '1/2', desc: '타우 렙톤과 짝을 이루는, 가장 관측하기 힘든 중성미자입니다.', discovered: false },
+
+            { id: 'g', name: '글루온', type: 'gauge', symbol: 'g', mass: '0', charge: '0', spin: '1', desc: '쿼크들을 강력(Strong Force)으로 묶어주는 강력 접착제입니다.', discovered: true },
+            { id: 'y', name: '광자', type: 'gauge', symbol: 'γ', mass: '0', charge: '0', spin: '1', desc: '전자기력을 매개하는 빛의 입자입니다.', discovered: true },
+            { id: 'z', name: 'Z 보손', type: 'gauge', symbol: 'Z', mass: '91.2 GeV', charge: '0', spin: '1', desc: '약한 상호작용(약력)을 매개하며 전하가 없는 무거운 보손입니다.', discovered: false, alreadyPopped: false },
+            { id: 'w', name: 'W 보손', type: 'gauge', symbol: 'W', mass: '80.4 GeV', charge: '±1', spin: '1', desc: '베타 붕괴를 일으켜 원소의 종류를 바꾸는 약력의 핵심 매개 입자입니다.', discovered: false },
+            { id: 'h', name: '힉스 보손', type: 'scalar', symbol: 'H', mass: '125.1 GeV', charge: '0', spin: '0', desc: '우주의 모든 입자에게 질량을 부여하는 신의 입자입니다.', discovered: false, alreadyPopped: false }
+        ];
+
+        let particles = [];
+        let collisionFlash = 0;
+        let currentEnergy = 1.0;
+        let currentQuest = 1;
+        let isColliding = false;
+        let incomingProtons = [];
+        let timeScale = 1.0;
+        let targetTimeScale = 1.0;
+        let labelTextures = {}; // 👈 [추가] 글씨 이미지를 저장할 빈 객체
+        let bField = 2.0;
+        let massBins = new Array(50).fill(0); // 50개의 질량 구간
+        let missingEnergyVec = null; // 사라진 에너지(운동량) 벡터
+        let showMissingEnergy = false; // 화살표 표시 여부
+
+
+        const R_TRACKER = 120;
+        const R_ECAL = 180;
+        const R_HCAL = 250;
+        const R_MUON = 380;
+        const DASHBOARD_WIDTH = 380;
+
+        function setup() {
+            let canvas = createCanvas(windowWidth - DASHBOARD_WIDTH, windowHeight, WEBGL);
+            canvas.parent('simulation-container');
+
+            // [수정] 아랫첨자를 지원하는 3D 텍스처 생성 로직
+            let symbols = [
+                { key: 'μ⁻', main: 'μ', sub: '-' }, { key: 'μ⁺', main: 'μ', sub: '+' },
+                { key: 'e⁻', main: 'e', sub: '-' }, { key: 'e⁺', main: 'e', sub: '+' },
+                { key: 'γ', main: 'γ', sub: '' }, { key: 'Z', main: 'Z', sub: '' },
+                { key: 'H', main: 'H', sub: '' }, { key: 'ν', main: 'ν', sub: '' },
+                { key: 'νe', main: 'ν', sub: 'e' }, { key: 'νμ', main: 'ν', sub: 'μ' }, { key: 'ντ', main: 'ν', sub: 'τ' }
+            ];
+
+            for (let s of symbols) {
+                let pg = createGraphics(120, 100); // 도화지를 조금 더 넓게
+                pg.clear();
+                pg.fill(255);
+                pg.textAlign(CENTER, CENTER);
+
+                // 메인 기호 그리기
+                pg.textSize(60);
+                pg.text(s.main, 45, 50);
+
+                // 아랫첨자(또는 위첨자) 그리기
+                if (s.sub !== '') {
+                    pg.textSize(35);
+                    // 첨자 위치 조정: 중성미자(ν)일 때는 아래로, 전하(+/-)일 때는 위로
+                    let yOff = (s.main === 'ν') ? 20 : -20;
+                    pg.text(s.sub, 85, 55 + yOff);
+                }
+                labelTextures[s.key] = pg;
+            }
+
+            initUI();
+
+            document.getElementById('energy-slider').addEventListener('input', (e) => {
+                currentEnergy = parseFloat(e.target.value);
+                document.getElementById('energy-val').innerText = currentEnergy.toFixed(1) + " TeV";
+            });
+
+            document.getElementById('btn-collide').addEventListener('click', () => {
+                if (!isColliding) startCollision();
+            });
+
+            document.getElementById('bfield-slider').addEventListener('input', (e) => {
+                bField = parseFloat(e.target.value);
+                document.getElementById('bfield-val').innerText = bField.toFixed(1) + " T";
+            });
+
+            // 자동 시작 제거됨
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth - DASHBOARD_WIDTH, windowHeight);
+        }
+
+        function initUI() {
+            const grid = document.getElementById('sm-grid');
+            grid.innerHTML = '';
+
+            const displayParticles = STANDARD_MODEL.filter(p => p.id !== 'w');
+            displayParticles[14].name = 'W/Z 보손'; displayParticles[14].symbol = 'W/Z';
+
+            const tooltip = document.getElementById('particle-tooltip');
+
+            displayParticles.forEach(p => {
+                let card = document.createElement('div');
+                card.className = `particle-card ${p.type}`;
+                card.id = `card-${p.id}`;
+                if (p.discovered) card.classList.add('discovered');
+
+                card.innerHTML = `
+                    <div class="card-symbol">${p.symbol}</div>
+                    <div class="card-name">${p.name}</div>
+                `;
+
+                card.addEventListener('mouseenter', (e) => {
+                    if (!p.discovered) return;
+                    tooltip.innerHTML = `
+                        <div class="tooltip-header">
+                            <span class="tooltip-name">${p.name}</span>
+                            <span>${p.symbol}</span>
+                        </div>
+                        <div class="tooltip-stat">질량: <span>${p.mass}</span></div>
+                        <div class="tooltip-stat">전하: <span>${p.charge}</span> / 스핀: <span>${p.spin}</span></div>
+                        <div style="margin-top: 8px; line-height: 1.4; color: #E2E8F0;">${p.desc}</div>
+                    `;
+                    tooltip.style.opacity = 1;
+                });
+
+                card.addEventListener('mousemove', (e) => {
+                    tooltip.style.left = (e.pageX - 240) + 'px';
+                    tooltip.style.top = (e.pageY + 10) + 'px';
+                });
+                card.addEventListener('mouseleave', () => { tooltip.style.opacity = 0; });
+                grid.appendChild(card);
+            });
+        }
+
+        function startCollision() {
+            isColliding = true;
+            particles = [];
+            // 3D에서는 양성자가 Z축(깊이)을 따라 날아오게 연출합니다.
+            incomingProtons = [
+                { z: -1000, v: 40 }, // 멀리서 앞으로
+                { z: 1000, v: -40 }  // 화면 앞쪽에서 뒤로
+            ];
+            appendLog(`\n[가속] $\\sqrt{s}$ = ${currentEnergy.toFixed(1)} TeV 로 양성자 가속 중...`);
+        }
+
+        function triggerCollision() {
+            collisionFlash = 255;
+            let logMsg = `> <span class='log-highlight'>💥 충돌 발생! (3D 이벤트 디스플레이)</span>\n`;
+
+            timeScale = 0.1;
+            targetTimeScale = 1.0;
+
+            // 배경 입자 생성
+            let numBackground = Math.floor(map(currentEnergy, 0.1, 14, 30, 100));
+            for (let i = 0; i < numBackground; i++) {
+                let type = random(['hadron', 'photon', 'electron']);
+                particles.push(new Particle(type, random(3, 8), false));
+            }
+
+            // [1.0 TeV 이상] 2세대 입자 발견
+            if (currentEnergy >= 1.0) {
+                particles.push(new Particle('muon', 12, true));
+                particles.push(new Particle('muon', 12, true));
+                unlockParticle('mu'); unlockParticle('c'); unlockParticle('s');
+                unlockParticle('vmu');
+            }
+
+            // [5.0 TeV 이상] Z 보손 (수명을 4 -> 10으로 증가)
+            if (currentEnergy >= 5.0) {
+                particles.push(new Particle('gauge', 6, true, 10, 'z')); // 👈 10으로 수정
+                recordMass(91.2 + random(-1.5, 1.5));
+
+                unlockParticle('z');
+                unlockParticle('t'); unlockParticle('b'); unlockParticle('tau');
+                unlockParticle('vtau');
+
+                let zParticle = STANDARD_MODEL.find(x => x.id === 'z');
+                if (!zParticle.alreadyPopped) {
+                    zParticle.alreadyPopped = true;
+                    setTimeout(() => showReconstruction('z'), 3500); // 팝업 대기 시간도 약간 늘림
+                }
+            }
+
+            // [14.0 TeV] 힉스 보손 (수명을 3 -> 8로 증가)
+            if (currentEnergy >= 14.0) {
+                particles.push(new Particle('scalar', 4, true, 8, 'h')); // 👈 8로 수정
+                recordMass(125.1 + random(-1.5, 1.5));
+
+                unlockParticle('h');
+                let hParticle = STANDARD_MODEL.find(x => x.id === 'h');
+                if (!hParticle.alreadyPopped) {
+                    hParticle.alreadyPopped = true;
+                    setTimeout(() => showReconstruction('h'), 3500); // 팝업 대기 시간도 약간 늘림
+                }
+            }
+
+            if (currentEnergy >= 5.0 && random() < 0.15) {
+                spawnJet();
+            }
+
+            logMsg += "> 관측된 입자 트랙 수: " + particles.length;
+            appendLog(logMsg);
+            // [추가] 사라진 에너지(Missing ET) 계산 로직
+            let sumP = createVector(0, 0, 0);
+            particles.forEach(p => {
+                // 각 입자의 속도(운동량 대용)를 모두 더함
+                sumP.add(p.vel);
+            });
+
+            // 보존 법칙에 따라 모든 입자의 합이 0이 되어야 하므로, 
+            // 그 반대 방향 벡터가 바로 '사라진 에너지'의 방향입니다.
+            missingEnergyVec = sumP.mult(-1);
+            showMissingEnergy = true;
+
+            if (missingEnergyVec.mag() > 5) {
+                appendLog("> <span style='color:#fff'>👻 <b>Missing Energy</b> 관측! 중성미자($\\nu$) 추적 중...</span>");
+            }
+            checkQuest();
+        }
+
+        function checkQuest() {
+            let descEl = document.getElementById('quest-desc');
+            let titleEl = document.querySelector('.quest-title');
+
+            if (currentQuest === 1 && currentEnergy >= 1.0) {
+                currentQuest = 2;
+                titleEl.innerText = "🎯 현재 미션 (Level 2)";
+                descEl.innerHTML = "마우스를 드래그해서 <b>검출기를 3D로 회전</b>시켜 보세요! 다음은 에너지를 <b style='color:#F1C40F'>5.0 TeV 이상</b>으로 높이세요.";
+                appendLog("> 🏆 [미션 1 달성] 다음 미션이 열렸습니다.");
+            } else if (currentQuest === 2 && currentEnergy >= 5.0) {
+                currentQuest = 3;
+                titleEl.innerText = "🎯 최종 미션 (Level 3)";
+                descEl.innerHTML = "에너지를 <b style='color:#F1C40F'>최대치(14.0 TeV)</b>로 끌어올려 신의 입자라 불리는 '힉스 보손(H)'을 발견하세요!";
+                appendLog("> 🏆 [미션 2 달성] 최종 미션이 열렸습니다.");
+            } else if (currentQuest === 3 && currentEnergy >= 14.0) {
+                currentQuest = 4;
+                titleEl.innerText = "🎉 모든 미션 완료!";
+                descEl.innerHTML = "당신은 입자물리학의 마스터입니다! 표준모형의 모든 비밀을 밝혀냈습니다.";
+                appendLog("> 🏆 [최종 미션 달성] 축하합니다!");
+            }
+        }
+
+        function unlockParticle(id) {
+            let p = STANDARD_MODEL.find(x => x.id === id);
+            if (p && !p.discovered) {
+                p.discovered = true;
+                let card = document.getElementById(`card-${id}`);
+                if (card) card.classList.add('discovered');
+                appendLog(`> [도감 업데이트] 신규 입자 '${p.name}' 발견!`);
+            }
+        }
+
+        function appendLog(msg) {
+            let logDiv = document.getElementById('event-log');
+            logDiv.innerHTML += msg + '<br>';
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // --- 3D 파티클 클래스 ---
+        // --- 3D 파티클 클래스 (플로팅 라벨 & 신호 대비 극대화 적용) ---
+        class Particle {
+            constructor(type, speed, isSignal, lifespan = Infinity, id = null) {
+                this.pos = createVector(0, 0, 0);
+                this.vel = p5.Vector.random3D().mult(speed);
+                this.type = type;
+                this.isSignal = isSignal;
+                this.history = [];
+                this.active = true;
+                this.lifespan = lifespan;
+                this.id = id;
+
+                this.charge = random([-1, 1]);
+                if (type === 'photon' || id === 'z' || id === 'h') this.charge = 0;
+
+                // [적용 1] 핵심 입자들에만 플로팅 라벨(이름표) 부여
+                this.label = "";
+                if (this.isSignal) {
+                    if (type === 'muon') this.label = this.charge > 0 ? 'μ⁺' : 'μ⁻';
+                    else if (type === 'electron') this.label = this.charge > 0 ? 'e⁺' : 'e⁻';
+                    else if (type === 'photon') this.label = 'γ';
+                    // 👇 중성미자 종류별 라벨 지정 (필요 시 triggerCollision에서 id를 넘겨받아야 함)
+                    else if (type === 'neutrino') {
+                        if (this.id === 've') this.label = 'νe';
+                        else if (this.id === 'vmu') this.label = 'νμ';
+                        else this.label = 'ντ';
+                    }
+                    else if (id === 'z') this.label = 'Z';
+                    else if (id === 'h') this.label = 'H';
+                }
+
+                // [적용 2] 신호 vs 잡음 색상 대비 극대화
+                if (!this.isSignal) {
+                    // 배경 입자(잡음)는 아주 어둡고 투명한 회보라색으로 죽임 (Dimming)
+                    this.color = color(100, 100, 150, 40);
+                } else {
+                    // 핵심 신호 입자들은 눈에 확 띄는 밝은 네온 컬러 부여
+                    if (type === 'electron') this.color = color(46, 204, 113, 255);
+                    else if (type === 'muon') this.color = color(102, 252, 241, 255); // 눈에 띄는 형광 시안색
+                    else if (type === 'photon') this.color = color(241, 196, 15, 255);
+                    else if (id === 'z') this.color = color(231, 76, 60, 255);
+                    else if (id === 'h') this.color = color(255, 255, 255, 255);
+                }
+
+                this.isSplash = false;
+                this.splashRadius = 0;
+                this.splashMax = this.isSignal ? 40 : 15;
+            }
+
+            update() {
+                if (this.isSplash) {
+                    this.splashRadius += 2.0 * timeScale;
+                    return;
+                }
+                if (!this.active) return;
+
+                this.history.push(this.pos.copy());
+                // 잡음은 꼬리 길이를 15로 짧게, 신호는 40으로 아주 길게 유지
+                if (this.history.length > (this.isSignal ? 40 : 15)) this.history.shift();
+
+                if (this.charge !== 0) {
+                    let curvature = (this.charge * bField * 0.05) / (this.vel.mag() * 0.1);
+
+                    let rx = this.vel.x * cos(curvature * timeScale) - this.vel.y * sin(curvature * timeScale);
+                    let ry = this.vel.x * sin(curvature * timeScale) + this.vel.y * cos(curvature * timeScale);
+                    this.vel.x = rx;
+                    this.vel.y = ry;
+                }
+
+                this.pos.add(p5.Vector.mult(this.vel, timeScale));
+
+                if (this.lifespan !== Infinity) {
+                    this.lifespan -= 1 * timeScale;
+                    if (this.lifespan <= 0) {
+                        this.triggerDecay();
+                        return;
+                    }
+                }
+
+                let r = dist(0, 0, this.pos.x, this.pos.y);
+                if (this.type === 'electron' && r > R_ECAL) this.triggerShower();
+                else if (this.type === 'photon' && r > R_ECAL) this.triggerShower();
+                else if (this.type === 'hadron' && r > R_HCAL) this.triggerShower();
+                else if (this.type === 'muon' && r > R_MUON + 100) this.active = false;
+            }
+
+            triggerShower() {
+                this.active = false;
+                this.isSplash = true;
+            }
+
+            triggerDecay() {
+                this.active = false;
+                if (this.id === 'z') {
+                    let m1 = new Particle('muon', 12, true); m1.pos = this.pos.copy(); m1.vel = this.vel.copy().rotate(0.6);
+                    let m2 = new Particle('muon', 12, true); m2.pos = this.pos.copy(); m2.vel = this.vel.copy().rotate(-0.6);
+                    particles.push(m1, m2);
+                } else if (this.id === 'h') {
+                    let p1 = new Particle('photon', 16, true); p1.pos = this.pos.copy(); p1.vel = this.vel.copy().rotate(1.2);
+                    let p2 = new Particle('photon', 16, true); p2.pos = this.pos.copy(); p2.vel = this.vel.copy().rotate(-1.2);
+                    particles.push(p1, p2);
+                }
+                this.isSplash = true;
+                this.splashMax = 20;
+            }
+
+            display() {
+
+                push();
+                noFill();
+
+                // [적용 2] 신호 입자는 선 굵기를 3.5로 두껍게, 잡음 입자는 0.8로 아주 얇게!
+                strokeWeight(this.isSignal ? 3.5 : 0.8);
+
+                beginShape();
+                for (let i = 0; i < this.history.length; i++) {
+                    let alpha = map(i, 0, this.history.length, 0, 255);
+                    let c = color(this.color);
+                    // 잡음은 꼬리로 갈수록 더 극단적으로 투명해짐
+                    c.setAlpha(this.isSignal ? alpha : alpha * 0.3);
+                    stroke(c);
+                    vertex(this.history[i].x, this.history[i].y, this.history[i].z);
+                }
+                endShape();
+
+                translate(this.pos.x, this.pos.y, this.pos.z);
+                noStroke();
+                if (this.isSplash && this.splashRadius < this.splashMax) {
+                    let alpha = map(this.splashRadius, 0, this.splashMax, 150, 0);
+                    let c = color(this.color); c.setAlpha(alpha);
+                    fill(c);
+                    sphere(this.splashRadius);
+                } else if (this.active) {
+                    if (this.id === 'z' || this.id === 'h') {
+                        fill(255); sphere(4);
+                    } else {
+                        fill(this.color);
+                        sphere(this.isSignal ? 4 : 1.5);
+                    }
+
+                    // [적용 1] 입자 옆에 따라다니는 플로팅 라벨 표시
+                    if (this.isSignal && this.label !== "") {
+                        push();
+                        translate(20, -20, 0); // 입자보다 살짝 우측 상단으로 띄움
+                        noStroke();
+                        tint(this.color); // 흰색 텍스트 이미지에 입자의 네온 색상을 입힘!
+                        texture(labelTextures[this.label]); // 아까 만든 글씨 이미지를 스티커로 가져옴
+                        plane(30, 30); // 가로세로 30 크기의 3D 유리판에 붙이기
+                        pop();
+                    }
+                }
+                pop();
+            }
+        }
+
+        function recordMass(mass) {
+            let bin = Math.floor(map(mass, 0, 200, 0, 49)); // 질량값을 0~49 인덱스로 매핑
+            if (bin >= 0 && bin < 50) {
+                massBins[bin]++; // 해당 구간 데이터 카운트 증가
+            }
+            updateHistogramUI(); // 그래프 업데이트
+        }
+
+        // [추가] 하드론 제트(Jet) 현상 생성 함수
+        function spawnJet() {
+            // 제트가 뿜어져 나갈 중심 방향을 무작위로 결정
+            let baseDir = p5.Vector.random3D();
+            let numTracks = floor(random(6, 12)); // 한 번에 6~12개의 입자 생성
+
+            for (let i = 0; i < numTracks; i++) {
+                // 중심 방향에서 아주 살짝씩만 어긋나게 설정 (좁은 원뿔 모양)
+                let variation = p5.Vector.random3D().mult(0.15);
+                let jetVel = p5.Vector.add(baseDir, variation).normalize().mult(random(5, 10));
+
+                // 제트는 주로 강입자(hadron)로 구성됨
+                let p = new Particle('hadron', jetVel.mag(), false);
+                p.vel = jetVel; // 위에서 계산한 제트 방향 속도 강제 할당
+                p.color = color(150, 150, 150, 80); // 제트는 신호와 구분되게 회색조로 설정
+                particles.push(p);
+            }
+            appendLog("> <span style='color:#bbb'>🌀 강입자 제트(Hadron Jet) 관측됨</span>");
+        }
+
+        function updateHistogramUI() {
+            const histContainer = document.getElementById('mass-histogram');
+            if (!histContainer) return;
+            histContainer.innerHTML = ''; // 이전 그래프 삭제
+
+            let maxVal = Math.max(...massBins, 5); // 그래프 높이 자동 조절을 위한 최대값 (최소 5)
+
+            massBins.forEach((val, i) => {
+                let bar = document.createElement('div');
+                bar.className = 'histogram-bar';
+                bar.style.height = (val / maxVal * 100) + '%'; // 최대값 대비 비율로 높이 설정
+
+                // 특정 입자 질량 구역 강조 (Z: 91GeV 부근, Higgs: 125GeV 부근)
+                if (i >= 22 && i <= 24) bar.style.backgroundColor = '#E74C3C'; // Z 보손 구간 (빨강)
+                if (i >= 30 && i <= 32) bar.style.backgroundColor = '#F1C40F'; // 힉스 보손 구간 (노랑)
+
+                histContainer.appendChild(bar);
+            });
+        }
+
+        // --- 메인 3D 렌더링 루프 ---
+        function draw() {
+            background(5, 7, 12); // 아주 어두운 남색 배경
+
+            // [3D 핵심] 마우스 드래그로 검출기 내부를 자유롭게 회전/확대 가능하게 합니다!
+            orbitControl(4, 4, 0.1);
+
+            timeScale = lerp(timeScale, targetTimeScale, 0.02);
+
+            if (collisionFlash > 200) {
+                rotateX(random(-0.02, 0.02));
+                rotateY(random(-0.02, 0.02));
+            }
+
+            // --- 1. 3D 원통형 검출기 그리기 (깔끔한 격자 모드) ---
+            push();
+            strokeWeight(1);
+            noFill();
+
+            // TRACKER (하늘색)
+            stroke(102, 252, 241, 60);
+            drawCleanCylinder(R_TRACKER, 600, 24);
+
+            // ECAL (초록색)
+            stroke(46, 204, 113, 50);
+            drawCleanCylinder(R_ECAL, 700, 24);
+
+            // HCAL (보라색)
+            stroke(155, 89, 182, 50);
+            drawCleanCylinder(R_HCAL, 800, 24);
+
+            // MUON Chamber (흰색)
+            stroke(255, 255, 255, 30);
+            drawCleanCylinder(R_MUON, 900, 16);
+            pop();
+
+            // --- 2. 양성자 접근 애니메이션 (Z축 방향) ---
+            if (isColliding) {
+                push();
+                noStroke();
+                for (let p of incomingProtons) {
+                    push();
+                    translate(0, 0, p.z); // Z축(깊이)으로 이동
+                    fill(255, 50, 50); sphere(8); // 3D 구체 양성자
+                    pop();
+                    p.z += (p.v * timeScale);
+                }
+                pop();
+
+                if (Math.abs(incomingProtons[0].z) <= Math.abs(incomingProtons[0].v * timeScale)) {
+                    isColliding = false;
+                    triggerCollision();
+                }
+            } else {
+                for (let p of particles) {
+                    p.update();
+                    p.display();
+                }
+            }
+
+            // 충돌 섬광 덮어씌우기 (Plane 이용)
+            if (collisionFlash > 0) {
+                push();
+                noStroke(); fill(255, collisionFlash);
+                plane(width * 2, height * 2);
+                collisionFlash -= 15;
+                pop();
+            }
+
+            // [추가] 사라진 에너지(중성미자) 시각화
+            if (showMissingEnergy && missingEnergyVec) {
+                // 벡터 길이를 검출기 크기에 맞게 조정 (시각적 효과)
+                let visualVec = missingEnergyVec.copy().normalize().mult(R_MUON + 50);
+                drawDashedLine(visualVec);
+            }
+
+        }
+
+        // --- 역추적 팝업 (이전과 동일) ---
+        function showReconstruction(id) {
+            noLoop(); 
+            let modal = document.getElementById('reconstruction-modal');
+            let title = document.getElementById('recon-title');
+            let desc = document.getElementById('recon-desc');
+            let diagram = document.getElementById('recon-svg');
+
+            // 애니메이션 스타일 정의
+            const svgStyle = `
+                <style>
+                    .fey-line { stroke-dasharray: 300; stroke-dashoffset: 300; animation: fey-draw 1.2s ease-out forwards; }
+                    .fey-fade { opacity: 0; animation: fey-in 0.5s ease-out forwards; }
+                    .delay-1 { animation-delay: 0.5s; }
+                    .delay-2 { animation-delay: 1.0s; }
+                    @keyframes fey-draw { to { stroke-dashoffset: 0; } }
+                    @keyframes fey-in { to { opacity: 1; } }
+                </style>
+            `;
+
+            if (id === 'z') {
+                title.innerHTML = "🔍 [분석 완료] Z 보손 붕괴 역추적";
+                desc.innerHTML = "충돌 직후 발생한 <b>고에너지 뮤온(μ⁻)과 반뮤온(μ⁺) 쌍</b>의 궤적을 거꾸로 역추적하여 계산한 결과, 약력을 매개하는 무거운 입자인 <b>Z 보손</b>이 찰나의 순간 존재했음을 증명했습니다!";
+                
+                // Z 보손 생성/붕괴 (q + qbar -> Z -> mu + mu)
+                diagram.innerHTML = svgStyle + `
+                    <svg width="100%" height="160" viewBox="0 0 400 160">
+                        <line x1="50" y1="30" x2="150" y2="80" stroke="#9B59B6" stroke-width="3" class="fey-line"/>
+                        <text x="30" y="35" fill="white" font-size="16" class="fey-fade">q</text>
+                        <line x1="50" y1="130" x2="150" y2="80" stroke="#9B59B6" stroke-width="3" class="fey-line"/>
+                        <text x="30" y="135" fill="white" font-size="16" class="fey-fade">q̄</text>
+                        
+                        <path d="M 150 80 L 250 80" stroke="#E74C3C" stroke-width="4" stroke-dasharray="8 4" fill="none" class="fey-line delay-1"/>
+                        <text x="180" y="70" fill="#F5B7B1" font-weight="bold" class="fey-fade delay-1">Z</text>
+                        
+                        <line x1="250" y1="80" x2="350" y2="30" stroke="#2ECC71" stroke-width="3" class="fey-line delay-2"/>
+                        <text x="360" y="35" fill="white" font-size="16" class="fey-fade delay-2">μ⁻</text>
+                        <line x1="250" y1="80" x2="350" y2="130" stroke="#2ECC71" stroke-width="3" class="fey-line delay-2"/>
+                        <text x="360" y="135" fill="white" font-size="16" class="fey-fade delay-2">μ⁺</text>
+                    </svg>
+                `;
+            } else if (id === 'h') {
+                title.innerHTML = "🔍 [분석 완료] 힉스 보손(H) 붕괴 역추적";
+                desc.innerHTML = "우리는 힉스 보손을 직접 볼 수 없습니다! 하지만 전자기 열량계(ECAL)에 기록된 <b>두 개의 강력한 광자(γ) 폭발 흔적</b>을 합산해 보니 힉스 보손의 질량과 완벽히 일치했습니다. 방금 신의 입자를 관측하셨습니다!";
+                
+                // 힉스 보손 (gg -> top loop -> H -> gamma gamma)
+                diagram.innerHTML = svgStyle + `
+                    <svg width="100%" height="160" viewBox="0 0 400 160">
+                        <path d="M 50 40 Q 80 40 100 60" stroke="#E74C3C" stroke-width="2" fill="none" class="fey-line"/>
+                        <path d="M 50 120 Q 80 120 100 100" stroke="#E74C3C" stroke-width="2" fill="none" class="fey-line"/>
+                        <text x="30" y="45" fill="white" class="fey-fade">g</text>
+                        <text x="30" y="125" fill="white" class="fey-fade">g</text>
+                        
+                        <path d="M 100 60 L 140 80 L 100 100 Z" stroke="#9B59B6" stroke-width="3" fill="rgba(155, 89, 182, 0.2)" class="fey-line delay-1"/>
+                        <text x="105" y="85" fill="#D2B4DE" font-size="12" class="fey-fade delay-1">top loop</text>
+                        
+                        <line x1="140" y1="80" x2="260" y2="80" stroke="#F1C40F" stroke-width="5" stroke-dasharray="10 5" class="fey-line delay-1"/>
+                        <text x="190" y="70" fill="#F9E79F" font-weight="bold" class="fey-fade delay-1">H</text>
+                        
+                        <path d="M 260 80 Q 290 50 350 40" stroke="#F1C40F" stroke-width="2" fill="none" class="fey-line delay-2"/>
+                        <text x="360" y="45" fill="white" class="fey-fade delay-2">γ</text>
+                        <path d="M 260 80 Q 290 110 350 120" stroke="#F1C40F" stroke-width="2" fill="none" class="fey-line delay-2"/>
+                        <text x="360" y="125" fill="white" class="fey-fade delay-2">γ</text>
+                    </svg>
+                `;
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeReconstruction() {
+            document.getElementById('reconstruction-modal').style.display = 'none';
+            loop();
+        }
+
+        function drawCleanCylinder(r, h, detail) {
+            // 1. 가로 방향 원형 링 그리기 (5단계 층)
+            for (let z = -h / 2; z <= h / 2; z += h / 4) {
+                push();
+                translate(0, 0, z);
+                beginShape();
+                for (let a = 0; a < TWO_PI; a += TWO_PI / detail) {
+                    vertex(cos(a) * r, sin(a) * r);
+                }
+                endShape(CLOSE);
+                pop();
+            }
+            // 2. 세로 방향 직선 연결하기
+            for (let i = 0; i < detail; i++) {
+                let a = TWO_PI / detail * i;
+                let x = cos(a) * r;
+                let y = sin(a) * r;
+                line(x, y, -h / 2, x, y, h / 2);
+            }
+        }
+
+        // [추가] 3D 공간에 점선(중성미자 경로)을 그리는 함수
+        function drawDashedLine(v) {
+            let segments = 20; // 점선 개수
+            let dashVec = v.copy().div(segments);
+
+            push();
+            stroke(255, 255, 255, 150); // 흐릿한 흰색
+            strokeWeight(2);
+            for (let i = 0; i < segments; i++) {
+                if (i % 2 === 0) { // 하나 건너뛰며 그리기
+                    let start = p5.Vector.mult(dashVec, i);
+                    let end = p5.Vector.mult(dashVec, i + 1);
+                    line(start.x, start.y, start.z, end.x, end.y, end.z);
+                }
+            }
+
+            // 화살표 끝에 'v' 라벨 표시 (중성미자 기호)
+            translate(v.x, v.y, v.z);
+            noStroke(); fill(255, 200);
+            texture(labelTextures['ν']); // 임시로 광자(gamma) 텍스처를 쓰거나 'v'를 추가하세요.
+            plane(40, 40);
+            pop();
+        }
+
+    </script>
+    <div id="particle-tooltip" class="tooltip"></div>
+</body>
+
+</html>
