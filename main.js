@@ -116,7 +116,13 @@ const projects = [
   { title: "이중슬릿", category: "광학", desc: "이중슬릿을 통과한 전자의 간섭무늬 확인하기", tags: ["슬릿", "간섭"], emoji: "〰️", demo: "./simul/이중슬릿.html", curriculumId: "[12전자03-01]", thumb: "./thumb_nail/이중슬릿.png" },
   { title: "양자 터널링", category: "현대물리", desc: "입자가 벽을 뚫고 지나간다? 양자 터널 효과와 확률 파동", tags: ["양자역학", "터널링", "파동함수"], emoji: "👻", demo: "./simul/양자 터널링.html", curriculumId: "[12전자03-03]", thumb: "./thumb_nail/양자_터널링.png" },
   { title: "원자모형", category: "시뮬레이션", desc: "보어/오비탈/전자구름 개념 확인하기", tags: ["원자", "준위"], emoji: "🧬", demo: "./simul/원자모형.html", curriculumId: "[12전자03-04]", thumb: "./thumb_nail/원자모형.png" },
-  { title: "나만의 별 키우기", category: "현대물리", desc: "가스를 모아 별을 점화하라! 중력과 압력의 균형(정역학 평형) 게임", tags: ["핵융합", "별의진화", "흑체복사"], emoji: "🌟", demo: "./simul/별의 탄생.html", curriculumId: "[12전자03-05]", thumb: "./thumb_nail/별의 탄생.png" }
+  { title: "나만의 별 키우기", category: "현대물리", desc: "가스를 모아 별을 점화하라! 중력과 압력의 균형(정역학 평형) 게임", tags: ["핵융합", "별의진화", "흑체복사"], emoji: "🌟", demo: "./simul/별의 탄생.html", curriculumId: "[12전자03-05]", thumb: "./thumb_nail/별의 탄생.png" },
+
+ // ===== 현대물리 =====
+  { title: "RLC 공명", category: "현대물리", desc: "베타붕괴 현상 알아보기", tags: ["베타붕괴", "입자물리"], emoji: "☢️", demo: "./simul/베타붕괴.html", curriculumId: " ", thumb: "./thumb_nail/베타붕괴.png" },
+  { title: "입자가속기", category: "현대물리", desc: "입자가속기 속에서 생기는 표준모형 알아보기", tags: ["입자가속기", "입자물리"], emoji: "🌀", demo: "./simul/입자가속기.html", curriculumId: " ", thumb: "./thumb_nail/입자가속기.png" },
+
+
 
 ];
 
@@ -792,5 +798,4 @@ render();
       closeModal();
     }
   });
-
 })();
