@@ -118,7 +118,7 @@ const projects = [
   { title: "원자모형", category: "시뮬레이션", desc: "보어/오비탈/전자구름 개념 확인하기", tags: ["원자", "준위"], emoji: "🧬", demo: "./simul/원자모형.html", curriculumId: "[12전자03-04]", thumb: "./thumb_nail/원자모형.png" },
   { title: "나만의 별 키우기", category: "현대물리", desc: "가스를 모아 별을 점화하라! 중력과 압력의 균형(정역학 평형) 게임", tags: ["핵융합", "별의진화", "흑체복사"], emoji: "🌟", demo: "./simul/별의 탄생.html", curriculumId: "[12전자03-05]", thumb: "./thumb_nail/별의 탄생.png" },
 
- // ===== 현대물리 =====
+  // ===== 현대물리 =====
   { title: "베타붕괴", category: "현대물리", desc: "베타붕괴 현상 알아보기", tags: ["베타붕괴", "입자물리"], emoji: "☢️", demo: "./simul/베타붕괴.html", curriculumId: " ", thumb: "./thumb_nail/베타붕괴.png" },
   { title: "입자가속기", category: "현대물리", desc: "입자가속기 속에서 생기는 표준모형 알아보기", tags: ["입자가속기", "입자물리"], emoji: "🌀", demo: "./simul/입자가속기.html", curriculumId: " ", thumb: "./thumb_nail/입자가속기.png" },
 
@@ -134,12 +134,1007 @@ const sortSel = document.getElementById('sort');
 const count = document.getElementById('count');
 const empty = document.getElementById('empty');
 
+// ====================== SEED 수업 설계 상태 ======================
+let curriculumData = null;
+const curriculumIndex = new Map();
+
+
+
+function normalizeCurriculumCodes(raw) {
+  if (!raw || raw === "ALL") return [];
+  return String(raw)
+    .split(",")
+    .map(v => v.replace(/\[|\]/g, "").trim())
+    .filter(Boolean);
+}
+
+async function loadCurriculumData() {
+  if (curriculumData) return curriculumData;
+
+  const res = await fetch("./science_curriculum_2022_checkbox.json");
+  if (!res.ok) throw new Error("교육과정 JSON을 불러오지 못했습니다.");
+  curriculumData = await res.json();
+
+  curriculumIndex.clear();
+  curriculumData.courses.forEach(course => {
+    course.units.forEach(unit => {
+      unit.standards.forEach(std => {
+        curriculumIndex.set(std.achievement_code, {
+          school_level: course.school_level,
+          course: course.course,
+          unit: unit.unit,
+          ...std
+        });
+      });
+    });
+  });
+
+  return curriculumData;
+}
+
+// ====================== SEED (Gemini 자유입력형) ======================
+const seedState = {
+  project: null,
+  apiKey: window.APP_CONFIG?.GEMINI_API_KEY || "",
+  lastResultText: ""
+};
+
+const elSeed = {
+  openBtn: document.getElementById("open-seed"),
+  backdrop: document.getElementById("seed-backdrop"),
+  panel: document.getElementById("seed-panel"),
+  closeBtn: document.getElementById("seed-close"),
+  projectCard: document.getElementById("seed-project-card"),
+  prompt: document.getElementById("seed-user-prompt"),
+  generateBtn: document.getElementById("seed-generate"),
+  copyBtn: document.getElementById("seed-copy"),
+  output: document.getElementById("seed-output")
+};
+
+if (elSeed.apiKey) {
+  elSeed.apiKey.value = seedState.apiKey;
+}
+
+function getStandardsForProject(project) {
+  if (!project) return [];
+  const codes = normalizeCurriculumCodes(project.curriculumId);
+  return codes
+    .map(code => curriculumIndex.get(code))
+    .filter(Boolean);
+}
+
+function renderSeedProjectCard() {
+  if (!elSeed.projectCard) return;
+
+  const p = seedState.project;
+  if (!p) {
+    elSeed.projectCard.innerHTML = `<div class="seed-muted">선택된 시뮬레이션이 없습니다. 상단 '수업 설계' 버튼으로 일반 설계를 시작하거나 카드의 '수업설계' 버튼을 눌러 주세요.</div>`;
+    return;
+  }
+
+  const standards = getStandardsForProject(p);
+  const codesHtml = standards.length
+    ? standards.map(s => `<span class="seed-badge">[${s.achievement_code}]</span>`).join("")
+    : `<span class="seed-badge">성취기준 연결 없음</span>`;
+
+  elSeed.projectCard.innerHTML = `
+    <div style="font-size:18px;font-weight:700;margin-bottom:6px;">${escapeHtml(p.title)}</div>
+    <div style="color:#9db3ec;margin-bottom:8px;">${escapeHtml(p.desc)}</div>
+    <div class="seed-badges">${codesHtml}</div>
+  `;
+}
+
+function openSeedPanel(project = null) {
+  seedState.project = project;
+  renderSeedProjectCard();
+
+  if (project && elSeed.prompt && !elSeed.prompt.value.trim()) {
+    const standards = getStandardsForProject(project);
+    const standardLines = standards.length
+      ? standards.map(s => `- [${s.achievement_code}] ${s.achievement_text}`).join("\n")
+      : "- 연결된 성취기준 없음";
+
+    elSeed.prompt.value =
+      `다음 조건을 반영하여 고등학교 과학/물리 수업안을 설계해줘.
+
+[사용 시뮬레이션]
+- ${project.title}
+- 설명: ${project.desc}
+
+[연결 성취기준]
+${standardLines}
+
+[요청]
+- 2차시 중 1차시 또는 2차시 수업으로 적용 가능하게
+- 탐구 질문, 변인 설정, 시뮬레이션 활동, 데이터 표현, 형성평가 포함
+- 학생 활동 중심으로
+- 결과는 구체적이고 바로 수업에 쓸 수 있게 작성`;
+  }
+
+  document.body.style.overflow = "hidden";
+  elSeed.backdrop.hidden = false;
+  elSeed.panel.classList.add("open");
+  elSeed.panel.setAttribute("aria-hidden", "false");
+}
+
+function closeSeedPanel() {
+  elSeed.panel.classList.remove("open");
+  elSeed.panel.setAttribute("aria-hidden", "true");
+  elSeed.backdrop.hidden = true;
+  document.body.style.overflow = "";
+}
+
+function getProjectContextText(project) {
+  if (!project) {
+    return "현재 선택된 시뮬레이션 없음";
+  }
+
+  const standards = getStandardsForProject(project);
+  const standardText = standards.length
+    ? standards.map(s => `[${s.achievement_code}] ${s.achievement_text}`).join("\n")
+    : "연결된 성취기준 없음";
+
+  return `
+시뮬레이션 제목: ${project.title}
+설명: ${project.desc}
+카테고리: ${project.category}
+태그: ${(project.tags || []).join(", ")}
+실행 경로: ${project.demo}
+연결 성취기준:
+${standardText}
+`.trim();
+}
+
+function buildGeminiRequestBody(userPrompt, project) {
+  const projectContext = getProjectContextText(project);
+
+  return {
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            text:
+              `너는 한국 고등학교 과학·물리 수업 설계 전문가다.
+반드시 실제 수업에 바로 적용 가능한 수준으로 작성하라.
+추상적 표현, 상투적 문장, 빈약한 일반론을 피하라.
+탐구 질문, 학생 활동, 교사 발문, 데이터 표현, 형성평가가 살아 있어야 한다.
+
+[시뮬레이션/교육과정 문맥]
+${projectContext}
+
+[교사 요구 조건]
+${userPrompt}`
+          }
+        ]
+      }
+    ],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: "object",
+        properties: {
+          lesson_title: { type: "string" },
+          target_summary: { type: "string" },
+          standards_used: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                code: { type: "string" },
+                text: { type: "string" }
+              },
+              required: ["code", "text"]
+            }
+          },
+          lesson_objectives: {
+            type: "array",
+            items: { type: "string" }
+          },
+          essential_question: { type: "string" },
+          prior_knowledge: {
+            type: "array",
+            items: { type: "string" }
+          },
+          inquiry_design: {
+            type: "object",
+            properties: {
+              hypothesis_example: { type: "string" },
+              independent_variables: {
+                type: "array",
+                items: { type: "string" }
+              },
+              dependent_variables: {
+                type: "array",
+                items: { type: "string" }
+              },
+              control_variables: {
+                type: "array",
+                items: { type: "string" }
+              },
+              data_representation: {
+                type: "array",
+                items: { type: "string" }
+              }
+            },
+            required: [
+              "hypothesis_example",
+              "independent_variables",
+              "dependent_variables",
+              "control_variables",
+              "data_representation"
+            ]
+          },
+          lesson_flow: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                phase: { type: "string" },
+                teacher_actions: {
+                  type: "array",
+                  items: { type: "string" }
+                },
+                student_actions: {
+                  type: "array",
+                  items: { type: "string" }
+                },
+                tips: {
+                  type: "array",
+                  items: { type: "string" }
+                }
+              },
+              required: ["phase", "teacher_actions", "student_actions", "tips"]
+            }
+          },
+          worksheet_items: {
+            type: "array",
+            items: { type: "string" }
+          },
+          formative_assessment: {
+            type: "array",
+            items: { type: "string" }
+          },
+          extension_or_reflection: {
+            type: "array",
+            items: { type: "string" }
+          }
+        },
+        required: [
+          "lesson_title",
+          "target_summary",
+          "standards_used",
+          "lesson_objectives",
+          "essential_question",
+          "prior_knowledge",
+          "inquiry_design",
+          "lesson_flow",
+          "worksheet_items",
+          "formative_assessment",
+          "extension_or_reflection"
+        ]
+      }
+    }
+  };
+}
+
+async function generateLessonWithGemini() {
+  const apiKey = seedState.apiKey;
+  const userPrompt = elSeed.prompt.value.trim();
+
+  if (!apiKey) {
+    alert("Gemini API Key를 찾을 수 없습니다. .env에 VITE_GEMINI_API_KEY를 설정해 주세요.");
+    return;
+  }
+
+  if (!userPrompt) {
+    alert("수업 조건을 입력해 주세요.");
+    return;
+  }
+
+  elSeed.generateBtn.disabled = true;
+  showSeedLoadingUI();
+
+  try {
+    const model = "gemini-2.5-flash";
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+    const body = buildGeminiRequestBody(userPrompt, seedState.project);
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error(data);
+      throw new Error(data?.error?.message || "Gemini 호출에 실패했습니다.");
+    }
+
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    if (!rawText) {
+      console.error(data);
+      throw new Error("Gemini 응답이 비어 있습니다.");
+    }
+
+    const parsed = JSON.parse(rawText);
+    seedState.lastResultText = rawText;
+    renderLessonResult(parsed);
+
+  } catch (err) {
+    console.error(err);
+    elSeed.output.innerHTML = `
+      <div class="seed-muted" style="color:#ffb4b4;">
+        생성 실패: ${escapeHtml(err.message)}
+      </div>
+      <div class="seed-help">모델명, API 키, 요청 한도를 확인해 주세요.</div>
+    `;
+  } finally {
+    elSeed.generateBtn.disabled = false;
+  }
+}
+
+let seedLoadingTimer = null;
+
+function showSeedLoadingUI() {
+  const mascots = [
+    "./image/역학시물이.png",
+    "./image/전기시물이.png",
+    "./image/양자시물이.png",
+    "./image/열시물이.png"
+  ];
+
+  const messages = [
+    "탐구 질문을 정리하고 있어요...",
+    "성취기준과 연결하는 중입니다...",
+    "시뮬레이션 변인을 설계하는 중...",
+    "형성평가 문항을 구성하고 있어요...",
+    "학생 활동 흐름을 다듬는 중입니다...",
+    "수업 구조를 최적화하고 있어요..."
+  ];
+
+  let i = 0;
+
+  elSeed.output.innerHTML = `
+    <div class="seed-loading-wrap">
+      <img id="seed-loading-img" class="seed-loading-mascot" src="${mascots[0]}">
+      <div class="seed-loading-text">수업을 설계하는 중입니다</div>
+      <div id="seed-loading-msg" class="seed-loading-sub">${messages[0]}</div>
+    </div>
+  `;
+
+  seedLoadingTimer = setInterval(() => {
+    i++;
+
+    const img = document.getElementById("seed-loading-img");
+    const msg = document.getElementById("seed-loading-msg");
+
+    if (!img || !msg) return;
+
+    img.style.opacity = "0";
+    img.style.transform = "scale(.9)";
+
+    setTimeout(() => {
+      img.src = mascots[i % mascots.length];
+      img.style.opacity = "1";
+      img.style.transform = "scale(1)";
+      msg.textContent = messages[i % messages.length];
+    }, 250);
+
+  }, 1700);
+}
+
+function stopSeedLoadingUI() {
+  if (seedLoadingTimer) {
+    clearInterval(seedLoadingTimer);
+    seedLoadingTimer = null;
+  }
+}
+
+function renderLessonResult(data) {
+  const standardsBadges = (data.standards_used || [])
+    .map(s => `<span class="seed-badge">${escapeHtml(s.code)}</span>`)
+    .join("");
+
+  const standardsList = (data.standards_used || [])
+    .map(s => `<li><strong>${escapeHtml(s.code)}</strong> ${escapeHtml(s.text)}</li>`)
+    .join("");
+
+  const objectivesList = (data.lesson_objectives || [])
+    .map(v => `<li>${escapeHtml(v)}</li>`)
+    .join("");
+
+  const priorList = (data.prior_knowledge || [])
+    .map(v => `<li>${escapeHtml(v)}</li>`)
+    .join("");
+
+  const worksheetList = (data.worksheet_items || [])
+    .map(v => `<li>${escapeHtml(v)}</li>`)
+    .join("");
+
+  const formativeList = (data.formative_assessment || [])
+    .map(v => `<li>${escapeHtml(v)}</li>`)
+    .join("");
+
+  const reflectionList = (data.extension_or_reflection || [])
+    .map(v => `<li>${escapeHtml(v)}</li>`)
+    .join("");
+
+  const flowHtml = (data.lesson_flow || [])
+    .map(step => `
+      <div class="seed-flow-step">
+        <h5>${escapeHtml(step.phase)}</h5>
+        <div class="seed-flow-grid">
+          <div class="seed-flow-box">
+            <strong>교사 활동</strong>
+            <ul>${(step.teacher_actions || []).map(v => `<li>${escapeHtml(v)}</li>`).join("")}</ul>
+          </div>
+          <div class="seed-flow-box">
+            <strong>학생 활동</strong>
+            <ul>${(step.student_actions || []).map(v => `<li>${escapeHtml(v)}</li>`).join("")}</ul>
+          </div>
+        </div>
+        <div class="seed-tip-list">
+          <strong>수업 팁</strong>
+          <ul>${(step.tips || []).map(v => `<li>${escapeHtml(v)}</li>`).join("")}</ul>
+        </div>
+      </div>
+    `)
+    .join("");
+
+  elSeed.output.innerHTML = `
+    <div class="seed-result">
+      <div class="seed-doc">
+        <div class="seed-doc-hero">
+          <h3>${escapeHtml(data.lesson_title || "수업안")}</h3>
+          <p class="seed-doc-summary">${escapeHtml(data.target_summary || "")}</p>
+          <div class="seed-doc-meta">
+            ${standardsBadges || '<span class="seed-badge">성취기준 정보 없음</span>'}
+          </div>
+        </div>
+
+        <div class="seed-doc-body">
+          <div class="seed-doc-grid">
+            <div class="seed-card">
+              <h4>핵심 질문</h4>
+              <p>${escapeHtml(data.essential_question || "")}</p>
+            </div>
+
+            <div class="seed-card">
+              <h4>가설 예시</h4>
+              <p>${escapeHtml(data.inquiry_design?.hypothesis_example || "")}</p>
+            </div>
+
+            <div class="seed-card">
+              <h4>수업 목표</h4>
+              <ul>${objectivesList}</ul>
+            </div>
+
+            <div class="seed-card">
+              <h4>선수학습</h4>
+              <ul>${priorList}</ul>
+            </div>
+          </div>
+
+          <div class="seed-section-block">
+            <h4>반영 성취기준</h4>
+            <ul>${standardsList}</ul>
+          </div>
+
+          <div class="seed-doc-grid">
+            <div class="seed-card">
+              <h4>조작 변인</h4>
+              <ul>${(data.inquiry_design?.independent_variables || []).map(v => `<li>${escapeHtml(v)}</li>`).join("")}</ul>
+            </div>
+            <div class="seed-card">
+              <h4>종속 변인</h4>
+              <ul>${(data.inquiry_design?.dependent_variables || []).map(v => `<li>${escapeHtml(v)}</li>`).join("")}</ul>
+            </div>
+            <div class="seed-card">
+              <h4>통제 변인</h4>
+              <ul>${(data.inquiry_design?.control_variables || []).map(v => `<li>${escapeHtml(v)}</li>`).join("")}</ul>
+            </div>
+            <div class="seed-card">
+              <h4>데이터 표현</h4>
+              <ul>${(data.inquiry_design?.data_representation || []).map(v => `<li>${escapeHtml(v)}</li>`).join("")}</ul>
+            </div>
+          </div>
+
+          <div class="seed-section-block">
+            <h4>차시 흐름</h4>
+            ${flowHtml}
+          </div>
+
+          <div class="seed-doc-grid">
+            <div class="seed-card">
+              <h4>활동지 문항</h4>
+              <ol>${worksheetList}</ol>
+            </div>
+            <div class="seed-card">
+              <h4>형성평가</h4>
+              <ul>${formativeList}</ul>
+            </div>
+          </div>
+
+          <div class="seed-section-block">
+            <h4>확장 및 성찰</h4>
+            <ul>${reflectionList}</ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function initSeedGemini() {
+  try {
+    await loadCurriculumData();
+
+    elSeed.openBtn?.addEventListener("click", () => openSeedPanel(null));
+    elSeed.closeBtn?.addEventListener("click", closeSeedPanel);
+    elSeed.backdrop?.addEventListener("click", closeSeedPanel);
+    elSeed.generateBtn?.addEventListener("click", generateLessonWithGemini);
+
+    elSeed.copyBtn?.addEventListener("click", async () => {
+      const text = elSeed.output.innerText.trim();
+      if (!text) {
+        alert("복사할 내용이 없습니다.");
+        return;
+      }
+      await navigator.clipboard.writeText(text);
+      alert("수업안이 복사되었습니다.");
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && elSeed.panel?.classList.contains("open")) {
+        closeSeedPanel();
+      }
+    });
+
+  } catch (err) {
+    console.error("SEED 초기화 실패:", err);
+  }
+}
+
+function getCourseListBySchoolLevel(level) {
+  if (!curriculumData) return [];
+  return curriculumData.courses.filter(c => c.school_level === level);
+}
+
+function getCourseByName(courseName) {
+  if (!curriculumData) return null;
+  return curriculumData.courses.find(c => c.course === courseName) || null;
+}
+
+function getStandardsByCurrentUnit() {
+  const course = getCourseByName(seedState.course);
+  if (!course) return [];
+  const unit = course.units.find(u => u.unit === seedState.unit);
+  return unit ? unit.standards : [];
+}
+
+function setOptions(selectEl, items, valueKey = "value", labelKey = "label") {
+  if (!selectEl) return;
+  selectEl.innerHTML = "";
+  items.forEach(item => {
+    const option = document.createElement("option");
+    if (typeof item === "string") {
+      option.value = item;
+      option.textContent = item;
+    } else {
+      option.value = item[valueKey];
+      option.textContent = item[labelKey];
+    }
+    selectEl.appendChild(option);
+  });
+}
+
+function syncSeedControlsFromState() {
+  if (elSeed.period) elSeed.period.value = seedState.period;
+  if (elSeed.classType) elSeed.classType.value = seedState.classType;
+  if (elSeed.level) elSeed.level.value = seedState.level;
+}
+
+function renderSeedProjectSummary() {
+  if (!elSeed.projectSummary) return;
+  const p = seedState.project;
+  if (!p) {
+    elSeed.projectSummary.style.display = "none";
+    elSeed.projectSummary.innerHTML = "";
+    return;
+  }
+
+  const codes = normalizeCurriculumCodes(p.curriculumId);
+  const chips = codes.map(code => `<span class="seed-badge">${code}</span>`).join("");
+
+  elSeed.projectSummary.style.display = "block";
+  elSeed.projectSummary.innerHTML = `
+    <strong>${p.title}</strong><br>
+    <span style="color:#9db3ec;">${p.desc}</span>
+    <div class="seed-badge-list" style="margin-top:10px;">${chips}</div>
+  `;
+}
+
+function renderSeedStandards() {
+  const standards = getStandardsByCurrentUnit();
+  elSeed.standards.innerHTML = "";
+
+  if (!standards.length) {
+    elSeed.standards.innerHTML = `<p class="seed-placeholder">표시할 성취기준이 없습니다.</p>`;
+    return;
+  }
+
+  standards.forEach(std => {
+    const checked = seedState.selectedStandards.includes(std.achievement_code);
+    const label = document.createElement("label");
+    label.className = "seed-standard-item";
+    label.innerHTML = `
+      <input type="checkbox" value="${std.achievement_code}" ${checked ? "checked" : ""}>
+      <div>
+        <div class="code">[${std.achievement_code}]</div>
+        <div>${std.achievement_text}</div>
+      </div>
+    `;
+
+    const checkbox = label.querySelector("input");
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) {
+        if (!seedState.selectedStandards.includes(std.achievement_code)) {
+          seedState.selectedStandards.push(std.achievement_code);
+        }
+      } else {
+        seedState.selectedStandards = seedState.selectedStandards.filter(code => code !== std.achievement_code);
+      }
+    });
+
+    elSeed.standards.appendChild(label);
+  });
+}
+
+function renderSeedSelectors() {
+  const schoolLevels = [...new Set((curriculumData?.courses || []).map(c => c.school_level))];
+  if (!seedState.schoolLevel) seedState.schoolLevel = schoolLevels[0] || "";
+
+  setOptions(elSeed.school, schoolLevels);
+
+  const courses = getCourseListBySchoolLevel(seedState.schoolLevel);
+  if (!courses.some(c => c.course === seedState.course)) {
+    seedState.course = courses[0]?.course || "";
+  }
+  setOptions(elSeed.course, courses.map(c => c.course));
+
+  const currentCourse = getCourseByName(seedState.course);
+  const units = currentCourse ? currentCourse.units.map(u => u.unit) : [];
+  if (!units.includes(seedState.unit)) {
+    seedState.unit = units[0] || "";
+  }
+  setOptions(elSeed.unit, units);
+
+  renderSeedStandards();
+  syncSeedControlsFromState();
+}
+
+function applySeedModeUI() {
+  const isProject = seedState.mode === "project";
+  elSeed.modeFree.classList.toggle("active", !isProject);
+  elSeed.modeProject.classList.toggle("active", isProject);
+  renderSeedProjectSummary();
+}
+
+function findProjectsByStandards(codes) {
+  if (!codes?.length) return [];
+  return projects.filter(project => {
+    const projectCodes = normalizeCurriculumCodes(project.curriculumId);
+    return codes.some(code => projectCodes.includes(code));
+  });
+}
+
+function escapeHtml(text) {
+  return String(text)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function generateInquiryQuestions(standards, project) {
+  const texts = standards.map(s => s.achievement_text).join(" ");
+  const questions = [];
+
+  if (/포물선|등가속도|운동/.test(texts) || /포물선/.test(project?.title || "")) {
+    questions.push("발사각을 바꾸면 도달 거리와 최대 높이는 어떻게 변할까?");
+    questions.push("초기속도를 증가시키면 비행 시간과 운동 에너지 해석은 어떻게 달라질까?");
+  }
+
+  if (/에너지|일/.test(texts)) {
+    questions.push("시뮬레이션 속 운동에서 일은 어떤 조건에서 운동 에너지 변화로 연결될까?");
+  }
+
+  if (/전기|전류|자기|전자기/.test(texts)) {
+    questions.push("전압이나 자기장 세기를 바꾸면 관측 결과는 어떤 경향을 보일까?");
+  }
+
+  if (/빛|간섭|굴절|렌즈/.test(texts)) {
+    questions.push("매질이나 파장을 바꾸면 빛의 경로와 무늬는 어떻게 달라질까?");
+  }
+
+  if (/양자|확률|원자|터널/.test(texts)) {
+    questions.push("관측 조건을 바꾸었을 때 결과를 확률적으로 어떻게 해석할 수 있을까?");
+  }
+
+  if (!questions.length) {
+    questions.push("변인을 한 가지씩 바꾸었을 때 결과에 어떤 정량적 변화가 나타날까?");
+    questions.push("이 시뮬레이션 결과를 실제 현상과 연결하면 어떤 과학 개념을 설명할 수 있을까?");
+  }
+
+  return questions.slice(0, 3);
+}
+
+function generateVariables(standards, project) {
+  const texts = standards.map(s => s.achievement_text).join(" ");
+  const title = project?.title || "";
+  if (/포물선|등가속도|포물선 운동/.test(texts + title)) {
+    return {
+      independent: ["발사각", "초기속도"],
+      dependent: ["도달 거리", "최대 높이", "비행 시간"],
+      control: ["중력가속도", "질량", "시작 위치"]
+    };
+  }
+  if (/전기|전류|옴/.test(texts + title)) {
+    return {
+      independent: ["전압", "저항값"],
+      dependent: ["전류", "전력"],
+      control: ["회로 연결 방식", "측정 위치"]
+    };
+  }
+  if (/빛|굴절|간섭|렌즈/.test(texts + title)) {
+    return {
+      independent: ["파장", "굴절률", "슬릿 간격"],
+      dependent: ["굴절각", "무늬 간격", "상의 위치"],
+      control: ["광원 위치", "스크린 거리"]
+    };
+  }
+  return {
+    independent: ["조작 변인 1"],
+    dependent: ["관찰 결과", "측정값"],
+    control: ["환경 조건", "실험 절차"]
+  };
+}
+
+function generateLessonPlanHtml() {
+  const selected = seedState.selectedStandards
+    .map(code => curriculumIndex.get(code))
+    .filter(Boolean);
+
+  if (!selected.length) {
+    return `<p class="seed-placeholder">성취기준을 한 개 이상 선택해 주세요.</p>`;
+  }
+
+  const recommendedProjects = [
+    ...(seedState.project ? [seedState.project] : []),
+    ...findProjectsByStandards(seedState.selectedStandards)
+  ].filter((item, idx, arr) => arr.findIndex(v => v.title === item.title) === idx);
+
+  const vars = generateVariables(selected, seedState.project);
+  const inquiryQuestions = generateInquiryQuestions(selected, seedState.project);
+
+  const title = seedState.project
+    ? `${seedState.project.title}를 활용한 ${seedState.classType} 수업`
+    : `${seedState.unit} 단원 ${seedState.classType} 수업`;
+
+  const standardsHtml = selected
+    .map(std => `<li><strong>[${std.achievement_code}]</strong> ${escapeHtml(std.achievement_text)}</li>`)
+    .join("");
+
+  const projectHtml = recommendedProjects.length
+    ? recommendedProjects.map(project => {
+      return `
+          <li>
+            <strong>${escapeHtml(project.title)}</strong>
+            <div class="seed-mini">${escapeHtml(project.desc)}</div>
+            <a href="${project.demo}" target="_blank" rel="noopener">시뮬레이션 실행</a>
+          </li>
+        `;
+    }).join("")
+    : `<li>추천 시뮬레이션 없음</li>`;
+
+  const essentialQuestion = inquiryQuestions[0];
+  const periodText = seedState.period;
+
+  return `
+    <h4>수업 개요</h4>
+    <div class="seed-mini">${escapeHtml(seedState.schoolLevel)} · ${escapeHtml(seedState.course)} · ${escapeHtml(seedState.unit)} · ${escapeHtml(periodText)} · ${escapeHtml(seedState.level)}</div>
+    <p><strong>${escapeHtml(title)}</strong></p>
+    <p><strong>핵심 질문:</strong> ${escapeHtml(essentialQuestion)}</p>
+
+    <h4>반영 성취기준</h4>
+    <ul>${standardsHtml}</ul>
+
+    <h4>추천 시뮬레이션</h4>
+    <ul>${projectHtml}</ul>
+
+    <h4>탐구 질문</h4>
+    <ol>
+      ${inquiryQuestions.map(q => `<li>${escapeHtml(q)}</li>`).join("")}
+    </ol>
+
+    <h4>변인 설정</h4>
+    <ul>
+      <li><strong>조작 변인:</strong> ${vars.independent.map(escapeHtml).join(", ")}</li>
+      <li><strong>종속 변인:</strong> ${vars.dependent.map(escapeHtml).join(", ")}</li>
+      <li><strong>통제 변인:</strong> ${vars.control.map(escapeHtml).join(", ")}</li>
+    </ul>
+
+    <h4>차시 흐름</h4>
+    <ol>
+      <li>도입: 관련 현상 제시 및 핵심 질문 공유</li>
+      <li>성취기준 확인: 오늘 탐구할 개념과 기능 명시</li>
+      <li>시뮬레이션 탐구: 변인을 바꾸며 데이터 수집</li>
+      <li>표현 및 해석: 표·그래프·관찰 기록 작성</li>
+      <li>정리: 개념 일반화 및 실제 현상과 연결</li>
+    </ol>
+
+    <h4>활동지 문항 예시</h4>
+    <ol>
+      <li>탐구 문제를 한 문장으로 정리하시오.</li>
+      <li>가설을 쓰고 근거를 설명하시오.</li>
+      <li>조작·종속·통제 변인을 구분하시오.</li>
+      <li>시뮬레이션 결과를 표 또는 그래프로 나타내시오.</li>
+      <li>결과가 성취기준과 어떻게 연결되는지 서술하시오.</li>
+    </ol>
+
+    <h4>평가 포인트</h4>
+    <ul>
+      <li>성취기준과 탐구 질문의 정합성</li>
+      <li>변인 통제의 적절성</li>
+      <li>데이터 해석의 정확성</li>
+      <li>개념 일반화 및 설명의 타당성</li>
+    </ul>
+  `;
+}
+
+function saveSeedPlan() {
+  const html = elSeed.output.innerHTML.trim();
+  if (!html || html.includes("성취기준을 한 개 이상")) {
+    alert("먼저 수업안을 생성해 주세요.");
+    return;
+  }
+
+  const payload = {
+    savedAt: new Date().toISOString(),
+    state: { ...seedState },
+    html
+  };
+
+  const key = `seed_lesson_${Date.now()}`;
+  localStorage.setItem(key, JSON.stringify(payload));
+  alert("브라우저에 수업안이 저장되었습니다.");
+}
+
+function openSeedDrawer(project = null) {
+  seedState.project = project;
+  seedState.mode = project ? "project" : "free";
+
+  if (project) {
+    const codes = normalizeCurriculumCodes(project.curriculumId);
+    const matched = codes
+      .map(code => curriculumIndex.get(code))
+      .filter(Boolean);
+
+    if (matched.length) {
+      seedState.schoolLevel = matched[0].school_level;
+      seedState.course = matched[0].course;
+      seedState.unit = matched[0].unit;
+      seedState.selectedStandards = [...new Set(matched.map(v => v.achievement_code))];
+    }
+  }
+
+  renderSeedSelectors();
+  applySeedModeUI();
+  elSeed.drawer.classList.add("open");
+  elSeed.drawer.setAttribute("aria-hidden", "false");
+  elSeed.backdrop.hidden = false;
+}
+
+function closeSeedDrawer() {
+  elSeed.drawer.classList.remove("open");
+  elSeed.drawer.setAttribute("aria-hidden", "true");
+  elSeed.backdrop.hidden = true;
+}
+
+async function initSeed() {
+  try {
+    await loadCurriculumData();
+
+    seedState.schoolLevel = "고등학교";
+    seedState.course = "물리학";
+    seedState.unit = "힘과 에너지";
+
+    renderSeedSelectors();
+    applySeedModeUI();
+
+    elSeed.openBtn?.addEventListener("click", () => openSeedDrawer());
+    elSeed.closeBtn?.addEventListener("click", closeSeedDrawer);
+    elSeed.backdrop?.addEventListener("click", closeSeedDrawer);
+
+    elSeed.modeFree?.addEventListener("click", () => {
+      seedState.mode = "free";
+      seedState.project = null;
+      applySeedModeUI();
+    });
+
+    elSeed.modeProject?.addEventListener("click", () => {
+      if (!seedState.project) return;
+      seedState.mode = "project";
+      applySeedModeUI();
+    });
+
+    elSeed.school?.addEventListener("change", e => {
+      seedState.schoolLevel = e.target.value;
+      seedState.course = "";
+      seedState.unit = "";
+      seedState.selectedStandards = [];
+      renderSeedSelectors();
+    });
+
+    elSeed.course?.addEventListener("change", e => {
+      seedState.course = e.target.value;
+      seedState.unit = "";
+      seedState.selectedStandards = [];
+      renderSeedSelectors();
+    });
+
+    elSeed.unit?.addEventListener("change", e => {
+      seedState.unit = e.target.value;
+      seedState.selectedStandards = [];
+      renderSeedStandards();
+    });
+
+    elSeed.period?.addEventListener("change", e => seedState.period = e.target.value);
+    elSeed.classType?.addEventListener("change", e => seedState.classType = e.target.value);
+    elSeed.level?.addEventListener("change", e => seedState.level = e.target.value);
+
+    elSeed.clearStandards?.addEventListener("click", () => {
+      seedState.selectedStandards = [];
+      renderSeedStandards();
+    });
+
+    elSeed.generateBtn?.addEventListener("click", () => {
+      elSeed.output.innerHTML = generateLessonPlanHtml();
+    });
+
+    elSeed.saveBtn?.addEventListener("click", saveSeedPlan);
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && elSeed.drawer.classList.contains("open")) {
+        closeSeedDrawer();
+      }
+    });
+  } catch (err) {
+    console.error("SEED 초기화 실패:", err);
+  }
+}
+
 function makeCard(p) {
   const node = document.getElementById('card-tpl').content.firstElementChild.cloneNode(true);
   const $ = s => node.querySelector(s);
 
   const thumb = node.querySelector('.thumb');
   thumb.innerHTML = '';
+
+  const seedBtn = node.querySelector(".seed-btn");
+  if (seedBtn) {
+    seedBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      openSeedPanel(p);
+    });
+  }
 
   // [수정됨] 카테고리별 시물이 매핑
   const simulMap = {
@@ -798,5 +1793,5 @@ render();
       closeModal();
     }
   });
-
 })();
+initSeedGemini();
