@@ -797,3 +797,18 @@ opacity: 0.8;
   font-size: 14px;
   color: #9fb4e6;
 }
+
+.seed-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+}
+
+.seed-select option {
+  color: #111;
+}

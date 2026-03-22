@@ -172,9 +172,163 @@ async function loadCurriculumData() {
   return curriculumData;
 }
 
+function getSchoolLevels() {
+  if (!curriculumData?.courses) return [];
+  return [...new Set(curriculumData.courses.map(course => course.school_level))];
+}
+
+function getCoursesBySchoolLevel(schoolLevel) {
+  if (!curriculumData?.courses) return [];
+  return curriculumData.courses.filter(course => course.school_level === schoolLevel);
+}
+
+function getCourseBySchoolLevelAndName(schoolLevel, courseName) {
+  if (!curriculumData?.courses) return null;
+  return curriculumData.courses.find(
+    course => course.school_level === schoolLevel && course.course === courseName
+  ) || null;
+}
+
+function getStandardsByCourse(schoolLevel, courseName) {
+  const courseObj = getCourseBySchoolLevelAndName(schoolLevel, courseName);
+  if (!courseObj?.units) return [];
+
+  return courseObj.units.flatMap(unit =>
+    (unit.standards || []).map(standard => ({
+      unit: unit.unit,
+      achievement_code: standard.achievement_code,
+      achievement_text: standard.achievement_text,
+      display_text: standard.display_text
+    }))
+  );
+}
+
+function fillSelectOptions(selectEl, items, placeholder, getValue, getLabel) {
+  if (!selectEl) return;
+
+  selectEl.innerHTML = "";
+
+  const firstOption = document.createElement("option");
+  firstOption.value = "";
+  firstOption.textContent = placeholder;
+  selectEl.appendChild(firstOption);
+
+  items.forEach(item => {
+    const option = document.createElement("option");
+    option.value = getValue(item);
+    option.textContent = getLabel(item);
+    selectEl.appendChild(option);
+  });
+}
+
+function renderSeedCurriculumSelectors() {
+  const schoolLevels = getSchoolLevels();
+
+  if (!seedState.schoolLevel && schoolLevels.length) {
+    seedState.schoolLevel = schoolLevels[0];
+  }
+
+  fillSelectOptions(
+    elSeed.schoolLevel,
+    schoolLevels,
+    "학교급 선택",
+    item => item,
+    item => item
+  );
+
+  elSeed.schoolLevel.value = seedState.schoolLevel || "";
+
+  const courseList = getCoursesBySchoolLevel(seedState.schoolLevel);
+
+  if (!courseList.some(course => course.course === seedState.course)) {
+    seedState.course = courseList[0]?.course || "";
+  }
+
+  fillSelectOptions(
+    elSeed.course,
+    courseList,
+    "과목 선택",
+    item => item.course,
+    item => item.course
+  );
+
+  elSeed.course.value = seedState.course || "";
+
+  const standards = getStandardsByCourse(seedState.schoolLevel, seedState.course);
+
+  if (!standards.some(std => std.achievement_code === seedState.selectedStandardCode)) {
+    seedState.selectedStandardCode = standards[0]?.achievement_code || "";
+  }
+
+  fillSelectOptions(
+    elSeed.standard,
+    standards,
+    "성취기준 선택",
+    item => item.achievement_code,
+    item => `${item.display_text} (${item.unit})`
+  );
+
+  elSeed.standard.value = seedState.selectedStandardCode || "";
+
+  renderSelectedStandardPreview();
+}
+
+function getSelectedStandardObject() {
+  const standards = getStandardsByCourse(seedState.schoolLevel, seedState.course);
+  return standards.find(std => std.achievement_code === seedState.selectedStandardCode) || null;
+}
+
+function renderSelectedStandardPreview() {
+  if (!elSeed.standardPreview) return;
+
+  const selected = getSelectedStandardObject();
+
+  if (!selected) {
+    elSeed.standardPreview.textContent = "성취기준을 선택하면 여기에 표시됩니다.";
+    return;
+  }
+
+  elSeed.standardPreview.innerHTML = `
+    <strong>[${selected.achievement_code}]</strong><br>
+    ${escapeHtml(selected.achievement_text)}<br>
+    <span style="color:#9db3ec;">단원: ${escapeHtml(selected.unit)}</span>
+  `;
+}
+
+function buildPromptWithCurriculumContext(rawPrompt) {
+  const selected = getSelectedStandardObject();
+
+  const curriculumBlock = selected
+    ? `[선택 정보]
+- 학교급: ${seedState.schoolLevel}
+- 과목: ${seedState.course}
+- 성취기준: [${selected.achievement_code}] ${selected.achievement_text}
+- 단원: ${selected.unit}`
+    : `[선택 정보]
+- 학교급: ${seedState.schoolLevel || "미선택"}
+- 과목: ${seedState.course || "미선택"}`;
+
+  const simulationBlock = seedState.project
+    ? `
+[사용 시뮬레이션]
+- 제목: ${seedState.project.title}
+- 설명: ${seedState.project.desc}
+`
+    : "";
+
+  return `${curriculumBlock}
+${simulationBlock}
+
+[교사 추가 요청]
+${rawPrompt || "학생 활동 중심의 탐구형 수업안을 설계해줘."}`;
+}
+
 // ====================== SEED (Gemini 자유입력형) ======================
 const seedState = {
   project: null,
+  schoolLevel: "",
+  course: "",
+  selectedStandardCode: "",
   lastResultText: ""
 };
 
@@ -184,6 +338,12 @@ const elSeed = {
   panel: document.getElementById("seed-panel"),
   closeBtn: document.getElementById("seed-close"),
   projectCard: document.getElementById("seed-project-card"),
+
+  schoolLevel: document.getElementById("seed-school-level"),
+  course: document.getElementById("seed-course"),
+  standard: document.getElementById("seed-standard"),
+  standardPreview: document.getElementById("seed-standard-preview"),
+
   prompt: document.getElementById("seed-user-prompt"),
   generateBtn: document.getElementById("seed-generate"),
   copyBtn: document.getElementById("seed-copy"),
@@ -221,6 +381,15 @@ function renderSeedProjectCard() {
 
 function openSeedPanel(project = null) {
   seedState.project = project;
+  if (project) {
+    const standards = getStandardsForProject(project);
+    if (standards.length) {
+      seedState.schoolLevel = standards[0].school_level;
+      seedState.course = standards[0].course;
+      seedState.selectedStandardCode = standards[0].achievement_code;
+      renderSeedCurriculumSelectors();
+    }
+  }
   renderSeedProjectCard();
 
   if (project && elSeed.prompt && !elSeed.prompt.value.trim()) {
@@ -414,7 +583,8 @@ ${userPrompt}`
 }
 
 async function generateLessonWithGemini() {
-  const userPrompt = elSeed.prompt.value.trim();
+  const rawPrompt = elSeed.prompt.value.trim();
+  const userPrompt = buildPromptWithCurriculumContext(rawPrompt);
 
   if (!userPrompt) {
     alert("수업 조건을 입력해 주세요.");
@@ -668,6 +838,30 @@ function renderLessonResult(data) {
 async function initSeedGemini() {
   try {
     await loadCurriculumData();
+
+    seedState.schoolLevel = "고등학교";
+    seedState.course = "";
+    seedState.selectedStandardCode = "";
+
+    renderSeedCurriculumSelectors();
+
+    elSeed.schoolLevel?.addEventListener("change", (e) => {
+      seedState.schoolLevel = e.target.value;
+      seedState.course = "";
+      seedState.selectedStandardCode = "";
+      renderSeedCurriculumSelectors();
+    });
+
+    elSeed.course?.addEventListener("change", (e) => {
+      seedState.course = e.target.value;
+      seedState.selectedStandardCode = "";
+      renderSeedCurriculumSelectors();
+    });
+
+    elSeed.standard?.addEventListener("change", (e) => {
+      seedState.selectedStandardCode = e.target.value;
+      renderSelectedStandardPreview();
+    });
 
     elSeed.openBtn?.addEventListener("click", () => openSeedPanel(null));
     elSeed.closeBtn?.addEventListener("click", closeSeedPanel);

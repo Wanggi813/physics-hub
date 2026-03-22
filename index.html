@@ -207,11 +207,36 @@
           </section>
 
           <section class="seed-block">
+            <label class="seed-label">교육과정 선택</label>
+
+            <div style="display:grid; gap:10px;">
+              <div>
+                <label class="seed-label" for="seed-school-level" style="font-size:13px;">학교급</label>
+                <select id="seed-school-level" class="seed-select"></select>
+              </div>
+
+              <div>
+                <label class="seed-label" for="seed-course" style="font-size:13px;">과목</label>
+                <select id="seed-course" class="seed-select"></select>
+              </div>
+
+              <div>
+                <label class="seed-label" for="seed-standard" style="font-size:13px;">성취기준</label>
+                <select id="seed-standard" class="seed-select"></select>
+              </div>
+
+              <div id="seed-standard-preview" class="seed-help">
+                성취기준을 선택하면 여기에 표시됩니다.
+              </div>
+            </div>
+          </section>
+
+          <section class="seed-block">
             <label class="seed-label" for="seed-user-prompt">수업 조건</label>
             <textarea id="seed-user-prompt" class="seed-textarea" rows="12"
-              placeholder="예: 고2 물리, 2차시 중 1차시, 포물선 운동 시뮬레이션 활용, 탐구 중심, 변인 통제·표·그래프·형성평가 포함, 학생들은 속도 성분 분해는 알고 있으나 정량 해석은 약함."></textarea>
+              placeholder="예: 고등학교 물리학 수업에서 포물선 운동 시뮬레이션을 활용해 탐구 질문 중심 활동을 설계해줘."></textarea>
             <div class="seed-help">
-              학교급, 차시, 학생 수준, 원하는 탐구 방식, 평가 요소를 자유롭게 적으세요.
+              학교급, 과목, 성취기준을 고른 뒤 자유 조건을 추가로 적을 수 있습니다.
             </div>
           </section>
 
