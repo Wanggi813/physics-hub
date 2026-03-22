@@ -642,6 +642,7 @@ ${userPrompt}`
 
 function buildIdeaRequestBody(userPrompt, project) {
   const projectContext = getProjectContextText(project);
+  const hasProject = !!project;
 
   return {
     contents: [
@@ -650,7 +651,7 @@ function buildIdeaRequestBody(userPrompt, project) {
         parts: [
           {
             text:
-              `너는 한국 고등학교 과학·물리 수업 설계 전문가다.
+`너는 한국 고등학교 과학·물리 수업 설계 전문가다.
 
 다음 시뮬레이션과 성취기준, 교사 요청을 바탕으로
 서로 다른 방향의 탐구형 수업 아이디어를 정확히 4개 제안하라.
@@ -667,6 +668,16 @@ function buildIdeaRequestBody(userPrompt, project) {
 - expected_data
 - activity_structure
 - student_mission
+- uses_simulation
+- simulation_connection
+
+중요 규칙:
+- 현재 시뮬레이션이 제공된 경우, 가능한 한 시뮬레이션을 활용한 수업 아이디어를 우선 제안하라.
+- 시뮬레이션 활용이 자연스러운 경우에는 uses_simulation을 true로 하라.
+- 시뮬레이션을 활용하지 않는 경우에만 uses_simulation을 false로 하라.
+- 시뮬레이션이 제공된 경우, 4개 아이디어 중 최소 2개 이상은 시뮬레이션 연계형으로 구성하라.
+- simulation_connection에는 시뮬레이션에서 학생이 무엇을 조작하고 어떤 데이터를 얻는지 구체적으로 쓰라.
+- 시뮬레이션을 쓰지 않는 아이디어는 simulation_connection을 빈 문자열로 두어라.
 
 조건:
 - 4개 아이디어는 서로 충분히 달라야 한다.
@@ -678,7 +689,10 @@ function buildIdeaRequestBody(userPrompt, project) {
 ${projectContext}
 
 [교사 요구 조건]
-${userPrompt}`
+${userPrompt}
+
+[현재 시뮬레이션 제공 여부]
+${hasProject ? "시뮬레이션 있음" : "시뮬레이션 없음"}`
           }
         ]
       }
@@ -700,7 +714,9 @@ ${userPrompt}`
             },
             expected_data: { type: "string" },
             activity_structure: { type: "string" },
-            student_mission: { type: "string" }
+            student_mission: { type: "string" },
+            uses_simulation: { type: "boolean" },
+            simulation_connection: { type: "string" }
           },
           required: [
             "id",
@@ -710,7 +726,9 @@ ${userPrompt}`
             "manipulated_variables",
             "expected_data",
             "activity_structure",
-            "student_mission"
+            "student_mission",
+            "uses_simulation",
+            "simulation_connection"
           ]
         }
       }
@@ -746,7 +764,9 @@ ${userPrompt}
 - 조작 변인: ${(idea.manipulated_variables || []).join(", ")}
 - 예상 데이터: ${idea.expected_data}
 - 활동 구조: ${idea.activity_structure}
-- 학생 미션: ${idea.student_mission}`
+- 학생 미션: ${idea.student_mission}
+- 시뮬레이션 활용 여부: ${idea.uses_simulation ? "예" : "아니오"}
+- 시뮬레이션 연계 방식: ${idea.simulation_connection || "없음"}`
           }
         ]
       }
@@ -1038,8 +1058,21 @@ function renderIdeaSelection(ideas) {
       .map(v => `<span class="seed-idea-var">${escapeHtml(v)}</span>`)
       .join("");
 
+    const simBadge = idea.uses_simulation
+      ? `<span class="seed-idea-badge seed-idea-badge-sim">시뮬레이션 활용</span>`
+      : `<span class="seed-idea-badge">일반 탐구형</span>`;
+
+    const simLine = idea.uses_simulation
+      ? `
+        <p class="seed-idea-line">
+          <span class="seed-idea-label">시뮬레이션 연계</span><br>
+          ${escapeHtml(idea.simulation_connection || "")}
+        </p>
+      `
+      : "";
+
     return `
-      <button type="button" class="seed-idea-card" data-idea-index="${index}">
+      <button type="button" class="seed-idea-card ${idea.uses_simulation ? "is-sim" : ""}" data-idea-index="${index}">
         <div class="seed-idea-mascot-wrap">
           <img class="seed-idea-mascot" src="${mascot}" alt="시물이 ${index + 1}">
         </div>
@@ -1047,7 +1080,10 @@ function renderIdeaSelection(ideas) {
         <div class="seed-idea-body">
           <div class="seed-idea-topline">
             <span class="seed-idea-number">${index + 1}</span>
-            <span class="seed-idea-badge">${escapeHtml(idea.inquiry_type || "탐구형")}</span>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <span class="seed-idea-badge">${escapeHtml(idea.inquiry_type || "탐구형")}</span>
+              ${simBadge}
+            </div>
           </div>
 
           <h4 class="seed-idea-title">${escapeHtml(idea.title || `아이디어 ${index + 1}`)}</h4>
@@ -1063,6 +1099,8 @@ function renderIdeaSelection(ideas) {
             <span class="seed-idea-label">예상 데이터</span><br>
             ${escapeHtml(idea.expected_data || "")}
           </p>
+
+          ${simLine}
 
           <p class="seed-idea-line">
             <span class="seed-idea-label">학생 미션</span><br>
