@@ -890,7 +890,7 @@ async function initSeedGemini() {
       seedState.selectedStandardCode = e.target.value;
       renderSelectedStandardPreview();
       applyRecommendedPrompt();
-    }); S
+    });
 
     elSeed.openBtn?.addEventListener("click", () => openSeedPanel(null));
     elSeed.closeBtn?.addEventListener("click", closeSeedPanel);
