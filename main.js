@@ -360,6 +360,29 @@ const seedState = {
   stage: "idle" // idle | ideas | lesson
 };
 
+function resetSeedState() {
+  seedState.project = null;
+  seedState.schoolLevel = "고등학교";
+  seedState.course = "";
+  seedState.selectedStandardCode = "";
+  seedState.lastResultText = "";
+  seedState.ideaOptions = [];
+  seedState.selectedIdea = null;
+  seedState.stage = "idle";
+
+  if (elSeed.prompt) elSeed.prompt.value = "";
+  if (elSeed.output) {
+    elSeed.output.innerHTML = `
+      <div class="seed-muted">
+        <p style="margin:0;">왼쪽에 조건을 입력하고 <strong>아이디어 4개 생성</strong>을 눌러 주세요.</p>
+      </div>
+    `;
+  }
+
+  renderSeedProjectCard();
+  renderSeedCurriculumSelectors();
+}
+
 const elSeed = {
   openBtn: document.getElementById("open-seed"),
   backdrop: document.getElementById("seed-backdrop"),
@@ -408,7 +431,11 @@ function renderSeedProjectCard() {
 }
 
 function openSeedPanel(project = null) {
+  stopSeedLoadingUI();
+  resetSeedState();
+
   seedState.project = project;
+
   if (project) {
     const standards = getStandardsForProject(project);
     if (standards.length) {
@@ -419,30 +446,8 @@ function openSeedPanel(project = null) {
       applyRecommendedPrompt();
     }
   }
+
   renderSeedProjectCard();
-
-  if (project && elSeed.prompt && !elSeed.prompt.value.trim()) {
-    const standards = getStandardsForProject(project);
-    const standardLines = standards.length
-      ? standards.map(s => `- [${s.achievement_code}] ${s.achievement_text}`).join("\n")
-      : "- 연결된 성취기준 없음";
-
-    elSeed.prompt.value =
-      `다음 조건을 반영하여 고등학교 과학/물리 수업안을 설계해줘.
-
-[사용 시뮬레이션]
-- ${project.title}
-- 설명: ${project.desc}
-
-[연결 성취기준]
-${standardLines}
-
-[요청]
-- 2차시 중 1차시 또는 2차시 수업으로 적용 가능하게
-- 탐구 질문, 변인 설정, 시뮬레이션 활동, 데이터 표현, 형성평가 포함
-- 학생 활동 중심으로
-- 결과는 구체적이고 바로 수업에 쓸 수 있게 작성`;
-  }
 
   document.body.style.overflow = "hidden";
   elSeed.backdrop.hidden = false;
@@ -451,6 +456,9 @@ ${standardLines}
 }
 
 function closeSeedPanel() {
+  stopSeedLoadingUI();
+  resetSeedState();
+
   elSeed.panel.classList.remove("open");
   elSeed.panel.setAttribute("aria-hidden", "true");
   elSeed.backdrop.hidden = true;
