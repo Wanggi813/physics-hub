@@ -354,7 +354,10 @@ const seedState = {
   schoolLevel: "",
   course: "",
   selectedStandardCode: "",
-  lastResultText: ""
+  lastResultText: "",
+  ideaOptions: [],
+  selectedIdea: null,
+  stage: "idle" // idle | ideas | lesson
 };
 
 const elSeed = {
@@ -473,6 +476,27 @@ function getProjectContextText(project) {
 연결 성취기준:
 ${standardText}
 `.trim();
+}
+
+function getMascotByProject(project) {
+  const category = project?.category || "";
+
+  if (category.includes("역학")) return "./image/역학시물이.png";
+  if (category.includes("열")) return "./image/열시물이.png";
+  if (category.includes("전자") || category.includes("반도체") || category.includes("전자기")) {
+    return "./image/전기시물이.png";
+  }
+  return "./image/양자시물이.png";
+}
+
+function getIdeaMascotByIndex(index) {
+  const mascots = [
+    "./image/역학시물이.png",
+    "./image/전기시물이.png",
+    "./image/양자시물이.png",
+    "./image/열시물이.png"
+  ];
+  return mascots[index % mascots.length];
 }
 
 function buildGeminiRequestBody(userPrompt, project) {
@@ -608,7 +632,260 @@ ${userPrompt}`
   };
 }
 
-async function generateLessonWithGemini() {
+function buildIdeaRequestBody(userPrompt, project) {
+  const projectContext = getProjectContextText(project);
+
+  return {
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            text:
+              `너는 한국 고등학교 과학·물리 수업 설계 전문가다.
+
+다음 시뮬레이션과 성취기준, 교사 요청을 바탕으로
+서로 다른 방향의 탐구형 수업 아이디어를 정확히 4개 제안하라.
+
+반드시 JSON 배열 하나만 출력하라.
+설명문, 머리말, 코드블록, markdown을 절대 출력하지 마라.
+
+각 아이디어는 다음 필드를 반드시 포함한다.
+- id
+- title
+- core_question
+- inquiry_type
+- manipulated_variables
+- expected_data
+- activity_structure
+- student_mission
+
+조건:
+- 4개 아이디어는 서로 충분히 달라야 한다.
+- 학생 활동 중심이어야 한다.
+- 정량 데이터가 나오게 구성해야 한다.
+- 교사가 바로 읽고 선택할 수 있게 짧고 명확하게 작성하라.
+
+[시뮬레이션/교육과정 문맥]
+${projectContext}
+
+[교사 요구 조건]
+${userPrompt}`
+          }
+        ]
+      }
+    ],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            id: { type: "integer" },
+            title: { type: "string" },
+            core_question: { type: "string" },
+            inquiry_type: { type: "string" },
+            manipulated_variables: {
+              type: "array",
+              items: { type: "string" }
+            },
+            expected_data: { type: "string" },
+            activity_structure: { type: "string" },
+            student_mission: { type: "string" }
+          },
+          required: [
+            "id",
+            "title",
+            "core_question",
+            "inquiry_type",
+            "manipulated_variables",
+            "expected_data",
+            "activity_structure",
+            "student_mission"
+          ]
+        }
+      }
+    }
+  };
+}
+
+function buildLessonFromIdeaRequestBody(userPrompt, project, idea) {
+  const projectContext = getProjectContextText(project);
+
+  return {
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            text:
+              `너는 한국 고등학교 과학·물리 수업 설계 전문가다.
+반드시 실제 수업에 바로 적용 가능한 수준으로 작성하라.
+추상적 표현, 상투적 문장, 빈약한 일반론을 피하라.
+탐구 질문, 학생 활동, 교사 발문, 데이터 표현, 형성평가가 살아 있어야 한다.
+
+[시뮬레이션/교육과정 문맥]
+${projectContext}
+
+[교사 요구 조건]
+${userPrompt}
+
+[선택된 수업 아이디어]
+- 제목: ${idea.title}
+- 핵심 질문: ${idea.core_question}
+- 탐구 유형: ${idea.inquiry_type}
+- 조작 변인: ${(idea.manipulated_variables || []).join(", ")}
+- 예상 데이터: ${idea.expected_data}
+- 활동 구조: ${idea.activity_structure}
+- 학생 미션: ${idea.student_mission}`
+          }
+        ]
+      }
+    ],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: "object",
+        properties: {
+          lesson_title: { type: "string" },
+          target_summary: { type: "string" },
+          standards_used: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                code: { type: "string" },
+                text: { type: "string" }
+              },
+              required: ["code", "text"]
+            }
+          },
+          lesson_objectives: {
+            type: "array",
+            items: { type: "string" }
+          },
+          essential_question: { type: "string" },
+          prior_knowledge: {
+            type: "array",
+            items: { type: "string" }
+          },
+          inquiry_design: {
+            type: "object",
+            properties: {
+              hypothesis_example: { type: "string" },
+              independent_variables: {
+                type: "array",
+                items: { type: "string" }
+              },
+              dependent_variables: {
+                type: "array",
+                items: { type: "string" }
+              },
+              control_variables: {
+                type: "array",
+                items: { type: "string" }
+              },
+              data_representation: {
+                type: "array",
+                items: { type: "string" }
+              }
+            },
+            required: [
+              "hypothesis_example",
+              "independent_variables",
+              "dependent_variables",
+              "control_variables",
+              "data_representation"
+            ]
+          },
+          lesson_flow: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                phase: { type: "string" },
+                teacher_actions: {
+                  type: "array",
+                  items: { type: "string" }
+                },
+                student_actions: {
+                  type: "array",
+                  items: { type: "string" }
+                },
+                tips: {
+                  type: "array",
+                  items: { type: "string" }
+                }
+              },
+              required: ["phase", "teacher_actions", "student_actions", "tips"]
+            }
+          },
+          worksheet_items: {
+            type: "array",
+            items: { type: "string" }
+          },
+          formative_assessment: {
+            type: "array",
+            items: { type: "string" }
+          },
+          extension_or_reflection: {
+            type: "array",
+            items: { type: "string" }
+          }
+        },
+        required: [
+          "lesson_title",
+          "target_summary",
+          "standards_used",
+          "lesson_objectives",
+          "essential_question",
+          "prior_knowledge",
+          "inquiry_design",
+          "lesson_flow",
+          "worksheet_items",
+          "formative_assessment",
+          "extension_or_reflection"
+        ]
+      }
+    }
+  };
+}
+
+async function requestSeedJson(body) {
+  const res = await fetch("/api/generate-lesson", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    console.error("Server API error:", data);
+    throw new Error(data?.error || "서버 호출에 실패했습니다.");
+  }
+
+  const rawText = data?.result || "";
+  if (!rawText) {
+    console.error("Empty server result:", data);
+    throw new Error("서버 응답이 비어 있습니다.");
+  }
+
+  seedState.lastResultText = rawText;
+
+  try {
+    return JSON.parse(rawText);
+  } catch (parseErr) {
+    console.error("JSON parse error:", parseErr, rawText);
+    throw new Error("AI 응답이 JSON 형식이 아닙니다.");
+  }
+}
+
+
+async function generateIdeaOptionsWithGemini() {
   const rawPrompt = elSeed.prompt.value.trim();
   const userPrompt = buildPromptWithCurriculumContext(rawPrompt);
 
@@ -621,41 +898,14 @@ async function generateLessonWithGemini() {
   showSeedLoadingUI();
 
   try {
-    const body = buildGeminiRequestBody(userPrompt, seedState.project);
+    const body = buildIdeaRequestBody(userPrompt, seedState.project);
+    const ideas = await requestSeedJson(body);
 
-    const res = await fetch("/api/generate-lesson", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.error("Server API error:", data);
-      throw new Error(data?.error || "서버 호출에 실패했습니다.");
+    if (!Array.isArray(ideas) || !ideas.length) {
+      throw new Error("아이디어 목록을 생성하지 못했습니다.");
     }
 
-    const rawText = data?.result || "";
-
-    if (!rawText) {
-      console.error("Empty server result:", data);
-      throw new Error("서버 응답이 비어 있습니다.");
-    }
-
-    seedState.lastResultText = rawText;
-
-    let parsed;
-    try {
-      parsed = JSON.parse(rawText);
-    } catch (parseErr) {
-      console.error("JSON parse error:", parseErr, rawText);
-      throw new Error("AI 응답이 JSON 형식이 아닙니다.");
-    }
-
-    renderLessonResult(parsed);
+    renderIdeaSelection(ideas);
   } catch (err) {
     console.error(err);
     elSeed.output.innerHTML = `
@@ -665,6 +915,50 @@ async function generateLessonWithGemini() {
       <div class="seed-help">서버 연결 또는 응답 형식을 확인해 주세요.</div>
     `;
   } finally {
+    stopSeedLoadingUI();
+    elSeed.generateBtn.disabled = false;
+  }
+}
+
+async function generateLessonFromIdea(idea) {
+  const rawPrompt = elSeed.prompt.value.trim();
+  const userPrompt = buildPromptWithCurriculumContext(rawPrompt);
+
+  if (!idea) return;
+
+  seedState.selectedIdea = idea;
+  elSeed.generateBtn.disabled = true;
+  showSeedLoadingUI();
+
+  try {
+    const body = buildLessonFromIdeaRequestBody(userPrompt, seedState.project, idea);
+    const lesson = await requestSeedJson(body);
+
+    seedState.stage = "lesson";
+
+    renderLessonResult(lesson);
+
+    const backRow = document.createElement("div");
+    backRow.className = "seed-back-row";
+    backRow.innerHTML = `<button type="button" class="seed-back-btn">← 아이디어 4개 다시 보기</button>`;
+
+    const resultRoot = elSeed.output.querySelector(".seed-result");
+    if (resultRoot) {
+      resultRoot.prepend(backRow);
+      backRow.querySelector("button").addEventListener("click", () => {
+        renderIdeaSelection(seedState.ideaOptions);
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    elSeed.output.innerHTML = `
+      <div class="seed-muted" style="color:#ffb4b4;">
+        생성 실패: ${escapeHtml(err.message)}
+      </div>
+      <div class="seed-help">서버 연결 또는 응답 형식을 확인해 주세요.</div>
+    `;
+  } finally {
+    stopSeedLoadingUI();
     elSeed.generateBtn.disabled = false;
   }
 }
@@ -724,6 +1018,78 @@ function stopSeedLoadingUI() {
     clearInterval(seedLoadingTimer);
     seedLoadingTimer = null;
   }
+}
+
+function renderIdeaSelection(ideas) {
+  seedState.ideaOptions = Array.isArray(ideas) ? ideas.slice(0, 4) : [];
+  seedState.stage = "ideas";
+
+  const cardsHtml = seedState.ideaOptions.map((idea, index) => {
+    const mascot = getIdeaMascotByIndex(index);
+    const varsHtml = (idea.manipulated_variables || [])
+      .map(v => `<span class="seed-idea-var">${escapeHtml(v)}</span>`)
+      .join("");
+
+    return `
+      <button type="button" class="seed-idea-card" data-idea-index="${index}">
+        <div class="seed-idea-mascot-wrap">
+          <img class="seed-idea-mascot" src="${mascot}" alt="시물이 ${index + 1}">
+        </div>
+
+        <div class="seed-idea-body">
+          <div class="seed-idea-topline">
+            <span class="seed-idea-number">${index + 1}</span>
+            <span class="seed-idea-badge">${escapeHtml(idea.inquiry_type || "탐구형")}</span>
+          </div>
+
+          <h4 class="seed-idea-title">${escapeHtml(idea.title || `아이디어 ${index + 1}`)}</h4>
+
+          <p class="seed-idea-line">
+            <span class="seed-idea-label">핵심 질문</span><br>
+            ${escapeHtml(idea.core_question || "")}
+          </p>
+
+          <div class="seed-idea-vars">${varsHtml}</div>
+
+          <p class="seed-idea-line">
+            <span class="seed-idea-label">예상 데이터</span><br>
+            ${escapeHtml(idea.expected_data || "")}
+          </p>
+
+          <p class="seed-idea-line">
+            <span class="seed-idea-label">학생 미션</span><br>
+            ${escapeHtml(idea.student_mission || "")}
+          </p>
+
+          <span class="seed-idea-cta">이 아이디어로 상세 설계 →</span>
+        </div>
+      </button>
+    `;
+  }).join("");
+
+  elSeed.output.innerHTML = `
+    <div class="seed-idea-stage">
+      <div class="seed-idea-head">
+        <div>
+          <h3>수업 아이디어 4가지</h3>
+          <p>시물이 카드를 눌러 하나를 선택하면, 그 방향으로 상세 수업안을 생성합니다.</p>
+        </div>
+      </div>
+      <div class="seed-idea-grid">
+        ${cardsHtml}
+      </div>
+    </div>
+  `;
+
+  elSeed.output.querySelectorAll(".seed-idea-card").forEach(card => {
+    card.addEventListener("click", () => {
+      const index = Number(card.dataset.ideaIndex);
+      const idea = seedState.ideaOptions[index];
+      if (idea) {
+        generateLessonFromIdea(idea);
+      }
+    });
+  });
 }
 
 function renderLessonResult(data) {
@@ -895,8 +1261,7 @@ async function initSeedGemini() {
     elSeed.openBtn?.addEventListener("click", () => openSeedPanel(null));
     elSeed.closeBtn?.addEventListener("click", closeSeedPanel);
     elSeed.backdrop?.addEventListener("click", closeSeedPanel);
-    elSeed.generateBtn?.addEventListener("click", generateLessonWithGemini);
-
+    elSeed.generateBtn?.addEventListener("click", generateIdeaOptionsWithGemini);
     elSeed.copyBtn?.addEventListener("click", async () => {
       const text = elSeed.output.innerText.trim();
       if (!text) {
