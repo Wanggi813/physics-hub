@@ -175,7 +175,6 @@ async function loadCurriculumData() {
 // ====================== SEED (Gemini 자유입력형) ======================
 const seedState = {
   project: null,
-  apiKey: window.APP_CONFIG?.GEMINI_API_KEY || "",
   lastResultText: ""
 };
 
@@ -190,10 +189,6 @@ const elSeed = {
   copyBtn: document.getElementById("seed-copy"),
   output: document.getElementById("seed-output")
 };
-
-if (elSeed.apiKey) {
-  elSeed.apiKey.value = seedState.apiKey;
-}
 
 function getStandardsForProject(project) {
   if (!project) return [];
@@ -419,13 +414,7 @@ ${userPrompt}`
 }
 
 async function generateLessonWithGemini() {
-  const apiKey = seedState.apiKey;
   const userPrompt = elSeed.prompt.value.trim();
-
-  if (!apiKey) {
-    alert("Gemini API Key를 찾을 수 없습니다. .env에 VITE_GEMINI_API_KEY를 설정해 주세요.");
-    return;
-  }
 
   if (!userPrompt) {
     alert("수업 조건을 입력해 주세요.");
@@ -436,44 +425,19 @@ async function generateLessonWithGemini() {
   showSeedLoadingUI();
 
   try {
-    const model = "gemini-2.5-flash";
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
-
     const body = buildGeminiRequestBody(userPrompt, seedState.project);
 
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.error(data);
-      throw new Error(data?.error?.message || "Gemini 호출에 실패했습니다.");
-    }
-
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    if (!rawText) {
-      console.error(data);
-      throw new Error("Gemini 응답이 비어 있습니다.");
-    }
-
-    const parsed = JSON.parse(rawText);
-    seedState.lastResultText = rawText;
-    renderLessonResult(parsed);
+    console.log("Gemini 요청 본문 준비 완료:", body);
+    throw new Error("현재 Gemini 직접 호출은 제거되었습니다. 다음 단계에서 서버 API로 연결합니다.");
 
   } catch (err) {
     console.error(err);
     elSeed.output.innerHTML = `
-      <div class="seed-muted" style="color:#ffb4b4;">
-        생성 실패: ${escapeHtml(err.message)}
-      </div>
-      <div class="seed-help">모델명, API 키, 요청 한도를 확인해 주세요.</div>
-    `;
+    <div class="seed-muted" style="color:#ffb4b4;">
+      생성 실패: ${escapeHtml(err.message)}
+    </div>
+    <div class="seed-help">다음 단계에서 서버 API 연결이 필요합니다.</div>
+  `;
   } finally {
     elSeed.generateBtn.disabled = false;
   }
