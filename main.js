@@ -295,6 +295,31 @@ function renderSelectedStandardPreview() {
   `;
 }
 
+function buildRecommendedPrompt() {
+  const std = getSelectedStandardObject();
+
+  if (!std) return "";
+
+  const school = seedState.schoolLevel || "고등학교";
+  const course = seedState.course || "과학";
+
+  const simulationPart = seedState.project
+    ? `${seedState.project.title} 시뮬레이션을 활용하여 `
+    : "";
+
+  return `${school} ${course} 수업에서
+${simulationPart}[${std.achievement_code}] ${std.achievement_text}
+개념을 학생이 스스로 탐구하도록 수업안을 설계해줘.
+모둠 활동, 질문 생성, 데이터 해석, 형성평가 요소를 포함해줘.`;
+}
+
+function applyRecommendedPrompt() {
+  const prompt = buildRecommendedPrompt();
+  if (!prompt) return;
+
+  elSeed.prompt.value = prompt;
+}
+
 function buildPromptWithCurriculumContext(rawPrompt) {
   const selected = getSelectedStandardObject();
 
@@ -388,6 +413,7 @@ function openSeedPanel(project = null) {
       seedState.course = standards[0].course;
       seedState.selectedStandardCode = standards[0].achievement_code;
       renderSeedCurriculumSelectors();
+      applyRecommendedPrompt();
     }
   }
   renderSeedProjectCard();
@@ -850,18 +876,21 @@ async function initSeedGemini() {
       seedState.course = "";
       seedState.selectedStandardCode = "";
       renderSeedCurriculumSelectors();
+      applyRecommendedPrompt();
     });
 
     elSeed.course?.addEventListener("change", (e) => {
       seedState.course = e.target.value;
       seedState.selectedStandardCode = "";
       renderSeedCurriculumSelectors();
+      applyRecommendedPrompt();
     });
 
     elSeed.standard?.addEventListener("change", (e) => {
       seedState.selectedStandardCode = e.target.value;
       renderSelectedStandardPreview();
-    });
+      applyRecommendedPrompt();
+    }); S
 
     elSeed.openBtn?.addEventListener("click", () => openSeedPanel(null));
     elSeed.closeBtn?.addEventListener("click", closeSeedPanel);
