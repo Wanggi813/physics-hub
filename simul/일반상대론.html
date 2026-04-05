@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>아인슈타인 엘리베이터: 등가원리</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif;
+      user-select: none;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #05050f;
+    }
+
+    #app {
+      position: fixed;
+      inset: 0;
+    }
+
+    #canvas-holder {
+      position: absolute;
+      left: 252px;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 1;
+    }
+
+    .panel {
+      background: rgba(10, 15, 38, 0.88);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 1px solid rgba(100, 145, 255, 0.18);
+      box-shadow: 0 8px 40px rgba(0, 8, 55, 0.65);
+      border-radius: 18px;
+    }
+
+    .controls {
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      width: 236px;
+      bottom: 8px;
+      z-index: 20;
+      padding: 20px 15px;
+      overflow: auto;
+      color: #d5e5ff;
+    }
+
+    .ctrl-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 3px;
+    }
+
+    .ctrl-sub {
+      font-size: 11px;
+      color: rgba(170, 198, 255, 0.58);
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    .sec-hd {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(130, 170, 255, 0.6);
+      margin: 14px 0 8px;
+    }
+
+    .planet-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+
+    .planet-btn {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 13px;
+      padding: 9px 6px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.06);
+      color: #b0c8ff;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .planet-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .planet-btn.active {
+      border-color: rgba(110, 175, 255, 0.55);
+      background: rgba(70, 135, 255, 0.2);
+      color: #fff;
+      box-shadow: 0 0 16px rgba(70, 135, 255, 0.2);
+    }
+
+    .p-icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .p-name {
+      font-size: 12px;
+    }
+
+    .p-g {
+      font-size: 10px;
+      color: rgba(150, 185, 255, 0.5);
+    }
+
+    .planet-btn.active .p-g {
+      color: rgba(200, 225, 255, 0.78);
+    }
+
+    .planet-btn.wide {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 8px;
+    }
+
+    .macro-grid {
+      display: none;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 7px;
+      margin-top: 7px;
+    }
+
+    .macro-btn {
+      min-width: 0;
+      padding: 9px 4px 8px;
+    }
+
+    .macro-btn .p-name {
+      font-size: 11px;
+    }
+
+    .macro-btn .p-g {
+      font-size: 9px;
+    }
+
+    .macro-grid.show {
+      display: grid;
+    }
+
+    .macro-btn {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 13px;
+      padding: 9px 6px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.05);
+      color: #b0c8ff;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .macro-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .macro-btn.active {
+      border-color: rgba(110, 175, 255, 0.55);
+      background: rgba(70, 135, 255, 0.2);
+      color: #fff;
+      box-shadow: 0 0 16px rgba(70, 135, 255, 0.2);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 7px;
+      margin-top: 8px;
+    }
+
+    .act-btn,
+    .tog-btn {
+      flex: 1;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 11px;
+      padding: 9px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .act-btn {
+      color: #fff;
+      background: linear-gradient(135deg, rgba(65, 125, 255, 0.65), rgba(105, 75, 255, 0.65));
+    }
+
+    .tog-btn {
+      color: rgba(185, 212, 255, 0.82);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .tog-btn.active {
+      background: rgba(35, 165, 105, 0.35);
+      border-color: rgba(55, 205, 135, 0.42);
+      color: #5ff0ba;
+    }
+
+    .act-btn:hover,
+    .tog-btn:hover {
+      filter: brightness(1.14);
+      transform: translateY(-1px);
+    }
+
+    .g-display {
+      margin-top: 13px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(110, 155, 255, 0.18);
+      border-radius: 11px;
+      padding: 9px 12px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #98c4ff;
+      text-align: center;
+    }
+
+    .info-box {
+      margin-top: 11px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-size: 11.5px;
+      line-height: 1.68;
+      color: rgba(170, 198, 255, 0.76);
+    }
+
+    .info-box strong {
+      color: rgba(212, 232, 255, 0.95);
+    }
+
+    .accel-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(100, 150, 255, 0.28);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .accel-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #6aabff;
+      box-shadow: 0 0 6px rgba(100, 170, 255, 0.5);
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div id="canvas-holder"></div>
+    <div class="controls panel">
+      <div class="ctrl-title">아인슈타인 엘리베이터</div>
+      <div class="ctrl-sub">등가원리: 중력과 가속도의 관계</div>
+
+      <div class="sec-hd">환경 선택</div>
+      <div class="planet-grid">
+        <button class="planet-btn active" data-planet="space">
+          <span class="p-icon">🌌</span>
+          <span class="p-name">우주</span>
+          <span class="p-g">무중력</span>
+        </button>
+        <button class="planet-btn" data-planet="earth">
+          <span class="p-icon">🌍</span>
+          <span class="p-name">지구</span>
+          <span class="p-g">9.8 m/s²</span>
+        </button>
+        <button class="planet-btn" data-planet="moon">
+          <span class="p-icon">🌕</span>
+          <span class="p-name">달</span>
+          <span class="p-g">1.62 m/s²</span>
+        </button>
+        <button class="planet-btn" data-planet="mars">
+          <span class="p-icon">🔴</span>
+          <span class="p-name">화성</span>
+          <span class="p-g">3.72 m/s²</span>
+        </button>
+        <button id="macroViewBtn" class="planet-btn wide" data-planet="blackhole">
+          <span class="p-icon">🕳️</span>
+          <span class="p-name">블랙홀</span>
+          <span class="p-g">거시적 시점 · 극강 휨</span>
+        </button>
+      </div>
+
+      <div class="sec-hd">조작</div>
+      <div class="btn-row">
+        <button id="replayBtn" class="act-btn">↺ 다시 발사</button>
+      </div>
+      <div class="btn-row">
+        <button id="trailBtn" class="tog-btn active">궤적 표시</button>
+        <button id="freefallBtn" class="tog-btn">자유낙하</button>
+      </div>
+
+      <div id="spaceAccelRow" style="display:none">
+        <div class="sec-hd">우주선 가속도</div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+          <input type="range" id="spaceAccelSlider" class="accel-slider" min="1" max="30" value="14" step="1">
+          <span id="spaceAccelVal"
+            style="font-size:12px; font-weight:700; color:#98c4ff; min-width:56px; text-align:right;">6.9 m/s²</span>
+        </div>
+      </div>
+
+      <div id="gDisplay" class="g-display">g = 9.8 m/s²</div>
+      <div id="infoBox" class="info-box">
+        <strong>지구 (g = 9.8 m/s²)</strong><br>
+        중력장 속 엘리베이터에서 빛은 아래로 크게 휘어 보입니다. 자유낙하를 켜면 내부에서 빛이 다시 직선이 됩니다.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 행성 데이터
+    const PLANETS = {
+      space: {
+        name: "우주", g: 0,
+        // gVisual: 교육용 픽셀 스케일 가속도 (drop = 0.5 * gVisual * T²)
+        gVisual: 14,
+        hasPlanet: false,
+        motionType: "upAccel",
+        bgTop: [3, 4, 16], bgBottom: [10, 12, 36],
+        starBrightness: 1.0,
+        infoHTML: "<strong>우주 (가속 중)</strong><br>중력 없는 우주에서 엘리베이터가 위로 가속합니다. 내부에서는 빛이 아래로 휘어 보입니다. 이것이 등가원리의 핵심입니다."
+      },
+      earth: {
+        name: "지구", g: 9.8,
+        gVisual: 20,
+        hasPlanet: true, imageName: "earth",
+        motionType: "hover",
+        bgTop: [12, 30, 85], bgBottom: [35, 85, 170],
+        atmosphereColor: [75, 145, 255],
+        starBrightness: 0.2,
+        infoHTML: "<strong>지구 (g = 9.8 m/s²)</strong><br>강한 중력장에서 빛이 크게 휘어 보입니다. 자유낙하 시 내부에서 빛은 직선이 됩니다."
+      },
+      moon: {
+        name: "달", g: 1.62,
+        gVisual: 3,
+        hasPlanet: true, imageName: "moon",
+        motionType: "hover",
+        bgTop: [3, 3, 14], bgBottom: [7, 7, 22],
+        atmosphereColor: [175, 180, 200],
+        starBrightness: 0.9,
+        infoHTML: "<strong>달 (g = 1.62 m/s²)</strong><br>지구의 약 1/6 중력. 빛의 휨이 매우 작게 나타납니다."
+      },
+      mars: {
+        name: "화성", g: 3.72,
+        gVisual: 8,
+        hasPlanet: true, imageName: "mars",
+        motionType: "hover",
+        bgTop: [25, 12, 7], bgBottom: [68, 34, 18],
+        atmosphereColor: [215, 90, 50],
+        starBrightness: 0.5,
+        infoHTML: "<strong>화성 (g = 3.72 m/s²)</strong><br>지구의 약 38% 중력. 중간 정도의 빛 휨이 나타납니다."
+      },
+      blackhole: {
+        name: "블랙홀", g: "extreme",
+        gVisual: 42,
+        hasPlanet: false,
+        imageName: "blackhole",
+        motionType: "macro",
+        bgTop: [1, 1, 6],
+        bgBottom: [8, 0, 18],
+        atmosphereColor: [130, 70, 255],
+        starBrightness: 0.9,
+        infoHTML: "<strong>블랙홀</strong><br>빛이 가장 강하게 휘며, 충분히 가까우면 여러 번 감기다가 사건의 지평선 안으로 빨려 들어갑니다."
+      }
+    };
+
+    // 전역 상태
+    const state = {
+      planet: "space",
+      freefall: true,
+      showTrail: true,
+      lightDuration: 2.2,
+      progress: 0,
+      isAnimating: true,
+      // 관측된 궤적 (엘리베이터 운동 반영 — 노란색)
+      extSegs: [], extCurSeg: [],
+      intSegs: [], intCurSeg: [],
+      // 기준 궤적 (엘리베이터 없을 때 실제 빛 — 하늘색, 항상 직선)
+      extRefSegs: [], extRefCurSeg: [],
+      intRefSegs: [], intRefCurSeg: [],
+      floatPhase: 0,
+      obsWallDropFixed: 0,
+      launchObsSrcX: 0,
+      launchObsSrcY: 0,
+      launchObsDstX: 0,
+      macroOpen: false,
+      bhAngle: 0,
+      bhRadius: 0,
+      bhTrail: [],
+      bhDone: false
+
+    };
+
+    let ui = {};
+    let stars = [];
+    const planetImages = {};
+
+    function drawBlackHoleStyled(x, y, r) {
+      push();
+      noStroke();
+
+      // 바깥 푸른 중력광
+      for (let i = 12; i >= 1; i--) {
+        fill(70, 130, 255, 4 + i * 2);
+        ellipse(x, y, r * (5.0 + i * 0.10), r * (5.0 + i * 0.10));
+      }
+
+      // 보라빛 약한 렌즈광
+      for (let i = 9; i >= 1; i--) {
+        fill(130, 90, 255, 4 + i * 2);
+        ellipse(x, y, r * (3.8 + i * 0.08), r * (3.8 + i * 0.08));
+      }
+
+      // 뜨거운 강착원반 바깥층
+      for (let i = 10; i >= 1; i--) {
+        fill(255, 110, 30, 7 + i * 3);
+        ellipse(x, y, r * (5.1 + i * 0.08), r * (1.20 + i * 0.04));
+      }
+
+      // 강착원반 안쪽 밝은층
+      for (let i = 8; i >= 1; i--) {
+        fill(255, 190, 80, 7 + i * 3);
+        ellipse(x, y, r * (4.0 + i * 0.06), r * (0.70 + i * 0.03));
+      }
+
+      // 원반 앞쪽을 일부 가려서 입체감
+      fill(10, 12, 18, 120);
+      ellipse(x, y + r * 0.18, r * 4.6, r * 1.05);
+
+      // 광자구 비슷한 테두리
+      fill(25, 30, 40, 220);
+      ellipse(x, y, r * 2.45, r * 2.45);
+
+      // 사건의 지평선
+      fill(0, 0, 0, 255);
+      ellipse(x, y, r * 1.82, r * 1.82);
+
+      pop();
+    }
+
+    function getPD() { return PLANETS[state.planet]; }
+
+    function getVisualG() {
+      return state.freefall ? 0 : getPD().gVisual;
+    }
+
+    // 주 엘리베이터 기준 높이 (drop 비율 계산용)
+    const MAIN_ELEV_H = 440;
+    function getCurvatureBoost() {
+      if (state.planet === "earth") return 2.0;
+      if (state.planet === "moon") return 2.0;
+      if (state.planet === "mars") return 2.0;
+      if (state.planet === "blackhole") return 2.8;
+      return 1.0;
+    }
+
+    function getLightDropFraction() {
+      const a = getVisualG();
+      const T = state.lightDuration;
+      return ((0.5 * a * T * T) / MAIN_ELEV_H) * getCurvatureBoost();
+    }
+
+    function getRefDropFraction() {
+      const pd = getPD();
+      if (pd.motionType === "upAccel") return 0;
+      const T = state.lightDuration;
+      return ((0.5 * pd.gVisual * T * T) / MAIN_ELEV_H) * getCurvatureBoost();
+    }
+
+    function getFreefallDropFraction() {
+      const pd = getPD();
+      if (pd.motionType === "upAccel") return 0;
+      const T = state.lightDuration;
+      return ((0.5 * pd.gVisual * T * T) / MAIN_ELEV_H) * getCurvatureBoost();
+    }
+
+    // UI 설정
+    function setupUI() {
+      ui.macroViewBtn = document.getElementById("macroViewBtn");
+      ui.replayBtn = document.getElementById("replayBtn");
+      ui.trailBtn = document.getElementById("trailBtn");
+      ui.freefallBtn = document.getElementById("freefallBtn");
+      ui.gDisplay = document.getElementById("gDisplay");
+      ui.infoBox = document.getElementById("infoBox");
+      ui.spaceAccelRow = document.getElementById("spaceAccelRow");
+      ui.spaceAccelSlider = document.getElementById("spaceAccelSlider");
+      ui.spaceAccelVal = document.getElementById("spaceAccelVal");
+
+      ui.spaceAccelSlider.addEventListener("input", () => {
+        const v = parseInt(ui.spaceAccelSlider.value);
+        PLANETS.space.gVisual = v;
+        const aPhys = (v * 9.8 / 20).toFixed(1);
+        ui.spaceAccelVal.textContent = `${aPhys} m/s²`;
+        ui.gDisplay.textContent = `a = ${aPhys} m/s²`;
+        clearTrails();
+        restartLight();
+      });
+
+      document.querySelectorAll(".planet-btn[data-planet]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          state.planet = btn.dataset.planet;
+          state.macroOpen = false;
+          state.freefall = false;
+          ui.freefallBtn.classList.remove("active");
+          refreshModeButtons();
+          updatePanel();
+          clearTrails();
+          restartLight();
+        });
+      });
+
+      ui.macroViewBtn.addEventListener("click", () => {
+        state.macroOpen = true;
+        state.planet = "blackhole";
+        state.freefall = false;
+        ui.freefallBtn.classList.remove("active");
+        refreshModeButtons();
+        updatePanel();
+        clearTrails();
+        restartLight();
+      });
+
+      ui.replayBtn.addEventListener("click", restartLight);
+
+      ui.trailBtn.addEventListener("click", () => {
+        state.showTrail = !state.showTrail;
+        ui.trailBtn.classList.toggle("active", state.showTrail);
+        if (!state.showTrail) clearTrails();
+      });
+
+      ui.freefallBtn.addEventListener("click", () => {
+        if (isMacroView()) {
+          restartLight();
+          return;
+        }
+        state.freefall = !state.freefall;
+        ui.freefallBtn.classList.toggle("active", state.freefall);
+        clearTrails();
+        restartLight();
+      });
+
+      refreshModeButtons();
+      updatePanel();
+    }
+
+    function isMacroView() {
+      return state.planet === "blackhole";
+    }
+
+    function refreshModeButtons() {
+      document.querySelectorAll(".planet-btn").forEach(b => b.classList.remove("active"));
+
+      if (isMacroView()) {
+        ui.macroViewBtn.classList.add("active");
+      } else {
+        const selected = document.querySelector(`.planet-btn[data-planet="${state.planet}"]`);
+        if (selected) selected.classList.add("active");
+      }
+    }
+
+    function updatePanel() {
+      const pd = getPD();
+
+      if (state.planet === "space") {
+        const aPhys = (PLANETS.space.gVisual * 9.8 / 20).toFixed(1);
+        ui.gDisplay.textContent = state.freefall ? "정지 (가속 없음)" : `a = ${aPhys} m/s²`;
+        ui.spaceAccelRow.style.display = "block";
+      } else if (isMacroView()) {
+        ui.gDisplay.textContent = "거시적 시점 · 블랙홀";
+        ui.spaceAccelRow.style.display = "none";
+      } else {
+        ui.gDisplay.textContent = `g = ${pd.g} m/s²`;
+        ui.spaceAccelRow.style.display = "none";
+      }
+
+      ui.infoBox.innerHTML = pd.infoHTML;
+      ui.freefallBtn.textContent = state.planet === "space" ? "정지" : (isMacroView() ? "다시 발사" : "자유낙하");
+    }
+
+    function restartLight() {
+      function saveAndClear(segs, cur) {
+        if (cur.length > 1) { segs.push([...cur]); if (segs.length > 6) segs.shift(); }
+      }
+      saveAndClear(state.extSegs, state.extCurSeg);
+      saveAndClear(state.intSegs, state.intCurSeg);
+      saveAndClear(state.extRefSegs, state.extRefCurSeg);
+      saveAndClear(state.intRefSegs, state.intRefCurSeg);
+      state.extCurSeg = []; state.intCurSeg = [];
+      state.extRefCurSeg = []; state.intRefCurSeg = [];
+      state.progress = 0;
+      state.isAnimating = true;
+
+      const e0 = getElevatorRectAt(0);
+      const e1 = getElevatorRectAt(1);
+
+      // 발사 순간의 광원 위치 고정
+      state.launchObsSrcX = e0.x + 18;
+      state.launchObsSrcY = e0.y + e0.h * 0.38;
+
+      // 도착 순간의 오른쪽 벽 위치 고정
+      state.launchObsDstX = e1.x + e1.w - 18;
+
+      // 발사 순간의 관측 휨량 고정
+      if (getPD().motionType === "upAccel" && !state.freefall) {
+        // 우주 가속계에서는 오른쪽 벽이 올라간 만큼 내부에서 빛이 아래로 휘어 보여야 함
+        state.obsWallDropFixed = -getSpaceShipShiftYAt(1) * 2;
+      } else {
+        state.obsWallDropFixed = getLightDropFraction() * MAIN_ELEV_H;
+      }
+      if (state.planet === "blackhole") {
+        initBlackHolePhotons();
+      }
+    }
+
+    function clearTrails() {
+      state.extSegs = []; state.extCurSeg = [];
+      state.intSegs = []; state.intCurSeg = [];
+      state.extRefSegs = []; state.extRefCurSeg = [];
+      state.intRefSegs = []; state.intRefCurSeg = [];
+    }
+
+    // p5 preload
+    function preload() {
+      planetImages.earth = loadImage("./image/earth.png");
+      planetImages.moon = loadImage("./image/moon.png");
+      planetImages.mars = loadImage("./image/mars.png");
+    }
+
+    // p5 setup
+    function setup() {
+      const holder = document.getElementById("canvas-holder");
+      const c = createCanvas(holder.clientWidth, holder.clientHeight);
+      c.parent(holder);
+      frameRate(60);
+      setupUI();
+      generateStars();
+      restartLight();
+    }
+
+    function windowResized() {
+      const holder = document.getElementById("canvas-holder");
+      resizeCanvas(holder.clientWidth, holder.clientHeight);
+      generateStars();
+    }
+
+    function generateStars() {
+      stars = [];
+      for (let i = 0; i < 260; i++) {
+        stars.push({
+          x: random(width), y: random(height),
+          r: random(0.6, 2.2), a: random(90, 240),
+          phase: random(TWO_PI), speed: random(0.015, 0.05)
+        });
+      }
+    }
+
+    // draw 루프
+    function draw() {
+      updateState();
+      drawBackground();
+
+      if (isMacroView()) {
+        drawMacroScene();
+        drawProgressBar();
+        return;
+      }
+
+      if (getPD().hasPlanet) {
+        drawPlanet();
+      }
+
+      const elev = getElevatorRect();
+      drawExternalBeam(elev);
+      drawElevatorBox(elev);
+      drawMotionIndicator(elev);
+      drawProgressBar();
+      drawMiniPanel();
+    }
+
+    function updateState() {
+      const dt = min(deltaTime / 1000, 0.05);
+      if (state.isAnimating) {
+        state.progress += dt / state.lightDuration;
+        if (state.progress >= 1) { state.progress = 1; state.isAnimating = false; }
+      }
+    }
+
+    // 배경 (하늘 + 별)
+    function drawBackground() {
+      const pd = getPD();
+      const [tr, tg, tb] = pd.bgTop;
+      const [br, bg, bb] = pd.bgBottom;
+      noStroke();
+      for (let y = 0; y < height; y += 2) {
+        const t = y / height;
+        fill(lerp(tr, br, t), lerp(tg, bg, t), lerp(tb, bb, t));
+        rect(0, y, width, 2);
+      }
+      const sb = pd.starBrightness;
+      for (const s of stars) {
+        const tw = 0.65 + 0.35 * sin(frameCount * s.speed + s.phase);
+        fill(255, 255, 255, s.a * sb * tw);
+        noStroke();
+        circle(s.x, s.y, s.r);
+      }
+    }
+
+    // 행성 (화면 하단)
+    function drawPlanet() {
+      const pd = getPD();
+      const img = planetImages[pd.imageName];
+      if (!img) return;
+
+      const pr = min(width, height) * 0.68;
+      const px = width * 0.5;
+      const py = height + pr * 0.36;
+
+      push();
+      // 원형 클립 후 이미지
+      drawingContext.save();
+      drawingContext.beginPath();
+      drawingContext.arc(px, py, pr, 0, Math.PI * 2);
+      drawingContext.clip();
+      imageMode(CENTER);
+      image(img, px, py, pr * 2, pr * 2);
+      drawingContext.restore();
+
+      // 대기권 글로우
+      const [ar, ag, ab] = pd.atmosphereColor;
+      noFill();
+      for (let i = 0; i < 7; i++) {
+        stroke(ar, ag, ab, map(i, 0, 7, 38, 2));
+        strokeWeight(18 - i * 2.3);
+        circle(px, py, (pr + 6 + i * 13) * 2);
+      }
+
+      // 지평선 글로우
+      noStroke();
+      for (let i = 0; i < 5; i++) {
+        fill(ar, ag, ab, map(i, 0, 5, 32, 4));
+        ellipse(width * 0.5, height + 4, width + i * 50, 55 + i * 18);
+      }
+      pop();
+    }
+
+    function drawMacroCenterObject(cx, cy) {
+      const s = min(width, height);
+      drawBlackHoleStyled(cx, cy, s * 0.070);
+    }
+
+    function drawMacroScene() {
+      drawBlackHoleScene();
+    }
+
+    function initBlackHolePhotons() {
+      const cx = width * 0.5;
+      const cy = height * 0.55;
+      const s = min(width, height);
+
+      // 사건의 지평선 반경을 더 크게
+      const horizonR = s * 0.155;
+
+      state.bhPhotons = [];
+      state.bhHorizonR = horizonR;
+
+      // 개수는 비슷하게 유지하고, 화면 거의 전체 높이에서 들어오게
+      const topY = height * 0.06;
+      const bottomY = height * 0.94;
+      const count = 18;
+
+      for (let i = 0; i < count; i++) {
+        const y0 = lerp(topY, bottomY, i / (count - 1));
+        const impact = y0 - cy;
+
+        state.bhPhotons.push({
+          x: -0.30 * width - i * 18,
+          y: y0,
+          vx: 6.2 + i * 0.02,
+          vy: 0,
+          trail: [],
+          alive: true,
+          absorbed: false,
+          escaped: false,
+          glow: abs(impact) < 0.18 * height ? 12 : 9,
+          weight: abs(impact) < 0.20 * height ? 3.9 : 2.4,
+          captureBias: map(abs(impact), 0, 0.50 * height, 2.0, 0.58)
+        });
+      }
+    }
+
+    function updateBlackHoleState() {
+      if (state.planet !== "blackhole") return;
+      if (!state.bhPhotons || state.bhPhotons.length === 0) return;
+
+      const cx = width * 0.5;
+      const cy = height * 0.55;
+      const horizonR = state.bhHorizonR || min(width, height) * 0.155;
+
+      for (const p of state.bhPhotons) {
+        if (!p.alive) continue;
+
+        // 진행
+        for (let sub = 0; sub < 2; sub++) {
+          const dx = cx - p.x;
+          const dy = cy - p.y;
+
+          // 타원거리: 원반이 납작해 보여서 y를 조금 압축
+          const rr = sqrt(dx * dx + (dy * 1.18) * (dy * 1.18));
+
+          // 블랙홀 쪽으로 향하는 단순화된 휨
+          const pull = 24500 / max(rr * rr, 360);
+          p.vx += (dx / max(rr, 1)) * pull * 0.085;
+          p.vy += (dy / max(rr, 1)) * pull * 0.085;
+
+          // 속도 크기 일정하게 유지
+          const sp = sqrt(p.vx * p.vx + p.vy * p.vy);
+          const targetSp = 5.8;
+          p.vx = (p.vx / sp) * targetSp;
+          p.vy = (p.vy / sp) * targetSp;
+
+          p.x += p.vx;
+          p.y += p.vy;
+        }
+
+        p.trail.push({ x: p.x, y: p.y });
+        if (p.trail.length > 240) p.trail.shift();
+
+        // 흡수
+        const hx = p.x - cx;
+        const hy = p.y - cy;
+        const hrr = sqrt(hx * hx + hy * hy);
+        if (hrr < horizonR * 1.52) {
+          p.alive = false;
+          p.absorbed = true;
+          continue;
+        }
+
+        // 화면 밖 탈출
+        if (p.x > width + 160 || p.y < -120 || p.y > height + 120) {
+          p.alive = false;
+          p.escaped = true;
+        }
+      }
+    }
+
+    function drawBlackHoleScene() {
+      updateBlackHoleState();
+
+      const cx = width * 0.5;
+      const cy = height * 0.55;
+      const r = min(width, height) * 0.105;
+
+      // 블랙홀 본체
+      drawBlackHoleAt(cx, cy, r);
+
+      // 여러 광선 궤적
+      if (state.bhPhotons) {
+        for (const p of state.bhPhotons) {
+          if (p.trail.length > 1) {
+            push();
+            noFill();
+            stroke(255, 215, 70, 210);
+            strokeWeight(p.weight || 3);
+
+            beginShape();
+            for (const q of p.trail) {
+              vertex(q.x, q.y);
+            }
+            endShape();
+            pop();
+          }
+        }
+
+        // 살아있는 광점들
+        for (const p of state.bhPhotons) {
+          if (p.alive) {
+            drawLightDot(p.x, p.y, p.glow || 10, 22, 36);
+          }
+        }
+
+        // 흡수 직전 여운
+        for (const p of state.bhPhotons) {
+          if (p.absorbed && p.trail.length > 0) {
+            const q = p.trail[p.trail.length - 1];
+            push();
+            noStroke();
+            fill(255, 180, 60, 60);
+            circle(q.x, q.y, 30);
+            fill(255, 220, 120, 28);
+            circle(q.x, q.y, 46);
+            pop();
+          }
+        }
+      }
+
+      // 안내 텍스트
+      push();
+      noStroke();
+      fill(220, 230, 255, 210);
+      textAlign(CENTER, TOP);
+      textSize(18);
+      textStyle(BOLD);
+      text("여러 빛줄기 중 일부는 휘어 지나가고, 일부는 블랙홀에 흡수됨", width * 0.5, 24);
+
+      fill(170, 190, 255, 180);
+      textSize(12);
+      textStyle(NORMAL);
+      text("교육용 단순화 모델", width * 0.5, 50);
+      pop();
+    }
+
+    function drawBlackHoleAt(cx, cy, r) {
+      push();
+      ellipseMode(RADIUS);
+
+      // 중심 검은 원
+      noStroke();
+      fill(0);
+      ellipse(cx, cy, r * 0.95, r * 0.95);
+
+      // 아주 바깥 중력권: 두껍고 흐린 회청색 링
+      noFill();
+      stroke(120, 140, 180, 65);
+      strokeWeight(r * 0.95);
+      ellipse(cx, cy, r * 2.8, r * 2.8);
+
+      // 보라빛 렌즈 링
+      stroke(110, 90, 255, 55);
+      strokeWeight(r * 0.42);
+      ellipse(cx, cy, r * 2.15, r * 2.15);
+
+      // 강착원반 바깥층
+      stroke(255, 150, 0, 85);
+      strokeWeight(r * 0.52);
+      ellipse(cx, cy, r * 1.9, r * 1.18);
+
+      // 강착원반 안쪽 더 밝은 층
+      stroke(252, 123, 3, 220);
+      strokeWeight(r * 0.34);
+      ellipse(cx, cy, r * 1.65, r * 1.02);
+
+      // 중심 바로 바깥의 얇은 광자구
+      stroke(200, 220, 255, 90);
+      strokeWeight(max(2, r * 0.06));
+      ellipse(cx, cy, r * 1.08, r * 1.08);
+
+      // 사건의 지평선 테두리
+      noStroke();
+      fill(0);
+      ellipse(cx, cy, r * 0.92, r * 0.92);
+
+      pop();
+    }
+
+    // 엘리베이터 위치 계산
+    function getElevatorRectAt(progressValue) {
+      const pd = getPD();
+      const ew = min(width * 0.84, 600);
+      const eh = MAIN_ELEV_H;
+      const ex = width * 0.5 - ew * 0.5;
+
+      const baseY = pd.hasPlanet ? height * 0.30 : height * 0.42;
+      const floatY = 0;
+
+      let motionY = 0;
+      if (pd.motionType === "upAccel" && !state.freefall) {
+        motionY = -progressValue * progressValue * (pd.gVisual / 14) * 120;
+      } else if (state.freefall && pd.motionType !== "upAccel") {
+        motionY = progressValue * progressValue * getFreefallDropFraction() * MAIN_ELEV_H;
+      }
+
+      return { x: ex, y: baseY + floatY + motionY - eh * 0.5, w: ew, h: eh };
+    }
+
+    function getSpaceShipShiftYAt(u) {
+      const pd = getPD();
+      if (pd.motionType !== "upAccel" || state.freefall) return 0;
+
+      // getElevatorRectAt(progressValue)와 같은 규칙
+      return -(u * u) * (pd.gVisual / 14) * 60;
+    }
+
+    function getElevatorRect() {
+      return getElevatorRectAt(state.progress);
+    }
+
+    // 엘리베이터 박스
+    function drawElevatorBox(e) {
+      push();
+      rectMode(CORNER);
+
+      drawingContext.save();
+      drawingContext.shadowColor = "rgba(0,8,55,0.55)";
+      drawingContext.shadowBlur = 30;
+      noStroke(); fill(255, 255, 255, 7);
+      rect(e.x + 5, e.y + 9, e.w, e.h, 15);
+      drawingContext.restore();
+
+      // 본체 (캔버스 그라디언트 — 가로선 없음)
+      const grad = drawingContext.createLinearGradient(e.x, e.y, e.x, e.y + e.h);
+      grad.addColorStop(0, "rgba(228,236,252,0.82)");
+      grad.addColorStop(1, "rgba(190,206,228,0.82)");
+      drawingContext.fillStyle = grad;
+      drawingContext.beginPath();
+      drawingContext.roundRect(e.x, e.y, e.w, e.h, 15);
+      drawingContext.fill();
+      drawingContext.fillStyle = "#000";   // p5 fill 리셋용
+      noFill();
+      stroke(145, 178, 220, 185);
+      strokeWeight(2.5);
+      rect(e.x, e.y, e.w, e.h, 15);
+
+      // 금속 바
+      noStroke();
+      fill(135, 162, 200, 188);
+      rect(e.x + 18, e.y + 11, e.w - 36, 7, 3);
+      rect(e.x + 18, e.y + e.h - 18, e.w - 36, 7, 3);
+
+      // 하이라이트
+      stroke(255, 255, 255, 85);
+      strokeWeight(1.5);
+      line(e.x + 12, e.y + 12, e.x + e.w - 12, e.y + 12);
+      line(e.x + 12, e.y + 12, e.x + 12, e.y + e.h - 12);
+
+      // 내부 패널 라인
+      stroke(200, 218, 242, 50);
+      strokeWeight(0.8);
+      for (let i = 1; i <= 3; i++) {
+        const yy = map(i, 0, 4, e.y + 30, e.y + e.h - 26);
+        line(e.x + 20, yy, e.x + e.w - 20, yy);
+      }
+      pop();
+    }
+
+    // 외부 광선
+    function drawExternalBeam(e) {
+      const pd = getPD();
+
+      // 발사 순간 / 도착 순간의 엘리베이터 위치
+      const e0 = getElevatorRectAt(0);
+      const e1 = getElevatorRectAt(1);
+      const beamShiftY = e.y - e0.y;
+
+      // 실제 빛의 출발점: 발사 순간 왼쪽 벽
+      const realSrcX = e0.x + 18;
+      const realSrcY = e0.y + e0.h * 0.38;
+
+      // 공통 도착점: 도착 순간 오른쪽 벽
+      const impactX = e1.x + e1.w - 18;
+      let impactY;
+
+      if (pd.motionType === "upAccel" && !state.freefall) {
+        // 우주 가속계: 실제 빛은 외부 관성계에서 직선
+        impactY = realSrcY;
+      } else {
+        // 행성: 실제 빛은 중력장에 의해 휘는 설정 유지
+        impactY = realSrcY + getRefDropFraction() * e.h;
+      }
+
+      // 실제 빛(하늘색)
+      const realDstX = impactX;
+      const realDstY = impactY;
+      const realTotalDx = realDstX - realSrcX;
+      const realWallDrop = realDstY - realSrcY;
+
+      // 관측된 빛(노란색): 시작점은 현재 엘리베이터, 도착점은 같은 사건
+      const obsSrcX = state.launchObsSrcX;
+      const obsSrcY = state.launchObsSrcY;
+      const obsDstX = state.launchObsDstX;
+      const obsTotalDx = obsDstX - obsSrcX;
+      const obsWallDrop = state.obsWallDropFixed;
+
+      const refPts = buildCurvePoints(realSrcX, realSrcY, realTotalDx, realWallDrop, 100);
+
+      const u = state.progress;
+
+      let pts;
+      let currentX;
+      let currentY;
+      let emitterY;
+
+      if (pd.motionType === "upAccel" && !state.freefall) {
+        // 우주 가속계: 노란빛은 현재 엘리베이터와 함께 움직이되,
+        // 내부에서 보이는 아래로 휜 곡선 모양은 그대로 유지
+        const curSrcX = e.x + 18;
+        const curSrcY = e.y + e.h * 0.38;
+        const curDstX = e.x + e.w - 18;
+        const curDx = curDstX - curSrcX;
+
+        pts = buildCurvePoints(curSrcX, curSrcY, curDx, state.obsWallDropFixed, 100);
+
+        currentX = curSrcX + curDx * u;
+        currentY = curSrcY + state.obsWallDropFixed * u * u;
+
+        emitterY = curSrcY;
+      } else {
+        // 행성 / 자유낙하: 기존 방식 유지
+        pts = buildCurvePoints(obsSrcX, obsSrcY, obsTotalDx, obsWallDrop, 100)
+          .map(p => ({ x: p.x, y: p.y + beamShiftY }));
+
+        currentX = obsSrcX + obsTotalDx * u;
+        const currentYBase = obsSrcY + obsWallDrop * u * u;
+        currentY = currentYBase + beamShiftY;
+
+        emitterY = obsSrcY + beamShiftY;
+      }
+
+      const refX = realSrcX + realTotalDx * u;
+      const refY = realSrcY + realWallDrop * u * u;
+
+      if (state.showTrail) {
+        if (state.isAnimating) {
+          state.extCurSeg.push({ x: currentX, y: currentY });
+          state.extRefCurSeg.push({ x: refX, y: refY });
+        }
+
+        push();
+        noFill();
+
+        // 실제 빛 궤적 (하늘색 점선)
+        strokeWeight(2.5);
+        drawingContext.setLineDash([6, 5]);
+        for (let si = 0; si < state.extRefSegs.length; si++) {
+          const seg = state.extRefSegs[si];
+          stroke(65, 220, 255, map(si, 0, state.extRefSegs.length, 15, 55));
+          if (seg.length > 1) {
+            beginShape();
+            for (const p of seg) vertex(p.x, p.y);
+            endShape();
+          }
+        }
+        if (state.extRefCurSeg.length > 1) {
+          stroke(65, 220, 255, 140);
+          beginShape();
+          for (const p of state.extRefCurSeg) vertex(p.x, p.y);
+          endShape();
+        }
+        drawingContext.setLineDash([]);
+        pop();
+      }
+
+      // 활성 실제 빛 (하늘색 점선)
+      push();
+      noFill();
+      stroke(65, 220, 255, 160);
+      strokeWeight(2);
+      drawingContext.setLineDash([6, 5]);
+      drawPartialCurve(refPts, state.progress, realSrcX, realSrcY, refX, refY, realWallDrop);
+      drawingContext.setLineDash([]);
+      pop();
+
+      // 활성 관측 빛 (노란색)
+      push();
+      noFill();
+      stroke(255, 212, 50, 248);
+      strokeWeight(5);
+      drawPartialCurve(pts, state.progress, obsSrcX, emitterY, currentX, currentY, obsWallDrop);
+      drawEmitter(obsSrcX, emitterY);
+      pop();
+
+      drawLightDot(currentX, currentY, 10, 24, 40);
+
+      // 실제 빛 현재 위치 표시
+      push();
+      noStroke();
+      fill(65, 220, 255, 80);
+      circle(refX, refY, 18);
+      fill(65, 220, 255, 220);
+      circle(refX, refY, 7);
+      pop();
+    }
+
+    function drawArrows(x, y, angle, col, label) {
+      push();
+      translate(x, y);
+      for (let i = 0; i < 3; i++) {
+        push();
+        translate(0, (i - 1) * 15);
+        rotate(angle);
+        stroke(col); strokeWeight(2.5);
+        line(-10, 0, 10, 0);
+        line(10, 0, 4, -5);
+        line(10, 0, 4, 5);
+        pop();
+      }
+      noStroke();
+      fill(red(col), green(col), blue(col), 210);
+      textAlign(CENTER, TOP); textSize(11); textStyle(BOLD);
+      text(label, 0, 28);
+      pop();
+    }
+
+    function drawMotionIndicator(e) {
+      const pd = getPD();
+
+      // 우주에서 가속 중일 때만 표시
+      if (pd.motionType === "upAccel" && !state.freefall) {
+        drawArrows(
+          e.x + e.w + 42,
+          e.y + e.h * 0.5,
+          -HALF_PI,
+          color(70, 170, 255),
+          "가속 ↑"
+        );
+        return;
+      }
+
+      // 행성에서 자유낙하일 때만 표시
+      if (pd.motionType !== "upAccel" && state.freefall) {
+        drawArrows(
+          e.x + e.w + 42,
+          e.y + e.h * 0.5,
+          HALF_PI,
+          color(255, 190, 90),
+          "낙하 ↓"
+        );
+      }
+    }
+    // 진행 바
+    function drawProgressBar() {
+      push();
+      const bw = 280;
+      const bx = width * 0.5 - bw * 0.5;
+      const by = height - 14;
+      noStroke();
+      fill(255, 255, 255, 20);
+      rect(bx, by, bw, 6, 999);
+      fill(255, 212, 55, 195);
+      rect(bx, by, bw * state.progress, 6, 999);
+      pop();
+    }
+
+    // 내부 시점 미니 패널 (항상 우측 상단)
+    function drawMiniPanel() {
+      const mw = 232;
+      const mh = 178;
+      const mx = width - mw - 14;
+      const my = 14;
+
+      push();
+
+      // 패널 배경
+      drawingContext.save();
+      drawingContext.shadowColor = "rgba(0,8,50,0.72)";
+      drawingContext.shadowBlur = 24;
+      noStroke();
+      fill(7, 12, 35, 218);
+      rect(mx, my, mw, mh, 16);
+      drawingContext.restore();
+
+      stroke(115, 155, 255, 28);
+      strokeWeight(1);
+      noFill();
+      rect(mx, my, mw, mh, 16);
+
+      // 헤더
+      noStroke();
+      fill(192, 216, 255, 185);
+      textAlign(LEFT, TOP);
+      textSize(10.5);
+      textStyle(BOLD);
+      text("엘리베이터 내부 시점", mx + 12, my + 9);
+
+      // 내부 씬 클립
+      clipRoundedRect(mx + 2, my + 27, mw - 4, mh - 30, 12);
+
+      noStroke();
+      fill(16, 24, 55);
+      rect(mx + 2, my + 27, mw - 4, mh - 30);
+
+      // 내부 엘리베이터 박스
+      const iew = mw - 26;
+      const ieh = mh - 50;
+      const iex = mx + 13;
+      const iey = my + 33;
+
+      stroke(125, 162, 208, 155);
+      strokeWeight(1.8);
+      noFill();
+      rect(iex, iey, iew, ieh, 8);
+
+      // 패널 라인
+      stroke(100, 140, 190, 40);
+      strokeWeight(0.7);
+      for (let i = 1; i <= 3; i++) {
+        const yy = map(i, 0, 4, iey + 10, iey + ieh - 10);
+        line(iex + 6, yy, iex + iew - 6, yy);
+      }
+
+      // 내부 광선 계산
+      const srcX = iex + 10;
+      const srcY = iey + ieh * 0.38;
+      const dstX = iex + iew - 10;
+      const totalDx = dstX - srcX;
+
+      const realEndY = srcY;                  // 실제 빛은 직선
+      const wallDrop = realEndY - srcY;       // 기본값 0
+
+      // 관찰된 빛은 바깥과 같은 방식으로 같은 도착점에 맞춤
+      const observedDrop = realEndY - srcY + getLightDropFraction() * ieh;
+
+      const miniPts = buildCurvePoints(srcX, srcY, totalDx, observedDrop, 60);
+
+      const u2 = state.progress;
+      const curX = srcX + totalDx * u2;
+      const curY = srcY + observedDrop * u2 * u2;
+
+      const refX = srcX + totalDx * u2;
+      const refY = srcY;
+
+      if (state.showTrail) {
+        if (state.isAnimating) {
+          state.intCurSeg.push({ dx: curX - srcX, dy: curY - srcY });
+          state.intRefCurSeg.push({ dx: refX - srcX, dy: refY - srcY });
+        }
+
+        push();
+        noFill();
+
+        // 기준 궤적 (하늘색 점선)
+        strokeWeight(1.8);
+        drawingContext.setLineDash([5, 4]);
+        for (let si = 0; si < state.intRefSegs.length; si++) {
+          const seg = state.intRefSegs[si];
+          stroke(65, 220, 255, map(si, 0, state.intRefSegs.length, 12, 45));
+          if (seg.length > 1) {
+            beginShape();
+            for (const p of seg) vertex(srcX + p.dx, srcY + p.dy);
+            endShape();
+          }
+        }
+        if (state.intRefCurSeg.length > 1) {
+          stroke(65, 220, 255, 130);
+          beginShape();
+          for (const p of state.intRefCurSeg) vertex(srcX + p.dx, srcY + p.dy);
+          endShape();
+        }
+        drawingContext.setLineDash([]);
+
+
+        pop();
+      }
+
+      // 활성 기준 빔 (하늘색 점선)
+      push();
+      noFill();
+      stroke(65, 220, 255, 150);
+      strokeWeight(1.8);
+      drawingContext.setLineDash([5, 4]);
+      line(srcX, srcY, refX, refY);
+      drawingContext.setLineDash([]);
+      pop();
+
+      // 활성 관측 빔 (노란색)
+      push();
+      noFill();
+      stroke(255, 208, 50, 238);
+      strokeWeight(2.5);
+      drawPartialCurve(miniPts, state.progress, srcX, srcY, curX, curY, observedDrop);
+      pop();
+
+      // 광원 + 광점
+      push();
+      noStroke();
+      fill(255, 228, 78, 65);
+      circle(srcX, srcY, 15);
+      fill(255, 212, 50, 255);
+      circle(srcX, srcY, 7);
+
+      fill(255, 228, 78, 50);
+      circle(curX, curY, 19);
+      fill(255, 212, 50, 255);
+      circle(curX, curY, 6);
+
+      fill(65, 220, 255, 70);
+      circle(refX, refY, 12);
+      fill(65, 220, 255, 200);
+      circle(refX, refY, 5);
+      pop();
+
+      unclipRoundedRect();
+
+      // 범례
+      noStroke();
+      textAlign(LEFT, BOTTOM);
+      textSize(9);
+      textStyle(NORMAL);
+      fill(65, 220, 255, 190);
+      text("─ ─ 실제 빛", mx + 8, my + mh - 5);
+      fill(255, 212, 65, 190);
+      text("── 보이는 빛", mx + 68, my + mh - 5);
+
+      pop();
+    }
+
+    function buildCurvePoints(srcX, srcY, totalDx, wallDrop, steps = 60) {
+      const pts = [];
+      for (let i = 0; i <= steps; i++) {
+        const u = i / steps;
+        const x = srcX + totalDx * u;
+        const y = srcY + wallDrop * u * u;
+        pts.push({ x, y });
+      }
+      return pts;
+    }
+
+    function drawPartialCurve(pts, progress, srcX, srcY, curX, curY, wallDrop) {
+      const maxIdx = max(1, floor(progress * (pts.length - 1)));
+
+      beginShape();
+      for (let i = 0; i <= maxIdx; i++) {
+        vertex(pts[i].x, pts[i].y);
+      }
+      endShape();
+    }
+
+    // 도형 헬퍼
+    function drawEmitter(x, y) {
+      push();
+      noStroke();
+      fill(255, 232, 125, 52); circle(x, y, 30);
+      fill(255, 218, 88, 128); circle(x, y, 19);
+      fill(255, 212, 50, 255); circle(x, y, 10);
+      stroke(255, 242, 195, 148); strokeWeight(1.5);
+      line(x - 9, y, x + 9, y); line(x, y - 9, x, y + 9);
+      pop();
+    }
+
+    function drawLightDot(x, y, inner, mid, outer) {
+      push();
+      noStroke();
+      fill(255, 232, 125, 50); circle(x, y, outer);
+      fill(255, 218, 88, 105); circle(x, y, mid);
+      fill(255, 212, 50, 255); circle(x, y, inner);
+      pop();
+    }
+
+    function clipRoundedRect(x, y, w, h, r) {
+      drawingContext.save();
+      drawingContext.beginPath();
+      const rr = min(r, w * 0.5, h * 0.5);
+      drawingContext.moveTo(x + rr, y);
+      drawingContext.arcTo(x + w, y, x + w, y + h, rr);
+      drawingContext.arcTo(x + w, y + h, x, y + h, rr);
+      drawingContext.arcTo(x, y + h, x, y, rr);
+      drawingContext.arcTo(x, y, x + w, y, rr);
+      drawingContext.closePath();
+      drawingContext.clip();
+    }
+
+    function unclipRoundedRect() {
+      drawingContext.restore();
+    }
+
+    function keyPressed() {
+      if (key === "r" || key === "R") restartLight();
+      if (key === "1") clickPlanetBtn("space");
+      if (key === "2") clickPlanetBtn("earth");
+      if (key === "3") clickPlanetBtn("moon");
+      if (key === "4") clickPlanetBtn("mars");
+      if (key === "5") {
+        state.macroOpen = true;
+        state.planet = "blackhole";
+        state.freefall = false;
+        ui.freefallBtn.classList.remove("active");
+        refreshModeButtons();
+        updatePanel();
+        clearTrails();
+        restartLight();
+      }
+    }
+
+    function clickPlanetBtn(planet) {
+      const btn = document.querySelector(`.planet-btn[data-planet="${planet}"]`);
+      if (btn) btn.click();
+    }
+  </script>
+</body>
+
+</html>
