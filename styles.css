@@ -736,10 +736,8 @@ input[type="search"] {
   inset: 0;
   width: 100vw;
   height: 100vh;
-  background:
-    radial-gradient(circle at top right, rgba(80, 120, 255, .15), transparent 28%),
-    radial-gradient(circle at top left, rgba(0, 200, 255, .08), transparent 24%),
-    linear-gradient(180deg, #08101f 0%, #0b1324 100%);
+  background: #f0faf4;
+
   z-index: 9998;
   opacity: 0;
   pointer-events: none;
@@ -2223,4 +2221,249 @@ input[type="search"] {
 
 .seed-idea-label {
   color: #b4dc96;
+}
+
+/* 전체 텍스트 색 어둡게 */
+.seed-panel {
+  color: #1a3a2a;
+}
+
+.seed-header {
+  background: #d4f0e0;
+  border-bottom: 1px solid #a8dfc0;
+}
+
+.seed-header h2 {
+  color: #1a3a2a;
+}
+
+.seed-sub {
+  color: #3a7a5a;
+}
+
+.seed-kicker {
+  background: rgba(52, 180, 120, .15);
+  color: #2a8a5a;
+}
+
+.seed-close {
+  background: rgba(52, 180, 120, .15);
+  color: #1a3a2a;
+}
+
+/* 왼쪽 사이드바 */
+.seed-sidebar {
+  background: #e8f7ef;
+  border-right: 1px solid #b8e8cc;
+}
+
+.seed-label {
+  color: #2a7a4a;
+}
+
+.seed-project-card {
+  background: #d4f0e0;
+  border-color: #a8dfc0;
+}
+
+.seed-muted {
+  color: #3a7a5a;
+}
+
+/* 드롭박스 */
+.seed-curr-item select,
+.seed-curr-full select,
+.seed-select {
+  background: #d4f0e0;
+  border-color: #a8dfc0;
+  color: #1a3a2a;
+}
+
+.seed-curr-item label,
+.seed-curr-full label {
+  color: #2a7a4a;
+}
+
+.seed-std-preview {
+  background: #d4f0e0;
+  border-color: #a8dfc0;
+  color: #1a3a2a;
+}
+
+/* 수업 조건 textarea */
+.seed-textarea {
+  background: #d4f0e0;
+  border-color: #a8dfc0;
+  color: #1a3a2a;
+}
+
+.seed-help {
+  color: #3a7a5a;
+}
+
+/* 버튼 */
+.seed-primary {
+  background: linear-gradient(180deg, #52c48a, #3aa870);
+  color: #fff;
+}
+
+.seed-secondary {
+  background: #d4f0e0;
+  border-color: #a8dfc0;
+  color: #2a7a4a;
+}
+
+/* 오른쪽 메인 */
+.seed-main {
+  background: #f0faf4;
+}
+
+.seed-empty-title {
+  color: #2a7a4a;
+}
+
+.seed-empty-sub {
+  color: #3a8a5a;
+}
+
+.seed-step {
+  background: #d4f0e0;
+  border-color: #a8dfc0;
+  color: #2a7a4a;
+}
+
+.seed-step-num {
+  color: #2a7a4a;
+}
+
+/* seed-block 카드들 */
+.seed-block {
+  background: transparent;
+  border: none;
+}
+
+/* ===== 드롭박스 옵션 + 글씨 진하게 ===== */
+.seed-select option,
+.seed-curr-item select option,
+.seed-curr-full select option {
+  background: #d4f0e0;
+  color: #1a3a2a;
+}
+
+/* 모든 텍스트 진하게 */
+.seed-panel,
+.seed-panel p,
+.seed-panel li,
+.seed-panel div,
+.seed-panel span,
+.seed-panel label {
+  color: #1a3a2a;
+}
+
+/* 각 영역별 명시적 지정 */
+.seed-project-card,
+.seed-project-card div {
+  color: #1a3a2a;
+}
+
+.seed-std-preview {
+  color: #1a3a2a;
+}
+
+.seed-textarea {
+  color: #1a3a2a;
+}
+
+.seed-help {
+  color: #2a5a3a;
+}
+
+.seed-empty-sub {
+  color: #2a5a3a;
+}
+
+.seed-idea-line {
+  color: #1a3a2a;
+}
+
+.seed-idea-title {
+  color: #0a2a1a;
+}
+
+.seed-doc-summary {
+  color: #1a3a2a;
+}
+
+.seed-result-summary {
+  color: #1a3a2a;
+}
+
+.seed-activity-list li,
+.seed-compact-list li,
+.seed-var-items {
+  color: #1a3a2a;
+}
+
+.seed-info-text {
+  color: #1a3a2a;
+}
+
+.seed-highlight-text {
+  color: #0a2a1a;
+}
+
+/* ===== 진하게 보정 ===== */
+
+/* 현재 시뮬레이션 카드 텍스트 */
+.seed-project-card {
+  color: #0a2a1a !important;
+}
+
+.seed-project-card * {
+  color: #0a2a1a !important;
+}
+
+.seed-project-card .seed-muted {
+  color: #1a5a3a !important;
+}
+
+/* 단계 뱃지 1,2,3,4 */
+.seed-step:nth-child(1) {
+  background: #b8e8cc !important;
+  border-color: #86d3ac !important;
+  color: #0a3a1a !important;
+}
+
+.seed-step:nth-child(1) .seed-step-num {
+  color: #0a3a1a !important;
+}
+
+.seed-step:nth-child(2) {
+  background: #c8e8a8 !important;
+  border-color: #a0cc70 !important;
+  color: #1a3a0a !important;
+}
+
+.seed-step:nth-child(2) .seed-step-num {
+  color: #1a3a0a !important;
+}
+
+.seed-step:nth-child(3) {
+  background: #f0e890 !important;
+  border-color: #d8c850 !important;
+  color: #2a2800 !important;
+}
+
+.seed-step:nth-child(3) .seed-step-num {
+  color: #2a2800 !important;
+}
+
+.seed-step:nth-child(4) {
+  background: #f8c8a8 !important;
+  border-color: #e0a078 !important;
+  color: #2a1000 !important;
+}
+
+.seed-step:nth-child(4) .seed-step-num {
+  color: #2a1000 !important;
 }
