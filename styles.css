@@ -758,32 +758,34 @@ input[type="search"] {
 .seed-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 20px;
-  padding: 24px 32px 18px;
+  padding: 14px 24px;
   border-bottom: 1px solid rgba(120, 150, 220, .18);
-  background: rgba(255, 255, 255, .03);
-  backdrop-filter: blur(10px);
+  background: rgba(13, 21, 48, 0.9);
 }
 
 .seed-kicker {
-  font-size: 11px;
-  letter-spacing: .18em;
-  color: #90b6ff;
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: #7aa2ff;
   font-weight: 700;
-  margin-bottom: 8px;
+  background: rgba(122, 162, 255, 0.12);
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-right: 12px;
 }
 
 .seed-header h2 {
   margin: 0;
-  font-size: 28px;
+  font-size: 18px;
   color: #f4f8ff;
 }
 
 .seed-sub {
-  margin: 8px 0 0;
+  margin: 2px 0 0;
   color: #a9bbdf;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .seed-close {
@@ -819,12 +821,8 @@ input[type="search"] {
 }
 
 .seed-block {
-  background: rgba(255, 255, 255, .045);
-  border: 1px solid rgba(110, 140, 220, .14);
-  border-radius: 18px;
-  padding: 18px;
-  margin-bottom: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+  border-radius: 12px;
+  margin-bottom: 14px;
 }
 
 .seed-label {
@@ -836,24 +834,24 @@ input[type="search"] {
 }
 
 .seed-project-card {
-  border: 1px solid rgba(110, 140, 220, .14);
-  background: linear-gradient(180deg, rgba(15, 24, 46, .95), rgba(10, 17, 36, .95));
-  border-radius: 16px;
-  padding: 16px;
+  border: 1px solid #1e2d5a;
+  background: rgba(122, 162, 255, 0.06);
+  border-radius: 10px;
+  padding: 12px;
 }
 
 .seed-textarea {
   width: 100%;
-  min-height: 260px;
+  min-height: 100px;
   resize: vertical;
-  padding: 14px 16px;
-  border-radius: 14px;
-  border: 1px solid #2b3e71;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #1e2d5a;
   background: #081022;
   color: #eef4ff;
-  line-height: 1.7;
+  line-height: 1.6;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .seed-help {
@@ -889,6 +887,8 @@ input[type="search"] {
 
 .seed-output {
   min-height: calc(100vh - 170px);
+  display: flex;
+  flex-direction: column;
 }
 
 .seed-muted {
@@ -1064,14 +1064,14 @@ input[type="search"] {
 }
 
 .seed-empty-state {
-  min-height: 60vh;
-  display: grid;
-  place-items: center;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: #4a6090;
   text-align: center;
-  color: #97add7;
-  border: 1px dashed rgba(120, 150, 220, .18);
-  border-radius: 24px;
-  background: rgba(255, 255, 255, .02);
 }
 
 @media (max-width: 1100px) {
@@ -1630,4 +1630,108 @@ input[type="search"] {
 .b-side-tab {
   display: flex;
   align-items: center;
+}
+
+/* ===== SEED 패널 개선 ===== */
+.seed-header-left {
+  display: flex;
+  align-items: center;
+}
+
+.seed-curr-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.seed-curr-item label,
+.seed-curr-full label {
+  display: block;
+  font-size: 11px;
+  color: #a6b3d9;
+  margin-bottom: 4px;
+}
+
+.seed-curr-item select,
+.seed-curr-full select {
+  width: 100%;
+  background: #121a33;
+  border: 1px solid #1e2d5a;
+  color: #e9efff;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.seed-std-preview {
+  background: rgba(122, 162, 255, 0.06);
+  border: 1px solid #1e2d5a;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 11px;
+  color: #a6b3d9;
+  line-height: 1.5;
+  margin-top: 8px;
+}
+
+.seed-empty-state {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: #4a6090;
+  text-align: center;
+}
+
+.seed-empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #0d1530;
+  border: 1px solid #1e2d5a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.seed-empty-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #a6b3d9;
+}
+
+.seed-empty-sub {
+  font-size: 12px;
+  color: #4a6090;
+  line-height: 1.6;
+  max-width: 260px;
+}
+
+.seed-steps {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.seed-step {
+  background: rgba(122, 162, 255, 0.08);
+  border: 1px solid #1e2d5a;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: #7aa2ff;
+  text-align: center;
+  min-width: 56px;
+}
+
+.seed-step-num {
+  font-size: 15px;
+  font-weight: 700;
+  color: #7aa2ff;
+  display: block;
+  margin-bottom: 2px;
 }

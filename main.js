@@ -373,11 +373,21 @@ function resetSeedState() {
 
   if (elSeed.prompt) elSeed.prompt.value = "";
   if (elSeed.output) {
+    const mascots = ['양자시물이', '역학시물이', '열시물이', '전기시물이'];
+    const random = mascots[Math.floor(Math.random() * mascots.length)];
     elSeed.output.innerHTML = `
-      <div class="seed-muted">
-        <p style="margin:0;">왼쪽에 조건을 입력하고 <strong>아이디어 4개 생성</strong>을 눌러 주세요.</p>
+    <div class="seed-empty-state">
+<img src="./image/${random}.png" style="width:320px; height:320px; object-fit:contain;">
+      <div class="seed-empty-title">아직 생성된 수업안이 없어요</div>
+      <div class="seed-empty-sub">왼쪽에서 교육과정과 조건을 설정하고<br>생성 버튼을 눌러주세요</div>
+      <div class="seed-steps">
+        <div class="seed-step"><span class="seed-step-num">1</span>시뮬레이션<br>선택</div>
+        <div class="seed-step"><span class="seed-step-num">2</span>성취기준<br>설정</div>
+        <div class="seed-step"><span class="seed-step-num">3</span>조건<br>입력</div>
+        <div class="seed-step"><span class="seed-step-num">4</span>아이디어<br>생성</div>
       </div>
-    `;
+    </div>
+  `;
   }
 
   renderSeedProjectCard();
@@ -425,10 +435,10 @@ function renderSeedProjectCard() {
     : `<span class="seed-badge">성취기준 연결 없음</span>`;
 
   elSeed.projectCard.innerHTML = `
-    <div style="font-size:18px;font-weight:700;margin-bottom:6px;">${escapeHtml(p.title)}</div>
-    <div style="color:#9db3ec;margin-bottom:8px;">${escapeHtml(p.desc)}</div>
-    <div class="seed-badges">${codesHtml}</div>
-  `;
+  <div style="font-size:13px;font-weight:700;color:#e9efff;margin-bottom:4px;">${escapeHtml(p.title)}</div>
+  <div style="font-size:11px;color:#7aa2ff;">${escapeHtml(p.desc)}</div>
+  <div class="seed-badges" style="margin-top:8px;">${codesHtml}</div>
+`;
 }
 
 function openSeedPanel(project = null) {
@@ -2466,14 +2476,5 @@ render();
     }
   });
 })();
-// 분류 탭 클릭 처리
-catTabs.addEventListener('click', e => {
-  const tab = e.target.closest('.cat-tab');
-  if (!tab) return;
-  catTabs.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
-  tab.classList.add('active');
-  selectedCat = tab.dataset.cat;
-  render(); // 기존에 카드 다시 그리는 함수 이름으로 바꾸세요
-});
 
 initSeedGemini();

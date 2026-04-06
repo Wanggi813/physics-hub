@@ -202,10 +202,12 @@
 
     <aside id="seed-panel" class="seed-panel" aria-hidden="true">
       <div class="seed-header">
-        <div>
-          <div class="seed-kicker">SEED</div>
-          <h2>AI 수업 설계</h2>
-          <p class="seed-sub">조건을 직접 쓰면 Gemini가 탐구형 수업안을 구조화해서 생성합니다.</p>
+        <div class="seed-header-left">
+          <span class="seed-kicker">SEED</span>
+          <div>
+            <h2>AI 수업 설계</h2>
+            <p class="seed-sub">Gemini가 탐구형 수업안을 구조화해서 생성합니다</p>
+          </div>
         </div>
         <button id="seed-close" class="seed-close" type="button" aria-label="닫기">✕</button>
       </div>
@@ -221,26 +223,22 @@
 
           <section class="seed-block">
             <label class="seed-label">교육과정 선택</label>
-
-            <div style="display:grid; gap:10px;">
-              <div>
-                <label class="seed-label" for="seed-school-level" style="font-size:13px;">학교급</label>
+            <div class="seed-curr-grid">
+              <div class="seed-curr-item">
+                <label for="seed-school-level">학교급</label>
                 <select id="seed-school-level" class="seed-select"></select>
               </div>
-
-              <div>
-                <label class="seed-label" for="seed-course" style="font-size:13px;">과목</label>
+              <div class="seed-curr-item">
+                <label for="seed-course">과목</label>
                 <select id="seed-course" class="seed-select"></select>
               </div>
-
-              <div>
-                <label class="seed-label" for="seed-standard" style="font-size:13px;">성취기준</label>
-                <select id="seed-standard" class="seed-select"></select>
-              </div>
-
-              <div id="seed-standard-preview" class="seed-help">
-                성취기준을 선택하면 여기에 표시됩니다.
-              </div>
+            </div>
+            <div class="seed-curr-full">
+              <label for="seed-standard">성취기준</label>
+              <select id="seed-standard" class="seed-select"></select>
+            </div>
+            <div id="seed-standard-preview" class="seed-std-preview">
+              성취기준을 선택하면 여기에 표시됩니다.
             </div>
           </section>
 
@@ -264,9 +262,14 @@
         <div class="seed-main">
           <div id="seed-output" class="seed-output">
             <div class="seed-empty-state">
-              <div>
-                <h3 style="margin:0 0 10px;">아직 생성된 수업안이 없습니다</h3>
-                <p style="margin:0;">왼쪽에 조건을 입력하고 <strong>아이디어 4개 생성</strong>을 눌러 주세요.</p>
+              <div class="seed-empty-icon">💡</div>
+              <div class="seed-empty-title">아직 생성된 수업안이 없어요</div>
+              <div class="seed-empty-sub">왼쪽에서 교육과정과 조건을 설정하고<br>생성 버튼을 눌러주세요</div>
+              <div class="seed-steps">
+                <div class="seed-step"><span class="seed-step-num">1</span>시뮬레이션<br>선택</div>
+                <div class="seed-step"><span class="seed-step-num">2</span>성취기준<br>설정</div>
+                <div class="seed-step"><span class="seed-step-num">3</span>조건<br>입력</div>
+                <div class="seed-step"><span class="seed-step-num">4</span>아이디어<br>생성</div>
               </div>
             </div>
           </div>
