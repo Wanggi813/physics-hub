@@ -758,9 +758,9 @@ function buildLessonFromIdeaRequestBody(userPrompt, project, idea) {
           {
             text:
               `너는 한국 고등학교 과학·물리 수업 설계 전문가다.
-반드시 실제 수업에 바로 적용 가능한 수준으로 작성하라.
-추상적 표현, 상투적 문장, 빈약한 일반론을 피하라.
-탐구 질문, 학생 활동, 교사 발문, 데이터 표현, 형성평가가 살아 있어야 한다.
+핵심 질문과 학생 활동을 중심으로 간결하게 작성하라.
+각 항목은 3줄 이내로 핵심만 써라. 상투적 표현, 긴 설명, 반복을 금지한다.
+교사 활동은 최소화하고 학생이 무엇을 하는지에 집중하라.
 
 [시뮬레이션/교육과정 문맥]
 ${projectContext}
@@ -1154,132 +1154,79 @@ function renderLessonResult(data) {
     .map(s => `<span class="seed-badge">${escapeHtml(s.code)}</span>`)
     .join("");
 
-  const standardsList = (data.standards_used || [])
-    .map(s => `<li><strong>${escapeHtml(s.code)}</strong> ${escapeHtml(s.text)}</li>`)
-    .join("");
+  // 학생 활동만 추출
+  const studentActivities = (data.lesson_flow || [])
+    .map(step => `
+      <div class="seed-activity-step">
+        <div class="seed-activity-phase">${escapeHtml(step.phase)}</div>
+        <ul class="seed-activity-list">
+          ${(step.student_actions || []).map(v => `<li>${escapeHtml(v)}</li>`).join("")}
+        </ul>
+      </div>
+    `).join("");
 
-  const objectivesList = (data.lesson_objectives || [])
-    .map(v => `<li>${escapeHtml(v)}</li>`)
-    .join("");
-
-  const priorList = (data.prior_knowledge || [])
-    .map(v => `<li>${escapeHtml(v)}</li>`)
-    .join("");
-
-  const worksheetList = (data.worksheet_items || [])
-    .map(v => `<li>${escapeHtml(v)}</li>`)
-    .join("");
+  const varRows = [
+    { label: '조작', items: data.inquiry_design?.independent_variables || [] },
+    { label: '종속', items: data.inquiry_design?.dependent_variables || [] },
+    { label: '통제', items: data.inquiry_design?.control_variables || [] },
+  ].map(row => `
+    <div class="seed-var-row">
+      <span class="seed-var-label">${row.label}</span>
+      <span class="seed-var-items">${row.items.map(escapeHtml).join(' · ')}</span>
+    </div>
+  `).join("");
 
   const formativeList = (data.formative_assessment || [])
-    .map(v => `<li>${escapeHtml(v)}</li>`)
-    .join("");
-
-  const reflectionList = (data.extension_or_reflection || [])
-    .map(v => `<li>${escapeHtml(v)}</li>`)
-    .join("");
-
-  const flowHtml = (data.lesson_flow || [])
-    .map(step => `
-      <div class="seed-flow-step">
-        <h5>${escapeHtml(step.phase)}</h5>
-        <div class="seed-flow-grid">
-          <div class="seed-flow-box">
-            <strong>교사 활동</strong>
-            <ul>${(step.teacher_actions || []).map(v => `<li>${escapeHtml(v)}</li>`).join("")}</ul>
-          </div>
-          <div class="seed-flow-box">
-            <strong>학생 활동</strong>
-            <ul>${(step.student_actions || []).map(v => `<li>${escapeHtml(v)}</li>`).join("")}</ul>
-          </div>
-        </div>
-        <div class="seed-tip-list">
-          <strong>수업 팁</strong>
-          <ul>${(step.tips || []).map(v => `<li>${escapeHtml(v)}</li>`).join("")}</ul>
-        </div>
-      </div>
-    `)
-    .join("");
+    .map(v => `<li>${escapeHtml(v)}</li>`).join("");
 
   elSeed.output.innerHTML = `
     <div class="seed-result">
-      <div class="seed-doc">
-        <div class="seed-doc-hero">
-          <h3>${escapeHtml(data.lesson_title || "수업안")}</h3>
-          <p class="seed-doc-summary">${escapeHtml(data.target_summary || "")}</p>
-          <div class="seed-doc-meta">
-            ${standardsBadges || '<span class="seed-badge">성취기준 정보 없음</span>'}
-          </div>
+
+      <!-- 헤더: 제목 + 성취기준 -->
+      <div class="seed-result-header">
+        <div class="seed-result-badges">${standardsBadges}</div>
+        <h2 class="seed-result-title">${escapeHtml(data.lesson_title || "수업안")}</h2>
+        <p class="seed-result-summary">${escapeHtml(data.target_summary || "")}</p>
+      </div>
+
+      <!-- 핵심 질문 (가장 크게) -->
+      <div class="seed-highlight-box">
+        <div class="seed-highlight-label">핵심 질문</div>
+        <div class="seed-highlight-text">${escapeHtml(data.essential_question || "")}</div>
+      </div>
+
+      <!-- 2열: 가설 + 변인 -->
+      <div class="seed-two-col">
+        <div class="seed-info-card">
+          <div class="seed-info-label">가설 예시</div>
+          <div class="seed-info-text">${escapeHtml(data.inquiry_design?.hypothesis_example || "")}</div>
         </div>
-
-        <div class="seed-doc-body">
-          <div class="seed-doc-grid">
-            <div class="seed-card">
-              <h4>핵심 질문</h4>
-              <p>${escapeHtml(data.essential_question || "")}</p>
-            </div>
-
-            <div class="seed-card">
-              <h4>가설 예시</h4>
-              <p>${escapeHtml(data.inquiry_design?.hypothesis_example || "")}</p>
-            </div>
-
-            <div class="seed-card">
-              <h4>수업 목표</h4>
-              <ul>${objectivesList}</ul>
-            </div>
-
-            <div class="seed-card">
-              <h4>선수학습</h4>
-              <ul>${priorList}</ul>
-            </div>
-          </div>
-
-          <div class="seed-section-block">
-            <h4>반영 성취기준</h4>
-            <ul>${standardsList}</ul>
-          </div>
-
-          <div class="seed-doc-grid">
-            <div class="seed-card">
-              <h4>조작 변인</h4>
-              <ul>${(data.inquiry_design?.independent_variables || []).map(v => `<li>${escapeHtml(v)}</li>`).join("")}</ul>
-            </div>
-            <div class="seed-card">
-              <h4>종속 변인</h4>
-              <ul>${(data.inquiry_design?.dependent_variables || []).map(v => `<li>${escapeHtml(v)}</li>`).join("")}</ul>
-            </div>
-            <div class="seed-card">
-              <h4>통제 변인</h4>
-              <ul>${(data.inquiry_design?.control_variables || []).map(v => `<li>${escapeHtml(v)}</li>`).join("")}</ul>
-            </div>
-            <div class="seed-card">
-              <h4>데이터 표현</h4>
-              <ul>${(data.inquiry_design?.data_representation || []).map(v => `<li>${escapeHtml(v)}</li>`).join("")}</ul>
-            </div>
-          </div>
-
-          <div class="seed-section-block">
-            <h4>차시 흐름</h4>
-            ${flowHtml}
-          </div>
-
-          <div class="seed-doc-grid">
-            <div class="seed-card">
-              <h4>활동지 문항</h4>
-              <ol>${worksheetList}</ol>
-            </div>
-            <div class="seed-card">
-              <h4>형성평가</h4>
-              <ul>${formativeList}</ul>
-            </div>
-          </div>
-
-          <div class="seed-section-block">
-            <h4>확장 및 성찰</h4>
-            <ul>${reflectionList}</ul>
-          </div>
+        <div class="seed-info-card">
+          <div class="seed-info-label">변인 설계</div>
+          ${varRows}
         </div>
       </div>
+
+      <!-- 학생 활동 흐름 (핵심) -->
+      <div class="seed-section">
+        <div class="seed-section-label">학생 활동 흐름</div>
+        <div class="seed-activities">${studentActivities}</div>
+      </div>
+
+      <!-- 2열: 형성평가 + 데이터 표현 -->
+      <div class="seed-two-col">
+        <div class="seed-info-card">
+          <div class="seed-info-label">형성평가</div>
+          <ul class="seed-compact-list">${formativeList}</ul>
+        </div>
+        <div class="seed-info-card">
+          <div class="seed-info-label">데이터 표현</div>
+          <ul class="seed-compact-list">
+            ${(data.inquiry_design?.data_representation || []).map(v => `<li>${escapeHtml(v)}</li>`).join("")}
+          </ul>
+        </div>
+      </div>
+
     </div>
   `;
 }

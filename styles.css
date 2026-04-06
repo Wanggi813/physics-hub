@@ -1736,3 +1736,159 @@ input[type="search"] {
   display: block;
   margin-bottom: 2px;
 }
+
+/* ===== 지도안 결과 새 디자인 ===== */
+.seed-result-header {
+  padding: 24px 28px 20px;
+  border-bottom: 1px solid rgba(120, 150, 220, 0.15);
+  margin-bottom: 20px;
+}
+
+.seed-result-badges {
+  margin-bottom: 10px;
+}
+
+.seed-result-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f4f8ff;
+  margin: 0 0 8px;
+  line-height: 1.35;
+}
+
+.seed-result-summary {
+  color: #a6b3d9;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.seed-highlight-box {
+  margin: 0 28px 20px;
+  background: rgba(122, 162, 255, 0.08);
+  border: 1px solid rgba(122, 162, 255, 0.3);
+  border-radius: 14px;
+  padding: 20px 24px;
+}
+
+.seed-highlight-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #7aa2ff;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.seed-highlight-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #e9efff;
+  line-height: 1.5;
+}
+
+.seed-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 0 28px 20px;
+}
+
+.seed-info-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(120, 150, 220, 0.15);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+
+.seed-info-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #7aa2ff;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.seed-info-text {
+  font-size: 13px;
+  color: #c8d8f4;
+  line-height: 1.6;
+}
+
+.seed-var-row {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.seed-var-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #7aa2ff;
+  background: rgba(122, 162, 255, 0.12);
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.seed-var-items {
+  color: #c8d8f4;
+  line-height: 1.5;
+}
+
+.seed-section {
+  margin: 0 28px 20px;
+}
+
+.seed-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #7aa2ff;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.seed-activities {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.seed-activity-step {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(120, 150, 220, 0.15);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.seed-activity-phase {
+  font-size: 11px;
+  font-weight: 700;
+  color: #7aa2ff;
+  white-space: nowrap;
+  min-width: 100px;
+  padding-top: 2px;
+}
+
+.seed-activity-list {
+  margin: 0;
+  padding-left: 16px;
+  color: #c8d8f4;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.seed-compact-list {
+  margin: 0;
+  padding-left: 16px;
+  color: #c8d8f4;
+  font-size: 13px;
+  line-height: 1.7;
+}
