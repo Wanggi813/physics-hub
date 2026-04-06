@@ -130,7 +130,8 @@ const projects = [
 
 const grid = document.getElementById('grid');
 const q = document.getElementById('q');
-const cat = document.getElementById('cat');
+const catTabs = document.getElementById('cat-tabs');
+let selectedCat = null;
 const sortSel = document.getElementById('sort');
 const count = document.getElementById('count');
 const empty = document.getElementById('empty');
@@ -652,7 +653,7 @@ function buildIdeaRequestBody(userPrompt, project) {
         parts: [
           {
             text:
-`너는 한국 고등학교 과학·물리 수업 설계 전문가다.
+              `너는 한국 고등학교 과학·물리 수업 설계 전문가다.
 
 다음 시뮬레이션과 성취기준, 교사 요청을 바탕으로
 서로 다른 방향의 탐구형 수업 아이디어를 정확히 4개 제안하라.
@@ -1824,7 +1825,12 @@ function makeCard(p) {
 
   $('h3').textContent = p.title;
   $('.desc').textContent = p.desc || '';
-  $('.category').textContent = p.category;
+  const catEl = node.querySelector('.category');
+  catEl.innerHTML = p.category
+    .split(',')
+    .map(c => c.trim())
+    .map(c => `<span class="category-badge badge-${c}">${c}</span>`)
+    .join('');
   node.querySelector('.curriculum').textContent = p.curriculumId ? `교육과정: ${p.curriculumId}` : '';
   const tags = node.querySelector('.tags'); tags.innerHTML = '';
 
@@ -1847,7 +1853,13 @@ function render() {
   let list = [...projects];
   const term = q.value.trim().toLowerCase();
   if (term) { list = list.filter(p => (p.title + p.desc + p.category + (p.tags || []).join(',')).toLowerCase().includes(term)); }
-  if (cat.value) { list = list.filter(p => p.category === cat.value); }
+  if (selectedCat) { list = list.filter(p => p.category.split(',').map(c => c.trim()).includes(selectedCat)); }
+
+  // 검색어도 없고 탭도 '모든 분류'면 → 랜덤 5개만 표시
+  const isDefault = !term && selectedCat === null;
+  if (isDefault) {
+    list = [...list].sort(() => Math.random() - 0.5).slice(0, 5);
+  }
   const by = sortSel.value;
   list.sort((a, b) => {
     if (by === 'title') return a.title.localeCompare(b.title, 'ko');
@@ -1875,7 +1887,16 @@ function render() {
 }
 
 q.addEventListener('input', render);
-cat.addEventListener('change', render);
+catTabs.addEventListener('click', e => {
+  const tab = e.target.closest('.cat-tab');
+  if (!tab) return;
+  catTabs.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  selectedCat = tab.dataset.cat; // 모든 분류는 '', 나머지는 분류명
+  const label = document.getElementById('cat-tabs-label');
+  if (label) label.textContent = selectedCat ? `📂 ${selectedCat}` : '📋 전체 시뮬레이션';
+  render();
+});
 sortSel.addEventListener('change', render);
 render();
 
@@ -2423,4 +2444,14 @@ render();
     }
   });
 })();
+// 분류 탭 클릭 처리
+catTabs.addEventListener('click', e => {
+  const tab = e.target.closest('.cat-tab');
+  if (!tab) return;
+  catTabs.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  selectedCat = tab.dataset.cat;
+  render(); // 기존에 카드 다시 그리는 함수 이름으로 바꾸세요
+});
+
 initSeedGemini();

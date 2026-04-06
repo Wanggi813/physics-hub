@@ -41,18 +41,6 @@
       <div class="top-right-wrap">
         <div class="controls">
           <input id="q" type="search" placeholder="검색: 제목·태그" />
-          <select id="cat">
-            <option value="">모든 분류</option>
-            <option>시뮬레이션</option>
-            <option>게임</option>
-            <option>전자/반도체</option>
-            <option>광학</option>
-            <option>상대성</option>
-            <option>데이터도구</option>
-            <option>웹앱</option>
-            <option>열</option>
-            <option>역학</option>
-          </select>
           <select id="sort">
             <option value="updated">최신순</option>
             <option value="title">가나다순</option>
@@ -154,6 +142,21 @@
         </div>
       </div>
     </section>
+
+    <div class="cat-tabs-row">
+      <div id="cat-tabs-label" class="cat-tabs-label">⚡ 오늘의 추천 시뮬레이션</div>
+      <div class="cat-tabs" id="cat-tabs">
+        <button class="cat-tab" data-cat="">모든 분류</button>
+        <button class="cat-tab" data-cat="역학">역학</button>
+        <button class="cat-tab" data-cat="열">열</button>
+        <button class="cat-tab" data-cat="광학">광학</button>
+        <button class="cat-tab" data-cat="전자/반도체">전자/반도체</button>
+        <button class="cat-tab" data-cat="상대성">상대성</button>
+        <button class="cat-tab" data-cat="현대물리">현대물리</button>
+        <button class="cat-tab" data-cat="게임">게임</button>
+        <button class="cat-tab" data-cat="시뮬레이션">시뮬레이션</button>
+      </div>
+    </div>
 
     <main id="grid" class="grid" aria-live="polite"></main>
 
