@@ -65,9 +65,13 @@ header {
   justify-content: space-between;
   position: relative;
   z-index: 2;
-  padding: 10px 0 14px;
+  padding: 6px 0 8px;
 }
 
+.seo-intro {
+  padding: 6px 0 4px;
+  font-size: 13px;
+}
 
 h1 {
   font-size: 24px;
@@ -253,8 +257,9 @@ input[type="search"] {
 .divider {
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(120, 150, 220, .35), transparent);
-  margin: 16px 0
+  margin: 8px 0
 }
+
 
 .ph-card {
   position: relative;
@@ -1419,52 +1424,54 @@ input[type="search"] {
   white-space: nowrap;
 }
 
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .badge-역학 {
-  background: rgba(59, 130, 246, .18);
-  border: 1px solid rgba(59, 130, 246, .4);
-  color: #93c5fd;
+  background: #1e3a5f;
+  color: #60a5fa;
 }
 
 .badge-열 {
-  background: rgba(239, 68, 68, .15);
-  border: 1px solid rgba(239, 68, 68, .35);
-  color: #fca5a5;
+  background: #3b1a1a;
+  color: #f87171;
 }
 
 .badge-광학 {
-  background: rgba(168, 85, 247, .15);
-  border: 1px solid rgba(168, 85, 247, .35);
-  color: #d8b4fe;
+  background: #2e1a4a;
+  color: #c084fc;
 }
 
 .badge-전자\/반도체 {
-  background: rgba(234, 179, 8, .15);
-  border: 1px solid rgba(234, 179, 8, .35);
-  color: #fde68a;
+  background: #2d2500;
+  color: #fbbf24;
 }
 
 .badge-상대성 {
-  background: rgba(20, 184, 166, .15);
-  border: 1px solid rgba(20, 184, 166, .35);
-  color: #99f6e4;
+  background: #0f2e2a;
+  color: #34d399;
 }
 
 .badge-현대물리 {
-  background: rgba(249, 115, 22, .15);
-  border: 1px solid rgba(249, 115, 22, .35);
-  color: #fed7aa;
+  background: #2d1a0e;
+  color: #fb923c;
 }
 
 .badge-게임 {
-  background: rgba(236, 72, 153, .15);
-  border: 1px solid rgba(236, 72, 153, .35);
-  color: #f9a8d4;
+  background: #2d1130;
+  color: #e879f9;
 }
 
 .badge-시뮬레이션 {
-  background: rgba(107, 114, 128, .18);
-  border: 1px solid rgba(107, 114, 128, .4);
-  color: #d1d5db;
+  background: #1a1f2e;
+  color: #94a3b8;
 }
 
 .cat-tabs-row {
@@ -1493,4 +1500,134 @@ input[type="search"] {
   white-space: nowrap;
   letter-spacing: 0.03em;
   flex-shrink: 0;
+}
+
+/* ===== B안 사이드바 레이아웃 ===== */
+.b-layout {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 0;
+  margin-top: 16px;
+  border: 1px solid rgba(120, 150, 220, 0.15);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.b-sidebar {
+  background: rgba(9, 14, 30, 0.8);
+  border-right: 1px solid rgba(120, 150, 220, 0.15);
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.b-side-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(120, 150, 220, 0.5);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 10px 16px 4px;
+}
+
+.b-side-tab {
+  padding: 9px 16px;
+  font-size: 13px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-left: 2px solid transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.b-side-tab:hover {
+  color: var(--ink);
+  background: rgba(122, 162, 255, 0.06);
+}
+
+.b-side-tab.on {
+  color: var(--accent);
+  border-left: 2px solid var(--accent);
+  background: rgba(122, 162, 255, 0.08);
+  font-weight: 600;
+}
+
+.b-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.b-content-header {
+  padding: 14px 20px 10px;
+  border-bottom: 1px solid rgba(120, 150, 220, 0.12);
+}
+
+/* 기존 .grid margin-top 제거 */
+.grid {
+  margin-top: 0 !important;
+  padding: 16px;
+}
+
+/* ===== 사이드바 아이콘 ===== */
+.si {
+  font-size: 14px;
+  margin-right: 8px;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.si-역학 {
+  background: #1e3a5f;
+}
+
+.si-열 {
+  background: #3b1a1a;
+}
+
+.si-광학 {
+  background: #2e1a4a;
+}
+
+.si-전자 {
+  background: #2d2500;
+}
+
+.si-상대성 {
+  background: #0f2e2a;
+}
+
+.si-현대물리 {
+  background: #2d1a0e;
+}
+
+.si-게임 {
+  background: #2d1130;
+}
+
+.si-시뮬레이션 {
+  background: #1a1f2e;
+}
+
+.side-count {
+  margin-left: auto;
+  background: rgba(122, 162, 255, 0.12);
+  color: #7aa2ff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.b-side-tab {
+  display: flex;
+  align-items: center;
 }

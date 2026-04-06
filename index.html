@@ -35,7 +35,7 @@
           <img src="./image/favicon.png" alt="시(물리)에이션 로고">
         </span>
         <span class="logo-text">시(물리)에이션</span>
-        <span class="pill" title="총 프로젝트 수"><span id="count">0</span>개</span>
+        <span class="pill" title="총 프로젝트 수" style="display:none;"><span id="count">0</span>개</span>
       </h1>
 
       <div class="top-right-wrap">
@@ -143,34 +143,44 @@
       </div>
     </section>
 
-    <div class="cat-tabs-row">
-      <div id="cat-tabs-label" class="cat-tabs-label">⚡ 오늘의 추천 시뮬레이션</div>
-      <div class="cat-tabs" id="cat-tabs">
-        <button class="cat-tab" data-cat="">모든 분류</button>
-        <button class="cat-tab" data-cat="역학">역학</button>
-        <button class="cat-tab" data-cat="열">열</button>
-        <button class="cat-tab" data-cat="광학">광학</button>
-        <button class="cat-tab" data-cat="전자/반도체">전자/반도체</button>
-        <button class="cat-tab" data-cat="상대성">상대성</button>
-        <button class="cat-tab" data-cat="현대물리">현대물리</button>
-        <button class="cat-tab" data-cat="게임">게임</button>
-        <button class="cat-tab" data-cat="시뮬레이션">시뮬레이션</button>
-      </div>
-    </div>
+    <div class="b-layout">
 
-    <main id="grid" class="grid" aria-live="polite"></main>
+      <nav class="b-sidebar">
+        <div class="b-side-label">분류</div>
+        <button class="b-side-tab on" data-cat="null">⚡ 추천</button>
+        <button class="b-side-tab" data-cat="">모든 분류</button>
+        <div class="b-side-label">물리</div>
+        <button class="b-side-tab" data-cat="역학"><span class="si si-역학">⚙️</span>역학</button>
+        <button class="b-side-tab" data-cat="열"><span class="si si-열">🌡️</span>열</button>
+        <button class="b-side-tab" data-cat="광학"><span class="si si-광학">🔬</span>광학</button>
+        <button class="b-side-tab" data-cat="전자/반도체"><span class="si si-전자">⚡</span>전자/반도체</button>
+        <button class="b-side-tab" data-cat="상대성"><span class="si si-상대성">🛸</span>상대성</button>
+        <button class="b-side-tab" data-cat="현대물리"><span class="si si-현대물리">☢️</span>현대물리</button>
+        <div class="b-side-label">기타</div>
+        <button class="b-side-tab" data-cat="게임"><span class="si si-게임">🎮</span>게임</button>
+        <button class="b-side-tab" data-cat="시뮬레이션"><span class="si si-시뮬레이션">🧪</span>시뮬레이션</button>
+      </nav>
+
+      <div class="b-main">
+        <div class="b-content-header">
+          <div id="cat-tabs-label" class="cat-tabs-label">⚡ 오늘의 추천 시뮬레이션</div>
+        </div>
+        <main id="grid" class="grid" aria-live="polite"></main>
+      </div>
+
+    </div>
 
     <template id="card-tpl">
       <article class="card" tabindex="0" aria-label="프로젝트 카드">
         <div class="thumb"><span>🧪</span></div>
         <div class="body">
+          <div class="meta"><span class="category"></span><span class="date"></span></div>
           <div class="title">
             <h3></h3>
           </div>
           <p class="desc"></p>
           <div class="curriculum"></div>
           <div class="tags"></div>
-          <div class="meta"><span class="category"></span><span class="date"></span></div>
           <div class="actions">
             <a class="demo" target="_blank" rel="noopener">실 행</a>
             <button class="seed-btn" type="button">수업설계</button>

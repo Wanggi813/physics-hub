@@ -130,7 +130,6 @@ const projects = [
 
 const grid = document.getElementById('grid');
 const q = document.getElementById('q');
-const catTabs = document.getElementById('cat-tabs');
 let selectedCat = null;
 const sortSel = document.getElementById('sort');
 const count = document.getElementById('count');
@@ -1866,8 +1865,23 @@ function render() {
     if (by === 'category') return a.category.localeCompare(b.category, 'ko') || a.title.localeCompare(b.title, 'ko');
     return (b.updated || '').localeCompare(a.updated || '');
   });
-  count.textContent = list.length;
   empty.style.display = list.length ? 'none' : 'flex'; // [수정] none or flex
+
+  // 사이드바 개수 뱃지 업데이트
+  document.querySelectorAll('.b-side-tab[data-cat]').forEach(tab => {
+    const cat = tab.dataset.cat;
+    if (cat === 'null' || cat === '') return; // 추천, 모든분류는 스킵
+    const n = projects.filter(p =>
+      p.category.split(',').map(c => c.trim()).includes(cat)
+    ).length;
+    let badge = tab.querySelector('.side-count');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'side-count';
+      tab.appendChild(badge);
+    }
+    badge.textContent = n;
+  });
 
   list.forEach((p, index) => {
     const card = makeCard(p);
@@ -1887,14 +1901,22 @@ function render() {
 }
 
 q.addEventListener('input', render);
-catTabs.addEventListener('click', e => {
-  const tab = e.target.closest('.cat-tab');
+document.querySelector('.b-sidebar').addEventListener('click', e => {
+  const tab = e.target.closest('.b-side-tab');
   if (!tab) return;
-  catTabs.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
-  tab.classList.add('active');
-  selectedCat = tab.dataset.cat; // 모든 분류는 '', 나머지는 분류명
+  document.querySelectorAll('.b-side-tab').forEach(t => t.classList.remove('on'));
+  tab.classList.add('on');
+
+  const val = tab.dataset.cat;
+  selectedCat = val === 'null' ? null : val;
+
   const label = document.getElementById('cat-tabs-label');
-  if (label) label.textContent = selectedCat ? `📂 ${selectedCat}` : '📋 전체 시뮬레이션';
+  if (label) {
+    if (selectedCat === null) label.textContent = '⚡ 오늘의 추천 시뮬레이션';
+    else if (selectedCat === '') label.textContent = '📋 전체 시뮬레이션';
+    else label.textContent = `📂 ${selectedCat}`;
+  }
+
   render();
 });
 sortSel.addEventListener('change', render);
