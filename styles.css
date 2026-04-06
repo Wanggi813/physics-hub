@@ -1158,7 +1158,8 @@ input[type="search"] {
 }
 
 .seed-select option {
-  color: #111;
+  background: #121a33;
+  color: #e9efff;
 }
 
 .seed-idea-stage {
