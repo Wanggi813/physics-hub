@@ -1892,3 +1892,335 @@ input[type="search"] {
   font-size: 13px;
   line-height: 1.7;
 }
+
+/* ===== 지도안 파스텔 멀티컬러 테마 ===== */
+
+/* 핵심 질문 — 민트 그린 */
+.seed-highlight-box {
+  background: rgba(134, 211, 172, 0.12);
+  border-color: rgba(134, 211, 172, 0.4);
+}
+
+.seed-highlight-label {
+  color: #86d3ac;
+}
+
+.seed-highlight-text {
+  color: #f0faf4;
+}
+
+/* 가설 예시 — 연두 */
+.seed-two-col .seed-info-card:first-child {
+  background: rgba(180, 220, 150, 0.08);
+  border-color: rgba(180, 220, 150, 0.3);
+}
+
+.seed-two-col .seed-info-card:first-child .seed-info-label {
+  color: #b4dc96;
+}
+
+/* 변인 설계 — 연노랑 */
+.seed-two-col .seed-info-card:last-child {
+  background: rgba(250, 220, 140, 0.08);
+  border-color: rgba(250, 220, 140, 0.3);
+}
+
+.seed-two-col .seed-info-card:last-child .seed-info-label {
+  color: #fadc8c;
+}
+
+/* 변인 라벨 */
+.seed-var-row:nth-child(1) .seed-var-label {
+  background: rgba(134, 211, 172, .2);
+  color: #86d3ac;
+}
+
+.seed-var-row:nth-child(2) .seed-var-label {
+  background: rgba(180, 220, 150, .2);
+  color: #b4dc96;
+}
+
+.seed-var-row:nth-child(3) .seed-var-label {
+  background: rgba(250, 220, 140, .2);
+  color: #fadc8c;
+}
+
+/* 학생 활동 흐름 — 4색 순환 */
+.seed-section-label {
+  color: #86d3ac;
+}
+
+.seed-activity-step:nth-child(1) {
+  border-color: rgba(134, 211, 172, .3);
+  background: rgba(134, 211, 172, .06);
+}
+
+.seed-activity-step:nth-child(1) .seed-activity-phase {
+  color: #86d3ac;
+}
+
+.seed-activity-step:nth-child(2) {
+  border-color: rgba(180, 220, 150, .28);
+  background: rgba(180, 220, 150, .06);
+}
+
+.seed-activity-step:nth-child(2) .seed-activity-phase {
+  color: #b4dc96;
+}
+
+.seed-activity-step:nth-child(3) {
+  border-color: rgba(250, 220, 140, .28);
+  background: rgba(250, 220, 140, .06);
+}
+
+.seed-activity-step:nth-child(3) .seed-activity-phase {
+  color: #fadc8c;
+}
+
+.seed-activity-step:nth-child(4) {
+  border-color: rgba(250, 185, 160, .28);
+  background: rgba(250, 185, 160, .06);
+}
+
+.seed-activity-step:nth-child(4) .seed-activity-phase {
+  color: #fab9a0;
+}
+
+.seed-activity-step:nth-child(5) {
+  border-color: rgba(134, 211, 172, .3);
+  background: rgba(134, 211, 172, .06);
+}
+
+.seed-activity-step:nth-child(5) .seed-activity-phase {
+  color: #86d3ac;
+}
+
+/* 형성평가 — 피치 핑크 */
+.seed-two-col:last-of-type .seed-info-card:first-child {
+  background: rgba(250, 185, 160, .08);
+  border-color: rgba(250, 185, 160, .3);
+}
+
+.seed-two-col:last-of-type .seed-info-card:first-child .seed-info-label {
+  color: #fab9a0;
+}
+
+/* 데이터 표현 — 민트 */
+.seed-two-col:last-of-type .seed-info-card:last-child {
+  background: rgba(134, 211, 172, .08);
+  border-color: rgba(134, 211, 172, .3);
+}
+
+.seed-two-col:last-of-type .seed-info-card:last-child .seed-info-label {
+  color: #86d3ac;
+}
+
+/* 제목/요약/뱃지 */
+.seed-result-title {
+  color: #f0faf4;
+}
+
+.seed-result-summary {
+  color: #b4dc96;
+}
+
+.seed-result-badges .seed-badge {
+  background: rgba(134, 211, 172, .15);
+  border-color: rgba(134, 211, 172, .4);
+  color: #86d3ac;
+}
+
+/* ===== SEED 패널 전체 파스텔 4색 톤 ===== */
+
+/* 헤더 — 민트 그린 */
+.seed-kicker {
+  background: rgba(134, 211, 172, 0.15);
+  color: #86d3ac;
+}
+
+.seed-header h2 {
+  color: #f0faf4;
+}
+
+.seed-sub {
+  color: #86d3ac;
+}
+
+/* 시뮬레이션 카드 — 민트 */
+.seed-label {
+  color: #86d3ac;
+}
+
+.seed-project-card {
+  background: rgba(134, 211, 172, 0.06);
+  border-color: rgba(134, 211, 172, 0.25);
+}
+
+/* 교육과정 — 연두 */
+.seed-curr-item label,
+.seed-curr-full label {
+  color: #b4dc96;
+}
+
+.seed-curr-item select,
+.seed-curr-full select {
+  border-color: rgba(180, 220, 150, 0.3);
+}
+
+.seed-std-preview {
+  background: rgba(180, 220, 150, 0.06);
+  border-color: rgba(180, 220, 150, 0.25);
+  color: #d4f0b4;
+}
+
+/* 수업 조건 textarea — 연노랑 */
+.seed-textarea {
+  border-color: rgba(250, 220, 140, 0.3);
+}
+
+.seed-help {
+  color: #fadc8c;
+}
+
+/* 생성 버튼 — 민트 그린 */
+.seed-primary {
+  background: linear-gradient(180deg, #86d3ac, #5bb890);
+  color: #0a2a1a;
+  font-weight: 700;
+}
+
+/* 복사 버튼 — 연두 */
+.seed-secondary {
+  background: rgba(180, 220, 150, 0.1);
+  border-color: rgba(180, 220, 150, 0.35);
+  color: #b4dc96;
+}
+
+/* 빈 상태 — 민트+연두+연노랑+피치 순환 */
+.seed-empty-title {
+  color: #86d3ac;
+}
+
+.seed-empty-sub {
+  color: #b4dc96;
+}
+
+.seed-step:nth-child(1) {
+  background: rgba(134, 211, 172, 0.1);
+  border-color: rgba(134, 211, 172, 0.3);
+  color: #86d3ac;
+}
+
+.seed-step:nth-child(1) .seed-step-num {
+  color: #86d3ac;
+}
+
+.seed-step:nth-child(2) {
+  background: rgba(180, 220, 150, 0.1);
+  border-color: rgba(180, 220, 150, 0.3);
+  color: #b4dc96;
+}
+
+.seed-step:nth-child(2) .seed-step-num {
+  color: #b4dc96;
+}
+
+.seed-step:nth-child(3) {
+  background: rgba(250, 220, 140, 0.1);
+  border-color: rgba(250, 220, 140, 0.3);
+  color: #fadc8c;
+}
+
+.seed-step:nth-child(3) .seed-step-num {
+  color: #fadc8c;
+}
+
+.seed-step:nth-child(4) {
+  background: rgba(250, 185, 160, 0.1);
+  border-color: rgba(250, 185, 160, 0.3);
+  color: #fab9a0;
+}
+
+.seed-step:nth-child(4) .seed-step-num {
+  color: #fab9a0;
+}
+
+/* 뱃지 — 피치 */
+.seed-badge {
+  background: rgba(250, 185, 160, 0.12);
+  border-color: rgba(250, 185, 160, 0.3);
+  color: #fab9a0;
+}
+
+/* 아이디어 카드 — 4색 순환 */
+.seed-idea-card:nth-child(1) {
+  border-color: rgba(134, 211, 172, 0.25);
+}
+
+.seed-idea-card:nth-child(1) .seed-idea-number {
+  background: rgba(134, 211, 172, 0.15);
+  color: #86d3ac;
+  border-color: rgba(134, 211, 172, 0.3);
+}
+
+.seed-idea-card:nth-child(1) .seed-idea-cta {
+  background: linear-gradient(180deg, #86d3ac, #5bb890);
+  color: #0a2a1a;
+}
+
+.seed-idea-card:nth-child(2) {
+  border-color: rgba(180, 220, 150, 0.25);
+}
+
+.seed-idea-card:nth-child(2) .seed-idea-number {
+  background: rgba(180, 220, 150, 0.15);
+  color: #b4dc96;
+  border-color: rgba(180, 220, 150, 0.3);
+}
+
+.seed-idea-card:nth-child(2) .seed-idea-cta {
+  background: linear-gradient(180deg, #b4dc96, #8fc870);
+  color: #0a2a1a;
+}
+
+.seed-idea-card:nth-child(3) {
+  border-color: rgba(250, 220, 140, 0.25);
+}
+
+.seed-idea-card:nth-child(3) .seed-idea-number {
+  background: rgba(250, 220, 140, 0.15);
+  color: #fadc8c;
+  border-color: rgba(250, 220, 140, 0.3);
+}
+
+.seed-idea-card:nth-child(3) .seed-idea-cta {
+  background: linear-gradient(180deg, #fadc8c, #e8c460);
+  color: #2a1e00;
+}
+
+.seed-idea-card:nth-child(4) {
+  border-color: rgba(250, 185, 160, 0.25);
+}
+
+.seed-idea-card:nth-child(4) .seed-idea-number {
+  background: rgba(250, 185, 160, 0.15);
+  color: #fab9a0;
+  border-color: rgba(250, 185, 160, 0.3);
+}
+
+.seed-idea-card:nth-child(4) .seed-idea-cta {
+  background: linear-gradient(180deg, #fab9a0, #e89a7a);
+  color: #2a0e00;
+}
+
+.seed-idea-title {
+  color: #f0faf4;
+}
+
+.seed-idea-line {
+  color: #d4f0e0;
+}
+
+.seed-idea-label {
+  color: #b4dc96;
+}
