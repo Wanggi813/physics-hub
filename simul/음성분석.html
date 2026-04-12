@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>음성 분석 시뮬레이터</title>
+  <style>
+    :root {
+      --bg: #f2f5fb;
+      --panel: #ffffff;
+      --border: #e2eaf6;
+      --text: #1a2232;
+      --sub: #5e6e85;
+      --accent: #4f6ef7;
+      --accent2: #2dbba8;
+      --accent-soft: #edf1ff;
+      --shadow: 0 2px 16px rgba(30,55,120,0.07);
+      --radius: 18px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── 앱 래퍼 ── */
+    .app {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 18px 16px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* ── 헤더 ── */
+    header {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+    h1 {
+      font-size: clamp(17px, 1.8vw, 22px);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .subtitle {
+      color: var(--sub);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* ── 메인 레이아웃: 사이드바 + 오른쪽 ── */
+    .main-layout {
+      display: grid;
+      grid-template-columns: 272px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    /* ── 사이드바 ── */
+    .sidebar {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .sidebar-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 -2px;
+    }
+    .sidebar-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--sub);
+      margin-bottom: 9px;
+    }
+
+    /* 녹음 버튼 */
+    #recordBtn {
+      width: 100%;
+      padding: 13px 16px;
+      border-radius: 13px;
+      font-size: 14px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #6a8bff, #4f6ef7);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: transform .14s, box-shadow .14s;
+      box-shadow: 0 5px 16px rgba(79,110,247,0.28);
+    }
+    #recordBtn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 9px 22px rgba(79,110,247,0.36);
+    }
+    #recordBtn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+    #recordBtn.recording {
+      background: linear-gradient(135deg, #ff8080, #f45050) !important;
+      box-shadow: 0 5px 16px rgba(244,80,80,0.30) !important;
+    }
+
+    /* 상태 */
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #b0bec9;
+      flex-shrink: 0;
+      transition: background .2s, box-shadow .2s;
+    }
+    .dot.recording { background: #f45050; box-shadow: 0 0 0 5px rgba(244,80,80,0.18); }
+    .dot.processing { background: #4f6ef7; box-shadow: 0 0 0 5px rgba(79,110,247,0.15); }
+    .dot.ready      { background: #2dbba8; box-shadow: 0 0 0 5px rgba(45,187,168,0.15); }
+    .status-title { font-size: 13.5px; font-weight: 800; }
+    .status-sub   { font-size: 12px; color: var(--sub); line-height: 1.55; margin-top: 3px; }
+
+    /* 메타 카드 2열 */
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      margin-top: 10px;
+    }
+    .meta-card {
+      background: #f6f8fe;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 9px 10px;
+    }
+    .meta-label { font-size: 10px; color: var(--sub); margin-bottom: 3px; }
+    .meta-value { font-size: 15px; font-weight: 900; letter-spacing: -0.03em; }
+
+    /* 단계 섹션 */
+    .stage-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .stage-num {
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: -0.045em;
+      color: #3050c4;
+      line-height: 1;
+    }
+    .stage-hz {
+      font-size: 11.5px;
+      color: var(--sub);
+      line-height: 1.5;
+      text-align: right;
+    }
+
+    /* 프로그레스 바 */
+    .bar-wrap { margin-bottom: 10px; }
+    .bar {
+      width: 100%; height: 5px;
+      border-radius: 999px;
+      background: #e6ecf8;
+      overflow: hidden;
+    }
+    .fill {
+      height: 100%; width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #6b8bff, #2dbba8);
+      transition: width .22s ease;
+    }
+
+    /* 단계 버튼 4열 그리드 */
+    .stage-buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    .stage-btn {
+      padding: 7px 2px;
+      border-radius: 9px;
+      background: #eef2ff;
+      color: #3d5bcc;
+      border: 1px solid transparent;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .13s;
+      box-shadow: none;
+      text-align: center;
+    }
+    .stage-btn:hover:not(:disabled) { background: #e1e8ff; transform: none; }
+    .stage-btn.active {
+      background: #4f6ef7;
+      color: #fff;
+      border-color: #3e5ee6;
+      box-shadow: 0 3px 10px rgba(79,110,247,0.28);
+    }
+    .stage-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+
+    /* 슬라이더 + 이전/다음 */
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    input[type="range"] {
+      flex: 1;
+      accent-color: #4f6ef7;
+      cursor: pointer;
+    }
+    .nav-btn {
+      padding: 7px 11px;
+      border-radius: 9px;
+      border: none;
+      background: #eef2ff;
+      color: #3d5bcc;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 800;
+      transition: background .13s;
+      box-shadow: none;
+    }
+    .nav-btn:hover:not(:disabled) { background: #e1e8ff; transform: none; }
+    .nav-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+
+    /* 단계 설명 */
+    .stage-desc {
+      font-size: 11.5px;
+      color: var(--sub);
+      line-height: 1.6;
+      padding: 8px 10px;
+      background: #f6f8fe;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    /* 재생 버튼 그리드 */
+    .play-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .play-grid button {
+      padding: 10px 6px;
+      border-radius: 11px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #eef2ff;
+      color: #3d5bcc;
+      border: none;
+      cursor: pointer;
+      transition: all .13s;
+      box-shadow: none;
+    }
+    .play-grid button:hover:not(:disabled) { background: #e1e8ff; transform: none; }
+    .play-grid button.playing {
+      background: linear-gradient(135deg, #35c9b6, #2aaa9a);
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(45,187,168,0.28);
+    }
+    .play-grid button:disabled { opacity: 0.38; cursor: not-allowed; box-shadow: none; }
+    .play-grid .full { grid-column: 1 / -1; }
+    .play-grid .stop { background: #fff0f0; color: #c43c3c; }
+
+    /* ── 오른쪽 컬럼 ── */
+    .right-content {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .canvas-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px 16px 16px;
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .panel-title {
+      font-size: 13.5px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+    .legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--sub);
+    }
+    .swatch {
+      width: 18px; height: 3px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    canvas {
+      width: 100%;
+      display: block;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fbfcff;
+    }
+    #waveCanvas     { height: 570px; }
+    #spectrumCanvas { height: 200px; }
+
+    /* JS호환용 숨김 요소 */
+    .steps, .step { display: none !important; }
+
+    /* 푸터 */
+    .footer {
+      text-align: center;
+      color: var(--sub);
+      font-size: 12px;
+      padding: 4px 0 2px;
+    }
+
+    /* ── 반응형 ── */
+    @media (max-width: 1080px) {
+      .main-layout { grid-template-columns: 250px 1fr; }
+    }
+    @media (max-width: 820px) {
+      .main-layout { grid-template-columns: 1fr; }
+      #waveCanvas     { height: 420px; }
+      #spectrumCanvas { height: 180px; }
+    }
+    @media (max-width: 520px) {
+      #waveCanvas     { height: 320px; }
+      #spectrumCanvas { height: 150px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- 헤더 -->
+    <header>
+      <h1>음성 분석 시뮬레이터</h1>
+      <p class="subtitle">2초 음성을 FFT로 분해한 뒤, 낮은 주파수부터 하나씩 더해가며 원본으로 복원합니다.</p>
+    </header>
+
+    <div class="main-layout">
+
+      <!-- ── 사이드바 ── -->
+      <aside class="sidebar">
+
+        <!-- 녹음 -->
+        <div>
+          <div class="sidebar-label">녹음</div>
+          <button id="recordBtn">🎙 마이크로 2초 녹음</button>
+          <div class="status-row">
+            <span id="statusDot" class="dot"></span>
+            <span id="statusTitle" class="status-title">준비됨</span>
+          </div>
+          <div id="statusSub" class="status-sub">마이크 버튼을 눌러 녹음해 보세요.</div>
+          <div class="meta-grid">
+            <div class="meta-card">
+              <div class="meta-label">샘플링 레이트</div>
+              <div id="sampleRateValue" class="meta-value">—</div>
+            </div>
+            <div class="meta-card">
+              <div class="meta-label">FFT 크기</div>
+              <div id="fftSizeValue" class="meta-value">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- 단계 선택 -->
+        <div>
+          <div class="sidebar-label">주파수 성분 수</div>
+          <div class="stage-header">
+            <div id="stageBig" class="stage-num">—</div>
+            <div id="stageHz" class="stage-hz">—</div>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar"><div id="progressFill" class="fill"></div></div>
+          </div>
+          <div id="stageButtons" class="stage-buttons"></div>
+          <div class="slider-row">
+            <input id="stageSlider" type="range" min="0" max="7" step="1" value="0" disabled />
+            <button id="prevBtn" class="nav-btn" disabled>◀</button>
+            <button id="nextBtn" class="nav-btn" disabled>▶</button>
+          </div>
+          <div id="stageDesc" class="stage-desc">녹음 후 단계를 선택하면 주파수 범위가 표시됩니다.</div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- 재생 -->
+        <div>
+          <div class="sidebar-label">재생</div>
+          <div class="play-grid">
+            <button id="playOriginalBtn" disabled>원본</button>
+            <button id="playCurrentBtn"  disabled>현재 단계</button>
+            <button id="playSequenceBtn" disabled class="full">▶ 전 단계 순차 재생</button>
+            <button id="stopBtn"         disabled class="full stop">■ 정지</button>
+          </div>
+        </div>
+
+        <!-- JS 호환: 숨겨진 요소들 -->
+        <div id="steps" class="steps"></div>
+        <span id="stagePercent" style="display:none"></span>
+        <span id="waveInfoRight" style="display:none"></span>
+        <div style="display:none">
+          <button id="play10Btn">10</button>
+          <button id="play100Btn">100</button>
+          <button id="play1000Btn">1000</button>
+          <button id="play10000Btn">10000</button>
+          <button id="play100000Btn">100000</button>
+        </div>
+
+      </aside>
+
+      <!-- ── 오른쪽: 캔버스들 ── -->
+      <div class="right-content">
+
+        <!-- 파형 캔버스 -->
+        <div class="canvas-panel">
+          <div class="panel-header">
+            <span class="panel-title">파형 분석</span>
+            <div class="legend">
+              <span><i class="swatch" style="background:#b6c2d5"></i>원본 파형</span>
+              <span><i class="swatch" style="background:#5c7cff"></i>복원 중인 파형</span>
+              <span><i class="swatch" style="background:#32b8a6"></i>추가되는 성분</span>
+            </div>
+            <span id="waveInfoLeft" style="font-size:12px;color:var(--sub);">—</span>
+          </div>
+          <canvas id="waveCanvas"></canvas>
+        </div>
+
+        <!-- 스펙트럼 캔버스 -->
+        <div class="canvas-panel">
+          <div class="panel-header">
+            <span class="panel-title">주파수 스펙트럼</span>
+            <span id="specInfoLeft"  style="font-size:12px;color:var(--sub);">0 ~ 8000 Hz</span>
+            <span id="specInfoRight" style="font-size:12px;color:var(--sub);">현재 단계 성분 강조</span>
+          </div>
+          <canvas id="spectrumCanvas"></canvas>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="footer">크롬 / 엣지 최신 버전 권장</div>
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const RECON_LEVELS = [10, 30, 100, 300, 1000, 5000, 10000, 100000];
+      const RECORD_SECONDS = 2.0;
+      const SPECTRUM_VIEW_MAX_HZ = 8000;
+
+      const state = {
+        audioContext: null,
+        mediaStream: null,
+        sourceNode: null,
+        processorNode: null,
+        recordingTimer: null,
+        recordingStartTime: 0,
+        isRecording: false,
+
+        rawSamples: null,
+        originalSamples: null,
+        sampleRate: 0,
+        fftSize: 0,
+        originalPeak: 1,
+
+        fftReal: null,
+        fftImag: null,
+        magnitudes: null,
+
+        stages: new Map(),
+        currentLevelIndex: 0,
+        currentPlayingKey: null,
+        currentSource: null,
+        autoSequenceActive: false,
+        specHover: null,
+        freeStage: null,   // 스펙트럼 클릭으로 생성된 임의 Hz 단계
+
+        // 시각 애니메이션용
+        anim: {
+          fromIndex: 0,
+          toIndex: 0,
+          startTime: 0,
+          active: false,
+          bins: [],
+          perWaveDuration: 200,
+          fromSamples: null,
+          toSamples: null,
+          playOnComplete: false,
+        },
+
+        support: {
+          mediaDevices: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+          audioContext: !!(window.AudioContext || window.webkitAudioContext)
+        }
+      };
+
+      const els = {
+        recordBtn: document.getElementById('recordBtn'),
+        playOriginalBtn: document.getElementById('playOriginalBtn'),
+        playCurrentBtn: document.getElementById('playCurrentBtn'),
+        playSequenceBtn: document.getElementById('playSequenceBtn'),
+        stopBtn: document.getElementById('stopBtn'),
+
+        play10Btn: document.getElementById('play10Btn'),
+        play100Btn: document.getElementById('play100Btn'),
+        play1000Btn: document.getElementById('play1000Btn'),
+        play10000Btn: document.getElementById('play10000Btn'),
+        play100000Btn: document.getElementById('play100000Btn'),
+
+        statusDot: document.getElementById('statusDot'),
+        statusTitle: document.getElementById('statusTitle'),
+        statusSub: document.getElementById('statusSub'),
+
+        sampleRateValue: document.getElementById('sampleRateValue'),
+        fftSizeValue: document.getElementById('fftSizeValue'),
+
+        stageBig: document.getElementById('stageBig'),
+        stageHz: document.getElementById('stageHz'),
+        stageDesc: document.getElementById('stageDesc'),
+        stagePercent: document.getElementById('stagePercent'),
+        progressFill: document.getElementById('progressFill'),
+        steps: document.getElementById('steps'),
+        stageSlider: document.getElementById('stageSlider'),
+        prevBtn: document.getElementById('prevBtn'),
+        nextBtn: document.getElementById('nextBtn'),
+        stageButtons: document.getElementById('stageButtons'),
+
+        waveCanvas: document.getElementById('waveCanvas'),
+        spectrumCanvas: document.getElementById('spectrumCanvas'),
+        waveInfoLeft: document.getElementById('waveInfoLeft'),
+        waveInfoRight: document.getElementById('waveInfoRight'),
+        specInfoLeft: document.getElementById('specInfoLeft'),
+        specInfoRight: document.getElementById('specInfoRight')
+      };
+
+      init();
+
+      function init() {
+        if (state.support.audioContext) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          state.audioContext = new AC();
+        }
+
+        bindEvents();
+        renderSteps();
+        renderStageButtons();
+        resizeAllCanvases();
+        drawWavePlaceholder();
+        drawSpectrumPlaceholder();
+        updateStatus('idle', '준비됨', '마이크 버튼을 눌러 2초간 음성을 녹음해 보세요.');
+
+        if (!state.support.mediaDevices || !state.support.audioContext) {
+          els.recordBtn.disabled = true;
+          updateStatus('error', '브라우저 기능 부족', '마이크 또는 Web Audio API를 사용할 수 없습니다. 최신 크롬/엣지를 권장합니다.');
+        }
+
+        window.addEventListener('resize', () => {
+          resizeAllCanvases();
+          renderWaveCanvas();
+          renderSpectrum();
+        });
+
+        requestAnimationFrame(animationLoop);
+      }
+
+      function bindEvents() {
+        els.recordBtn.addEventListener('click', startRecording);
+        els.playOriginalBtn.addEventListener('click', () => playStage('original'));
+        els.playCurrentBtn.addEventListener('click', () => playStage(getCurrentStageKey()));
+        els.playSequenceBtn.addEventListener('click', playSequence);
+        els.stopBtn.addEventListener('click', () => stopPlayback(true));
+
+        els.play10Btn.addEventListener('click', () => playStage('top-10'));
+        els.play100Btn.addEventListener('click', () => playStage('top-100'));
+        els.play1000Btn.addEventListener('click', () => playStage('top-1000'));
+        els.play10000Btn.addEventListener('click', () => playStage('top-10000'));
+        els.play100000Btn.addEventListener('click', () => playStage('top-100000'));
+
+        els.stageSlider.addEventListener('input', e => {
+          setCurrentLevelIndex(Number(e.target.value), true);
+        });
+
+        els.prevBtn.addEventListener('click', () => {
+          setCurrentLevelIndex(Math.max(0, state.currentLevelIndex - 1), true);
+        });
+
+        els.nextBtn.addEventListener('click', () => {
+          setCurrentLevelIndex(Math.min(RECON_LEVELS.length - 1, state.currentLevelIndex + 1), true);
+        });
+
+        // 스펙트럼 클릭 → 클릭한 Hz까지 정확히 복원
+        els.spectrumCanvas.addEventListener('click', e => {
+          if (!state.sampleRate || !state.stages.size) return;
+          const rect = els.spectrumCanvas.getBoundingClientRect();
+          const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+          const maxHz = Math.min(SPECTRUM_VIEW_MAX_HZ, state.sampleRate / 2);
+          const clickedHz = Math.max(1, ratio * maxHz);
+          jumpToHz(clickedHz);
+        });
+
+        // hover 시 수직선 + Hz 표시
+        els.spectrumCanvas.addEventListener('mousemove', e => {
+          const rect = els.spectrumCanvas.getBoundingClientRect();
+          const ratio = (e.clientX - rect.left) / rect.width;
+          const maxHz = Math.min(SPECTRUM_VIEW_MAX_HZ, state.sampleRate / 2);
+          state.specHover = { ratio, hz: ratio * maxHz };
+        });
+        els.spectrumCanvas.addEventListener('mouseleave', () => {
+          state.specHover = null;
+        });
+
+        els.spectrumCanvas.style.cursor = 'crosshair';
+      }
+
+      function updateStatus(type, title, sub) {
+        els.statusDot.className = 'dot';
+        if (type === 'recording') els.statusDot.classList.add('recording');
+        if (type === 'processing') els.statusDot.classList.add('processing');
+        if (type === 'ready') els.statusDot.classList.add('ready');
+        els.statusTitle.textContent = title;
+        els.statusSub.textContent = sub;
+      }
+
+      async function startRecording() {
+        if (state.isRecording) return;
+
+        try {
+          if (!state.audioContext) throw new Error('오디오 컨텍스트를 만들 수 없습니다.');
+          if (state.audioContext.state === 'suspended') await state.audioContext.resume();
+
+          stopPlayback(true);
+
+          updateStatus('processing', '마이크 권한 요청 중...', '브라우저 권한 창에서 마이크를 허용해 주세요.');
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              channelCount: 1,
+              echoCancellation: false,
+              noiseSuppression: false,
+              autoGainControl: false
+            }
+          });
+
+          state.mediaStream = stream;
+          state.sampleRate = state.audioContext.sampleRate;
+
+          const source = state.audioContext.createMediaStreamSource(stream);
+          const processor = state.audioContext.createScriptProcessor(4096, 1, 1);
+          const targetSamples = Math.round(state.sampleRate * RECORD_SECONDS);
+
+          const chunks = [];
+          let collected = 0;
+
+          state.sourceNode = source;
+          state.processorNode = processor;
+          state.isRecording = true;
+          state.recordingStartTime = performance.now();
+
+          source.connect(processor);
+          processor.connect(state.audioContext.destination);
+
+          els.recordBtn.disabled = true;
+          els.recordBtn.classList.add('recording');
+          els.recordBtn.textContent = '녹음 중...';
+
+          updateStatus('recording', '녹음 중...', `녹음 중... 0.0초 / ${RECORD_SECONDS.toFixed(1)}초`);
+
+          clearInterval(state.recordingTimer);
+          state.recordingTimer = setInterval(() => {
+            const t = Math.min((performance.now() - state.recordingStartTime) / 1000, RECORD_SECONDS);
+            updateStatus('recording', '녹음 중...', `녹음 중... ${t.toFixed(1)}초 / ${RECORD_SECONDS.toFixed(1)}초`);
+          }, 50);
+
+          processor.onaudioprocess = (e) => {
+            if (!state.isRecording) return;
+            const input = e.inputBuffer.getChannelData(0);
+            const remain = targetSamples - collected;
+            if (remain <= 0) return;
+
+            const len = Math.min(remain, input.length);
+            const chunk = new Float32Array(len);
+            chunk.set(input.subarray(0, len));
+            chunks.push(chunk);
+            collected += len;
+
+            if (collected >= targetSamples) {
+              finishRecording(chunks, targetSamples);
+            }
+          };
+
+        } catch (err) {
+          console.error(err);
+          cleanupRecording();
+          els.recordBtn.disabled = false;
+          els.recordBtn.classList.remove('recording');
+          els.recordBtn.textContent = '마이크로 2초 녹음 시작';
+          updateStatus('error', '녹음 실패', '마이크 권한이 거부되었거나 장치를 사용할 수 없습니다.');
+        }
+      }
+
+      function finishRecording(chunks, targetSamples) {
+        state.isRecording = false;
+        clearInterval(state.recordingTimer);
+
+        const merged = new Float32Array(targetSamples);
+        let offset = 0;
+        for (const chunk of chunks) {
+          merged.set(chunk, offset);
+          offset += chunk.length;
+        }
+
+        cleanupRecording();
+
+        els.recordBtn.disabled = false;
+        els.recordBtn.classList.remove('recording');
+        els.recordBtn.textContent = '다시 2초 녹음하기';
+
+        state.rawSamples = merged;
+        updateStatus('processing', '분석 중...', 'FFT 계산과 단계별 복원음을 생성하고 있습니다.');
+
+        setTimeout(analyzeSignal, 40);
+      }
+
+      function cleanupRecording() {
+        clearInterval(state.recordingTimer);
+
+        if (state.processorNode) {
+          try { state.processorNode.disconnect(); } catch (_) { }
+          state.processorNode.onaudioprocess = null;
+          state.processorNode = null;
+        }
+
+        if (state.sourceNode) {
+          try { state.sourceNode.disconnect(); } catch (_) { }
+          state.sourceNode = null;
+        }
+
+        if (state.mediaStream) {
+          state.mediaStream.getTracks().forEach(track => track.stop());
+          state.mediaStream = null;
+        }
+      }
+
+      async function analyzeSignal() {
+        try {
+          updateStatus('processing', '전처리 중...', '모노 신호 정리와 평균 제거를 수행합니다.');
+          await nextFrame();
+
+          const mono = preprocessSignal(state.rawSamples);
+          state.originalSamples = mono;
+          state.originalPeak = getPeakAbs(mono);
+
+          // 100000개의 양의 주파수 bin을 사용하려면 양의 영역이 100000개 이상이어야 하므로
+          // FFT 길이를 최소 262144 이상으로 확보합니다.
+          state.fftSize = chooseFFTSizeForTopN(mono.length, 100000);
+          els.sampleRateValue.textContent = `${Math.round(state.sampleRate)} Hz`;
+          els.fftSizeValue.textContent = state.fftSize.toLocaleString();
+
+          updateStatus('processing', 'FFT 계산 중...', '시간영역 신호를 주파수 성분으로 분해하고 있습니다.');
+          await nextFrame();
+
+          const { real, imag } = computeFFT(mono, state.fftSize);
+          state.fftReal = real;
+          state.fftImag = imag;
+          state.magnitudes = computeMagnitudes(real, imag);
+
+          updateStatus('processing', 'IFFT 복원 중...', '상위 주파수 성분 수에 따라 복원 파형을 단계별로 생성합니다.');
+          await nextFrame();
+
+          buildStages();
+
+          enableControls();
+          setCurrentLevelIndex(0, false);
+
+          updateStatus('ready', '분석 완료', '이제 10개부터 100000개 성분까지 점차 추가되는 과정을 들어보고 볼 수 있습니다.');
+        } catch (err) {
+          console.error(err);
+          updateStatus('error', '분석 실패', '오디오 분석 중 오류가 발생했습니다. 다시 시도해 주세요.');
+        }
+      }
+
+      function preprocessSignal(samples) {
+        const out = new Float32Array(samples.length);
+        out.set(samples);
+
+        let mean = 0;
+        for (let i = 0; i < out.length; i++) mean += out[i];
+        mean /= out.length || 1;
+        for (let i = 0; i < out.length; i++) out[i] -= mean;
+
+        const fadeLen = Math.min(256, Math.floor(out.length * 0.01));
+        for (let i = 0; i < fadeLen; i++) {
+          const w = i / Math.max(1, fadeLen - 1);
+          out[i] *= w;
+          out[out.length - 1 - i] *= w;
+        }
+        return out;
+      }
+
+      function chooseFFTSizeForTopN(signalLength, maxTopN) {
+        let n = 1;
+        while (n < signalLength) n <<= 1;
+        while ((n >> 1) <= maxTopN + 4) n <<= 1;
+        return n;
+      }
+
+      function computeFFT(samples, fftSize) {
+        const real = new Float64Array(fftSize);
+        const imag = new Float64Array(fftSize);
+        for (let i = 0; i < samples.length; i++) real[i] = samples[i];
+        fftInPlace(real, imag, false);
+        return { real, imag };
+      }
+
+      function computeMagnitudes(real, imag) {
+        const mags = new Float64Array(real.length);
+        for (let i = 0; i < real.length; i++) mags[i] = Math.hypot(real[i], imag[i]);
+        return mags;
+      }
+
+      function buildStages() {
+        state.stages.clear();
+
+        state.stages.set('original', {
+          key: 'original',
+          label: '원본',
+          count: null,
+          samples: new Float32Array(state.originalSamples),
+          selectedBins: [],
+          topPreviewBins: []
+        });
+
+        for (const n of RECON_LEVELS) {
+          const bins = selectBinsUpToHz(n);
+          const reconstructed = reconstructFromBins(bins, state.originalSamples.length);
+          state.stages.set(`top-${n}`, {
+            key: `top-${n}`,
+            label: `${n.toLocaleString()}개 성분`,
+            count: n,
+            samples: reconstructed,
+            selectedBins: bins,
+            topPreviewBins: bins.slice(0, 16)
+          });
+        }
+      }
+
+      function selectBinsUpToHz(maxHz) {
+        // maxHz 이하의 주파수를 가진 bin을 모두 선택 (주파수 오름차순)
+        const half = state.fftSize >> 1;
+        const maxBin = Math.min(half - 1, Math.floor(maxHz * state.fftSize / state.sampleRate));
+        const bins = [];
+        for (let i = 1; i <= maxBin; i++) bins.push(i);
+        return bins;
+      }
+
+      function reconstructFromBins(selectedBins, targetLen) {
+        const n = state.fftSize;
+        const half = n >> 1;
+        const real = new Float64Array(n);
+        const imag = new Float64Array(n);
+
+        real[0] = 0;
+        imag[0] = 0;
+        real[half] = 0;
+        imag[half] = 0;
+
+        for (const bin of selectedBins) {
+          real[bin] = state.fftReal[bin];
+          imag[bin] = state.fftImag[bin];
+
+          const mirror = n - bin;
+          real[mirror] = state.fftReal[mirror];
+          imag[mirror] = state.fftImag[mirror];
+        }
+
+        const out = inverseFFT(real, imag).slice(0, targetLen);
+        return normalizeToPeak(out, state.originalPeak || 1);
+      }
+
+      function inverseFFT(realIn, imagIn) {
+        const real = new Float64Array(realIn.length);
+        const imag = new Float64Array(imagIn.length);
+        real.set(realIn);
+        imag.set(imagIn);
+        fftInPlace(real, imag, true);
+
+        const out = new Float32Array(real.length);
+        for (let i = 0; i < real.length; i++) out[i] = real[i];
+        return out;
+      }
+
+      function fftInPlace(real, imag, inverse) {
+        const n = real.length;
+        const levels = Math.log2(n);
+        if (Math.floor(levels) !== levels) throw new Error('FFT 길이는 2의 거듭제곱이어야 합니다.');
+
+        for (let i = 0; i < n; i++) {
+          const j = reverseBits(i, levels);
+          if (j > i) {
+            [real[i], real[j]] = [real[j], real[i]];
+            [imag[i], imag[j]] = [imag[j], imag[i]];
+          }
+        }
+
+        for (let size = 2; size <= n; size <<= 1) {
+          const half = size >> 1;
+          const angle = (inverse ? 2 : -2) * Math.PI / size;
+          const wmR = Math.cos(angle);
+          const wmI = Math.sin(angle);
+
+          for (let start = 0; start < n; start += size) {
+            let wr = 1;
+            let wi = 0;
+
+            for (let j = 0; j < half; j++) {
+              const even = start + j;
+              const odd = even + half;
+
+              const tr = wr * real[odd] - wi * imag[odd];
+              const ti = wr * imag[odd] + wi * real[odd];
+
+              real[odd] = real[even] - tr;
+              imag[odd] = imag[even] - ti;
+              real[even] += tr;
+              imag[even] += ti;
+
+              const nextWr = wr * wmR - wi * wmI;
+              const nextWi = wr * wmI + wi * wmR;
+              wr = nextWr;
+              wi = nextWi;
+            }
+          }
+        }
+
+        if (inverse) {
+          for (let i = 0; i < n; i++) {
+            real[i] /= n;
+            imag[i] /= n;
+          }
+        }
+      }
+
+      function reverseBits(x, bits) {
+        let y = 0;
+        for (let i = 0; i < bits; i++) {
+          y = (y << 1) | (x & 1);
+          x >>>= 1;
+        }
+        return y;
+      }
+
+      function enableControls() {
+        els.playOriginalBtn.disabled = false;
+        els.playCurrentBtn.disabled = false;
+        els.playSequenceBtn.disabled = false;
+        els.stopBtn.disabled = false;
+
+        els.play10Btn.disabled = false;
+        els.play100Btn.disabled = false;
+        els.play1000Btn.disabled = false;
+        els.play10000Btn.disabled = false;
+        els.play100000Btn.disabled = false;
+
+        els.stageSlider.disabled = false;
+        els.prevBtn.disabled = false;
+        els.nextBtn.disabled = false;
+      }
+
+      function renderSteps() {
+        els.steps.innerHTML = '';
+        RECON_LEVELS.forEach((n, i) => {
+          const div = document.createElement('div');
+          div.className = 'step' + (i === state.currentLevelIndex ? ' active' : '');
+          div.textContent = n.toLocaleString();
+          els.steps.appendChild(div);
+        });
+      }
+
+      function renderStageButtons() {
+        els.stageButtons.innerHTML = '';
+        RECON_LEVELS.forEach((n, i) => {
+          const btn = document.createElement('button');
+          btn.className = 'stage-btn' + (i === state.currentLevelIndex ? ' active' : '');
+          btn.textContent = n >= 1000 ? `${n / 1000}kHz` : `${n}Hz`;
+          btn.disabled = !state.stages.has(`top-${n}`);
+          btn.addEventListener('click', () => setCurrentLevelIndex(i, true));
+          els.stageButtons.appendChild(btn);
+        });
+      }
+
+      function setCurrentLevelIndex(index, animate) {
+        state.freeStage = null; // 단계 버튼/슬라이더 사용 시 freeStage 해제
+        const clamped = Math.max(0, Math.min(RECON_LEVELS.length - 1, index));
+        const prev = state.currentLevelIndex;
+
+        if (animate && state.stages.size && clamped !== prev) {
+          beginMergeAnimation(prev, clamped);
+        } else {
+          state.anim.active = false;
+        }
+
+        state.currentLevelIndex = clamped;
+        els.stageSlider.value = String(clamped);
+
+        updateStageUI();
+        renderSteps();
+        renderStageButtons();
+        renderWaveCanvas();
+        renderSpectrum();
+      }
+
+      function beginMergeAnimation(fromIndex, toIndex) {
+        const fromStage = state.stages.get(`top-${RECON_LEVELS[fromIndex]}`);
+        const toStage = state.stages.get(`top-${RECON_LEVELS[toIndex]}`);
+        if (!fromStage || !toStage) return;
+
+        const prevSet = new Set(fromStage.selectedBins);
+        const newlyAdded = [];
+        for (const bin of toStage.selectedBins) {
+          if (!prevSet.has(bin)) newlyAdded.push(bin);
+        }
+        newlyAdded.sort((a, b) => a - b);
+
+        // 주파수 순(낮은→높은)으로 대표 성분 6개를 고르게 선택해 하나씩 순차적으로 보여줌
+        // newlyAdded는 이미 주파수 오름차순 정렬되어 있음
+        const MAX_WAVES = 6;
+        const bins = [];
+        if (newlyAdded.length > 0) {
+          const count = Math.min(MAX_WAVES, newlyAdded.length);
+          for (let i = 0; i < count; i++) {
+            const idx = Math.round(i * (newlyAdded.length - 1) / Math.max(1, count - 1));
+            bins.push(newlyAdded[idx]);
+          }
+        }
+        if (bins.length === 0) bins.push(...toStage.selectedBins.slice(0, MAX_WAVES));
+
+        state.anim.fromIndex = fromIndex;
+        state.anim.toIndex = toIndex;
+        state.anim.startTime = performance.now();
+        state.anim.perWaveDuration = 200; // 슈슉! 빠르게
+        state.anim.bins = bins;
+        state.anim.fromSamples = fromStage.samples;
+        state.anim.toSamples = toStage.samples;
+        state.anim.active = true;
+        state.anim.playOnComplete = true;
+      }
+
+      function updateStageUI() {
+        const n = RECON_LEVELS[state.currentLevelIndex];
+        const percent = Math.round((state.currentLevelIndex / (RECON_LEVELS.length - 1)) * 100);
+        const stage = state.stages.get(`top-${n}`);
+
+        if (els.stagePercent) els.stagePercent.textContent = `${percent}%`;
+        els.progressFill.style.width = `${percent}%`;
+
+        // n은 이제 Hz 값
+        const hzLabel = n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)} kHz` : `${n} Hz`;
+        els.stageBig.textContent = hzLabel;
+
+        const binCount = stage ? stage.selectedBins.length : 0;
+        if (els.stageHz) {
+          els.stageHz.textContent = binCount ? `${binCount.toLocaleString()}개 성분` : '—';
+        }
+        els.stageDesc.textContent =
+          `1 Hz ~ ${hzLabel} 범위의 주파수 성분 ${binCount.toLocaleString()}개를 낮은 주파수부터 합산해 IFFT 복원한 결과입니다.`;
+
+        if (stage) els.waveInfoLeft.textContent = `1 Hz ~ ${hzLabel}`;
+        if (els.waveInfoRight) els.waveInfoRight.textContent = '';
+
+        els.specInfoRight.textContent = `현재: 1 Hz ~ ${hzLabel}`;
+      }
+
+      function getCurrentStageKey() {
+        return state.freeStage ? 'free' : `top-${RECON_LEVELS[state.currentLevelIndex]}`;
+      }
+
+      async function playStage(stageKey) {
+        const stage = state.stages.get(stageKey);
+        if (!stage || !state.audioContext) return;
+
+        try {
+          if (state.audioContext.state === 'suspended') await state.audioContext.resume();
+          stopPlayback(false);
+
+          const buffer = state.audioContext.createBuffer(1, stage.samples.length, state.sampleRate);
+          buffer.copyToChannel(stage.samples, 0, 0);
+
+          const source = state.audioContext.createBufferSource();
+          source.buffer = buffer;
+          source.connect(state.audioContext.destination);
+          source.start();
+
+          state.currentSource = source;
+          state.currentPlayingKey = stageKey;
+          updatePlayButtons();
+
+          source.onended = () => {
+            if (state.currentSource === source) {
+              state.currentSource = null;
+              state.currentPlayingKey = null;
+              updatePlayButtons();
+            }
+          };
+        } catch (err) {
+          console.error(err);
+          updateStatus('error', '재생 실패', '오디오 재생 중 오류가 발생했습니다.');
+        }
+      }
+
+      async function playSequence() {
+        if (!state.stages.size) return;
+        state.autoSequenceActive = true;
+        updatePlayButtons();
+
+        for (let i = 0; i < RECON_LEVELS.length; i++) {
+          if (!state.autoSequenceActive) break;
+
+          if (i === 0) {
+            // 첫 단계: 애니메이션 없이 바로 재생
+            setCurrentLevelIndex(0, false);
+          } else {
+            // 애니메이션 시작 (playOnComplete는 여기서 직접 관리하므로 끔)
+            setCurrentLevelIndex(i, true);
+            state.anim.playOnComplete = false;
+
+            // 애니메이션이 끝날 때까지 대기
+            await waitForAnimation();
+            if (!state.autoSequenceActive) break;
+
+            // 짧은 텀
+            await delay(80);
+            if (!state.autoSequenceActive) break;
+          }
+
+          // 소리 재생 후 끝날 때까지 대기
+          await playStageAndWait(`top-${RECON_LEVELS[i]}`);
+
+          // 단계 사이 짧은 멈춤
+          await delay(300);
+        }
+
+        state.autoSequenceActive = false;
+        updatePlayButtons();
+      }
+
+      function jumpToHz(targetHz) {
+        if (!state.originalSamples || !state.sampleRate) return;
+
+        const toBins = selectBinsUpToHz(targetHz);
+        if (toBins.length === 0) return;
+
+        // 현재 복원 상태의 샘플과 bin 파악
+        const currentSamples = state.freeStage
+          ? state.freeStage.samples
+          : (state.stages.get(getCurrentStageKey())?.samples ?? new Float32Array(state.originalSamples.length));
+        const currentHz = state.freeStage
+          ? state.freeStage.hz
+          : RECON_LEVELS[state.currentLevelIndex];
+
+        // 새로 추가되는 bins (주파수 오름차순)
+        const fromBinCount = Math.floor(currentHz * state.fftSize / state.sampleRate);
+        const newBins = toBins.filter(b => b > fromBinCount);
+
+        // 대표 성분 6개 선택
+        const MAX_WAVES = 6;
+        const animBins = [];
+        if (newBins.length > 0) {
+          const count = Math.min(MAX_WAVES, newBins.length);
+          for (let i = 0; i < count; i++) {
+            const idx = Math.round(i * (newBins.length - 1) / Math.max(1, count - 1));
+            animBins.push(newBins[idx]);
+          }
+        } else {
+          animBins.push(...toBins.slice(-Math.min(MAX_WAVES, toBins.length)));
+        }
+
+        // 새 복원 계산
+        const toSamples = reconstructFromBins(toBins, state.originalSamples.length);
+
+        // Hz 레이블 (이후 여러 곳에서 사용)
+        const hzLabel = targetHz >= 1000
+          ? `${(targetHz / 1000).toFixed(targetHz % 1000 === 0 ? 0 : 1)} kHz`
+          : `${Math.round(targetHz)} Hz`;
+
+        // freeStage 저장 + stages 맵에 등록 (playCurrentBtn이 바로 사용 가능)
+        state.freeStage = { hz: targetHz, bins: toBins, samples: toSamples };
+        state.stages.set('free', {
+          key: 'free', label: hzLabel,
+          samples: toSamples, selectedBins: toBins
+        });
+
+        // 단계 버튼 갱신 (active 없이)
+        renderStageButtons();
+
+        // 애니메이션 시작
+        state.anim.startTime = performance.now();
+        state.anim.perWaveDuration = 200;
+        state.anim.bins = animBins;
+        state.anim.fromSamples = currentSamples;
+        state.anim.toSamples = toSamples;
+        state.anim.active = true;
+        state.anim.playOnComplete = true;
+        els.stageBig.textContent = hzLabel;
+        if (els.stageHz) els.stageHz.textContent = `${toBins.length.toLocaleString()}개 성분`;
+        els.stageDesc.textContent =
+          `1 Hz ~ ${hzLabel} 범위의 주파수 성분 ${toBins.length.toLocaleString()}개를 낮은 주파수부터 합산해 IFFT 복원한 결과입니다.`;
+        els.waveInfoLeft.textContent = `1 Hz ~ ${hzLabel}`;
+        els.specInfoRight.textContent = `현재: 1 Hz ~ ${hzLabel}`;
+      }
+
+      function waitForAnimation() {
+        return new Promise(resolve => {
+          (function check() {
+            if (!state.anim.active) { resolve(); return; }
+            requestAnimationFrame(check);
+          })();
+        });
+      }
+
+      function delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
+      function playStageAndWait(stageKey) {
+        return new Promise(async (resolve) => {
+          const stage = state.stages.get(stageKey);
+          if (!stage || !state.audioContext) {
+            resolve();
+            return;
+          }
+
+          if (state.audioContext.state === 'suspended') await state.audioContext.resume();
+          stopPlayback(false);
+
+          const buffer = state.audioContext.createBuffer(1, stage.samples.length, state.sampleRate);
+          buffer.copyToChannel(stage.samples, 0, 0);
+
+          const source = state.audioContext.createBufferSource();
+          source.buffer = buffer;
+          source.connect(state.audioContext.destination);
+          source.start();
+
+          state.currentSource = source;
+          state.currentPlayingKey = stageKey;
+          updatePlayButtons();
+
+          source.onended = () => {
+            if (state.currentSource === source) {
+              state.currentSource = null;
+              state.currentPlayingKey = null;
+              updatePlayButtons();
+            }
+            resolve();
+          };
+        });
+      }
+
+      function stopPlayback(cancelSequence) {
+        if (state.currentSource) {
+          try { state.currentSource.stop(); } catch (_) { }
+          try { state.currentSource.disconnect(); } catch (_) { }
+          state.currentSource = null;
+        }
+        state.currentPlayingKey = null;
+        if (cancelSequence) state.autoSequenceActive = false;
+        updatePlayButtons();
+      }
+
+      function updatePlayButtons() {
+        els.playOriginalBtn.classList.toggle('playing', state.currentPlayingKey === 'original');
+        els.playCurrentBtn.classList.toggle('playing', state.currentPlayingKey === getCurrentStageKey());
+        els.playSequenceBtn.classList.toggle('playing', state.autoSequenceActive);
+
+        els.play10Btn.classList.toggle('playing', state.currentPlayingKey === 'top-10');
+        els.play100Btn.classList.toggle('playing', state.currentPlayingKey === 'top-100');
+        els.play1000Btn.classList.toggle('playing', state.currentPlayingKey === 'top-1000');
+        els.play10000Btn.classList.toggle('playing', state.currentPlayingKey === 'top-10000');
+        els.play100000Btn.classList.toggle('playing', state.currentPlayingKey === 'top-100000');
+      }
+
+      function animationLoop() {
+        renderWaveCanvas();
+        if (state.specHover) renderSpectrum(); // hover 시 실시간 업데이트
+        requestAnimationFrame(animationLoop);
+      }
+
+      function renderWaveCanvas() {
+        const canvas = els.waveCanvas;
+        fitCanvas(canvas);
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+
+        clearCanvas(ctx, w, h, '#fbfdff');
+        drawFrame(ctx, w, h);
+        drawWaveGrid(ctx, w, h);
+
+        const original = state.stages.get('original')?.samples;
+        if (!original) {
+          drawCenterText(ctx, w, h, '녹음 후 원본과 복원 파형이 표시됩니다.');
+          return;
+        }
+
+        const peak = state.originalPeak || 1;
+
+        const topBand    = { y0: Math.round(h * 0.04), y1: Math.round(h * 0.27) };
+        const midBand    = { y0: Math.round(h * 0.34), y1: Math.round(h * 0.63) };
+        const bottomBand = { y0: Math.round(h * 0.70), y1: Math.round(h * 0.96) };
+
+        // 구분 라벨
+        drawBandLabel(ctx, 18, topBand.y0 - 8, '원본 파형', '#7a8799');
+        drawBandLabel(ctx, 18, midBand.y0 - 8, '현재 복원 파형', '#405fd1');
+        drawBandLabel(ctx, 18, bottomBand.y0 - 8, '추가되는 성분', '#2cae9d');
+
+        // 위: 원본
+        drawWaveBand(ctx, original, w, topBand, '#b6c2d5', 2.3, peak, 1);
+
+        // 가운데: 현재 복원 (freeStage 우선)
+        const current = state.freeStage ?? state.stages.get(getCurrentStageKey());
+        if (!current) return;
+
+        let midSamples = current.samples;
+        let mergeGlowT = 0;
+
+        if (state.anim.active) {
+          const elapsed = performance.now() - state.anim.startTime;
+          const { bins, perWaveDuration, fromSamples, toSamples } = state.anim;
+          const N = bins.length;
+          const totalDuration = N * perWaveDuration;
+
+          if (elapsed >= totalDuration) {
+            state.anim.active = false;
+            midSamples = toSamples;
+            if (state.anim.playOnComplete) {
+              state.anim.playOnComplete = false;
+              setTimeout(() => playStage(getCurrentStageKey()), 120);
+            }
+          } else {
+            const waveIdx = Math.min(N - 1, Math.floor(elapsed / perWaveDuration));
+            const waveT = easeInOut(Math.min(1, (elapsed % perWaveDuration) / perWaveDuration));
+            const overallT = (waveIdx + waveT) / N;
+
+            midSamples = blendSignals(fromSamples, toSamples, overallT);
+
+            // 합쳐질 때 중간 밴드 글로우
+            if (waveT > 0.65) mergeGlowT = (waveT - 0.65) / 0.35;
+
+            drawSingleIncomingWave(ctx, bins[waveIdx], w, bottomBand, midBand, peak, waveT, waveIdx, N);
+          }
+        }
+
+        // 가운데 복원 파형 (글로우 + 실선)
+        if (mergeGlowT > 0) {
+          drawWaveBand(ctx, midSamples, w, midBand,
+            `rgba(92,124,255,${mergeGlowT * 0.35})`, 7, peak, 1);
+        }
+        drawWaveBand(ctx, midSamples, w, midBand, '#5c7cff', 2.5, peak, 1);
+
+        drawSectionTimeLabels(ctx, w, h);
+      }
+
+      function drawSingleIncomingWave(ctx, bin, w, bottomBand, midBand, peakRef, t, waveIdx, totalWaves) {
+        if (!state.magnitudes || !state.fftReal) return;
+
+        const freq  = bin * state.sampleRate / state.fftSize;
+        const mag   = state.magnitudes[bin];
+        const phase = Math.atan2(state.fftImag[bin], state.fftReal[bin]);
+
+        // 진폭: 이번 배치 최대값 기준으로 정규화 → 가장 큰 성분이 꽉 차게
+        const batchMax = state.anim.bins.reduce((m, b) => Math.max(m, state.magnitudes[b]), 1e-12);
+        const ampNorm  = Math.max(0.25, Math.sqrt(mag / batchMax));
+        const bandH    = bottomBand.y1 - bottomBand.y0;
+        const ampPx    = Math.min(bandH * 0.38, ampNorm * bandH * 0.40);
+
+        // ─── 3단계 모션 ───────────────────────────────────────
+        // [0, 0.20]: 아래에서 솟아오름 (easeOutCubic)
+        // [0.20, 0.72]: 밴드 중앙에 정지, 완전히 보임
+        // [0.72, 1.0]: 중간 밴드를 향해 빠르게 쏘아 올라감 (easeInCubic)
+        const bandCenter = bottomBand.y0 + bandH * 0.50;
+        const botEntry   = bottomBand.y1 + ampPx; // 화면 아래서 진입
+        const midTarget  = midBand.y0 + (midBand.y1 - midBand.y0) * 0.50;
+
+        let centerY, alpha, lineW, glowAlpha;
+
+        if (t <= 0.20) {
+          const s = easeOutCubic(t / 0.20);
+          centerY   = botEntry + (bandCenter - botEntry) * s;
+          alpha     = s;
+          lineW     = 2.0 + ampNorm * 1.5;
+          glowAlpha = 0;
+        } else if (t <= 0.72) {
+          const s = (t - 0.20) / 0.52;
+          centerY   = bandCenter;
+          alpha     = 1;
+          lineW     = 2.2 + ampNorm * 1.5;
+          glowAlpha = 0.18 + 0.10 * Math.sin(s * Math.PI);
+        } else {
+          const s = easeInCubic((t - 0.72) / 0.28);
+          centerY   = bandCenter + (midTarget - bandCenter) * s;
+          alpha     = 1 - s;
+          lineW     = 1.8 + ampNorm * 1.0;
+          glowAlpha = (1 - s) * 0.22;
+        }
+
+        alpha = Math.max(0, alpha);
+
+        // 색상: teal → 파란색 (합류 단계에서 전환)
+        const colorT = Math.max(0, (t - 0.72) / 0.28);
+        const cr = Math.round(34  + (92  - 34)  * colorT);
+        const cg = Math.round(197 + (124 - 197) * colorT);
+        const cb = Math.round(176 + (255 - 176) * colorT);
+
+        ctx.save();
+
+        // 글로우 (정지 구간에서 빛남)
+        if (glowAlpha > 0) {
+          ctx.shadowColor = `rgba(${cr},${cg},${cb},${glowAlpha * 2})`;
+          ctx.shadowBlur  = 10;
+        }
+
+        ctx.strokeStyle = `rgba(${cr},${cg},${cb},${alpha})`;
+        ctx.lineWidth   = lineW;
+        ctx.beginPath();
+        for (let x = 0; x < w; x++) {
+          const time = (x / Math.max(1, w - 1)) * RECORD_SECONDS;
+          const yVal = Math.sin(2 * Math.PI * freq * time + phase);
+          const y    = centerY - yVal * ampPx;
+          if (x === 0) ctx.moveTo(x, y);
+          else         ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // 주파수 레이블 (정지 구간만)
+        if (t > 0.18 && t <= 0.72 && alpha > 0.3) {
+          const freqLabel = freq >= 1000
+            ? `${(freq / 1000).toFixed(1)} kHz`
+            : `${Math.round(freq)} Hz`;
+          ctx.fillStyle = `rgba(20,160,140,${alpha})`;
+          ctx.font      = 'bold 12px Pretendard, sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText(freqLabel, 12, centerY - ampPx - 6);
+        }
+
+        // 진행 카운터 (아래 밴드 상단 고정)
+        ctx.shadowBlur  = 0;
+        ctx.fillStyle   = `rgba(80,110,150,0.65)`;
+        ctx.font        = 'bold 11px Pretendard, sans-serif';
+        ctx.textAlign   = 'right';
+        ctx.fillText(`${waveIdx + 1} / ${totalWaves}`, w - 12, bottomBand.y0 + 15);
+        ctx.textAlign   = 'left';
+
+        ctx.restore();
+      }
+
+      function easeInCubic(t) { return t * t * t; }
+
+
+      function blendSignals(a, b, t) {
+        const out = new Float32Array(a.length);
+        const inv = 1 - t;
+        for (let i = 0; i < a.length; i++) out[i] = a[i] * inv + b[i] * t;
+        return out;
+      }
+
+      function addSignals(base, added, t) {
+        const out = new Float32Array(base.length);
+        for (let i = 0; i < base.length; i++) {
+          out[i] = base[i] + added[i] * t;
+        }
+        return out;
+      }
+
+      function renderSpectrum() {
+        const canvas = els.spectrumCanvas;
+        fitCanvas(canvas);
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+
+        clearCanvas(ctx, w, h, '#fbfdff');
+        drawFrame(ctx, w, h);
+        drawSpectrumGrid(ctx, w, h);
+
+        if (!state.magnitudes || !state.fftSize || !state.sampleRate) {
+          drawCenterText(ctx, w, h, '녹음 후 주파수 스펙트럼이 표시됩니다.');
+          return;
+        }
+
+        const half = state.fftSize >> 1;
+        const maxHz = Math.min(SPECTRUM_VIEW_MAX_HZ, state.sampleRate / 2);
+        const maxBin = Math.min(half - 1, Math.floor(maxHz / state.sampleRate * state.fftSize));
+
+        let maxMag = 1e-12;
+        for (let i = 1; i <= maxBin; i++) {
+          if (state.magnitudes[i] > maxMag) maxMag = state.magnitudes[i];
+        }
+
+        // 전체 스펙트럼
+        ctx.strokeStyle = '#9db2d7';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        for (let x = 0; x < w; x++) {
+          const bin = Math.min(maxBin, Math.floor((x / Math.max(1, w - 1)) * maxBin));
+          const mag = state.magnitudes[bin];
+          const y = h - 28 - (mag / maxMag) * (h - 54);
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // 현재 선택 단계 성분 강조 (freeStage 우선)
+        const current = state.freeStage ?? state.stages.get(getCurrentStageKey());
+        if (current?.selectedBins?.length || current?.bins?.length) {
+          if (!current.selectedBins) current.selectedBins = current.bins;
+          ctx.strokeStyle = '#5c7cff';
+          ctx.lineWidth = 1.2;
+          for (const bin of current.selectedBins) {
+            const freq = bin * state.sampleRate / state.fftSize;
+            if (freq > maxHz) continue;
+            const x = (freq / maxHz) * w;
+            const mag = state.magnitudes[bin];
+            const y = h - 28 - (mag / maxMag) * (h - 54);
+            ctx.beginPath();
+            ctx.moveTo(x, h - 28);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+          }
+        }
+
+        // 피크 주파수 5개
+        const peaks = findTopPeaks(maxBin, 5);
+        ctx.font = '12px Pretendard, sans-serif';
+        peaks.forEach(p => {
+          const freq = p.bin * state.sampleRate / state.fftSize;
+          const x = (freq / maxHz) * w;
+          const y = h - 28 - (p.mag / maxMag) * (h - 54);
+
+          ctx.fillStyle = '#2bb39f';
+          ctx.beginPath();
+          ctx.arc(x, y, 3.1, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#405068';
+          ctx.fillText(`${Math.round(freq)} Hz`, Math.min(w - 64, x + 6), Math.max(14, y - 8));
+        });
+
+        // 현재 복원 경계선
+        const activeHz = state.freeStage
+          ? state.freeStage.hz
+          : RECON_LEVELS[state.currentLevelIndex];
+
+        if (activeHz <= maxHz) {
+          const x = (activeHz / maxHz) * w;
+          const hzLabel = activeHz >= 1000
+            ? `${(activeHz / 1000).toFixed(activeHz % 1000 === 0 ? 0 : 1)}kHz`
+            : `${Math.round(activeHz)}Hz`;
+          ctx.save();
+          ctx.strokeStyle = 'rgba(79,110,247,0.65)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, h - 28);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(79,110,247,0.90)';
+          ctx.font = 'bold 11px Pretendard, sans-serif';
+          ctx.textAlign = x > w * 0.85 ? 'right' : 'left';
+          ctx.fillText(hzLabel, x + (x > w * 0.85 ? -5 : 5), 14);
+          ctx.restore();
+        }
+
+        // hover 수직선 + Hz 표시
+        if (state.specHover && state.sampleRate) {
+          const { ratio, hz } = state.specHover;
+          const x = ratio * w;
+          ctx.save();
+          ctx.strokeStyle = 'rgba(30,30,60,0.35)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 3]);
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, h - 28);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          const hzLabel = hz >= 1000 ? `${(hz / 1000).toFixed(1)} kHz` : `${Math.round(hz)} Hz`;
+
+          // 가장 가까운 단계 표시
+          let bestIdx = 0, bestDist = Infinity;
+          RECON_LEVELS.forEach((lHz, i) => {
+            const d = Math.abs(Math.log(lHz + 1) - Math.log(hz + 1));
+            if (d < bestDist) { bestDist = d; bestIdx = i; }
+          });
+          const snapHz = RECON_LEVELS[bestIdx];
+          const snapLabel = snapHz >= 1000 ? `${snapHz / 1000}kHz` : `${snapHz}Hz`;
+
+          const tip = `클릭 → 1 Hz ~ ${hzLabel} 까지 복원`;
+          ctx.font = '11px Pretendard, sans-serif';
+          const tw = ctx.measureText(tip).width;
+          const tx = Math.min(w - tw - 8, Math.max(4, x + 8));
+          ctx.fillStyle = 'rgba(25,35,60,0.72)';
+          ctx.beginPath();
+          ctx.roundRect(tx - 4, h - 56, tw + 8, 18, 5);
+          ctx.fill();
+          ctx.fillStyle = '#fff';
+          ctx.fillText(tip, tx, h - 43);
+          ctx.restore();
+        }
+
+        drawSpectrumLabels(ctx, w, h, maxHz);
+      }
+
+      function findTopPeaks(maxBin, count) {
+        const peaks = [];
+        for (let i = 2; i < maxBin - 1; i++) {
+          const m = state.magnitudes[i];
+          if (m > state.magnitudes[i - 1] && m >= state.magnitudes[i + 1]) {
+            peaks.push({ bin: i, mag: m });
+          }
+        }
+        peaks.sort((a, b) => b.mag - a.mag);
+        return peaks.slice(0, count);
+      }
+
+      function drawWaveBand(ctx, samples, width, band, color, lineWidth, peakRef, alpha) {
+        const h = band.y1 - band.y0;
+        const centerY = band.y0 + h / 2;
+        const usableH = h * 0.78;
+        const pixels = Math.max(30, Math.floor(width));
+        const bucket = Math.max(1, Math.floor(samples.length / pixels));
+
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = alpha;
+        ctx.lineWidth = lineWidth;
+        ctx.beginPath();
+
+        let started = false;
+        for (let px = 0; px < pixels; px++) {
+          const start = px * bucket;
+          const end = Math.min(samples.length, start + bucket);
+
+          let min = 1e9;
+          let max = -1e9;
+          for (let i = start; i < end; i++) {
+            const v = samples[i];
+            if (v < min) min = v;
+            if (v > max) max = v;
+          }
+          if (min === 1e9) { min = 0; max = 0; }
+
+          const x = (px / Math.max(1, pixels - 1)) * width;
+          const y1 = centerY - (max / peakRef) * (usableH / 2);
+          const y2 = centerY - (min / peakRef) * (usableH / 2);
+
+          if (!started) {
+            ctx.moveTo(x, y1);
+            started = true;
+          }
+          ctx.lineTo(x, y1);
+          ctx.lineTo(x, y2);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawBandLabel(ctx, x, y, text, color) {
+        ctx.save();
+        ctx.fillStyle = color;
+        ctx.font = '13px Pretendard, sans-serif';
+        ctx.fillText(text, x, y);
+        ctx.restore();
+      }
+
+      function drawWaveGrid(ctx, w, h) {
+        ctx.save();
+        ctx.strokeStyle = '#edf2f9';
+        ctx.lineWidth = 1;
+
+        for (let i = 1; i < 6; i++) {
+          const y = (h / 6) * i;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+          ctx.stroke();
+        }
+
+        for (let i = 1; i < 7; i++) {
+          const x = (w / 7) * i;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, h);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function drawSpectrumGrid(ctx, w, h) {
+        ctx.save();
+        ctx.strokeStyle = '#edf2f9';
+        ctx.lineWidth = 1;
+        for (let i = 1; i < 4; i++) {
+          const y = ((h - 28) / 4) * i;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+          ctx.stroke();
+        }
+        for (let i = 1; i < 6; i++) {
+          const x = (w / 6) * i;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, h - 28);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function drawSectionTimeLabels(ctx, w, h) {
+        ctx.save();
+        ctx.fillStyle = '#7b899d';
+        ctx.font = '12px Pretendard, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('0초', 8, h - 8);
+        ctx.textAlign = 'right';
+        ctx.fillText(`${RECORD_SECONDS.toFixed(1)}초`, w - 8, h - 8);
+        ctx.restore();
+      }
+
+      function drawSpectrumLabels(ctx, w, h, maxHz) {
+        ctx.save();
+        ctx.fillStyle = '#7b899d';
+        ctx.font = '12px Pretendard, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('0 Hz', 8, h - 8);
+        ctx.textAlign = 'center';
+        for (let i = 1; i < 4; i++) {
+          ctx.fillText(`${Math.round(maxHz * i / 4)} Hz`, (w / 4) * i, h - 8);
+        }
+        ctx.textAlign = 'right';
+        ctx.fillText(`${Math.round(maxHz)} Hz`, w - 8, h - 8);
+        ctx.restore();
+      }
+
+      function drawFrame(ctx, w, h) {
+        ctx.save();
+        ctx.strokeStyle = '#e8eef8';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0.5, 0.5, w - 1, h - 1);
+        ctx.restore();
+      }
+
+      function drawCenterText(ctx, w, h, text) {
+        ctx.save();
+        ctx.fillStyle = '#8d98ab';
+        ctx.font = '14px Pretendard, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, w / 2, h / 2);
+        ctx.restore();
+      }
+
+      function drawWavePlaceholder() {
+        const c = els.waveCanvas;
+        fitCanvas(c);
+        const ctx = c.getContext('2d');
+        clearCanvas(ctx, c.width, c.height, '#fbfdff');
+        drawFrame(ctx, c.width, c.height);
+        drawWaveGrid(ctx, c.width, c.height);
+        drawCenterText(ctx, c.width, c.height, '녹음 후 위·가운데·아래 구조의 파형 애니메이션이 표시됩니다.');
+      }
+
+      function drawSpectrumPlaceholder() {
+        const c = els.spectrumCanvas;
+        fitCanvas(c);
+        const ctx = c.getContext('2d');
+        clearCanvas(ctx, c.width, c.height, '#fbfdff');
+        drawFrame(ctx, c.width, c.height);
+        drawSpectrumGrid(ctx, c.width, c.height);
+        drawCenterText(ctx, c.width, c.height, '녹음 후 스펙트럼이 표시됩니다.');
+      }
+
+      function clearCanvas(ctx, w, h, fill) {
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = fill;
+        ctx.fillRect(0, 0, w, h);
+      }
+
+      function fitCanvas(canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = Math.max(1, Math.round(rect.width * dpr));
+        const h = Math.max(1, Math.round(rect.height * dpr));
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width = w;
+          canvas.height = h;
+        }
+      }
+
+      function resizeAllCanvases() {
+        fitCanvas(els.waveCanvas);
+        fitCanvas(els.spectrumCanvas);
+      }
+
+      function getPeakAbs(samples) {
+        let p = 0;
+        for (let i = 0; i < samples.length; i++) {
+          const a = Math.abs(samples[i]);
+          if (a > p) p = a;
+        }
+        return p || 1;
+      }
+
+      function normalizeToPeak(samples, targetPeak) {
+        let p = 0;
+        for (let i = 0; i < samples.length; i++) {
+          const a = Math.abs(samples[i]);
+          if (a > p) p = a;
+        }
+
+        const out = new Float32Array(samples.length);
+        if (p < 1e-12) return out;
+
+        const safeTarget = Math.min(0.98, targetPeak || 0.95);
+        const scale = safeTarget / p;
+
+        for (let i = 0; i < samples.length; i++) {
+          let v = samples[i] * scale;
+          if (v > 1) v = 1;
+          if (v < -1) v = -1;
+          out[i] = v;
+        }
+        return out;
+      }
+
+      function nextFrame() {
+        return new Promise(resolve => requestAnimationFrame(resolve));
+      }
+
+      function easeInOut(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      }
+
+      function easeOutCubic(t) {
+        return 1 - Math.pow(1 - t, 3);
+      }
+    })();
+  </script>
+</body>
+
+</html>
