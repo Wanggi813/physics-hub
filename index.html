@@ -1,495 +1,655 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>시(물리)에이션 — 물리 시뮬레이션 플랫폼</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>시(물리)에이션 — 물리 시뮬레이션 플랫폼</title>
 
-<link rel="icon" type="image/png" href="./image/favicon.png">
+  <link rel="icon" type="image/png" href="./image/favicon.png">
 
-<style>
-  @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
-  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+  <style>
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  body {
-    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
-    overflow-x: hidden;
-  }
+    html,
+    body {
+      height: 100%;
+    }
 
-  .hero {
-    position: relative;
-    width: 100%;
-    height: 100vh;
-    min-height: 600px;
-    overflow: hidden;
-  }
+    body {
+      font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+      overflow-x: hidden;
+    }
 
-  .hero-bg {
-    position: absolute;
-    inset: 0;
-    background-image: url('image/hero.png');
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
-    z-index: 0;
-  }
+    .hero {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      min-height: 600px;
+      overflow: hidden;
+    }
 
-  .hero-overlay {
-    position: absolute;
-    inset: 0;
-    background: transparent;
-    z-index: 1;
-  }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background-image: url('image/hero.png');
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      z-index: 0;
+    }
 
-  /* ===== 곡선 텍스트 ===== */
-  .hero-arc-text {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 3;
-    pointer-events: none;
-    animation: fadeUp .9s .4s ease both;
-  }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: transparent;
+      z-index: 1;
+    }
 
-  /* ===== 히어로 콘텐츠 ===== */
-  .hero-content {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    z-index: 5;
-    padding: 0 52px 52px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 32px;
-  }
+    /* ===== 곡선 텍스트 ===== */
+    .hero-arc-text {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 3;
+      pointer-events: none;
+      animation: fadeUp .9s .4s ease both;
+    }
 
-  .hero-left {
-    flex: 0 0 auto;
-    width: clamp(320px, 38vw, 460px);
-    animation: fadeUp .7s .1s ease both;
-    background: rgba(255, 255, 255, 0.58);
-    border: 1px solid rgba(255, 255, 255, 0.88);
-    border-radius: 20px;
-    padding: 28px 32px 24px;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 8px 32px rgba(30, 80, 160, 0.12);
-  }
+    /* ===== 히어로 콘텐츠 ===== */
+    .hero-content {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 5;
+      padding: 0 52px 52px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 32px;
+    }
 
-  .eyebrow {
-    display: inline-flex; align-items: center; gap: 7px;
-    background: rgba(255,255,255,0.7); border: 1px solid rgba(45,124,201,0.3);
-    border-radius: 99px; padding: 5px 14px; margin-bottom: 14px;
-    font-size: 11px; font-weight: 700; letter-spacing: .07em; color: #1a5fa5;
-    backdrop-filter: blur(8px);
-  }
-  .eyebrow-dot {
-    width: 6px; height: 6px; background: #2d7cc9; border-radius: 50%;
-    animation: pulse 2s ease-in-out infinite;
-  }
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.65)} }
+    .hero-left {
+      flex: 0 0 auto;
+      width: clamp(320px, 32vw, 460px);
+      animation: fadeUp .7s .1s ease both;
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid rgba(255, 255, 255, 0.82);
+      border-radius: 24px;
+      padding: 34px 34px 30px;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 18px 44px rgba(30, 80, 160, 0.10);
+    }
 
-  .hero-title {
-    font-size: clamp(32px, 4.5vw, 56px);
-    font-weight: 700; line-height: 1.18; letter-spacing: -0.025em;
-    color: #1a2e45;
-    text-shadow: none;
-    margin-bottom: 12px;
-  }
-  .hero-title em { font-style: normal; color: #2d7cc9; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(45, 124, 201, 0.3);
+      border-radius: 99px;
+      padding: 5px 14px;
+      margin-bottom: 14px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      color: #1a5fa5;
+      backdrop-filter: blur(8px);
+    }
 
-  .hero-desc {
-    font-size: 14px; font-weight: 400;
-    color: #3d5a7a;
-    line-height: 1.75;
-    text-shadow: none;
-    margin-bottom: 22px;
-  }
+    .eyebrow-dot {
+      width: 6px;
+      height: 6px;
+      background: #2d7cc9;
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
 
-  /* ===== CTA ===== */
-  .cta-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .cta-main {
-    font-size: 17px; font-weight: 700; font-family: inherit; padding: 16px 40px;
-    background: #2d7cc9; color: #fff; border: none; border-radius: 12px; cursor: pointer;
-    transition: all .2s; box-shadow: 0 4px 24px rgba(25,75,160,0.45);
-  }
-  .cta-main:hover { background: #1a5fa5; transform: translateY(-2px); }
+    @keyframes pulse {
 
-  /* 시뮬레이션 수 뱃지 (AI 수업설계 버튼 자리) */
-  .sim-badge {
-    display: inline-flex; align-items: center; gap: 10px;
-    background: #7ab8e8;
-    border: none;
-    border-radius: 10px; padding: 10px 18px;
-  }
-  .sim-badge-num {
-    font-size: 24px; font-weight: 700; color: #fff;
-    font-family: 'Space Mono', monospace; letter-spacing: -0.02em;
-    line-height: 1;
-  }
-  .sim-badge-text {
-    font-size: 12px; color: rgba(255,255,255,0.88);
-    line-height: 1.3;
-  }
-  .sim-badge-text strong { display: block; font-weight: 700; font-size: 10px; letter-spacing: .08em; color: rgba(255,255,255,0.65); }
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1)
+      }
 
-  /* ===== 우측 유저 카드 ===== */
-  .hero-right { flex-shrink: 0; animation: fadeUp .7s .25s ease both; }
+      50% {
+        opacity: .3;
+        transform: scale(.65)
+      }
+    }
 
-  .user-card {
-    background: rgba(255,255,255,0.58);
-    border: 1px solid rgba(255,255,255,0.88);
-    border-radius: 16px;
-    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-    min-width: 200px;
-    overflow: hidden;
-  }
+    .hero-title {
+      font-size: clamp(32px, 4.5vw, 56px);
+      font-weight: 700;
+      line-height: 1.18;
+      letter-spacing: -0.025em;
+      color: #1a2e45;
+      text-shadow: none;
+      margin-bottom: 12px;
+    }
 
-  /* 로그인 전 */
-  .card-guest {
-    display: flex; flex-direction: column; align-items: center;
-    padding: 22px 20px 18px;
-    gap: 10px;
-  }
-  .card-guest-icon {
-    width: 44px; height: 44px; border-radius: 50%;
-    background: rgba(45,124,201,0.12);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px;
-  }
-  .card-guest-msg {
-    font-size: 11px; color: #4a6a8a; text-align: center; line-height: 1.5;
-  }
-  .card-login-btn {
-    width: 100%; padding: 9px 0;
-    background: #2d7cc9; color: #fff;
-    border: none; border-radius: 8px;
-    font-size: 13px; font-weight: 700; font-family: inherit;
-    cursor: pointer; transition: all .2s;
-  }
-  .card-login-btn:hover { background: #1a5fa5; }
+    .hero-title em {
+      font-style: normal;
+      color: #2d7cc9;
+    }
 
-  /* 로그인 폼 */
-  .card-form {
-    padding: 16px;
-    display: flex; flex-direction: column; gap: 8px;
-  }
-  .card-form-title {
-    font-size: 12px; font-weight: 700; color: #1a3a5c; margin-bottom: 2px;
-  }
-  .card-input {
-    width: 100%; padding: 8px 10px;
-    border: 1.5px solid rgba(45,124,201,0.25); border-radius: 7px;
-    font-size: 12px; font-family: inherit; background: rgba(255,255,255,0.8);
-    outline: none; transition: border-color .2s;
-  }
-  .card-input:focus { border-color: #2d7cc9; }
-  .card-form-btns { display: flex; gap: 6px; margin-top: 2px; }
-  .card-btn-cancel {
-    flex: 1; padding: 8px 0; border-radius: 7px;
-    border: 1.5px solid rgba(45,124,201,0.3); background: transparent;
-    font-size: 12px; font-family: inherit; color: #1a5fa5; cursor: pointer;
-    transition: all .2s;
-  }
-  .card-btn-cancel:hover { background: rgba(45,124,201,0.08); }
-  .card-btn-submit {
-    flex: 1; padding: 8px 0; border-radius: 7px;
-    border: none; background: #2d7cc9;
-    font-size: 12px; font-weight: 700; font-family: inherit; color: #fff; cursor: pointer;
-    transition: all .2s;
-  }
-  .card-btn-submit:hover { background: #1a5fa5; }
+    .hero-desc {
+      font-size: 14px;
+      font-weight: 400;
+      color: #3d5a7a;
+      line-height: 1.75;
+      text-shadow: none;
+      margin-bottom: 22px;
+    }
 
-  /* 로그인 후 */
-  .card-user {
-    display: flex; flex-direction: column; align-items: center;
-    padding: 18px 20px 14px; gap: 6px;
-  }
-  .card-rank-img {
-    width: 112px; height: 112px; object-fit: contain;
-  }
-  .card-rank-name {
-    font-size: 11px; font-weight: 700; letter-spacing: .1em;
-    font-family: 'Space Mono', monospace;
-  }
-  .card-user-id {
-    font-size: 13px; font-weight: 700; color: #1a2e45;
-  }
-  .card-score {
-    font-size: 11px; color: #4a6a8a;
-  }
-  .card-logout-btn {
-    margin-top: 4px; padding: 6px 20px;
-    border: 1.5px solid rgba(45,124,201,0.3); border-radius: 7px;
-    background: transparent; color: #1a5fa5;
-    font-size: 11px; font-family: inherit; cursor: pointer; transition: all .2s;
-  }
-  .card-logout-btn:hover { background: rgba(45,124,201,0.08); }
+    /* ===== CTA ===== */
+    .cta-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .cta-main {
+      font-size: 17px;
+      font-weight: 700;
+      font-family: inherit;
+      padding: 16px 34px;
+      background: linear-gradient(180deg, #3e8fe3 0%, #2d7cc9 100%);
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all .2s ease;
+      box-shadow: 0 10px 24px rgba(45, 124, 201, 0.28);
+    }
+
+    .cta-main:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(45, 124, 201, 0.34);
+    }
+
+    /* 시뮬레이션 수 뱃지 (AI 수업설계 버튼 자리) */
+    .sim-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #7ab8e8;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 18px;
+    }
+
+    .sim-badge-num {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+      font-family: 'Space Mono', monospace;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .sim-badge-text {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.88);
+      line-height: 1.3;
+    }
+
+    .sim-badge-text strong {
+      display: block;
+      font-weight: 700;
+      font-size: 10px;
+      letter-spacing: .08em;
+      color: rgba(255, 255, 255, 0.65);
+    }
+
+    /* ===== 우측 유저 카드 ===== */
+    .hero-right {
+      flex-shrink: 0;
+      animation: fadeUp .7s .25s ease both;
+    }
+
+    .user-card {
+      background: rgba(255, 255, 255, 0.58);
+      border: 1px solid rgba(255, 255, 255, 0.88);
+      border-radius: 16px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      min-width: 200px;
+      overflow: hidden;
+    }
+
+    /* 로그인 전 */
+    .card-guest {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 22px 20px 18px;
+      gap: 10px;
+    }
+
+    .card-guest-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(45, 124, 201, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .card-guest-msg {
+      font-size: 11px;
+      color: #4a6a8a;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .card-login-btn {
+      width: 100%;
+      padding: 9px 0;
+      background: #2d7cc9;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .card-login-btn:hover {
+      background: #1a5fa5;
+    }
+
+    /* 로그인 폼 */
+    .card-form {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card-form-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1a3a5c;
+      margin-bottom: 2px;
+    }
+
+    .card-input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1.5px solid rgba(45, 124, 201, 0.25);
+      border-radius: 7px;
+      font-size: 12px;
+      font-family: inherit;
+      background: rgba(255, 255, 255, 0.8);
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    .card-input:focus {
+      border-color: #2d7cc9;
+    }
+
+    .card-form-btns {
+      display: flex;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .card-btn-cancel {
+      flex: 1;
+      padding: 8px 0;
+      border-radius: 7px;
+      border: 1.5px solid rgba(45, 124, 201, 0.3);
+      background: transparent;
+      font-size: 12px;
+      font-family: inherit;
+      color: #1a5fa5;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .card-btn-cancel:hover {
+      background: rgba(45, 124, 201, 0.08);
+    }
+
+    .card-btn-submit {
+      flex: 1;
+      padding: 8px 0;
+      border-radius: 7px;
+      border: none;
+      background: #2d7cc9;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      color: #fff;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .card-btn-submit:hover {
+      background: #1a5fa5;
+    }
+
+    /* 로그인 후 */
+    .card-user {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 18px 20px 14px;
+      gap: 6px;
+    }
+
+    .card-rank-img {
+      width: 112px;
+      height: 112px;
+      object-fit: contain;
+    }
+
+    .card-rank-name {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .card-user-id {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1a2e45;
+    }
+
+    .card-score {
+      font-size: 11px;
+      color: #4a6a8a;
+    }
+
+    .card-logout-btn {
+      margin-top: 4px;
+      padding: 6px 20px;
+      border: 1.5px solid rgba(45, 124, 201, 0.3);
+      border-radius: 7px;
+      background: transparent;
+      color: #1a5fa5;
+      font-size: 11px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .card-logout-btn:hover {
+      background: rgba(45, 124, 201, 0.08);
+    }
 
 
-  @keyframes fadeUp { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(22px)
+      }
 
-  @media (max-width: 768px) {
-    .hero-content { padding: 0 20px 36px; flex-direction: column; align-items: flex-start; gap: 20px; }
-    .hero-right { align-self: stretch; }
-    .user-card { min-width: unset; }
-  }
-</style>
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    @media (max-width: 768px) {
+      .hero-left {
+        width: 100%;
+        max-width: 420px;
+        padding: 28px 24px 24px;
+      }
+
+      .hero-title {
+        font-size: clamp(30px, 9vw, 44px);
+      }
+
+      .hero-right {
+        align-self: stretch;
+      }
+
+      .user-card {
+        min-width: unset;
+        width: 100%;
+        max-width: 220px;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<section class="hero">
-  <div class="hero-bg"></div>
-  <div class="hero-overlay"></div>
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
 
-  <!-- 우주선을 따라 휘는 텍스트 -->
-  <svg class="hero-arc-text" viewBox="0 0 1200 750" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-    <defs>
-      <!--
-        viewBox 1200x750 기준.
-        [위] L→R sweep=1(∩), 텍스트가 호 바깥(위)에 붙음 → 호 정점 y≈99, 텍스트 ~y=73
-        [아래] R→L sweep=1(∪), 텍스트가 호 바깥(아래)에 붙음 → 호 바닥 y≈469, 텍스트 ~y=495
-      -->
-      <!-- 아래: L→R sweep=0(∪), 텍스트가 호 곡선 따라 좌→우로 읽힘 -->
-      <path id="arc-bot" d="M 180 370 A 430 240 0 0 0 1000 370" />
-      <!-- 그림자 필터 -->
-      <filter id="arc-shadow" x="-10%" y="-30%" width="120%" height="160%">
-        <feDropShadow dx="0" dy="1" stdDeviation="5" flood-color="#092050" flood-opacity="0.75"/>
-      </filter>
-    </defs>
-    <!-- 위: 상단 가로 배치 -->
-    <text filter="url(#arc-shadow)"
-          font-family="'Space Mono', monospace"
-          font-size="26" font-weight="700"
-          fill="rgba(255,255,255,0.92)"
-          letter-spacing="6"
-          text-anchor="middle"
-          x="600" y="52">
-      PHYSICS TAKES YOU FURTHER
-    </text>
-    <!-- 아래: 물리의 우주로, 지금 발사 -->
-    <text filter="url(#arc-shadow)"
-          font-family="'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"
-          font-size="24" font-weight="700"
-          fill="rgba(255,255,255,0.88)"
-          letter-spacing="4">
-      <textPath href="#arc-bot" startOffset="50%" text-anchor="middle">
-        물리의 우주로, 지금 발사
-      </textPath>
-    </text>
-  </svg>
-
-  <div class="hero-content">
-    <div class="hero-left">
-      <div class="eyebrow">
-        <span class="eyebrow-dot"></span>
-        물리 시뮬레이션 교육 플랫폼
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="eyebrow">
+          <span class="eyebrow-dot"></span>
+          물리 시뮬레이션 교육 플랫폼
+        </div>
+        <h1 class="hero-title">
+          물리를 <em>직접 보며</em><br>
+          배우는 공간
+        </h1>
+        <p class="hero-desc">
+          역학·열·파동·전자기·상대성이론·현대물리까지,
+          다양한 시뮬레이션으로 수업과 탐구를 더 직관적으로 만들어 보세요.
+        </p>
+        <div class="cta-row">
+          <div class="sim-badge">
+            <span class="sim-badge-num" id="cnt">0</span>
+            <div class="sim-badge-text">
+              <strong>SIMULATIONS</strong>
+              개의 시뮬레이션
+            </div>
+          </div>
+          <button class="cta-main" onclick="location.href='./main.html'">시뮬레이션 시작하기</button>
+        </div>
       </div>
-      <h1 class="hero-title">
-        물리를 <em>직접 보며</em><br>
-        배우는 공간
-      </h1>
-      <p class="hero-desc">
-        역학·열·파동·전자기·상대성이론·현대물리까지.<br>
-        <span id="desc-count">38</span>개 인터랙티브 시뮬레이션으로 수업과<br>
-        탐구 활동을 새롭게 만들어 보세요.
-      </p>
-      <div class="cta-row">
-        <div class="sim-badge">
-          <span class="sim-badge-num" id="cnt">0</span>
-          <div class="sim-badge-text">
-            <strong>SIMULATIONS</strong>
-            개의 시뮬레이션
+
+      <div class="hero-right">
+        <div class="user-card">
+          <!-- 로그인 전 -->
+          <div id="card-guest" class="card-guest">
+            <div class="card-guest-icon">👤</div>
+            <p class="card-guest-msg">로그인하면 점수와<br>랭크를 확인할 수 있어요</p>
+            <button class="card-login-btn" id="show-form-btn">로그인</button>
+          </div>
+          <!-- 로그인 폼 -->
+          <div id="card-form" class="card-form" style="display:none">
+            <div class="card-form-title">로그인</div>
+            <input type="text" id="loginId" placeholder="아이디" class="card-input" />
+            <input type="password" id="loginPassword" placeholder="비밀번호" class="card-input"
+              onkeydown="if(event.key==='Enter') heroLogin()" />
+            <div class="card-form-btns">
+              <button class="card-btn-cancel" id="hide-form-btn">취소</button>
+              <button class="card-btn-submit" onclick="heroLogin()">로그인</button>
+            </div>
+          </div>
+          <!-- 로그인 후 -->
+          <div id="card-user" class="card-user" style="display:none">
+            <img id="hero-rank-img" src="" class="card-rank-img" alt="rank" />
+            <div class="card-rank-name" id="hero-rank-name"></div>
+            <div class="card-user-id" id="hero-user-id"></div>
+            <div class="card-score" id="hero-score"></div>
+            <button class="card-logout-btn" onclick="heroLogout()">로그아웃</button>
           </div>
         </div>
-        <button class="cta-main" onclick="location.href='./main.html'">시뮬레이션 탐색하기</button>
       </div>
     </div>
 
-    <div class="hero-right">
-      <div class="user-card">
-        <!-- 로그인 전 -->
-        <div id="card-guest" class="card-guest">
-          <div class="card-guest-icon">👤</div>
-          <p class="card-guest-msg">로그인하면 점수와<br>랭크를 확인할 수 있어요</p>
-          <button class="card-login-btn" id="show-form-btn">로그인</button>
-        </div>
-        <!-- 로그인 폼 -->
-        <div id="card-form" class="card-form" style="display:none">
-          <div class="card-form-title">로그인</div>
-          <input type="text" id="loginId" placeholder="아이디" class="card-input" />
-          <input type="password" id="loginPassword" placeholder="비밀번호" class="card-input" onkeydown="if(event.key==='Enter') heroLogin()" />
-          <div class="card-form-btns">
-            <button class="card-btn-cancel" id="hide-form-btn">취소</button>
-            <button class="card-btn-submit" onclick="heroLogin()">로그인</button>
-          </div>
-        </div>
-        <!-- 로그인 후 -->
-        <div id="card-user" class="card-user" style="display:none">
-          <img id="hero-rank-img" src="" class="card-rank-img" alt="rank" />
-          <div class="card-rank-name" id="hero-rank-name"></div>
-          <div class="card-user-id" id="hero-user-id"></div>
-          <div class="card-score" id="hero-score"></div>
-          <button class="card-logout-btn" onclick="heroLogout()">로그아웃</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  </section>
 
-</section>
+  <script src="config.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+    import {
+      getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+    import {
+      getFirestore, doc, getDoc, collection, getDocs
+    } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
-<script src="config.js"></script>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-import {
-  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
-import {
-  getFirestore, doc, getDoc, collection, getDocs
-} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
-
-const cfg = window.APP_CONFIG;
-const app = initializeApp({
-  apiKey:            cfg.FIREBASE_API_KEY,
-  authDomain:        cfg.FIREBASE_AUTH_DOMAIN,
-  projectId:         cfg.FIREBASE_PROJECT_ID,
-  storageBucket:     cfg.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: cfg.FIREBASE_MESSAGING_SENDER_ID,
-  appId:             cfg.FIREBASE_APP_ID
-});
-const auth = getAuth(app);
-const db   = getFirestore(app);
-
-const rankMeta = {
-  "아이언.png":      { en: "IRON",        color: "#8a7a76" },
-  "브론즈.png":      { en: "BRONZE",      color: "#a07060" },
-  "실버.png":        { en: "SILVER",      color: "#8899aa" },
-  "골드.png":        { en: "GOLD",        color: "#c8a840" },
-  "에메랄드.png":    { en: "EMERALD",     color: "#3aaa8a" },
-  "다이아.png":      { en: "DIAMOND",     color: "#60b8d0" },
-  "마스터.png":      { en: "MASTER",      color: "#885BA6" },
-  "그랜드마스터.png":{ en: "GRANDMASTER", color: "#c04040" },
-  "챌린저.png":      { en: "CHALLENGER",  color: "#4a8acc" }
-};
-
-function getRankFile(score) {
-  const s = Number(score) || 0;
-  if (s < 500)   return "아이언.png";
-  if (s < 1000)  return "브론즈.png";
-  if (s < 2000)  return "실버.png";
-  if (s < 5000)  return "골드.png";
-  if (s < 7000)  return "에메랄드.png";
-  if (s < 9000)  return "다이아.png";
-  if (s < 11000) return "마스터.png";
-  if (s < 15000) return "그랜드마스터.png";
-  return "챌린저.png";
-}
-
-function showGuest() {
-  document.getElementById('card-guest').style.display = 'flex';
-  document.getElementById('card-form').style.display  = 'none';
-  document.getElementById('card-user').style.display  = 'none';
-}
-function showForm() {
-  document.getElementById('card-guest').style.display = 'none';
-  document.getElementById('card-form').style.display  = 'flex';
-  document.getElementById('card-user').style.display  = 'none';
-  document.getElementById('loginId').focus();
-}
-function showUser(userId, score) {
-  document.getElementById('card-guest').style.display = 'none';
-  document.getElementById('card-form').style.display  = 'none';
-  document.getElementById('card-user').style.display  = 'flex';
-
-  const file = getRankFile(score);
-  const meta = rankMeta[file] || { en: '', color: '#fff' };
-
-  document.getElementById('hero-rank-img').src  = './rank/' + file;
-  document.getElementById('hero-rank-name').textContent  = meta.en;
-  document.getElementById('hero-rank-name').style.color  = meta.color;
-  document.getElementById('hero-user-id').textContent    = userId;
-  document.getElementById('hero-score').textContent      = score.toLocaleString() + '점';
-}
-
-document.getElementById('show-form-btn').addEventListener('click', showForm);
-document.getElementById('hide-form-btn').addEventListener('click', showGuest);
-
-window.heroLogin = async function() {
-  const userId   = document.getElementById('loginId').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  if (!userId || !password) { alert('아이디와 비밀번호를 입력해 주세요.'); return; }
-  try {
-    await signInWithEmailAndPassword(auth, userId + '@myapp.local', password);
-  } catch (err) {
-    alert('로그인 실패: ' + (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' ? '아이디 또는 비밀번호가 올바르지 않습니다.' : err.message));
-  }
-};
-
-window.heroLogout = async function() {
-  await signOut(auth);
-};
-
-onAuthStateChanged(auth, async (user) => {
-  if (!user) { showGuest(); return; }
-
-  let displayId = user.email ? user.email.split('@')[0] : '';
-  try {
-    const userDoc = await getDoc(doc(db, 'users', user.uid));
-    if (userDoc.exists() && userDoc.data().ID) displayId = userDoc.data().ID;
-  } catch (_) {}
-
-  let score = 0;
-  try {
-    const simsSnap = await getDocs(collection(db, 'users', user.uid, 'simulations'));
-    simsSnap.forEach(d => { score += Number(d.data().score ?? 0); });
-  } catch (_) {
-    try {
-      const snap = await getDoc(doc(db, 'scores', user.uid));
-      if (snap.exists()) score = snap.data().score ?? 0;
-    } catch (_) {}
-  }
-
-  showUser(displayId, score);
-});
-</script>
-
-<script>
-// 시뮬레이션 카운터 애니메이션
-(function(){
-  var el   = document.getElementById('cnt');
-  var desc = document.getElementById('desc-count');
-  var start = null, dur = 1400, target = 38;
-
-  function animate(t) {
-    if (!start) start = t;
-    var p = Math.min((t - start) / dur, 1);
-    var e = 1 - Math.pow(1 - p, 3);
-    el.textContent = Math.round(e * target);
-    if (p < 1) requestAnimationFrame(animate);
-  }
-
-  fetch('./main.js')
-    .then(function(r) { return r.text(); })
-    .then(function(src) {
-      var m = src.match(/const\s+projects\s*=\s*\[[\s\S]*?\];/);
-      if (m) {
-        var count = (m[0].match(/\{\s*title:/g) || []).length;
-        if (count > 0) {
-          target = count;
-          if (desc) desc.textContent = count;
-        }
-      }
-      setTimeout(function() { requestAnimationFrame(animate); }, 600);
-    })
-    .catch(function() {
-      setTimeout(function() { requestAnimationFrame(animate); }, 600);
+    const cfg = window.APP_CONFIG;
+    const app = initializeApp({
+      apiKey: cfg.FIREBASE_API_KEY,
+      authDomain: cfg.FIREBASE_AUTH_DOMAIN,
+      projectId: cfg.FIREBASE_PROJECT_ID,
+      storageBucket: cfg.FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: cfg.FIREBASE_MESSAGING_SENDER_ID,
+      appId: cfg.FIREBASE_APP_ID
     });
-})();
-</script>
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const rankMeta = {
+      "아이언.png": { en: "IRON", color: "#8a7a76" },
+      "브론즈.png": { en: "BRONZE", color: "#a07060" },
+      "실버.png": { en: "SILVER", color: "#8899aa" },
+      "골드.png": { en: "GOLD", color: "#c8a840" },
+      "에메랄드.png": { en: "EMERALD", color: "#3aaa8a" },
+      "다이아.png": { en: "DIAMOND", color: "#60b8d0" },
+      "마스터.png": { en: "MASTER", color: "#885BA6" },
+      "그랜드마스터.png": { en: "GRANDMASTER", color: "#c04040" },
+      "챌린저.png": { en: "CHALLENGER", color: "#4a8acc" }
+    };
+
+    function getRankFile(score) {
+      const s = Number(score) || 0;
+      if (s < 500) return "아이언.png";
+      if (s < 1000) return "브론즈.png";
+      if (s < 2000) return "실버.png";
+      if (s < 5000) return "골드.png";
+      if (s < 7000) return "에메랄드.png";
+      if (s < 9000) return "다이아.png";
+      if (s < 11000) return "마스터.png";
+      if (s < 15000) return "그랜드마스터.png";
+      return "챌린저.png";
+    }
+
+    function showGuest() {
+      document.getElementById('card-guest').style.display = 'flex';
+      document.getElementById('card-form').style.display = 'none';
+      document.getElementById('card-user').style.display = 'none';
+    }
+    function showForm() {
+      document.getElementById('card-guest').style.display = 'none';
+      document.getElementById('card-form').style.display = 'flex';
+      document.getElementById('card-user').style.display = 'none';
+      document.getElementById('loginId').focus();
+    }
+    function showUser(userId, score) {
+      document.getElementById('card-guest').style.display = 'none';
+      document.getElementById('card-form').style.display = 'none';
+      document.getElementById('card-user').style.display = 'flex';
+
+      const file = getRankFile(score);
+      const meta = rankMeta[file] || { en: '', color: '#fff' };
+
+      document.getElementById('hero-rank-img').src = './rank/' + file;
+      document.getElementById('hero-rank-name').textContent = meta.en;
+      document.getElementById('hero-rank-name').style.color = meta.color;
+      document.getElementById('hero-user-id').textContent = userId;
+      document.getElementById('hero-score').textContent = score.toLocaleString() + '점';
+    }
+
+    document.getElementById('show-form-btn').addEventListener('click', showForm);
+    document.getElementById('hide-form-btn').addEventListener('click', showGuest);
+
+    window.heroLogin = async function () {
+      const userId = document.getElementById('loginId').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      if (!userId || !password) { alert('아이디와 비밀번호를 입력해 주세요.'); return; }
+      try {
+        await signInWithEmailAndPassword(auth, userId + '@myapp.local', password);
+      } catch (err) {
+        alert('로그인 실패: ' + (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' ? '아이디 또는 비밀번호가 올바르지 않습니다.' : err.message));
+      }
+    };
+
+    window.heroLogout = async function () {
+      await signOut(auth);
+    };
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) { showGuest(); return; }
+
+      let displayId = user.email ? user.email.split('@')[0] : '';
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists() && userDoc.data().ID) displayId = userDoc.data().ID;
+      } catch (_) { }
+
+      let score = 0;
+      try {
+        const simsSnap = await getDocs(collection(db, 'users', user.uid, 'simulations'));
+        simsSnap.forEach(d => { score += Number(d.data().score ?? 0); });
+      } catch (_) {
+        try {
+          const snap = await getDoc(doc(db, 'scores', user.uid));
+          if (snap.exists()) score = snap.data().score ?? 0;
+        } catch (_) { }
+      }
+
+      showUser(displayId, score);
+    });
+  </script>
+
+  <script>
+    // 시뮬레이션 카운터 애니메이션
+    (function () {
+      var el = document.getElementById('cnt');
+      var desc = document.getElementById('desc-count');
+      var start = null, dur = 1400, target = 38;
+
+      function animate(t) {
+        if (!start) start = t;
+        var p = Math.min((t - start) / dur, 1);
+        var e = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(e * target);
+        if (p < 1) requestAnimationFrame(animate);
+      }
+
+      fetch('./main.js')
+        .then(function (r) { return r.text(); })
+        .then(function (src) {
+          var m = src.match(/const\s+projects\s*=\s*\[[\s\S]*?\];/);
+          if (m) {
+            var count = (m[0].match(/\{\s*title:/g) || []).length;
+            if (count > 0) {
+              target = count;
+              if (desc) desc.textContent = count;
+            }
+          }
+          setTimeout(function () { requestAnimationFrame(animate); }, 600);
+        })
+        .catch(function () {
+          setTimeout(function () { requestAnimationFrame(animate); }, 600);
+        });
+    })();
+  </script>
 
 </body>
+
 </html>
