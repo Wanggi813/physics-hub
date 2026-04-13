@@ -1,324 +1,491 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
-  <meta charset="utf-8" />
-  <meta name="naver-site-verification" content="beba7effcf2f133069c6902bc1f0067f1ed59953" />
-  <meta name="description" content="시(물리)에이션은 물리학 전반을 다루는 교육용 물리학 시뮬레이션 플랫폼입니다. 역학과 에너지, 전자기, 양자, 상대성이론 개념을 수업·탐구 활동·시뮬레이션 실험에 활용할 수 있도록 제작되었습니다.
-" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>시(물리)에이션 — 물리 시뮬레이션 플랫폼</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono&display=swap');
 
-  <meta name="viewport" id="vp" content="width=1200" />
-  <script>
-    const BASE = 1200;
-    function fit() {
-      const w = Math.min(window.innerWidth, screen.width);
-      const s = w / BASE;
-      document.getElementById('vp').setAttribute(
-        'content',
-        `width=${BASE}, initial-scale=${s}, minimum-scale=${s}, maximum-scale=${s}, user-scalable=no`
-      );
-    }
-    addEventListener('resize', fit);
-    addEventListener('orientationchange', fit);
-    fit();
-  </script>
-  <title>시(물리)에이션 | 물리 시뮬레이션 · 고등학교 물리 수업 자료</title>
-  <link rel="icon" type="image/png" href="./image/favicon.png">
-  <link rel="stylesheet" href="styles.css">
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    overflow-x: hidden;
+  }
+
+  .hero {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    min-height: 600px;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background-image: url('image/hero.png');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    z-index: 0;
+  }
+
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: transparent;
+    z-index: 1;
+  }
+
+  /* ===== 곡선 텍스트 ===== */
+  .hero-arc-text {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+    animation: fadeUp .9s .4s ease both;
+  }
+
+  /* ===== 히어로 콘텐츠 ===== */
+  .hero-content {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    z-index: 5;
+    padding: 0 52px 52px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 32px;
+  }
+
+  .hero-left {
+    flex: 0 0 auto;
+    width: clamp(320px, 38vw, 460px);
+    animation: fadeUp .7s .1s ease both;
+    background: rgba(255, 255, 255, 0.58);
+    border: 1px solid rgba(255, 255, 255, 0.88);
+    border-radius: 20px;
+    padding: 28px 32px 24px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 32px rgba(30, 80, 160, 0.12);
+  }
+
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(255,255,255,0.7); border: 1px solid rgba(45,124,201,0.3);
+    border-radius: 99px; padding: 5px 14px; margin-bottom: 14px;
+    font-size: 11px; font-weight: 700; letter-spacing: .07em; color: #1a5fa5;
+    backdrop-filter: blur(8px);
+  }
+  .eyebrow-dot {
+    width: 6px; height: 6px; background: #2d7cc9; border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.65)} }
+
+  .hero-title {
+    font-size: clamp(32px, 4.5vw, 56px);
+    font-weight: 700; line-height: 1.18; letter-spacing: -0.025em;
+    color: #1a2e45;
+    text-shadow: none;
+    margin-bottom: 12px;
+  }
+  .hero-title em { font-style: normal; color: #2d7cc9; }
+
+  .hero-desc {
+    font-size: 14px; font-weight: 400;
+    color: #3d5a7a;
+    line-height: 1.75;
+    text-shadow: none;
+    margin-bottom: 22px;
+  }
+
+  /* ===== CTA ===== */
+  .cta-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .cta-main {
+    font-size: 17px; font-weight: 700; font-family: inherit; padding: 16px 40px;
+    background: #2d7cc9; color: #fff; border: none; border-radius: 12px; cursor: pointer;
+    transition: all .2s; box-shadow: 0 4px 24px rgba(25,75,160,0.45);
+  }
+  .cta-main:hover { background: #1a5fa5; transform: translateY(-2px); }
+
+  /* 시뮬레이션 수 뱃지 (AI 수업설계 버튼 자리) */
+  .sim-badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: #7ab8e8;
+    border: none;
+    border-radius: 10px; padding: 10px 18px;
+  }
+  .sim-badge-num {
+    font-size: 24px; font-weight: 700; color: #fff;
+    font-family: 'Space Mono', monospace; letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .sim-badge-text {
+    font-size: 12px; color: rgba(255,255,255,0.88);
+    line-height: 1.3;
+  }
+  .sim-badge-text strong { display: block; font-weight: 700; font-size: 10px; letter-spacing: .08em; color: rgba(255,255,255,0.65); }
+
+  /* ===== 우측 유저 카드 ===== */
+  .hero-right { flex-shrink: 0; animation: fadeUp .7s .25s ease both; }
+
+  .user-card {
+    background: rgba(255,255,255,0.58);
+    border: 1px solid rgba(255,255,255,0.88);
+    border-radius: 16px;
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    min-width: 200px;
+    overflow: hidden;
+  }
+
+  /* 로그인 전 */
+  .card-guest {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 22px 20px 18px;
+    gap: 10px;
+  }
+  .card-guest-icon {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(45,124,201,0.12);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .card-guest-msg {
+    font-size: 11px; color: #4a6a8a; text-align: center; line-height: 1.5;
+  }
+  .card-login-btn {
+    width: 100%; padding: 9px 0;
+    background: #2d7cc9; color: #fff;
+    border: none; border-radius: 8px;
+    font-size: 13px; font-weight: 700; font-family: inherit;
+    cursor: pointer; transition: all .2s;
+  }
+  .card-login-btn:hover { background: #1a5fa5; }
+
+  /* 로그인 폼 */
+  .card-form {
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .card-form-title {
+    font-size: 12px; font-weight: 700; color: #1a3a5c; margin-bottom: 2px;
+  }
+  .card-input {
+    width: 100%; padding: 8px 10px;
+    border: 1.5px solid rgba(45,124,201,0.25); border-radius: 7px;
+    font-size: 12px; font-family: inherit; background: rgba(255,255,255,0.8);
+    outline: none; transition: border-color .2s;
+  }
+  .card-input:focus { border-color: #2d7cc9; }
+  .card-form-btns { display: flex; gap: 6px; margin-top: 2px; }
+  .card-btn-cancel {
+    flex: 1; padding: 8px 0; border-radius: 7px;
+    border: 1.5px solid rgba(45,124,201,0.3); background: transparent;
+    font-size: 12px; font-family: inherit; color: #1a5fa5; cursor: pointer;
+    transition: all .2s;
+  }
+  .card-btn-cancel:hover { background: rgba(45,124,201,0.08); }
+  .card-btn-submit {
+    flex: 1; padding: 8px 0; border-radius: 7px;
+    border: none; background: #2d7cc9;
+    font-size: 12px; font-weight: 700; font-family: inherit; color: #fff; cursor: pointer;
+    transition: all .2s;
+  }
+  .card-btn-submit:hover { background: #1a5fa5; }
+
+  /* 로그인 후 */
+  .card-user {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 18px 20px 14px; gap: 6px;
+  }
+  .card-rank-img {
+    width: 112px; height: 112px; object-fit: contain;
+  }
+  .card-rank-name {
+    font-size: 11px; font-weight: 700; letter-spacing: .1em;
+    font-family: 'Space Mono', monospace;
+  }
+  .card-user-id {
+    font-size: 13px; font-weight: 700; color: #1a2e45;
+  }
+  .card-score {
+    font-size: 11px; color: #4a6a8a;
+  }
+  .card-logout-btn {
+    margin-top: 4px; padding: 6px 20px;
+    border: 1.5px solid rgba(45,124,201,0.3); border-radius: 7px;
+    background: transparent; color: #1a5fa5;
+    font-size: 11px; font-family: inherit; cursor: pointer; transition: all .2s;
+  }
+  .card-logout-btn:hover { background: rgba(45,124,201,0.08); }
+
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+
+  @media (max-width: 768px) {
+    .hero-content { padding: 0 20px 36px; flex-direction: column; align-items: flex-start; gap: 20px; }
+    .hero-right { align-self: stretch; }
+    .user-card { min-width: unset; }
+  }
+</style>
 </head>
-
 <body>
-  <div class="wrap">
-    <header>
-      <h1>
-        <span class="logo-icon">
-          <img src="./image/favicon.png" alt="시(물리)에이션 로고">
-        </span>
-        <span class="logo-text">시(물리)에이션</span>
-        <span class="pill" title="총 프로젝트 수" style="display:none;"><span id="count">0</span>개</span>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+
+  <!-- 우주선을 따라 휘는 텍스트 -->
+  <svg class="hero-arc-text" viewBox="0 0 1200 750" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+    <defs>
+      <!--
+        viewBox 1200x750 기준.
+        [위] L→R sweep=1(∩), 텍스트가 호 바깥(위)에 붙음 → 호 정점 y≈99, 텍스트 ~y=73
+        [아래] R→L sweep=1(∪), 텍스트가 호 바깥(아래)에 붙음 → 호 바닥 y≈469, 텍스트 ~y=495
+      -->
+      <!-- 아래: L→R sweep=0(∪), 텍스트가 호 곡선 따라 좌→우로 읽힘 -->
+      <path id="arc-bot" d="M 180 370 A 430 240 0 0 0 1000 370" />
+      <!-- 그림자 필터 -->
+      <filter id="arc-shadow" x="-10%" y="-30%" width="120%" height="160%">
+        <feDropShadow dx="0" dy="1" stdDeviation="5" flood-color="#092050" flood-opacity="0.75"/>
+      </filter>
+    </defs>
+    <!-- 위: 상단 가로 배치 -->
+    <text filter="url(#arc-shadow)"
+          font-family="'Space Mono', monospace"
+          font-size="26" font-weight="700"
+          fill="rgba(255,255,255,0.92)"
+          letter-spacing="6"
+          text-anchor="middle"
+          x="600" y="52">
+      PHYSICS TAKES YOU FURTHER
+    </text>
+    <!-- 아래: 물리의 우주로, 지금 발사 -->
+    <text filter="url(#arc-shadow)"
+          font-family="'Noto Sans KR', sans-serif"
+          font-size="24" font-weight="700"
+          fill="rgba(255,255,255,0.88)"
+          letter-spacing="4">
+      <textPath href="#arc-bot" startOffset="50%" text-anchor="middle">
+        물리의 우주로, 지금 발사
+      </textPath>
+    </text>
+  </svg>
+
+  <div class="hero-content">
+    <div class="hero-left">
+      <div class="eyebrow">
+        <span class="eyebrow-dot"></span>
+        물리 시뮬레이션 교육 플랫폼
+      </div>
+      <h1 class="hero-title">
+        물리를 <em>직접 보며</em><br>
+        배우는 공간
       </h1>
-
-      <div class="top-right-wrap">
-        <div class="controls">
-          <input id="q" type="search" placeholder="검색: 제목·태그" />
-          <select id="sort">
-            <option value="updated">최신순</option>
-            <option value="title">가나다순</option>
-            <option value="category">분류순</option>
-          </select>
-        </div>
-
-        <button id="open-seed" class="seed-open-btn" type="button">수업 설계</button>
-
-        <div class="auth-bar" id="auth-bar">
-          <span id="status">로그인 상태: 없음</span>
-          <button class="auth-btn outline" id="btn-sugg" onclick="openSugg()" style="display:none; margin-right:4px;">📢
-            건의함</button>
-          <button class="auth-btn" id="open-auth" type="button">로그인</button>
-          <button class="auth-btn outline" type="button" onclick="location.href='./admin.html'">관리자 모드</button>
-          <button class="auth-btn outline" id="logout-btn" onclick="logout()" style="display:none;">로그아웃</button>
-        </div>
-      </div>
-    </header>
-
-    <div id="auth-panel" class="auth-panel" aria-hidden="true">
-      <h3 style="display:flex; justify-content:space-between; align-items:center;">
-        로그인 / 비밀번호
-      </h3>
-
-      <div id="info-section" class="auth-section" style="display:none;">
-        <div class="info-id" id="info-id-label">아이디: -</div>
-        <div class="info-score-label">현재 점수</div>
-        <div class="info-score-big" id="info-score-big">0점</div>
-
-        <div id="rank-img-wrap" style="text-align:center; margin-top:8px;">
-          <img id="rank-img" src="" style="width:80px; height:80px; object-fit:contain;">
-          <div id="rank-name"
-            style="text-align:center;margin-top:6px;font-weight:700;font-size:18px;letter-spacing:2px;text-transform:uppercase;">
-          </div>
-        </div>
-      </div>
-      <div id="login-section" class="auth-section">
-        <input type="text" id="loginId" placeholder="아이디 (선생님이 준 ID)" />
-        <input type="password" id="loginPassword" placeholder="비밀번호" />
-        <button type="button" onclick="login()">로그인</button>
-      </div>
-
-      <div id="change-section" class="auth-section" style="display:none;">
-        <input type="text" id="changeId" placeholder="아이디 (현재 로그인한 ID)" />
-        <input type="password" id="changeCurrentPassword" placeholder="현재 비밀번호" />
-        <input type="password" id="changeNewPassword" placeholder="새 비밀번호 (6자 이상)" />
-        <div style="display:flex;gap:6px;justify-content:flex-end;">
-          <button type="button" class="auth-btn outline small" onclick="closeChangeMode()">취소</button>
-          <button type="button" onclick="changePassword()">비밀번호 변경</button>
-        </div>
-      </div>
-
-      <p id="pw-status" class="auth-status"></p>
-
-      <div class="auth-close-row">
-        <button type="button" class="auth-close">닫기</button>
-      </div>
-    </div>
-
-    <section class="seo-intro">
-      <p>
-        시(물리)에이션은 물리학 전반을 다루는 교육용 물리학 시뮬레이션 플랫폼입니다. 역학과 에너지, 전자기, 양자, 상대성이론 등 다양한 물리 개념을 수업과 탐구 활동에 활용할 수 있도록 시각화 중심으로
-        제작되었습니다.
+      <p class="hero-desc">
+        역학·열·파동·전자기·상대성이론·현대물리까지.<br>
+        <span id="desc-count">38</span>개 인터랙티브 시뮬레이션으로 수업과<br>
+        탐구 활동을 새롭게 만들어 보세요.
       </p>
-    </section>
-
-    <div class="divider"></div>
-
-    <section class="ph-card" id="fun-fact" aria-live="polite">
-      <div class="ph-inner">
-        <div class="ph-badge"
-          style="background:transparent; border:none; width:64px; height:64px; padding:0; overflow:visible;">
-          <img id="fact-mascot" src="./image/열시물이.png" alt="물리 마스코트"
-            style="width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.3)); transition:transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+      <div class="cta-row">
+        <div class="sim-badge">
+          <span class="sim-badge-num" id="cnt">0</span>
+          <div class="sim-badge-text">
+            <strong>SIMULATIONS</strong>
+            개의 시뮬레이션
+          </div>
         </div>
-
-        <div style="flex:1 1 auto">
-          <h2 class="ph-title">오늘의 물리</h2>
-          <div class="ph-fact" id="fact-text">로딩 중…</div>
-        </div>
-        <div class="ph-actions">
-          <button class="ph-btn primary" id="next-fact">다른 사실</button>
-          <button class="ph-btn" id="copy-fact" title="클립보드로 복사">복사</button>
-        </div>
+        <button class="cta-main" onclick="location.href='./main.html'">시뮬레이션 탐색하기</button>
       </div>
-    </section>
-
-    <section class="ph-canvas-wrap" aria-label="인터랙티브 중력 배경">
-      <canvas id="gravity-bg"></canvas>
-      <div class="ph-controls">
-        <button class="ph-btn" id="toggle-run">⏸︎ 일시정지</button>
-        <button class="ph-btn" id="toggle-trail">트레일: 켜짐</button>
-        <button class="ph-btn" id="reset">리셋</button>
-        <div class="ph-slider">
-          <label for="particle-count">파티클</label>
-          <input type="range" id="particle-count" min="50" max="800" step="10" value="260" />
-          <span id="particle-label">260</span>
-        </div>
-      </div>
-    </section>
-
-    <div class="b-layout">
-
-      <nav class="b-sidebar">
-        <div class="b-side-label">분류</div>
-        <button class="b-side-tab on" data-cat="null">⚡ 추천</button>
-        <button class="b-side-tab" data-cat="">모든 분류</button>
-        <div class="b-side-label">물리</div>
-        <button class="b-side-tab" data-cat="역학"><span class="si si-역학">⚙️</span>역학</button>
-        <button class="b-side-tab" data-cat="열"><span class="si si-열">🌡️</span>열</button>
-        <button class="b-side-tab" data-cat="파동/광학"><span class="si si-광학">🔬</span>파동/광학</button>
-        <button class="b-side-tab" data-cat="전자/반도체"><span class="si si-전자">⚡</span>전자/반도체</button>
-        <button class="b-side-tab" data-cat="상대성"><span class="si si-상대성">🛸</span>상대성</button>
-        <button class="b-side-tab" data-cat="현대물리"><span class="si si-현대물리">☢️</span>현대물리</button>
-        <div class="b-side-label">기타</div>
-        <button class="b-side-tab" data-cat="게임"><span class="si si-게임">🎮</span>게임</button>
-        <button class="b-side-tab" data-cat="시뮬레이션"><span class="si si-시뮬레이션">🧪</span>시뮬레이션</button>
-      </nav>
-
-      <div class="b-main">
-        <div class="b-content-header">
-          <div id="cat-tabs-label" class="cat-tabs-label">⚡ 오늘의 추천 시뮬레이션</div>
-        </div>
-        <main id="grid" class="grid" aria-live="polite"></main>
-      </div>
-
     </div>
 
-    <template id="card-tpl">
-      <article class="card" tabindex="0" aria-label="프로젝트 카드">
-        <div class="thumb"><span>🧪</span></div>
-        <div class="body">
-          <div class="meta"><span class="category"></span><span class="date"></span></div>
-          <div class="title">
-            <h3></h3>
-          </div>
-          <p class="desc"></p>
-          <div class="curriculum"></div>
-          <div class="tags"></div>
-          <div class="actions">
-            <a class="demo" target="_blank" rel="noopener">실 행</a>
-            <button class="seed-btn" type="button">수업설계</button>
-          </div>
+    <div class="hero-right">
+      <div class="user-card">
+        <!-- 로그인 전 -->
+        <div id="card-guest" class="card-guest">
+          <div class="card-guest-icon">👤</div>
+          <p class="card-guest-msg">로그인하면 점수와<br>랭크를 확인할 수 있어요</p>
+          <button class="card-login-btn" id="show-form-btn">로그인</button>
         </div>
-      </article>
-    </template>
-
-    <div id="empty" class="empty" style="display:none">
-      <img src="./image/양자시물이.png" alt="검색 결과 없음" style="width:130px; height:auto; margin-bottom:16px; opacity:0.9;">
-      <p>검색 조건에 맞는 프로젝트가 없습니다.<br>양자 중첩 상태 어딘가에 숨어있을지도 몰라요!</p>
-    </div>
-
-    <div class="footer-admin">
-      <a href="./admin.html" style="font-size:11px;opacity:0.25;">관리자</a>
-    </div>
-
-    <div id="seed-backdrop" class="seed-backdrop" hidden></div>
-
-    <aside id="seed-panel" class="seed-panel" aria-hidden="true">
-      <div class="seed-header">
-        <div class="seed-header-left">
-          <span class="seed-kicker">SEED</span>
-          <div>
-            <h2>AI 수업 설계</h2>
-            <p class="seed-sub">Gemini가 탐구형 수업안을 구조화해서 생성합니다</p>
+        <!-- 로그인 폼 -->
+        <div id="card-form" class="card-form" style="display:none">
+          <div class="card-form-title">로그인</div>
+          <input type="text" id="loginId" placeholder="아이디" class="card-input" />
+          <input type="password" id="loginPassword" placeholder="비밀번호" class="card-input" onkeydown="if(event.key==='Enter') heroLogin()" />
+          <div class="card-form-btns">
+            <button class="card-btn-cancel" id="hide-form-btn">취소</button>
+            <button class="card-btn-submit" onclick="heroLogin()">로그인</button>
           </div>
         </div>
-        <button id="seed-close" class="seed-close" type="button" aria-label="닫기">✕</button>
-      </div>
-
-      <div class="seed-body">
-        <div class="seed-sidebar">
-          <section class="seed-block">
-            <label class="seed-label">현재 시뮬레이션</label>
-            <div id="seed-project-card" class="seed-project-card">
-              <div class="seed-muted">선택된 시뮬레이션이 없습니다.</div>
-            </div>
-          </section>
-
-          <section class="seed-block">
-            <label class="seed-label">교육과정 선택</label>
-            <div class="seed-curr-grid">
-              <div class="seed-curr-item">
-                <label for="seed-school-level">학교급</label>
-                <select id="seed-school-level" class="seed-select"></select>
-              </div>
-              <div class="seed-curr-item">
-                <label for="seed-course">과목</label>
-                <select id="seed-course" class="seed-select"></select>
-              </div>
-            </div>
-            <div class="seed-curr-full">
-              <label for="seed-standard">성취기준</label>
-              <select id="seed-standard" class="seed-select"></select>
-            </div>
-            <div id="seed-standard-preview" class="seed-std-preview">
-              성취기준을 선택하면 여기에 표시됩니다.
-            </div>
-          </section>
-
-          <section class="seed-block">
-            <label class="seed-label" for="seed-user-prompt">수업 조건</label>
-            <textarea id="seed-user-prompt" class="seed-textarea" rows="12"
-              placeholder="예: 고등학교 물리학 수업에서 포물선 운동 시뮬레이션을 활용해 탐구 질문 중심 활동을 설계해줘."></textarea>
-            <div class="seed-help">
-              학교급, 과목, 성취기준을 고른 뒤 자유 조건을 추가로 적을 수 있습니다.
-            </div>
-          </section>
-
-          <section class="seed-block">
-            <div class="seed-action-row">
-              <button id="seed-generate" class="seed-primary" type="button">아이디어 4개 생성</button>
-              <button id="seed-copy" class="seed-secondary" type="button">복사</button>
-            </div>
-          </section>
+        <!-- 로그인 후 -->
+        <div id="card-user" class="card-user" style="display:none">
+          <img id="hero-rank-img" src="" class="card-rank-img" alt="rank" />
+          <div class="card-rank-name" id="hero-rank-name"></div>
+          <div class="card-user-id" id="hero-user-id"></div>
+          <div class="card-score" id="hero-score"></div>
+          <button class="card-logout-btn" onclick="heroLogout()">로그아웃</button>
         </div>
-
-        <div class="seed-main">
-          <div id="seed-output" class="seed-output">
-            <div class="seed-empty-state">
-              <div class="seed-empty-icon">💡</div>
-              <div class="seed-empty-title">아직 생성된 수업안이 없어요</div>
-              <div class="seed-empty-sub">왼쪽에서 교육과정과 조건을 설정하고<br>생성 버튼을 눌러주세요</div>
-              <div class="seed-steps">
-                <div class="seed-step"><span class="seed-step-num">1</span>시뮬레이션<br>선택</div>
-                <div class="seed-step"><span class="seed-step-num">2</span>성취기준<br>설정</div>
-                <div class="seed-step"><span class="seed-step-num">3</span>조건<br>입력</div>
-                <div class="seed-step"><span class="seed-step-num">4</span>아이디어<br>생성</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </aside>
-
-
-    <footer class="site-footer">
-      <div class="footer-line">
-        운영: 인천광역시교육청 소속 물리 교사 김왕기
-      </div>
-
-      <div class="footer-line">
-        문의 · 건의: sufaman0@gmail.com
-      </div>
-
-      <div class="footer-line footer-copy">
-        © 2026 시(물리)에이션 ·
-        교육·비영리 목적 활용 가능 ·
-        무단 배포 및 상업적 이용 제한
-      </div>
-    </footer>
-  </div>
-
-  <script src="config.js"></script>
-  <script src="main.js"></script>
-  <script type="module" src="firebase-auth.js"></script>
-  <div id="modal-sugg" class="modal-overlay" style="display:none;">
-    <div class="modal-content">
-      <h3>📢 선생님께 의견 보내기</h3>
-      <p class="modal-desc">
-        시뮬레이션 오류나 추가하고 싶은 기능을 적어주세요.<br>
-        로그인한 학생의 이름으로 전송됩니다.
-      </p>
-      <div class="input-group">
-        <label>제목</label>
-        <input type="text" id="s-title" placeholder="예: 화면이 안 나와요 / 이런 기능 넣어주세요" />
-      </div>
-      <div class="input-group">
-        <label>내용</label>
-        <textarea id="s-content" rows="4" placeholder="내용을 입력하세요."></textarea>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="auth-btn outline" onclick="closeSugg()">취소</button>
-        <button type="button" class="auth-btn" onclick="sendSugg()">보내기</button>
       </div>
     </div>
   </div>
+
+</section>
+
+<script src="config.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+import {
+  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, collection, getDocs
+} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+const cfg = window.APP_CONFIG;
+const app = initializeApp({
+  apiKey:            cfg.FIREBASE_API_KEY,
+  authDomain:        cfg.FIREBASE_AUTH_DOMAIN,
+  projectId:         cfg.FIREBASE_PROJECT_ID,
+  storageBucket:     cfg.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: cfg.FIREBASE_MESSAGING_SENDER_ID,
+  appId:             cfg.FIREBASE_APP_ID
+});
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+const rankMeta = {
+  "아이언.png":      { en: "IRON",        color: "#8a7a76" },
+  "브론즈.png":      { en: "BRONZE",      color: "#a07060" },
+  "실버.png":        { en: "SILVER",      color: "#8899aa" },
+  "골드.png":        { en: "GOLD",        color: "#c8a840" },
+  "에메랄드.png":    { en: "EMERALD",     color: "#3aaa8a" },
+  "다이아.png":      { en: "DIAMOND",     color: "#60b8d0" },
+  "마스터.png":      { en: "MASTER",      color: "#885BA6" },
+  "그랜드마스터.png":{ en: "GRANDMASTER", color: "#c04040" },
+  "챌린저.png":      { en: "CHALLENGER",  color: "#4a8acc" }
+};
+
+function getRankFile(score) {
+  const s = Number(score) || 0;
+  if (s < 500)   return "아이언.png";
+  if (s < 1000)  return "브론즈.png";
+  if (s < 2000)  return "실버.png";
+  if (s < 5000)  return "골드.png";
+  if (s < 7000)  return "에메랄드.png";
+  if (s < 9000)  return "다이아.png";
+  if (s < 11000) return "마스터.png";
+  if (s < 15000) return "그랜드마스터.png";
+  return "챌린저.png";
+}
+
+function showGuest() {
+  document.getElementById('card-guest').style.display = 'flex';
+  document.getElementById('card-form').style.display  = 'none';
+  document.getElementById('card-user').style.display  = 'none';
+}
+function showForm() {
+  document.getElementById('card-guest').style.display = 'none';
+  document.getElementById('card-form').style.display  = 'flex';
+  document.getElementById('card-user').style.display  = 'none';
+  document.getElementById('loginId').focus();
+}
+function showUser(userId, score) {
+  document.getElementById('card-guest').style.display = 'none';
+  document.getElementById('card-form').style.display  = 'none';
+  document.getElementById('card-user').style.display  = 'flex';
+
+  const file = getRankFile(score);
+  const meta = rankMeta[file] || { en: '', color: '#fff' };
+
+  document.getElementById('hero-rank-img').src  = './rank/' + file;
+  document.getElementById('hero-rank-name').textContent  = meta.en;
+  document.getElementById('hero-rank-name').style.color  = meta.color;
+  document.getElementById('hero-user-id').textContent    = userId;
+  document.getElementById('hero-score').textContent      = score.toLocaleString() + '점';
+}
+
+document.getElementById('show-form-btn').addEventListener('click', showForm);
+document.getElementById('hide-form-btn').addEventListener('click', showGuest);
+
+window.heroLogin = async function() {
+  const userId   = document.getElementById('loginId').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!userId || !password) { alert('아이디와 비밀번호를 입력해 주세요.'); return; }
+  try {
+    await signInWithEmailAndPassword(auth, userId + '@myapp.local', password);
+  } catch (err) {
+    alert('로그인 실패: ' + (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' ? '아이디 또는 비밀번호가 올바르지 않습니다.' : err.message));
+  }
+};
+
+window.heroLogout = async function() {
+  await signOut(auth);
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { showGuest(); return; }
+
+  let displayId = user.email ? user.email.split('@')[0] : '';
+  try {
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    if (userDoc.exists() && userDoc.data().ID) displayId = userDoc.data().ID;
+  } catch (_) {}
+
+  let score = 0;
+  try {
+    const simsSnap = await getDocs(collection(db, 'users', user.uid, 'simulations'));
+    simsSnap.forEach(d => { score += Number(d.data().score ?? 0); });
+  } catch (_) {
+    try {
+      const snap = await getDoc(doc(db, 'scores', user.uid));
+      if (snap.exists()) score = snap.data().score ?? 0;
+    } catch (_) {}
+  }
+
+  showUser(displayId, score);
+});
+</script>
+
+<script>
+// 시뮬레이션 카운터 애니메이션
+(function(){
+  var el   = document.getElementById('cnt');
+  var desc = document.getElementById('desc-count');
+  var start = null, dur = 1400, target = 38;
+
+  function animate(t) {
+    if (!start) start = t;
+    var p = Math.min((t - start) / dur, 1);
+    var e = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(e * target);
+    if (p < 1) requestAnimationFrame(animate);
+  }
+
+  fetch('./main.js')
+    .then(function(r) { return r.text(); })
+    .then(function(src) {
+      var m = src.match(/const\s+projects\s*=\s*\[[\s\S]*?\];/);
+      if (m) {
+        var count = (m[0].match(/\{\s*title:/g) || []).length;
+        if (count > 0) {
+          target = count;
+          if (desc) desc.textContent = count;
+        }
+      }
+      setTimeout(function() { requestAnimationFrame(animate); }, 600);
+    })
+    .catch(function() {
+      setTimeout(function() { requestAnimationFrame(animate); }, 600);
+    });
+})();
+</script>
+
 </body>
-
 </html>
