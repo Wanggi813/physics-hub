@@ -10,7 +10,8 @@
 
   <style>
     /* 칠판 느낌의 손글씨 폰트 로드 */
-    @import url('https://fonts.googleapis.com/css2?family=Gamja+Flower&family=Noto+Sans+KR:wght@400;700&display=swap');
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+    @import url('https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap');
 
     :root {
       --chalk-white: #f3f4f6;
@@ -29,8 +30,8 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
-      font-family: 'Gamja Flower', cursive;
-      /* 메인 폰트 변경 */
+      font-family: 'Gamja Flower', "Pretendard", "Apple SD Gothic Neo", cursive, sans-serif;
+      /* 칠판 게임 콘셉트: Gamja Flower 유지, Pretendard fallback 추가 */
       background-color: #2b3a33;
       color: var(--chalk-white);
       user-select: none;
