@@ -122,7 +122,7 @@ const projects = [
   // ===== 기타 =====
   { title: "베타붕괴", category: "현대물리", desc: "베타붕괴 현상 알아보기", tags: ["베타붕괴", "입자물리"], emoji: "☢️", demo: "./simul/베타붕괴.html", curriculumId: " ", thumb: "./thumb_nail/베타붕괴.png" },
   { title: "입자가속기", category: "현대물리", desc: "입자가속기 속에서 생기는 표준모형 알아보기", tags: ["입자가속기", "입자물리"], emoji: "🌀", demo: "./simul/입자가속기.html", curriculumId: " ", thumb: "./thumb_nail/입자가속기.png" },
-  { title: "음성 분석", category: "파동/광학", desc: "녹음한 음성을 주파수 성분으로 분석하고 복원하기", tags: ["소리", "FFT", "진동수", "파형"], emoji: "🎤", demo: "./simul/음성분석.html", curriculumId: " ", thumb: "./thumb_nail/음성분석.png"},
+  { title: "음성 분석", category: "파동/광학", desc: "녹음한 음성을 주파수 성분으로 분석하고 복원하기", tags: ["소리", "FFT", "진동수", "파형"], emoji: "🎤", demo: "./simul/음성분석.html", curriculumId: " ", thumb: "./thumb_nail/음성분석.png" },
 
 ];
 
@@ -1707,7 +1707,18 @@ async function initSeed() {
 }
 
 function makeCard(p) {
-  const node = document.getElementById('card-tpl').content.firstElementChild.cloneNode(true);
+  const tpl = document.getElementById('card-tpl');
+  if (!tpl || !tpl.content || !tpl.content.firstElementChild) {
+    console.error('[makeCard] card-tpl template 없음');
+    return null;
+  }
+
+  if (!p || typeof p !== 'object') {
+    console.error('[makeCard] 잘못된 프로젝트 데이터:', p);
+    return null;
+  }
+
+  const node = tpl.content.firstElementChild.cloneNode(true);
   const $ = s => node.querySelector(s);
 
   const thumb = node.querySelector('.thumb');
@@ -1781,10 +1792,15 @@ function makeCard(p) {
   $('h3').textContent = p.title;
   $('.desc').textContent = p.desc || '';
   const catEl = node.querySelector('.category');
-  catEl.innerHTML = p.category
+  const safeCategory = String(p.category || '');
+  catEl.innerHTML = safeCategory
     .split(',')
     .map(c => c.trim())
-    .map(c => `<span class="category-badge badge-${c}">${c}</span>`)
+    .filter(Boolean)
+    .map(c => {
+      const cls = c.replace(/[^\w가-힣-]/g, '-');
+      return `<span class="category-badge badge-${cls}">${c}</span>`;
+    })
     .join('');
   node.querySelector('.curriculum').textContent = p.curriculumId ? `교육과정: ${p.curriculumId}` : '';
   const tags = node.querySelector('.tags'); tags.innerHTML = '';
@@ -1792,8 +1808,19 @@ function makeCard(p) {
   (p.tags || []).forEach(t => {
     const chip = document.createElement('span'); chip.className = 'tag'; chip.textContent = t; tags.append(chip);
   });
-  node.querySelector('.demo').href = p.demo || '#';
+  const demoLink = node.querySelector('.demo');
+  if (demoLink) {
+    const href = String(p.demo || '').trim();
+    demoLink.href = href || '#';
 
+    demoLink.addEventListener('click', (e) => {
+      if (!href) {
+        e.preventDefault();
+        console.error('[demo click] 실행 경로 없음:', p);
+        alert('이 시뮬레이션의 실행 경로가 설정되지 않았습니다.');
+      }
+    });
+  }
   node.classList.add('card');
 
   return node;
@@ -1804,32 +1831,103 @@ function pickEmoji(cat) {
 }
 
 function render() {
-  grid.innerHTML = '';
-  let list = [...projects];
-  const term = q.value.trim().toLowerCase();
-  if (term) { list = list.filter(p => (p.title + p.desc + p.category + (p.tags || []).join(',')).toLowerCase().includes(term)); }
-  if (selectedCat) { list = list.filter(p => p.category.split(',').map(c => c.trim()).includes(selectedCat)); }
+  if (!grid || !q || !sortSel || !empty) {
+    console.error('[render] 필수 DOM이 없습니다.');
+    return;
+  }
 
-  // 검색어도 없고 탭도 '모든 분류'면 → 랜덤 5개만 표시
+  let list = [...projects];
+
+  const term = String(q.value || '').trim().toLowerCase();
+
+  if (term) {
+    list = list.filter(p =>
+      (String(p.title || '') +
+        String(p.desc || '') +
+        String(p.category || '') +
+        String((p.tags || []).join(',')))
+        .toLowerCase()
+        .includes(term)
+    );
+  }
+
+  if (selectedCat !== null && selectedCat !== '') {
+    list = list.filter(p =>
+      String(p.category || '')
+        .split(',')
+        .map(c => c.trim())
+        .includes(selectedCat)
+    );
+  }
+
   const isDefault = !term && selectedCat === null;
   if (isDefault) {
     list = [...list].sort(() => Math.random() - 0.5).slice(0, 5);
   }
+
   const by = sortSel.value;
   list.sort((a, b) => {
-    if (by === 'title') return a.title.localeCompare(b.title, 'ko');
-    if (by === 'category') return a.category.localeCompare(b.category, 'ko') || a.title.localeCompare(b.title, 'ko');
-    return (b.updated || '').localeCompare(a.updated || '');
+    if (by === 'title') return String(a.title || '').localeCompare(String(b.title || ''), 'ko');
+    if (by === 'category') {
+      return String(a.category || '').localeCompare(String(b.category || ''), 'ko')
+        || String(a.title || '').localeCompare(String(b.title || ''), 'ko');
+    }
+    return String(b.updated || '').localeCompare(String(a.updated || ''));
   });
-  empty.style.display = list.length ? 'none' : 'flex'; // [수정] none or flex
 
-  // 사이드바 개수 뱃지 업데이트
+  const fragment = document.createDocumentFragment();
+  let createdCount = 0;
+
+  list.forEach((p, index) => {
+    try {
+      const card = makeCard(p);
+      if (!card) return;
+
+      card.classList.add('card-entry');
+      fragment.appendChild(card);
+      createdCount++;
+
+      setTimeout(() => {
+        requestAnimationFrame(() => {
+          card.classList.add('card-entry-active');
+          setTimeout(() => {
+            card.classList.remove('card-entry', 'card-entry-active');
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+          }, 600);
+        });
+      }, index * 50);
+    } catch (err) {
+      console.error('[render] 카드 생성 실패:', p?.title, err);
+    }
+  });
+
+  // 기존 화면을 먼저 지우지 말고, 새 내용이 준비된 뒤 교체
+  if (createdCount > 0) {
+    grid.replaceChildren(fragment);
+    empty.style.display = 'none';
+  } else {
+    console.warn('[render] 결과 0개', {
+      term,
+      selectedCat,
+      sort: by
+    });
+
+    grid.replaceChildren();
+    empty.style.display = 'flex';
+  }
+
   document.querySelectorAll('.b-side-tab[data-cat]').forEach(tab => {
     const cat = tab.dataset.cat;
-    if (cat === 'null' || cat === '') return; // 추천, 모든분류는 스킵
+    if (cat === 'null' || cat === '') return;
+
     const n = projects.filter(p =>
-      p.category.split(',').map(c => c.trim()).includes(cat)
+      String(p.category || '')
+        .split(',')
+        .map(c => c.trim())
+        .includes(cat)
     ).length;
+
     let badge = tab.querySelector('.side-count');
     if (!badge) {
       badge = document.createElement('span');
@@ -1837,22 +1935,6 @@ function render() {
       tab.appendChild(badge);
     }
     badge.textContent = n;
-  });
-
-  list.forEach((p, index) => {
-    const card = makeCard(p);
-    card.classList.add('card-entry');
-    grid.append(card);
-    setTimeout(() => {
-      requestAnimationFrame(() => {
-        card.classList.add('card-entry-active');
-        setTimeout(() => {
-          card.classList.remove('card-entry', 'card-entry-active');
-          card.style.opacity = '1';
-          card.style.transform = 'translateY(0)';
-        }, 600);
-      });
-    }, index * 50);
   });
 }
 
@@ -1874,6 +1956,20 @@ document.querySelector('.b-sidebar').addEventListener('click', e => {
   }
 
   render();
+
+  window.addEventListener('pageshow', () => {
+    if (q) q.value = '';
+    selectedCat = null;
+
+    document.querySelectorAll('.b-side-tab').forEach(t => t.classList.remove('on'));
+    const defaultTab = document.querySelector('.b-side-tab[data-cat="null"]');
+    if (defaultTab) defaultTab.classList.add('on');
+
+    const label = document.getElementById('cat-tabs-label');
+    if (label) label.textContent = '⚡ 오늘의 추천 시뮬레이션';
+
+    render();
+  });
 });
 sortSel.addEventListener('change', render);
 render();
