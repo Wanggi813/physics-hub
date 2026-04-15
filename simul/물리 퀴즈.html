@@ -21,7 +21,24 @@
     html,body{width:100vw;height:100dvh;overflow:hidden;
       font-family:"Pretendard",system-ui,sans-serif;
       color:var(--ink);user-select:none;
-      background:#eef4ff}
+      background:#eef4ff;
+      -webkit-tap-highlight-color:transparent}  /* iOS 탭 하이라이트 제거 */
+
+    /* 터치 기기에서 hover 효과 제거 (손가락 떼도 hover 잔류 문제) */
+    @media(hover:none){
+      .cat-btn:hover,.opt-btn:hover:not(:disabled),
+      .diff-card:hover,.btn-all:hover,.btn-retry:hover,
+      .btn-home2:hover,.btn-next:hover{
+        transform:none;box-shadow:inherit
+      }
+      /* 대신 active로 피드백 */
+      .opt-btn:active:not(:disabled){
+        transform:scale(.95);
+        background:rgba(148,163,184,.15)
+      }
+      .cat-btn:active,.diff-card:active{transform:scale(.95)}
+      .btn-all:active,.btn-retry:active,.btn-next:active{opacity:.85}
+    }
 
     #p5bg{position:fixed;inset:0;z-index:0;pointer-events:none}
     #app{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column}
@@ -270,6 +287,19 @@
     }
     .hud-back:hover{color:var(--ink);background:rgba(0,0,0,.06)}
 
+    /* 문제 마스코트 */
+    .q-mascot{
+      height:clamp(60px,15vw,110px);   /* vw 확대 — 모바일 portrait 대응 */
+      width:auto;
+      filter:drop-shadow(0 6px 16px rgba(15,25,60,.15));
+      animation:mascotBob 2.2s ease-in-out infinite;
+      flex-shrink:0
+    }
+    @keyframes mascotBob{
+      0%,100%{transform:translateY(0) rotate(-3deg)}
+      50%{transform:translateY(-10px) rotate(3deg)}
+    }
+
     /* 질문 패널 */
     .q-panel{
       flex:0 0 38%;
@@ -292,8 +322,8 @@
       border:1px solid rgba(100,116,139,.15)
     }
     .q-text{
-      font-size:clamp(15px,2.2vw,21px);font-weight:700;
-      line-height:1.6;text-align:center;max-width:820px;
+      font-size:clamp(14px,4vw,21px);font-weight:700;  /* 2.2vw→4vw */
+      line-height:1.55;text-align:center;max-width:820px;
       letter-spacing:-.015em
     }
 
@@ -312,9 +342,9 @@
       font-family:inherit;color:var(--ink);
       cursor:pointer;
       display:flex;align-items:center;
-      gap:clamp(10px,1.8vw,18px);
-      padding:clamp(10px,1.8vw,18px) clamp(14px,2.2vw,24px);
-      font-size:clamp(13.5px,1.75vw,18px);
+      gap:clamp(8px,3vw,18px);           /* 1.8vw→3vw */
+      padding:clamp(8px,3vw,18px) clamp(12px,3.5vw,24px);
+      font-size:clamp(13px,3.5vw,18px);  /* 1.75vw→3.5vw */
       font-weight:700;text-align:left;
       line-height:1.35;
       transition:transform .16s,box-shadow .16s,border-color .16s,background .16s;
@@ -330,9 +360,9 @@
 
     /* 라벨 뱃지 */
     .opt-lbl{
-      width:clamp(34px,4.5vw,46px);height:clamp(34px,4.5vw,46px);
+      width:clamp(34px,9vw,46px);height:clamp(34px,9vw,46px);   /* 4.5vw→9vw */
       border-radius:50%;display:flex;align-items:center;justify-content:center;
-      font-size:clamp(15px,2vw,21px);font-weight:900;color:#fff;
+      font-size:clamp(14px,4vw,21px);font-weight:900;color:#fff; /* 2vw→4vw */
       flex-shrink:0;transition:transform .14s
     }
     .opt-btn:nth-child(1) .opt-lbl{background:var(--a)}
@@ -505,6 +535,82 @@
       min-height:16px;text-align:center
     }
 
+    /* ══════════════════════════════════════════
+       모바일 대응 (≤ 540px)
+    ══════════════════════════════════════════ */
+    @media(max-width:540px){
+      /* 홈 */
+      .thumb-strip{height:82px}
+      .thumb-card{width:106px;height:68px}
+      .home-body{gap:10px;padding:10px 14px}
+      .home-sub{font-size:12.5px}
+      .home-hint{display:none}
+      .home-footer{padding:8px 14px 14px;gap:8px}
+      .btn-all{padding:15px;font-size:15px}
+      .auth-badge{top:10px;right:10px;font-size:10.5px;padding:4px 10px}
+
+      /* 난이도 선택 */
+      .diff-box{padding:20px 14px;gap:14px;border-radius:22px}
+      .diff-title{font-size:17px}
+      .diff-sub{font-size:12px}
+      .diff-cards{gap:7px}
+      .diff-card{padding:14px 6px;gap:5px;border-radius:14px}
+      .diff-icon{font-size:26px}
+      .diff-name{font-size:12.5px}
+      .diff-desc{display:none}   /* 설명 숨김 — 카드 너무 빽빽함 */
+      .diff-badge{font-size:10px;padding:2px 8px}
+
+      /* HUD */
+      .hud{flex:0 0 46px;gap:6px;padding:0 10px}
+      .hud-score{font-size:14px;min-width:60px}
+      .hud-score .lightning{width:18px;height:18px;font-size:11px}
+      .hud-combo{min-width:0;font-size:11px;padding:2px 6px}
+      .hud-prog{font-size:11px}
+
+      /* 마스코트 */
+      .q-mascot{height:88px}
+
+      /* 질문 패널 */
+      .q-panel{flex:0 0 auto;min-height:38%;max-height:46%;
+        padding:10px 14px 8px;gap:6px}
+      .q-badges{gap:5px}
+      .q-lv{font-size:10px;padding:2px 8px}
+      .q-cat{font-size:10px;padding:2px 8px}
+
+      /* 답변 */
+      .opt-grid{gap:5px;padding:5px}
+      .opt-btn{border-radius:14px;gap:8px;
+        padding:9px 11px;font-size:13px}
+      .opt-lbl{width:32px;height:32px;font-size:14px}
+
+      /* 해설바 */
+      .reveal-bar{padding:10px 14px 14px;gap:8px}
+      .reveal-icon{font-size:20px}
+      .reveal-text{font-size:12px;line-height:1.55}
+      .btn-next{padding:10px 18px;font-size:13px;width:100%}
+
+      /* 결과 */
+      #s-result{padding:16px}
+      .r-card{padding:18px 16px;gap:10px;border-radius:20px}
+      .r-emoji{font-size:40px}
+      .r-stats{gap:6px}
+      .r-stat{padding:10px 8px;border-radius:12px;min-width:0;flex:1}
+      .r-sv{font-size:18px}
+      .r-sl{font-size:9.5px}
+      .btn-retry,.btn-home2{padding:13px 14px;font-size:13.5px}
+    }
+
+    /* 아주 작은 화면 (≤ 360px) */
+    @media(max-width:360px){
+      .home-title{font-size:22px}
+      .cat-grid{gap:6px}
+      .cat-btn{padding:10px 6px}
+      .cat-btn .ci{font-size:22px}
+      .cat-btn .cn{font-size:12px}
+      .q-text{font-size:13px}
+      .opt-btn{font-size:12px;padding:8px 10px}
+    }
+
     /* XP 팝업 */
     .xp-pop{
       position:fixed;z-index:45;
@@ -585,6 +691,7 @@
       <div class="hud-prog" id="hud-prog">1 / 10</div>
     </div>
     <div class="q-panel">
+      <img class="q-mascot" id="q-mascot" src="" alt="">
       <div class="q-badges">
         <span class="q-lv" id="q-lv"></span>
         <span class="q-cat" id="q-cat"></span>
@@ -709,7 +816,20 @@ new p5(sk => {
   const EQNS = ['F = ma','E = mc²','λ = h/p','PV = nRT',
                 'v = fλ','F = qvB','Δx·Δp ≥ ℏ/2','η = 1−Tc/Th',
                 'E = hf','F = kq₁q₂/r²'];
-  let blobs=[], dots=[], eqItems=[], wt=0;
+  const IMG_SRCS = [
+    '../image/역학시물이.png',
+    '../image/전기시물이.png',
+    '../image/열시물이.png',
+    '../image/양자시물이.png',
+  ];
+  let blobs=[], dots=[], eqItems=[], chars=[], wt=0;
+  let imgs=[];
+  let quizMode=false;
+  window._setCharVisible = v => { quizMode = !v; };
+
+  sk.preload = () => {
+    IMG_SRCS.forEach(src => imgs.push(sk.loadImage(src)));
+  };
 
   sk.setup = () => {
     const c = sk.createCanvas(sk.windowWidth, sk.windowHeight);
@@ -736,11 +856,32 @@ new p5(sk => {
       vx:sk.random(-.07,.07), vy:sk.random(-.05,.05),
       txt:EQNS[i], sz:sk.random(10,15), a:sk.random(15,42)
     });
+
+    // 시물이 캐릭터 — 4마리, 화면 곳곳에 배치
+    imgs.forEach((img, i) => {
+      const baseH = sk.random(100, 130);          // 기준 높이
+      const ratio = img.width / img.height;       // 원본 가로/세로 비율
+      const w = baseH * ratio;                    // 비율 유지한 너비
+      const h = baseH;
+      chars.push({
+        img, w, h,
+        x: sk.random(w, sk.width  - w),
+        y: sk.random(h, sk.height - h),
+        vx: sk.random(-.4, .4) || .3,
+        vy: sk.random(-.3, .3) || .2,
+        bobOffset: sk.random(0, sk.TWO_PI),
+        bobAmp:    sk.random(6, 14),
+        tiltAmp:   sk.random(3, 7),
+        alpha:     sk.random(170, 210),
+      });
+    });
   };
 
   sk.draw = () => {
     sk.background(238, 244, 255);
     wt += .007;
+
+    // 배경 블롭
     blobs.forEach(b => {
       b.x+=b.vx; b.y+=b.vy;
       if(b.x<-b.r)b.x=sk.width+b.r; if(b.x>sk.width+b.r)b.x=-b.r;
@@ -748,6 +889,8 @@ new p5(sk => {
       sk.fill(b.col[0],b.col[1],b.col[2],b.a);
       sk.ellipse(b.x,b.y,b.r*2);
     });
+
+    // 사인파
     sk.noFill();
     [[175,198,255,16],[205,175,255,13],[175,228,205,12]].forEach(([r,g,b,a],wi)=>{
       sk.beginShape();
@@ -759,6 +902,8 @@ new p5(sk => {
       sk.endShape();
     });
     sk.noStroke();
+
+    // 파티클
     dots.forEach(d=>{
       d.x+=d.vx; d.y+=d.vy;
       if(d.x<0)d.x=sk.width; if(d.x>sk.width)d.x=0;
@@ -766,6 +911,8 @@ new p5(sk => {
       sk.fill(d.col[0],d.col[1],d.col[2],d.a);
       sk.ellipse(d.x,d.y,d.r*2);
     });
+
+    // 수식
     eqItems.forEach(e=>{
       e.x+=e.vx; e.y+=e.vy;
       if(e.x<-120)e.x=sk.width+120; if(e.x>sk.width+120)e.x=-120;
@@ -774,7 +921,61 @@ new p5(sk => {
       sk.textSize(e.sz);
       sk.text(e.txt,e.x,e.y);
     });
+
+    // 퀴즈 중에는 시물이 숨김
+    if(quizMode) return;
+
+    // 시물이끼리 충돌 감지 & 반사
+    for(let i = 0; i < chars.length; i++){
+      for(let j = i + 1; j < chars.length; j++){
+        const a = chars[i], b = chars[j];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const minDist = (a.w + b.w) * .38; // 충돌 반경 (크기 평균 기반)
+        if(dist < minDist && dist > 0){
+          // 충돌 법선 방향
+          const nx = dx / dist, ny = dy / dist;
+          // 상대 속도의 법선 성분
+          const dvx = a.vx - b.vx, dvy = a.vy - b.vy;
+          const dot = dvx * nx + dvy * ny;
+          if(dot > 0){ // 서로 가까워지는 경우만 처리
+            a.vx -= dot * nx;  a.vy -= dot * ny;
+            b.vx += dot * nx;  b.vy += dot * ny;
+          }
+          // 겹침 보정 — 서로 밀어냄
+          const overlap = (minDist - dist) * .5;
+          a.x -= nx * overlap;  a.y -= ny * overlap;
+          b.x += nx * overlap;  b.y += ny * overlap;
+        }
+      }
+    }
+
+    // 시물이 캐릭터
+    chars.forEach(ch => {
+      // 이동
+      ch.x += ch.vx;
+      ch.y += ch.vy;
+
+      // 벽 반사
+      const hw = ch.w * .5, hh = ch.h * .5;
+      if(ch.x < hw || ch.x > sk.width  - hw) { ch.vx *= -1; ch.x = sk.constrain(ch.x, hw, sk.width  - hw); }
+      if(ch.y < hh || ch.y > sk.height - hh) { ch.vy *= -1; ch.y = sk.constrain(ch.y, hh, sk.height - hh); }
+
+      // 둥실 + 기울기
+      const bob   = Math.sin(wt * 1.4 + ch.bobOffset) * ch.bobAmp;
+      const tiltR = Math.sin(wt * 1.1 + ch.bobOffset) * sk.radians(ch.tiltAmp);
+
+      sk.push();
+      sk.translate(ch.x, ch.y + bob);
+      sk.rotate(tiltR);
+      sk.tint(255, ch.alpha);
+      sk.imageMode(sk.CENTER);
+      sk.image(ch.img, 0, 0, ch.w, ch.h);   // 원본 비율 유지
+      sk.noTint();
+      sk.pop();
+    });
   };
+
   sk.windowResized=()=>sk.resizeCanvas(sk.windowWidth,sk.windowHeight);
 });
 
@@ -827,7 +1028,7 @@ function buildHome(){
     b.className='cat-btn';
     b.innerHTML=`<span class="ci">${d.icon}</span>
       <span class="cn">${cat}</span>
-      <span class="ck">${d.questions.length}문제</span>`;
+      <span class="ck">10문제</span>`;
     b.onclick=()=>startQuiz(cat,null);
     g.appendChild(b);
   });
@@ -852,7 +1053,7 @@ function startAll(lv){
 function startQuiz(cat,lv){
   selCat=cat; selLv=null;
   score=combo=maxCombo=correctCnt=spdTotal=qIdx=0;
-  queue=shuffle(QUIZ_DATA[cat].questions.map(q=>({...q,_c:cat})));
+  queue=shuffle(QUIZ_DATA[cat].questions.map(q=>({...q,_c:cat}))).slice(0,10);
   hideReveal(); showScreen('quiz'); renderQ();
 }
 
@@ -872,6 +1073,13 @@ function renderQ(){
   const lvEl=el('q-lv'); lvEl.textContent=lt; lvEl.className='q-lv '+lc;
   el('q-cat').textContent=q._c;
   el('q-text').textContent=q.text;
+
+  // 카테고리에 맞는 마스코트 표시
+  const mascot=el('q-mascot');
+  mascot.src=MASCOT_MAP[q._c]||'';
+  // 이미지 교체 시 애니메이션 재시작
+  mascot.style.animation='none';
+  requestAnimationFrame(()=>{ mascot.style.animation=''; });
 
   const grid=el('opt-grid'); grid.innerHTML='';
   q.options.forEach((opt,i)=>{
@@ -1040,9 +1248,20 @@ function updateComboHUD(){
   }
 }
 
+const MASCOT_MAP = {
+  '역학':       '../image/역학시물이.png',
+  '파동/광학':  '../image/전기시물이.png',
+  '전자/반도체':'../image/전기시물이.png',
+  '열역학':     '../image/열시물이.png',
+  '상대성':     '../image/양자시물이.png',
+  '현대물리':   '../image/양자시물이.png',
+};
+
 function showScreen(n){
   ['home','diff','quiz','result'].forEach(s=>
     el('s-'+s).classList.toggle('hidden',s!==n));
+  // 퀴즈 화면일 때만 배경 시물이 숨김
+  if(window._setCharVisible) window._setCharVisible(n !== 'quiz');
 }
 
 const el=id=>document.getElementById(id);
