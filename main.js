@@ -1883,20 +1883,15 @@ function render() {
       const card = makeCard(p);
       if (!card) return;
 
-      card.classList.add('card-entry');
+      card.classList.add('animating');
+      card.style.animationDelay = `${index * 45}ms`;
+      card.addEventListener('animationend', () => {
+        card.classList.remove('animating');
+        card.style.animationDelay = '';
+        card.style.opacity = '1';
+      }, { once: true });
       fragment.appendChild(card);
       createdCount++;
-
-      setTimeout(() => {
-        requestAnimationFrame(() => {
-          card.classList.add('card-entry-active');
-          setTimeout(() => {
-            card.classList.remove('card-entry', 'card-entry-active');
-            card.style.opacity = '1';
-            card.style.transform = 'translateY(0)';
-          }, 600);
-        });
-      }, index * 50);
     } catch (err) {
       console.error('[render] 카드 생성 실패:', p?.title, err);
     }
