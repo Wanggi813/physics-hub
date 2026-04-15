@@ -78,6 +78,7 @@
 const projects = [
   // ===== ALL =====
   { title: "물리 공식 맞추기", category: "게임", desc: "떨어지는 물리 공식을 맞추자!", tags: ["물리", "공식"], emoji: "❤️", demo: "./simul/물리 공식 맞추기.html", curriculumId: "ALL", thumb: "./thumb_nail/물리 공식 맞추기.png" },
+  { title: "물리 퀴즈 도전!", category: "게임", desc: "물리 퀴즈를 맞추자!", tags: ["물리", "문제", "시뮬레이션"], emoji: "❤️", demo: "./simul/물리 퀴즈.html", curriculumId: "ALL", thumb: "./thumb_nail/물리 퀴즈.png" },
 
   // ===== 12물리 =====
   { title: "토크와 평형", category: "역학", desc: "여러 물체를 이용해 토크평형 만들기", tags: ["토크", "평형"], emoji: "🧗‍♀️", demo: "./simul/토크와 평형.html", curriculumId: "[12물리01-01]", thumb: "./thumb_nail/토크와_평형.png" },
