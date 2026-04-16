@@ -182,6 +182,28 @@
       box-shadow: 0 14px 28px rgba(45, 124, 201, 0.34);
     }
 
+    .cta-ghost {
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      padding: 15px 26px;
+      background: rgba(255, 255, 255, 0.72);
+      color: #2d7cc9;
+      border: 1.5px solid rgba(45, 124, 201, 0.38);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all .2s ease;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .cta-ghost:hover {
+      background: rgba(255, 255, 255, 0.92);
+      border-color: rgba(45, 124, 201, 0.65);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(45, 124, 201, 0.14);
+    }
+
     /* 시뮬레이션 수 뱃지 (AI 수업설계 버튼 자리) */
     .sim-badge {
       display: inline-flex;
@@ -454,6 +476,7 @@
       .hero-desc { font-size: 12.5px; margin-bottom: 16px; line-height: 1.65; }
       .cta-row { gap: 8px; }
       .cta-main { font-size: 14px; padding: 13px 20px; border-radius: 11px; }
+      .cta-ghost { font-size: 13px; padding: 12px 18px; border-radius: 11px; }
       .sim-badge { padding: 8px 14px; gap: 8px; }
       .sim-badge-num { font-size: 20px; }
       .sim-badge-text { font-size: 11px; }
@@ -535,6 +558,7 @@
             </div>
           </div>
           <button class="cta-main" onclick="location.href='./main.html'">시뮬레이션 둘러보기</button>
+          <button class="cta-ghost" onclick="location.href='./시뮬레이션.html'">왜 시뮬레이션 수업인가? →</button>
         </div>
       </div>
 
