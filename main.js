@@ -77,6 +77,7 @@
 // ===== 프로젝트 카드 렌더링 (기존 유지) =====
 const projects = [
   // ===== ALL =====
+  { title: "물리량 단위 짝맞추기", category: "게임", desc: "물리량 이름과 SI 단위 카드를 뒤집어 짝을 맞춰보세요!", tags: ["물리", "SI단위", "단위", "카드게임", "짝맞추기"], emoji: "🃏", demo: "./simul/물리량 단위 짝맞추기.html", curriculumId: "ALL", thumb: "" },
   { title: "물리 공식 맞추기", category: "게임", desc: "떨어지는 물리 공식을 맞추자!", tags: ["물리", "공식"], emoji: "❤️", demo: "./simul/물리 공식 맞추기.html", curriculumId: "ALL", thumb: "./thumb_nail/물리 공식 맞추기.png" },
   { title: "물리 퀴즈 도전!", category: "게임", desc: "물리 퀴즈를 맞추자!", tags: ["물리", "문제", "시뮬레이션"], emoji: "❤️", demo: "./simul/물리 퀴즈.html", curriculumId: "ALL", thumb: "./thumb_nail/물리 퀴즈.png" },
 
@@ -1775,19 +1776,15 @@ function makeCard(p) {
     };
 
     thumb.appendChild(img);
-  } else if (simulMap[p.category]) {
-    // [추가됨] 썸네일은 없지만 시물이가 있는 경우
+  } else {
+    // 썸네일 없음 → 카테고리 시물이 또는 랜덤 시물이
     const img = document.createElement('img');
-    img.src = simulMap[p.category];
+    img.src = simulMap[p.category] || FALLBACK_MASCOTS[Math.floor(Math.random() * FALLBACK_MASCOTS.length)];
     img.alt = p.category + ' 캐릭터';
     img.className = 'thumb-img';
     img.style.objectFit = 'contain';
     img.style.padding = '18px';
     thumb.appendChild(img);
-  } else {
-    const span = document.createElement('span');
-    span.textContent = p.emoji || pickEmoji(p.category);
-    thumb.appendChild(span);
   }
 
   $('h3').textContent = p.title;
