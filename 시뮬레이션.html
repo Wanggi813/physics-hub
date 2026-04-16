@@ -154,8 +154,8 @@
 
     .hero-title {
       font-size: clamp(38px,5.8vw,76px);
-      font-weight: 900; line-height: 1.08; letter-spacing: -.022em;
-      color: #0f2d1a; margin-bottom: 26px;
+      font-weight: 900; line-height: 1.18; letter-spacing: -.022em;
+      color: #0f2d1a; margin-bottom: clamp(36px, 4.5vw, 60px);
     }
     .hero-title .hl {
       background: linear-gradient(128deg, #059669 0%, #0d9488 50%, #16a34a 100%);
@@ -164,8 +164,8 @@
     .hero-title .hero-lead {
       display: block;
       font-size: clamp(28px,4vw,54px);
-      line-height: 1.02;
-      margin-bottom: 8px;
+      line-height: 1.12;
+      margin-bottom: 12px;
       color: #0f2d1a;
       -webkit-text-fill-color: initial;
       background: none;
@@ -173,7 +173,7 @@
     .hero-title .hero-focus {
       display: inline-block;
       font-size: clamp(50px,8vw,110px);
-      line-height: .96;
+      line-height: 1.05;
       letter-spacing: -.05em;
       margin-right: .08em;
       text-shadow: 0 12px 34px rgba(5,150,105,.16);
@@ -181,8 +181,8 @@
     .hero-title .hero-tail {
       display: block;
       font-size: clamp(28px,4vw,54px);
-      line-height: 1.08;
-      margin-top: 10px;
+      line-height: 1.18;
+      margin-top: clamp(14px, 1.8vw, 22px);
       color: #0f2d1a;
       -webkit-text-fill-color: initial;
       background: none;
@@ -190,15 +190,15 @@
 
     .hero-sub {
       font-size: clamp(15px,1.75vw,19px); color: #3d5a45;
-      line-height: 1.84; max-width: 860px; margin-bottom: 42px;
+      line-height: 1.84; max-width: 860px; margin-bottom: clamp(36px, 4vw, 56px);
     }
 
-    .hero-btns { display: flex; flex-wrap: wrap; gap: 12px; }
+    .hero-btns { display: flex; flex-wrap: wrap; gap: clamp(12px, 1.5vw, 20px); }
 
     .btn-main {
       appearance: none; border: none; cursor: pointer; font-family: inherit;
       font-size: clamp(14px,1.35vw,16px); font-weight: 800;
-      padding: 16px 38px; border-radius: 999px; color: #fff;
+      padding: clamp(14px, 1.6vw, 20px) clamp(32px, 3.5vw, 52px); border-radius: 999px; color: #fff;
       background: linear-gradient(132deg, #059669 0%, #0d9488 100%);
       box-shadow: 0 8px 32px rgba(5,150,105,.35);
       transition: transform .2s, box-shadow .2s;
@@ -214,7 +214,7 @@
     .btn-ghost {
       appearance: none; background: #fff; cursor: pointer; font-family: inherit;
       font-size: clamp(14px,1.35vw,16px); font-weight: 700;
-      padding: 15px 28px; border-radius: 999px; color: #059669;
+      padding: clamp(13px, 1.5vw, 19px) clamp(24px, 2.8vw, 40px); border-radius: 999px; color: #059669;
       border: 1px solid rgba(5,150,105,.38);
       transition: border-color .2s, color .2s, background .2s, box-shadow .2s;
     }
