@@ -1,0 +1,1839 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>해석을 훈련하는 수업 — 시뮬레이션 기반 탐구</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+  <style>
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+
+    /* ══════════════════════════════════════════════════
+       BASE RESET
+    ══════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Pretendard", "Apple SD Gothic Neo", system-ui, sans-serif;
+      background: #f0fdf4; color: #0f2d1a;
+      overflow: hidden; width: 100%; height: 100%;
+    }
+
+    /* ══════════════════════════════════════════════════
+       INTRO — ROOT
+    ══════════════════════════════════════════════════ */
+    #intro {
+      position: fixed; inset: 0; z-index: 200;
+      overflow-y: auto; overflow-x: hidden;
+      background: #f0fdf4;
+      scroll-snap-type: y proximity;
+      scroll-padding-top: 0;
+      overscroll-behavior-y: contain;
+      transition: opacity .55s cubic-bezier(.4,0,.2,1), transform .55s cubic-bezier(.4,0,.2,1);
+    }
+    #intro.leaving { opacity: 0; transform: scale(.97); pointer-events: none; }
+
+    /* ── Scroll reveal ── */
+    .rv {
+      opacity: 0; transform: translateY(26px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+    .rv.on { opacity: 1; transform: none; }
+    .rv.d1 { transition-delay: .07s; }
+    .rv.d2 { transition-delay: .16s; }
+    .rv.d3 { transition-delay: .25s; }
+    .rv.d4 { transition-delay: .34s; }
+    .rv.d5 { transition-delay: .43s; }
+    .rv.d6 { transition-delay: .52s; }
+
+    /* ── Shared section shell ── */
+    .isec {
+      width: 100%; position: relative; padding: 88px 6vw;
+    }
+    .intro-panel {
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+    }
+    .isec-inner { max-width: 1280px; margin: 0 auto; }
+
+    .sec-label {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 5px 14px; border-radius: 999px;
+      background: rgba(5,150,105,.10); border: 1px solid rgba(5,150,105,.30);
+      color: #059669; font-size: 11px; font-weight: 800; letter-spacing: .10em;
+      margin-bottom: 20px;
+    }
+    .sec-label::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%; background: #059669;
+      animation: blip 2.2s ease-in-out infinite;
+    }
+    @keyframes blip { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+    .sec-title {
+      font-size: clamp(26px,3.2vw,42px); font-weight: 900;
+      line-height: 1.14; color: #0f2d1a; letter-spacing: -.01em;
+      margin-bottom: 14px;
+    }
+    .sec-sub {
+      font-size: clamp(14px,1.55vw,17px); color: #3d5a45;
+      line-height: 1.88; max-width: 680px; margin-bottom: 54px;
+    }
+
+    /* ══════════════════════════════════════════════════
+       S1 · HERO
+    ══════════════════════════════════════════════════ */
+    .hero {
+      min-height: 100vh; padding: 0 6vw;
+      display: flex; align-items: center;
+      position: relative; overflow: hidden;
+      background: #f0fdf4;
+    }
+
+    .hero::before {
+      content: ''; position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 55% at 48% 28%, rgba(52,211,153,.18), transparent 68%),
+        radial-gradient(ellipse 55% 55% at 18% 72%, rgba(16,185,129,.10), transparent 62%),
+        radial-gradient(ellipse 60% 45% at 82% 82%, rgba(20,184,166,.10), transparent 58%);
+    }
+    .hero::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background-image: repeating-linear-gradient(
+        -45deg,
+        rgba(22,163,74,.018) 0px, rgba(22,163,74,.018) 1px,
+        transparent 1px, transparent 56px
+      );
+    }
+
+    .h-orb { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(88px); }
+    .h-orb-a { width: 680px; height: 680px; top: -180px; left: -90px;
+      background: radial-gradient(circle, rgba(52,211,153,.22), transparent 70%);
+      animation: orb-a 20s ease-in-out infinite alternate; }
+    .h-orb-b { width: 480px; height: 480px; bottom: -80px; right: -60px;
+      background: radial-gradient(circle, rgba(20,184,166,.14), transparent 70%);
+      animation: orb-b 26s ease-in-out infinite alternate; }
+    .h-orb-c { width: 340px; height: 340px; top: 35%; left: 62%;
+      background: radial-gradient(circle, rgba(16,185,129,.12), transparent 70%);
+      animation: orb-c 14s ease-in-out infinite alternate; }
+    @keyframes orb-a { to { transform: translate(110px,90px) scale(1.22); } }
+    @keyframes orb-b { to { transform: translate(-95px,-80px) scale(1.18); } }
+    @keyframes orb-c { to { transform: translate(-55px,65px) scale(.82); } }
+
+    .h-rays { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+    .h-rays span {
+      position: absolute; width: 1.5px; height: 300%;
+      background: linear-gradient(to bottom, transparent 0%, rgba(22,163,74,.10) 30%, rgba(22,163,74,.10) 70%, transparent 100%);
+      top: -100%; animation: ray-fall linear infinite;
+      transform-origin: center top;
+    }
+    .h-rays span:nth-child(1) { left: 20%; animation-duration: 14s; transform: rotate(-22deg); }
+    .h-rays span:nth-child(2) { left: 46%; animation-duration: 19s; animation-delay: -6s; transform: rotate(-22deg); }
+    .h-rays span:nth-child(3) { left: 66%; animation-duration: 24s; animation-delay: -11s; transform: rotate(-22deg); opacity: .6; }
+    .h-rays span:nth-child(4) { left: 80%; animation-duration: 17s; animation-delay: -4s; transform: rotate(-22deg); opacity: .5; width: 1px; }
+    @keyframes ray-fall {
+      from { transform: rotate(-22deg) translateY(-5%); }
+      to   { transform: rotate(-22deg) translateY(55%); }
+    }
+
+    .hero-content {
+      position: relative; z-index: 2;
+      max-width: 980px; width: 100%;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 16px; border-radius: 999px;
+      background: rgba(5,150,105,.10); border: 1px solid rgba(5,150,105,.30);
+      color: #059669; font-size: 11px; font-weight: 800; letter-spacing: .12em;
+      margin-bottom: 30px;
+    }
+    .hero-badge span {
+      width: 7px; height: 7px; border-radius: 50%; background: #059669;
+      animation: blip 2.4s ease-in-out infinite;
+    }
+
+    .hero-title {
+      font-size: clamp(38px,5.8vw,76px);
+      font-weight: 900; line-height: 1.08; letter-spacing: -.022em;
+      color: #0f2d1a; margin-bottom: 26px;
+      max-width: 980px;
+    }
+    .hero-title .hl {
+      background: linear-gradient(128deg, #059669 0%, #0d9488 50%, #16a34a 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero-title .hero-lead {
+      display: block;
+      font-size: clamp(28px,4vw,54px);
+      line-height: 1.02;
+      margin-bottom: 8px;
+      color: #0f2d1a;
+      -webkit-text-fill-color: initial;
+      background: none;
+    }
+    .hero-title .hero-focus {
+      display: inline-block;
+      font-size: clamp(50px,8vw,110px);
+      line-height: .96;
+      letter-spacing: -.05em;
+      margin-right: .08em;
+      text-shadow: 0 12px 34px rgba(5,150,105,.16);
+    }
+    .hero-title .hero-tail {
+      display: block;
+      font-size: clamp(28px,4vw,54px);
+      line-height: 1.08;
+      margin-top: 10px;
+      color: #0f2d1a;
+      -webkit-text-fill-color: initial;
+      background: none;
+    }
+
+    .hero-sub {
+      font-size: clamp(15px,1.75vw,19px); color: #3d5a45;
+      line-height: 1.84; max-width: 620px; margin-bottom: 42px;
+    }
+
+    .hero-btns { display: flex; flex-wrap: wrap; gap: 12px; }
+
+    .btn-main {
+      appearance: none; border: none; cursor: pointer; font-family: inherit;
+      font-size: clamp(14px,1.35vw,16px); font-weight: 800;
+      padding: 16px 38px; border-radius: 999px; color: #fff;
+      background: linear-gradient(132deg, #059669 0%, #0d9488 100%);
+      box-shadow: 0 8px 32px rgba(5,150,105,.35);
+      transition: transform .2s, box-shadow .2s;
+      animation: pulse-btn 3.6s ease-in-out infinite;
+    }
+    @keyframes pulse-btn {
+      0%,100% { box-shadow: 0 8px 32px rgba(5,150,105,.30); }
+      50%      { box-shadow: 0 8px 52px rgba(13,148,136,.45); }
+    }
+    .btn-main:hover { transform: translateY(-2px) scale(1.025); }
+    .btn-main:active { transform: scale(.98); }
+
+    .btn-ghost {
+      appearance: none; background: #fff; cursor: pointer; font-family: inherit;
+      font-size: clamp(14px,1.35vw,16px); font-weight: 700;
+      padding: 15px 28px; border-radius: 999px; color: #059669;
+      border: 1px solid rgba(5,150,105,.38);
+      transition: border-color .2s, color .2s, background .2s, box-shadow .2s;
+    }
+    .btn-ghost:hover { border-color: rgba(5,150,105,.65); color: #047857; background: #f0fdf4; box-shadow: 0 4px 16px rgba(5,150,105,.12); }
+
+    .hero-scroll {
+      position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+      z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 7px;
+      color: rgba(5,100,60,.45); font-size: 10.5px; font-weight: 700; letter-spacing: .07em;
+      animation: sc-fade 3s ease-in-out infinite;
+    }
+    @keyframes sc-fade { 0%,100%{opacity:.45} 50%{opacity:.95} }
+    .scroll-chevron {
+      width: 18px; height: 18px;
+      border-right: 2px solid rgba(5,120,70,.4); border-bottom: 2px solid rgba(5,120,70,.4);
+      transform: rotate(45deg);
+    }
+
+    /* ══════════════════════════════════════════════════
+       S2 · 4 PRINCIPLES
+    ══════════════════════════════════════════════════ */
+    .principles {
+      background:
+        radial-gradient(ellipse 82% 58% at 12% 16%, rgba(52,211,153,.16), transparent 64%),
+        radial-gradient(ellipse 60% 48% at 88% 22%, rgba(20,184,166,.11), transparent 62%),
+        radial-gradient(ellipse 72% 54% at 52% 100%, rgba(34,197,94,.10), transparent 58%),
+        linear-gradient(180deg, #f4fef7 0%, #edfdf4 100%);
+      border-top: 1px solid rgba(5,150,105,.14);
+      overflow: hidden;
+    }
+    .principles::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 84% 22%, rgba(255,255,255,.42), transparent 0 24%),
+        repeating-linear-gradient(
+          90deg,
+          transparent 0 68px,
+          rgba(22,163,74,.024) 68px 69px
+        );
+      opacity: .8;
+    }
+
+    .p-kicker {
+      display: inline-block;
+      margin-bottom: 14px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      color: #059669;
+    }
+    .p-intro {
+      font-size: clamp(20px,2.4vw,32px);
+      font-weight: 800;
+      line-height: 1.6;
+      color: #0f2d1a;
+      word-break: keep-all;
+    }
+    .p-intro strong {
+      color: #059669;
+      font-weight: 800;
+    }
+
+    /* ══════════════════════════════════════════════════
+       S4 · FINAL CTA
+    ══════════════════════════════════════════════════ */
+    .final-sec {
+      background:
+        radial-gradient(ellipse 80% 62% at 18% 10%, rgba(52,211,153,.16), transparent 62%),
+        radial-gradient(ellipse 56% 46% at 84% 18%, rgba(20,184,166,.10), transparent 60%),
+        radial-gradient(ellipse 75% 72% at 50% 108%, rgba(5,150,105,.14), transparent 60%),
+        linear-gradient(180deg, #f3fef7 0%, #e8fbef 100%);
+      border-top: 1px solid rgba(5,150,105,.16);
+      text-align: center; padding: 100px 6vw 130px;
+      position: relative; overflow: hidden;
+    }
+    .final-sec::before {
+      content: ''; position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 75% 80% at 50% 105%, rgba(5,150,105,.12), transparent 60%),
+        repeating-linear-gradient(
+          -45deg,
+          rgba(22,163,74,.014) 0px, rgba(22,163,74,.014) 1px,
+          transparent 1px, transparent 54px
+        );
+      pointer-events: none;
+    }
+    .final-sec .isec-inner {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .final-gallery-shell {
+      width: min(1120px, 100%);
+      margin: 0 auto 34px;
+      position: relative;
+    }
+    .final-gallery-shell::before,
+    .final-gallery-shell::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 96px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .final-gallery-shell::before {
+      left: 0;
+      background: linear-gradient(90deg, rgba(243,254,247,.98), rgba(243,254,247,0));
+    }
+    .final-gallery-shell::after {
+      right: 0;
+      background: linear-gradient(270deg, rgba(243,254,247,.98), rgba(243,254,247,0));
+    }
+    .final-gallery-frame {
+      overflow: hidden;
+      border-radius: 34px;
+      border: 1px solid rgba(5,150,105,.14);
+      background: rgba(255,255,255,.38);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.60), 0 24px 56px rgba(5,150,105,.10);
+      backdrop-filter: blur(16px);
+      padding: 18px 0;
+      position: relative;
+      cursor: grab;
+      user-select: none;
+      touch-action: pan-y;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .final-gallery-frame::-webkit-scrollbar { display: none; }
+    .final-gallery-frame.is-dragging { cursor: grabbing; }
+    .final-gallery-frame::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,.24), transparent 0 32%),
+        linear-gradient(180deg, rgba(255,255,255,.08), transparent 24%, transparent 76%, rgba(255,255,255,.08));
+    }
+    .final-gallery-track {
+      display: flex;
+      align-items: stretch;
+      width: max-content;
+      gap: 18px;
+      padding: 4px 18px;
+      transform: translate3d(calc(var(--final-offset, 0px) * -1), 0, 0);
+      will-change: transform;
+    }
+    .final-thumb {
+      width: 232px;
+      flex: 0 0 232px;
+      border-radius: 24px;
+      overflow: hidden;
+      background: rgba(255,255,255,.86);
+      border: 1px solid rgba(5,150,105,.10);
+      box-shadow: 0 18px 30px rgba(15,45,26,.08);
+      position: relative;
+    }
+    .final-thumb::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), transparent 28%, transparent 68%, rgba(15,45,26,.10));
+    }
+    .final-thumb img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      background: #dff7e8;
+    }
+    .final-thumb-title {
+      display: block;
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 12px;
+      z-index: 1;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.35;
+      letter-spacing: -.01em;
+      text-align: left;
+      text-shadow: 0 3px 18px rgba(0,0,0,.34);
+    }
+    .final-sec .sec-title { margin-bottom: 16px; }
+    .final-sec .sec-sub { text-align: center; margin: 0 auto 44px; }
+    .final-sec .sec-sub::before {
+      content: '';
+      display: block;
+      width: 66px;
+      height: 2px;
+      margin: 0 auto 22px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(5,150,105,.72), rgba(13,148,136,.18));
+    }
+
+    /* ══════════════════════════════════════════════════
+       SIMULATION (EXISTING — UNCHANGED)
+    ══════════════════════════════════════════════════ */
+    .split { display: flex; width: 100%; height: 100vh; height: 100dvh; overflow: hidden; }
+    #simRoot { pointer-events: auto; }
+
+    .board-panel {
+      width: 50%; height: 100vh; background: #263a26;
+      display: flex; flex-direction: column; overflow: hidden;
+      position: relative; border-right: 3px solid rgba(100,130,80,.45);
+    }
+    .board-panel::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background:
+        repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,.04) 3px, rgba(0,0,0,.04) 4px),
+        repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,0,.03) 3px, rgba(0,0,0,.03) 4px);
+    }
+    .board-header {
+      padding: 11px 18px; flex-shrink: 0; z-index: 1;
+      border-bottom: 1px solid rgba(160,200,140,.25); background: rgba(0,0,0,.18);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .board-badge {
+      background: rgba(180,200,140,.18); border: 1px solid rgba(180,200,140,.40);
+      border-radius: 999px; padding: 4px 11px;
+      font-size: 10px; font-weight: 800; letter-spacing: .09em; color: rgba(200,220,170,.9);
+    }
+    .board-title { font-size: 16px; font-weight: 800; color: rgba(235,238,220,.92); }
+    .board-body {
+      flex: 1; min-height: 0; z-index: 1;
+      display: flex; flex-direction: column; padding: 14px 18px 12px; gap: 10px; overflow: hidden;
+    }
+    .chalk-diagram {
+      flex: 1; min-height: 0; width: 100%;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .chalk-diagram svg { width: 100%; height: 100%; display: block; }
+    .chalk-formula {
+      flex-shrink: 0; font-size: clamp(18px,2.2vw,30px); font-weight: 800;
+      color: rgba(245,242,225,.95); text-align: center;
+      padding: 10px 14px; border: 2px solid rgba(220,215,180,.3); border-radius: 10px;
+      letter-spacing: .05em; background: rgba(0,0,0,.14);
+    }
+    .board-limits { flex-shrink: 0; display: grid; gap: 5px; }
+    .limit-row {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 12.5px; line-height: 1.55; color: rgba(255,215,130,.82);
+    }
+    .limit-row .icon { flex-shrink: 0; font-size: 13px; margin-top: 1px; }
+
+    .sim-panel {
+      width: 50%; height: 100vh; background: #f0fdf4;
+      display: flex; flex-direction: column; overflow: hidden;
+      min-width: 0;
+    }
+    .sim-header {
+      padding: 10px 16px; flex-shrink: 0;
+      border-bottom: 1px solid rgba(5,150,105,.22); background: #ecfdf5;
+      display: flex; flex-direction: column; gap: 7px;
+    }
+    .sim-top-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .sim-top-actions { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .sim-badge {
+      display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px;
+      background: rgba(5,150,105,.12); border: 1px solid rgba(5,150,105,.35);
+      color: #059669; font-size: 10px; font-weight: 800; letter-spacing: .08em;
+    }
+    .sim-title { font-size: 15px; font-weight: 800; color: #064e3b; }
+    .drag-hint {
+      font-size: 11px; color: rgba(255,200,80,.8); font-weight: 700;
+      padding: 3px 9px; border-radius: 999px;
+      background: rgba(255,180,40,.12); border: 1px solid rgba(255,180,40,.3);
+    }
+    .head-stats { display: flex; flex-wrap: wrap; gap: 5px; }
+    .stat-chip { padding: 4px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+    .chip-n1  { background: rgba(5,150,105,.12); border: 1px solid rgba(5,150,105,.32); color: #047857; }
+    .chip-n2  { background: rgba(13,148,136,.10); border: 1px solid rgba(13,148,136,.30); color: #0f766e; }
+    .chip-t1  { background: rgba(220,38,38,.08); border: 1px solid rgba(220,38,38,.28); color: #dc2626; }
+    .chip-t2  { background: rgba(5,150,105,.10); border: 1px solid rgba(5,150,105,.28); color: #059669; }
+    .chip-tir { border-color: rgba(220,38,38,.50); color: #dc2626; }
+
+    .sim-canvas-wrap { flex: 1; min-height: 0; position: relative; overflow: hidden; background: #f4fdf7; }
+    #sketch-holder { width: 100%; height: 100%; touch-action: none; }
+    #sketch-holder canvas { display: block; touch-action: none; }
+    .floating-panel {
+      position: absolute; left: 12px; top: 12px;
+      display: flex; flex-wrap: wrap; gap: 5px; max-width: calc(100% - 24px); pointer-events: none;
+    }
+    .floating-chip {
+      padding: 5px 10px; border-radius: 999px;
+      background: rgba(255,255,255,.85); border: 1px solid rgba(5,150,105,.38);
+      color: #047857; font-size: 11px; font-weight: 800; backdrop-filter: blur(6px);
+    }
+
+    .control-dock {
+      flex-shrink: 0; display: grid; grid-template-columns: 1.2fr 1fr 1.1fr;
+      gap: 7px; padding: 8px;
+      border-top: 1px solid rgba(5,150,105,.18); background: #ecfdf5;
+      max-height: 44vh; overflow-y: auto;
+    }
+    .dock-card {
+      background: #ffffff; border: 1px solid rgba(5,150,105,.18);
+      border-radius: 14px; padding: 9px 10px;
+    }
+    .dock-title { margin: 0 0 7px 0; font-size: 12.5px; font-weight: 800; color: #059669; }
+
+    .stack-step { opacity: 1; transform: none; }
+
+    .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .step-btn {
+      appearance: none; border: 1px solid rgba(5,150,105,.22); background: #f4fdf7;
+      color: #3d5a45; border-radius: 10px; padding: 7px; text-align: left; cursor: pointer; font: inherit;
+      min-height: 64px; transition: transform .12s, border-color .12s, background .12s;
+    }
+    .step-btn:hover { background: #ecfdf5; border-color: rgba(5,150,105,.45); color: #064e3b; }
+    .step-btn.active { background: linear-gradient(160deg,#059669,#047857); color: #fff; border-color: #059669; box-shadow: 0 4px 16px rgba(5,150,105,.28); }
+    .step-btn .num { display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; border-radius: 999px; font-size: 11px; font-weight: 800; margin-bottom: 4px; background: rgba(255,255,255,.15); }
+    .step-btn:not(.active) .num { background: rgba(5,150,105,.18); }
+    .step-btn .label { display: block; font-weight: 800; margin-bottom: 2px; font-size: 11.5px; }
+    .step-btn .desc  { display: block; font-size: 10.5px; line-height: 1.4; opacity: .82; }
+
+    .slider-grid { display: grid; gap: 7px; }
+    .slider-row  { display: grid; gap: 4px; }
+    .slider-row label { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 800; color: #047857; }
+    .slider-row .value { font-weight: 800; }
+    .val-n  { color: #059669; }
+    .val-t1 { color: #dc2626; }
+    .val-t2 { color: #0f766e; }
+    input[type="range"] { width: 100%; accent-color: #059669; }
+
+    .btn-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+    .btn {
+      appearance: none; border: none; border-radius: 9px; padding: 7px 9px; font: inherit;
+      font-size: 11.5px; font-weight: 800; cursor: pointer; color: #fff;
+      background: linear-gradient(160deg,#059669,#047857);
+    }
+    .btn.secondary { background: #f0fdf4; color: #047857; border: 1px solid rgba(5,150,105,.30); }
+
+    .think-prompt { color: #3d5a45; font-size: 12.5px; line-height: 1.65; min-height: 44px; }
+    .choice-grid  { display: grid; gap: 5px; margin-top: 7px; }
+    .choice-btn {
+      appearance: none; border: 1px solid rgba(5,150,105,.20); background: #f4fdf7;
+      color: #3d5a45; border-radius: 9px; padding: 7px 9px; font: inherit;
+      font-size: 12px; font-weight: 700; text-align: left; cursor: pointer; transition: background .12s;
+    }
+    .choice-btn:hover    { background: #ecfdf5; color: #064e3b; }
+    .choice-btn.selected { background: rgba(5,150,105,.14); border-color: rgba(5,150,105,.45); color: #064e3b; }
+    .feedback { margin-top: 7px; font-size: 12px; line-height: 1.6; color: #6b9e7a; }
+    .feedback.ok  { color: #059669; }
+    .feedback.bad { color: #dc2626; }
+
+    /* ══════════════════════════════════════════════════
+       CURIOSITY SECTION
+    ══════════════════════════════════════════════════ */
+    .curiosity-sec {
+      background:
+        radial-gradient(ellipse 80% 62% at 18% 22%, rgba(52,211,153,.18), transparent 62%),
+        radial-gradient(ellipse 52% 44% at 84% 18%, rgba(16,185,129,.11), transparent 60%),
+        radial-gradient(ellipse 70% 52% at 50% 100%, rgba(20,184,166,.10), transparent 58%),
+        linear-gradient(180deg, #f3fef7 0%, #edfdf4 100%);
+      border-top: 1px solid rgba(5,150,105,.14);
+      padding: 72px 6vw;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .curiosity-sec::before {
+      content: ''; position: absolute; left: 50%; top: 0;
+      width: min(88vw, 980px); height: 1px; transform: translateX(-50%);
+      background: linear-gradient(90deg, transparent, rgba(5,150,105,.24), transparent);
+      pointer-events: none;
+    }
+    .curiosity-sec::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 20% 18%, rgba(255,255,255,.40), transparent 0 18%),
+        radial-gradient(circle at 82% 78%, rgba(255,255,255,.28), transparent 0 16%),
+        repeating-linear-gradient(
+          -45deg,
+          rgba(22,163,74,.015) 0px, rgba(22,163,74,.015) 1px,
+          transparent 1px, transparent 52px
+        );
+      opacity: .9;
+    }
+    .curiosity-inner { max-width: 1040px; margin: 0 auto; }
+    .curiosity-quote {
+      position: relative;
+      padding: 0 28px 28px;
+      margin-bottom: 40px;
+      border-bottom: 1px solid rgba(5,150,105,.16);
+    }
+    .curiosity-quote p {
+      font-size: clamp(20px, 2.8vw, 34px);
+      font-weight: 800;
+      color: #064e3b;
+      line-height: 1.64;
+    }
+    .curiosity-quote p em {
+      font-style: normal;
+      color: #059669;
+    }
+    .cq-mark {
+      position: absolute;
+      font-size: 88px;
+      font-family: Georgia, serif;
+      color: rgba(5,150,105,.18);
+      line-height: 1;
+      top: -16px; left: 0;
+    }
+    .cq-mark.right { left: auto; right: 0; top: auto; bottom: -32px; }
+    .curiosity-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 26px;
+      margin-top: 40px;
+    }
+    .curi-card {
+      padding: 20px 4px 0;
+      text-align: left;
+      position: relative;
+    }
+    .curi-card::before {
+      content: ''; position: absolute; left: 0; top: 0;
+      width: 54px; height: 2px; border-radius: 999px;
+      background: linear-gradient(90deg, rgba(5,150,105,.72), rgba(13,148,136,.16));
+    }
+    .curi-kicker {
+      display: inline-block;
+      margin-bottom: 14px;
+      color: #059669;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .12em;
+    }
+    .curi-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f2d1a;
+      line-height: 1.34;
+      margin-bottom: 12px;
+    }
+    .curi-text { font-size: 15px; color: #3d5a45; line-height: 1.82; }
+    .curi-text strong { color: #059669; }
+
+    /* ══════════════════════════════════════════════════
+       CONTRAST SECTION (정적 vs 동적)
+    ══════════════════════════════════════════════════ */
+    .contrast-sec {
+      background:
+        radial-gradient(ellipse 78% 58% at 14% 18%, rgba(52,211,153,.15), transparent 64%),
+        radial-gradient(ellipse 56% 44% at 86% 24%, rgba(13,148,136,.10), transparent 60%),
+        radial-gradient(ellipse 72% 54% at 50% 104%, rgba(34,197,94,.09), transparent 60%),
+        linear-gradient(180deg, #f4fef7 0%, #edfdf4 100%);
+      border-top: 1px solid rgba(5,150,105,.14);
+      padding: 80px 6vw;
+      overflow: hidden;
+      position: relative;
+    }
+    .contrast-sec::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 18% 22%, rgba(255,255,255,.34), transparent 0 16%),
+        radial-gradient(circle at 86% 18%, rgba(255,255,255,.32), transparent 0 14%),
+        repeating-linear-gradient(
+          0deg,
+          transparent 0 62px,
+          rgba(13,148,136,.022) 62px 63px
+        );
+      opacity: .9;
+    }
+    .contrast-inner { max-width: 1100px; margin: 0 auto; }
+    .contrast-grid { display: grid; grid-template-columns: 1fr 80px 1fr; gap: 0; align-items: start; }
+    .contrast-card {
+      padding: 20px 8px 0;
+      position: relative;
+    }
+    .contrast-card::before {
+      content: ''; position: absolute; left: 8px; top: 0;
+      width: 54px; height: 2px; border-radius: 999px;
+    }
+    .static-card::before { background: linear-gradient(90deg, rgba(220,38,38,.62), rgba(220,38,38,.10)); }
+    .dynamic-card::before { background: linear-gradient(90deg, rgba(5,150,105,.72), rgba(13,148,136,.16)); }
+    .static-card {
+      background: transparent;
+      border: none;
+      backdrop-filter: none;
+    }
+    .dynamic-card {
+      background: transparent;
+      border: none;
+      backdrop-filter: none;
+    }
+    .contrast-label {
+      font-size: 28px; font-weight: 800; letter-spacing: -.02em;
+      margin-bottom: 22px;
+      display: block;
+    }
+    .static-label { color: #9f1239; }
+    .dynamic-label { color: #047857; }
+    .contrast-list { list-style: none; display: grid; gap: 18px; }
+    .contrast-list li {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 15px; line-height: 1.76; color: #3d5a45;
+    }
+    .contrast-copy { display: block; }
+    .contrast-copy strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #059669;
+      line-height: 1.2;
+    }
+    .static-list li { color: #7f1d1d; }
+    .static-list .contrast-copy strong { color: #dc2626; }
+    .x-icon { color: #dc2626; font-size: 17px; flex-shrink: 0; margin-top: 3px; }
+    .o-icon { color: #059669; font-size: 17px; flex-shrink: 0; margin-top: 3px; }
+    .contrast-divider {
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      min-height: 100%;
+    }
+    .contrast-divider::before {
+      content: ''; width: 1px; align-self: stretch;
+      background: linear-gradient(180deg, transparent, rgba(80,140,255,.28), transparent);
+    }
+    .contrast-arrow {
+      font-size: 28px;
+      color: rgba(80,140,255,.28);
+      font-weight: 900;
+      position: absolute;
+      background: rgba(244,254,247,.92);
+      padding: 10px 0;
+    }
+    /* ══════════════════════════════════════════════════
+       BACK BUTTON (inside simulation)
+    ══════════════════════════════════════════════════ */
+    .btn-back-intro {
+      appearance: none; border: 1px solid rgba(5,150,105,.30);
+      background: #ffffff; color: #059669;
+      border-radius: 8px; padding: 5px 12px; font: inherit;
+      font-size: 12px; font-weight: 700; cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+      flex-shrink: 0;
+    }
+    .btn-back-intro:hover { background: #ecfdf5; border-color: rgba(5,150,105,.55); color: #047857; }
+
+    /* ── Responsive ── */
+    @media (max-width: 1080px) {
+      .curiosity-cards { grid-template-columns: 1fr; }
+      .contrast-grid { grid-template-columns: 1fr; }
+      .contrast-divider { padding: 12px 0; }
+      .contrast-arrow { transform: rotate(90deg); }
+    }
+    @media (min-width: 981px) {
+      #intro { scroll-snap-type: y mandatory; }
+      .intro-panel {
+        min-height: 100vh;
+        min-height: 100dvh;
+      }
+      .curiosity-sec,
+      .principles,
+      .contrast-sec,
+      .final-sec {
+        display: flex;
+        align-items: center;
+      }
+      .curiosity-inner,
+      .principles .isec-inner,
+      .contrast-inner,
+      .final-sec .isec-inner {
+        width: 100%;
+      }
+    }
+    @media (max-width: 980px) {
+      .split {
+        flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scroll-snap-type: y proximity;
+        scroll-behavior: smooth;
+        scroll-padding-top: 10px;
+      }
+      .board-panel,
+      .sim-panel {
+        width: 100%;
+        height: auto;
+      }
+      .board-panel {
+        order: 1;
+        min-height: 34dvh;
+        border-right: none;
+        border-bottom: 3px solid rgba(100,130,80,.45);
+      }
+      .board-header {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .board-title { font-size: 14px; }
+      .board-body { padding: 12px 14px; gap: 8px; }
+      .chalk-diagram { min-height: 210px; }
+      .chalk-formula { font-size: clamp(17px,3.2vw,24px); }
+      .sim-panel {
+        order: 2;
+        min-height: 100dvh;
+        overflow: visible;
+      }
+      .sim-header { padding: 12px 14px; }
+      .sim-top-row {
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+      .sim-top-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .sim-canvas-wrap { min-height: 42dvh; }
+      .control-dock {
+        grid-template-columns: 1fr;
+        max-height: none;
+        overflow: visible;
+        padding: 10px;
+      }
+      .dock-card { padding: 12px; }
+      .board-panel,
+      .sim-panel,
+      .dock-card {
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+      }
+      .stack-step {
+        opacity: 0;
+        transform: translateY(30px) scale(.985);
+        transition:
+          opacity .55s ease,
+          transform .65s cubic-bezier(.22,1,.36,1),
+          box-shadow .45s ease;
+        will-change: opacity, transform;
+      }
+      .stack-step.in-view {
+        opacity: 1;
+        transform: none;
+      }
+      .stack-step.d1 { transition-delay: .04s; }
+      .stack-step.d2 { transition-delay: .10s; }
+      .stack-step.d3 { transition-delay: .16s; }
+      .steps { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .think-prompt { min-height: 0; }
+      .floating-panel {
+        left: 10px;
+        top: 10px;
+        max-width: calc(100% - 20px);
+      }
+      #intro { scroll-snap-type: y proximity; }
+    }
+    @media (max-width: 680px) {
+      .hero-title { font-size: 36px; }
+      .hero-title .hero-lead { font-size: 24px; margin-bottom: 6px; }
+      .hero-title .hero-focus { font-size: clamp(44px,14vw,72px); display: block; margin-right: 0; }
+      .hero-title .hero-tail { font-size: 24px; margin-top: 8px; }
+      .isec { padding: 64px 5vw; }
+      .p-intro { font-size: 22px; }
+      .contrast-label { font-size: 24px; }
+      .contrast-list li { font-size: 14px; }
+      .contrast-copy strong { font-size: 12px; }
+      .final-gallery-shell::before,
+      .final-gallery-shell::after { width: 40px; }
+      .final-gallery-frame { border-radius: 24px; padding: 14px 0; }
+      .final-gallery-track { gap: 12px; padding: 2px 12px; }
+      .final-thumb { width: 188px; flex-basis: 188px; border-radius: 18px; }
+      .final-thumb-title { left: 10px; right: 10px; bottom: 10px; font-size: 12px; }
+      .split { overscroll-behavior: contain; }
+      .board-panel { min-height: 32dvh; }
+      .chalk-diagram { min-height: 170px; }
+      .limit-row { font-size: 11.5px; }
+      .sim-header { padding: 10px 12px; }
+      .sim-title { font-size: 14px; }
+      .sim-top-actions { gap: 6px; }
+      .drag-hint {
+        font-size: 10px;
+        padding: 3px 7px;
+      }
+      .btn-back-intro {
+        padding: 5px 10px;
+        font-size: 11px;
+      }
+      .head-stats { gap: 4px; }
+      .stat-chip {
+        font-size: 10.5px;
+        padding: 4px 8px;
+      }
+      .sim-canvas-wrap { min-height: 40dvh; }
+      .floating-chip {
+        font-size: 10px;
+        padding: 5px 8px;
+      }
+      .control-dock { padding: 8px; }
+      .steps { grid-template-columns: 1fr; }
+      .step-btn { min-height: 58px; }
+      .slider-row label,
+      .choice-btn,
+      .feedback,
+      .think-prompt { font-size: 11.5px; }
+      .btn-row { display: grid; grid-template-columns: 1fr; }
+      .btn { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .stack-step {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+      }
+      .split { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ════════════════════════════════════════════════
+     INTRO — 3 SECTIONS (압축)
+════════════════════════════════════════════════ -->
+<div id="intro">
+
+  <!-- ░░ S1 · HERO ░░ -->
+  <section class="hero isec intro-panel" id="sec-hero">
+    <div class="h-orb h-orb-a"></div>
+    <div class="h-orb h-orb-b"></div>
+    <div class="h-orb h-orb-c"></div>
+    <div class="h-rays"><span></span><span></span><span></span><span></span></div>
+
+    <div class="hero-content">
+      <h1 class="hero-title rv d1">
+        <span class="hl hero-focus">시뮬레이션 수업은</span>
+        <span class="hero-tail">스스로 이해하게 만든다.</span>
+      </h1>
+
+      <div class="hero-btns rv d2">
+        <button class="btn-main" data-launch type="button">
+          대표 시뮬레이션 직접 체험하기 →
+        </button>
+        <button class="btn-ghost" data-scrollto="sec-philosophy" type="button">
+          수업 원리 보기 ↓
+        </button>
+      </div>
+    </div>
+
+    <div class="hero-scroll">
+      <div class="scroll-chevron"></div>
+      SCROLL
+    </div>
+  </section>
+
+  <!-- ░░ S1.5 · POE 흐름 & 수업 설계 의도 ░░ -->
+  <section class="curiosity-sec intro-panel" id="sec-philosophy">
+    <div class="curiosity-inner">
+      <div class="rv" style="text-align:left; margin-bottom:44px; padding-bottom:28px; border-bottom:1px solid rgba(5,150,105,.16);">
+        <div class="p-kicker">수업 설계 의도</div>
+        <p class="p-intro"><strong>시뮬레이션</strong>으로 예상을 이끌어내고,<br><strong>관찰과 설명</strong>으로 그 예상을 확인하는 수업을 만듭니다.</p>
+      </div>
+      <div class="curiosity-cards rv d2">
+        <div class="curi-card">
+          <div class="curi-kicker">PREDICT</div>
+          <div class="curi-title">먼저 결과를 예상합니다</div>
+          <div class="curi-text">교사가 시뮬레이션의 초기 상태를 보여주면서 학생과 함께 결과를 예상해 봅니다. 예측을 먼저 공개하면 학생의 사전 개념이 드러나 <strong>인지적 갈등과 진짜 학습</strong>으로 이어집니다.</div>
+        </div>
+        <div class="curi-card">
+          <div class="curi-kicker">OBSERVE</div>
+          <div class="curi-title">예상과 실제를 비교합니다</div>
+          <div class="curi-text">교사는 같은 시뮬레이션에서 변인을 하나씩 바꾸며 결과를 확인합니다. 학생은 자기 예상이 실제와 어디서 같고 다른지 <strong>눈으로 비교</strong>합니다.</div>
+        </div>
+        <div class="curi-card">
+          <div class="curi-kicker">EXPLAIN</div>
+          <div class="curi-title">차이가 생긴 이유를 설명합니다</div>
+          <div class="curi-text">맞고 틀린 데서 멈추지 않습니다. 학생은 예상과 결과가 왜 같거나 달랐는지 말하면서 <strong>개념을 자기 언어로 설명</strong>하게 됩니다.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ░░ S3 · 판서 중심 POE vs 시뮬레이션 중심 POE ░░ -->
+  <section class="contrast-sec intro-panel">
+    <div class="contrast-inner">
+        <div class="contrast-grid rv d2">
+        <div class="contrast-card static-card">
+          <div class="contrast-label static-label">판서형 POE</div>
+          <ul class="contrast-list static-list">
+            <li><span class="x-icon">✗</span><span class="contrast-copy"><strong>Predict</strong> 변인 값이 명확히 드러나지 않아, 예측이 조건과 연결된 근거 없이 직관적 추측에 머물기 쉽습니다.</span></li>
+            <li><span class="x-icon">✗</span><span class="contrast-copy"><strong>Observe</strong> 변화 과정보다 이미 정리된 결과를 따라가게 되어, 관찰이 설명을 확인하는 단계로 좁아지기 쉽습니다.</span></li>
+            <li><span class="x-icon">✗</span><span class="contrast-copy">조건을 즉시 바꾸기 어려워, 예상과 실제를 여러 경우로 반복해서 대조하기 어렵습니다.</span></li>
+            <li><span class="x-icon">✗</span><span class="contrast-copy"><strong>Explain</strong> 학생 설명보다 교사의 정리 문장이 중심이 되어, 설명 단계가 자신의 언어로 남기 어렵습니다.</span></li>
+            <li><span class="x-icon">✗</span><span class="contrast-copy">틀린 예측이 나와도 바로 다시 시험하기 어려워, POE가 한 번의 확인으로 끝나기 쉽습니다.</span></li>
+          </ul>
+        </div>
+        <div class="contrast-divider">
+          <div class="contrast-arrow">→</div>
+        </div>
+        <div class="contrast-card dynamic-card">
+          <div class="contrast-label dynamic-label">시뮬레이션형 POE</div>
+          <ul class="contrast-list">
+            <li><span class="o-icon">✓</span><span class="contrast-copy"><strong>Predict</strong> 변인 값이 수치로 명확히 보여, 학생이 조건과 연결된 근거를 가지고 예측할 수 있습니다.</span></li>
+            <li><span class="o-icon">✓</span><span class="contrast-copy"><strong>Observe</strong> 같은 화면에서 변인을 바꾸며 결과를 바로 보게 되어, 예상과 실제의 차이가 훨씬 분명하게 드러납니다.</span></li>
+            <li><span class="o-icon">✓</span><span class="contrast-copy">여러 조건을 연속으로 시험할 수 있어, 한 번의 확인이 아니라 반복 비교를 통해 경향을 읽게 합니다.</span></li>
+            <li><span class="o-icon">✓</span><span class="contrast-copy"><strong>Explain</strong> 학생이 화면에서 확인한 근거를 바탕으로 왜 달라졌는지 설명하게 되어, 설명의 설득력이 커집니다.</span></li>
+            <li><span class="o-icon">✓</span><span class="contrast-copy">틀린 예측도 즉시 다시 시험하고 설명을 고칠 수 있어, POE가 한 번이 아니라 순환으로 이어집니다.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ░░ S4 · CTA ░░ -->
+  <section class="final-sec intro-panel">
+    <div class="isec-inner">
+      <div class="final-gallery-shell rv d1" aria-label="시뮬레이션 썸네일 미리보기">
+        <div class="final-gallery-frame">
+          <div class="final-gallery-track" id="finalThumbRail"></div>
+        </div>
+      </div>
+      <p class="sec-sub rv d2" style="text-align:center; margin:0 auto 44px; max-width:760px;">
+        학생이 먼저 예상하고, 교실에서 관찰하고, 마지막에는 자기 설명으로 남기는 흐름을 직접 체험해 볼 수 있습니다.
+      </p>
+      <button class="btn-main rv d3" data-launch type="button">
+        시뮬레이션 체험하기 →
+      </button>
+    </div>
+  </section>
+
+</div><!-- /#intro -->
+
+
+<!-- ════════════════════════════════════════════════
+     SIMULATION (initially hidden, opacity:0)
+════════════════════════════════════════════════ -->
+<div class="split" id="simRoot" style="opacity:0;transition:opacity 0.5s ease 0.1s;">
+
+  <!-- ════ LEFT: BLACKBOARD ════ -->
+  <div class="board-panel stack-step">
+    <div class="board-header">
+      <span class="board-badge">정적인 판서 방식</span>
+      <span class="board-title">스넬의 법칙 — 하나의 고정된 상황</span>
+    </div>
+    <div class="board-body">
+      <div class="chalk-diagram">
+        <svg viewBox="0 0 480 310" xmlns="http://www.w3.org/2000/svg" aria-label="칠판 판서 스타일 다이어그램">
+          <defs>
+            <filter id="chalk" x="-5%" y="-5%" width="110%" height="110%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" result="n"/>
+              <feDisplacementMap in="SourceGraphic" in2="n" scale="1.6" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+            <marker id="arrI" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,9 3,0 6" fill="rgba(255,160,140,0.9)"/></marker>
+            <marker id="arrR" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,9 3,0 6" fill="rgba(130,185,255,0.9)"/></marker>
+            <marker id="arrRf" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,9 3,0 6" fill="rgba(255,210,100,0.75)"/></marker>
+          </defs>
+          <text x="14" y="28" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="rgba(235,240,215,0.88)" filter="url(#chalk)">매질 1: 공기 (n₁ = 1.00)</text>
+          <text x="14" y="298" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="rgba(235,240,215,0.88)" filter="url(#chalk)">매질 2: 유리 (n₂ = 1.50)</text>
+          <line x1="14" y1="166" x2="466" y2="166" stroke="rgba(230,228,205,0.72)" stroke-width="2.8" stroke-linecap="round" filter="url(#chalk)"/>
+          <line x1="240" y1="14" x2="240" y2="298" stroke="rgba(195,218,168,0.62)" stroke-width="2.1" stroke-dasharray="11 8" stroke-linecap="round" filter="url(#chalk)"/>
+          <text x="248" y="26" font-family="Pretendard,sans-serif" font-size="12" font-weight="600" fill="rgba(195,220,168,0.80)" filter="url(#chalk)">법선</text>
+          <line x1="147" y1="57" x2="240" y2="166" stroke="rgba(255,160,140,0.92)" stroke-width="3.8" stroke-linecap="round" marker-end="url(#arrI)" filter="url(#chalk)"/>
+          <line x1="240" y1="166" x2="333" y2="57" stroke="rgba(255,210,100,0.72)" stroke-width="2.6" stroke-linecap="round" marker-end="url(#arrRf)" filter="url(#chalk)"/>
+          <line x1="240" y1="166" x2="307" y2="306" stroke="rgba(130,185,255,0.92)" stroke-width="3.8" stroke-linecap="round" marker-end="url(#arrR)" filter="url(#chalk)"/>
+          <path d="M 240 122 A 44 44 0 0 0 212 132" fill="none" stroke="rgba(255,160,140,0.80)" stroke-width="2.3" filter="url(#chalk)"/>
+          <path d="M 240 122 A 44 44 0 0 1 268 132" fill="none" stroke="rgba(255,210,100,0.72)" stroke-width="2.3" filter="url(#chalk)"/>
+          <path d="M 240 210 A 44 44 0 0 0 259 206" fill="none" stroke="rgba(130,185,255,0.80)" stroke-width="2.3" filter="url(#chalk)"/>
+          <text x="172" y="144" font-family="Pretendard,sans-serif" font-size="14" font-weight="800" fill="rgba(255,180,155,0.95)" filter="url(#chalk)">θ₁ = 40°</text>
+          <text x="276" y="142" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="rgba(255,215,110,0.84)" filter="url(#chalk)">θr = 40°</text>
+          <text x="270" y="231" font-family="Pretendard,sans-serif" font-size="14" font-weight="800" fill="rgba(150,200,255,0.95)" filter="url(#chalk)">θ₂ ≈ 25°</text>
+        </svg>
+      </div>
+      <div class="chalk-formula">n₁ sinθ₁ = n₂ sinθ₂</div>
+      <div class="board-limits">
+        <div class="limit-row"><span class="icon">✗</span><span>입사각을 바꾸면 굴절각이 어떻게 변하는지 <b style="color:rgba(255,220,140,.95)">이 그림 하나로는 알 수 없음</b></span></div>
+        <div class="limit-row"><span class="icon">✗</span><span>임계각이 언제 나타나는지, 전반사 순간을 직접 <b style="color:rgba(255,220,140,.95)">확인 불가</b></span></div>
+        <div class="limit-row"><span class="icon">✗</span><span>n₁ · n₂ 값을 바꾸며 경향을 탐색하는 <b style="color:rgba(255,220,140,.95)">능동적 조작 불가</b></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ RIGHT: SIMULATION ════ -->
+  <div class="sim-panel stack-step d1">
+    <div class="sim-header">
+      <div class="sim-top-row">
+        <span class="sim-badge">인터랙티브 시뮬레이션</span>
+        <div class="sim-top-actions">
+          <span class="drag-hint">✦ 광선을 드래그해 각도를 바꾸세요</span>
+          <button class="btn-back-intro" onclick="goBackToIntro()" type="button">← 뒤로</button>
+        </div>
+      </div>
+      <span class="sim-title">스넬의 법칙 탐구 스테이지</span>
+      <div class="head-stats">
+        <div class="stat-chip chip-n1" id="topMediumChip">n₁ = 1.00</div>
+        <div class="stat-chip chip-n2" id="bottomMediumChip">n₂ = 1.50</div>
+        <div class="stat-chip chip-t1" id="thetaChip">θ₁ = 40.0°</div>
+        <div class="stat-chip chip-t2" id="theta2Chip">θ₂ = 25.4°</div>
+      </div>
+    </div>
+    <div class="sim-canvas-wrap">
+      <div id="sketch-holder"></div>
+      <div class="floating-panel">
+        <div class="floating-chip" id="stateChip">법선 쪽으로 굴절</div>
+        <div class="floating-chip" id="criticalChip">임계각: 없음</div>
+        <div class="floating-chip" id="modeChip">1. 예측하기</div>
+      </div>
+    </div>
+    <div class="control-dock">
+      <div class="dock-card stack-step d1">
+        <h3 class="dock-title">단계별 사고</h3>
+        <div class="steps">
+          <button class="step-btn active" data-step="0"><span class="num">1</span><span class="label">예측하기</span><span class="desc">어느 쪽으로 꺾일지 생각합니다.</span></button>
+          <button class="step-btn" data-step="1"><span class="num">2</span><span class="label">굴절률 비교</span><span class="desc">n₁과 n₂ 크기 차이에 집중합니다.</span></button>
+          <button class="step-btn" data-step="2"><span class="num">3</span><span class="label">입사각 변화</span><span class="desc">입사각을 키우며 경향을 봅니다.</span></button>
+          <button class="step-btn" data-step="3"><span class="num">4</span><span class="label">전반사 찾기</span><span class="desc">임계각을 넘는 순간을 발견합니다.</span></button>
+        </div>
+      </div>
+      <div class="dock-card stack-step d2">
+        <h3 class="dock-title">조작 변수</h3>
+        <div class="slider-grid">
+          <div class="slider-row">
+            <label for="angleRange">입사각 θ₁ <span class="value val-t1" id="angleVal">40.0°</span></label>
+            <input id="angleRange" type="range" min="0" max="80" step="0.1" value="40">
+          </div>
+          <div class="slider-row">
+            <label for="n1Range">위쪽 굴절률 n₁ <span class="value val-n" id="n1Val">1.00</span></label>
+            <input id="n1Range" type="range" min="1" max="2" step="0.01" value="1.00">
+          </div>
+          <div class="slider-row">
+            <label for="n2Range">아래쪽 굴절률 n₂ <span class="value val-n" id="n2Val">1.50</span></label>
+            <input id="n2Range" type="range" min="1" max="2" step="0.01" value="1.50">
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn" id="resetBtn" type="button">기본값</button>
+          <button class="btn secondary" id="swapBtn" type="button">매질 뒤집기</button>
+        </div>
+      </div>
+      <div class="dock-card stack-step d3">
+        <h3 class="dock-title">생각하기</h3>
+        <div class="think-prompt" id="promptBox">아래쪽 매질의 굴절률이 더 크다면, 빛은 법선 쪽과 법선에서 먼 쪽 중 어디로 더 가까워질까요?</div>
+        <div class="choice-grid" id="choiceGrid"></div>
+        <div class="btn-row">
+          <button class="btn" id="checkBtn" type="button">생각 확인</button>
+          <button class="btn secondary" id="clearBtn" type="button">선택 지우기</button>
+        </div>
+        <div class="feedback" id="feedbackBox"></div>
+        <div id="observeHintBox" style="display:none;margin-top:7px;font-size:12px;color:#047857;line-height:1.65;padding:7px 10px;background:rgba(5,150,105,.07);border-radius:8px;border:1px solid rgba(5,150,105,.18);"></div>
+        <div class="btn-row" id="explainBtnRow" style="display:none;margin-top:6px;">
+          <button class="btn secondary" id="explainBtn" type="button">설명 보기</button>
+        </div>
+        <div class="feedback" id="explainBox" style="display:none;margin-top:5px;"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#simRoot -->
+
+
+<script>
+  /* ══════════════════════════════════════════════════
+     INTRO LOGIC
+  ══════════════════════════════════════════════════ */
+  (function () {
+    const intro   = document.getElementById('intro');
+    const simRoot = document.getElementById('simRoot');
+    const introPanels = [...document.querySelectorAll('#intro .intro-panel')];
+    let simStepObserver = null;
+    let introWheelLocked = false;
+    let finalGalleryState = null;
+    let finalGalleryAnimId = null;
+    let finalGalleryLastTick = 0;
+    let finalGalleryPauseUntil = 0;
+    const thumbnailFiles = [
+      'RLC회로.png',
+      '간섭무늬.png',
+      '경로찾기.png',
+      '광전효과.png',
+      '궤도 올리기.png',
+      '다이오드.png',
+      '도플러효과.png',
+      '러더퍼드_산란실험.png',
+      '레이저.png',
+      '렌즈의_법칙.png',
+      '로런츠 힘.png',
+      '멕스웰 도깨비.png',
+      '물리 공식 맞추기.png',
+      '발광_다이오드.png',
+      '번지점프.png',
+      '베타붕괴.png',
+      '별의 탄생.png',
+      '상대성이론.png',
+      '스넬의_법칙.png',
+      '양자_터널링.png',
+      '열역학.png',
+      '옴의_법칙.png',
+      '우주 미아.png',
+      '원자모형.png',
+      '위치와 변위.png',
+      '이중슬릿.png',
+      '일과_운동에너지.png',
+      '입자가속기.png',
+      '전기장과_등전위면.png',
+      '전자기유도.png',
+      '줄의_실험.png',
+      '중력렌즈.png',
+      '토크와_평형.png',
+      '편광과 LCD.png',
+      '포물선_운동.png',
+      '힘의_평형.png',
+      '일반상대론.png',
+      '음성분석.png',
+      '물리 퀴즈.png',
+      '물리량 단위 짝맞추기.png'
+    ];
+
+    function prettifyThumbTitle(file) {
+      return file
+        .replace(/\.[^.]+$/, '')
+        .replace(/_/g, ' ')
+        .trim();
+    }
+
+    function buildFinalThumbnailRail() {
+      const rail = document.getElementById('finalThumbRail');
+      if (!rail || rail.dataset.ready === 'true') return;
+
+      const loopFiles = thumbnailFiles.concat(thumbnailFiles);
+      const frag = document.createDocumentFragment();
+
+      loopFiles.forEach(file => {
+        const card = document.createElement('figure');
+        card.className = 'final-thumb';
+
+        const img = document.createElement('img');
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        img.src = encodeURI(`thumb_nail/${file}`);
+        img.alt = `${prettifyThumbTitle(file)} 썸네일`;
+        img.addEventListener('load', refreshFinalThumbnailRailMetrics, { once: true });
+
+        const caption = document.createElement('figcaption');
+        caption.className = 'final-thumb-title';
+        caption.textContent = prettifyThumbTitle(file);
+
+        card.appendChild(img);
+        card.appendChild(caption);
+        frag.appendChild(card);
+      });
+
+      rail.appendChild(frag);
+      rail.dataset.ready = 'true';
+      refreshFinalThumbnailRailMetrics();
+      setupFinalThumbnailRailInteraction();
+      startFinalThumbnailRailMotion();
+    }
+
+    function refreshFinalThumbnailRailMetrics() {
+      const frame = document.querySelector('.final-gallery-frame');
+      const rail = document.getElementById('finalThumbRail');
+      if (!frame || !rail) return;
+
+      const nextLoopWidth = rail.scrollWidth / 2;
+      if (!nextLoopWidth) return;
+
+      if (!finalGalleryState) {
+        finalGalleryState = {
+          frame,
+          rail,
+          loopWidth: nextLoopWidth,
+          offset: nextLoopWidth * 0.08,
+          dragging: false,
+          pointerId: null,
+          lastX: 0
+        };
+      } else {
+        const prevLoopWidth = finalGalleryState.loopWidth || nextLoopWidth;
+        finalGalleryState.frame = frame;
+        finalGalleryState.rail = rail;
+        finalGalleryState.loopWidth = nextLoopWidth;
+
+        if (prevLoopWidth > 0 && frame.dataset.seeded === 'true') {
+          finalGalleryState.offset = (finalGalleryState.offset / prevLoopWidth) * nextLoopWidth;
+        }
+      }
+
+      if (frame.dataset.seeded !== 'true') {
+        finalGalleryState.offset = nextLoopWidth * 0.08;
+        frame.dataset.seeded = 'true';
+      }
+
+      setFinalThumbnailRailOffset(finalGalleryState.offset);
+    }
+
+    function setFinalThumbnailRailOffset(nextOffset) {
+      if (!finalGalleryState || !finalGalleryState.loopWidth) return;
+      const { rail, loopWidth } = finalGalleryState;
+      let wrappedOffset = nextOffset % loopWidth;
+      if (wrappedOffset < 0) wrappedOffset += loopWidth;
+      finalGalleryState.offset = wrappedOffset;
+      rail.style.setProperty('--final-offset', `${wrappedOffset}px`);
+    }
+
+    function setupFinalThumbnailRailInteraction() {
+      if (!finalGalleryState) return;
+      const { frame } = finalGalleryState;
+      if (frame.dataset.dragBound === 'true') return;
+
+      const endDrag = (event) => {
+        if (!finalGalleryState) return;
+        if (event && finalGalleryState.pointerId != null && event.pointerId !== finalGalleryState.pointerId) return;
+        finalGalleryState.dragging = false;
+        finalGalleryState.pointerId = null;
+        frame.classList.remove('is-dragging');
+        finalGalleryPauseUntil = performance.now() + 1400;
+      };
+
+      frame.addEventListener('pointerdown', (event) => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        if (!finalGalleryState) return;
+        finalGalleryState.dragging = true;
+        finalGalleryState.pointerId = event.pointerId;
+        finalGalleryState.lastX = event.clientX;
+        finalGalleryPauseUntil = performance.now() + 2600;
+        frame.classList.add('is-dragging');
+        if (frame.setPointerCapture) frame.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      });
+
+      frame.addEventListener('pointermove', (event) => {
+        if (!finalGalleryState || !finalGalleryState.dragging || event.pointerId !== finalGalleryState.pointerId) return;
+
+        const dx = event.clientX - finalGalleryState.lastX;
+        finalGalleryState.lastX = event.clientX;
+        const loopWidth = finalGalleryState.loopWidth;
+        if (!loopWidth) return;
+
+        setFinalThumbnailRailOffset(finalGalleryState.offset - dx);
+        finalGalleryPauseUntil = performance.now() + 2600;
+      });
+
+      frame.addEventListener('pointerup', endDrag);
+      frame.addEventListener('pointercancel', endDrag);
+      frame.addEventListener('lostpointercapture', endDrag);
+      frame.dataset.dragBound = 'true';
+    }
+
+    function startFinalThumbnailRailMotion() {
+      if (finalGalleryAnimId) return;
+
+      const tick = (timestamp) => {
+        if (!finalGalleryLastTick) finalGalleryLastTick = timestamp;
+        const dt = Math.min(34, timestamp - finalGalleryLastTick);
+        finalGalleryLastTick = timestamp;
+
+        if (
+          finalGalleryState &&
+          !finalGalleryState.dragging &&
+          timestamp >= finalGalleryPauseUntil &&
+          !document.hidden &&
+          getComputedStyle(intro).display !== 'none' &&
+          !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ) {
+          setFinalThumbnailRailOffset(finalGalleryState.offset + dt * 0.03);
+        }
+
+        finalGalleryAnimId = requestAnimationFrame(tick);
+      };
+
+      finalGalleryAnimId = requestAnimationFrame(tick);
+    }
+
+    function useIntroPaging() {
+      return window.matchMedia('(min-width: 981px)').matches &&
+        !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+        getComputedStyle(intro).display !== 'none';
+    }
+
+    function getClosestIntroIndex() {
+      const top = intro.scrollTop;
+      let closest = 0;
+      let minDist = Infinity;
+      introPanels.forEach((panel, idx) => {
+        const dist = Math.abs(panel.offsetTop - top);
+        if (dist < minDist) {
+          minDist = dist;
+          closest = idx;
+        }
+      });
+      return closest;
+    }
+
+    function scrollIntroByStep(direction) {
+      const current = getClosestIntroIndex();
+      const next = Math.max(0, Math.min(introPanels.length - 1, current + direction));
+      introPanels[next].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function setupSimulationScrollMotion() {
+      const simSteps = [...simRoot.querySelectorAll('.stack-step')];
+      const isMobileStack = window.matchMedia('(max-width: 980px)').matches;
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (simStepObserver) {
+        simStepObserver.disconnect();
+        simStepObserver = null;
+      }
+
+      simSteps.forEach((el, idx) => {
+        if (!isMobileStack || reduceMotion) {
+          el.classList.add('in-view');
+          return;
+        }
+        el.classList.toggle('in-view', idx === 0);
+      });
+
+      if (!isMobileStack || reduceMotion) return;
+
+      simStepObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) entry.target.classList.add('in-view');
+        });
+      }, {
+        root: simRoot,
+        threshold: 0.22,
+        rootMargin: '0px 0px -10% 0px'
+      });
+
+      simSteps.forEach(el => simStepObserver.observe(el));
+    }
+
+    /* Launch simulation */
+    function launch() {
+      intro.classList.add('leaving');
+      setTimeout(() => {
+        intro.style.display = 'none';
+        simRoot.scrollTop = 0;
+        setupSimulationScrollMotion();
+        simRoot.style.opacity = '1';
+        const holder = document.getElementById('sketch-holder');
+        if (typeof resizeCanvas === 'function' && holder.clientWidth > 0)
+          resizeCanvas(holder.clientWidth, holder.clientHeight);
+      }, 520);
+    }
+
+    /* Back to intro */
+    window.goBackToIntro = function () {
+      simRoot.style.opacity = '0';
+      setTimeout(() => {
+        intro.style.display = '';
+        intro.classList.remove('leaving');
+        intro.scrollTop = 0;
+        simRoot.scrollTop = 0;
+        simRoot.style.opacity = '0';
+      }, 300);
+    };
+
+    document.querySelectorAll('[data-launch]').forEach(btn => {
+      btn.addEventListener('click', launch);
+    });
+
+    /* Scroll-to buttons */
+    document.querySelectorAll('[data-scrollto]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = document.getElementById(btn.dataset.scrollto);
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    intro.addEventListener('wheel', (event) => {
+      if (!useIntroPaging()) return;
+      if (Math.abs(event.deltaY) < 18) return;
+      if (introWheelLocked) {
+        event.preventDefault();
+        return;
+      }
+      introWheelLocked = true;
+      event.preventDefault();
+      scrollIntroByStep(event.deltaY > 0 ? 1 : -1);
+      setTimeout(() => { introWheelLocked = false; }, 720);
+    }, { passive: false });
+
+    /* Scroll reveal via IntersectionObserver */
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+
+    /* Observe after a tick so hero items reveal immediately */
+    requestAnimationFrame(() => {
+      buildFinalThumbnailRail();
+      document.querySelectorAll('#intro .rv').forEach(el => io.observe(el));
+    });
+
+    window.addEventListener('resize', setupSimulationScrollMotion);
+    window.addEventListener('resize', refreshFinalThumbnailRailMetrics);
+  }());
+
+  /* ══════════════════════════════════════════════════
+     SIMULATION STATE
+  ══════════════════════════════════════════════════ */
+  const state = { angle: 40, n1: 1.0, n2: 1.5, step: 0, selectedChoice: null };
+  let tAnim = 0, pulse = 0;
+  let dragging = false, hoverHandle = false;
+  let lastAngleChange = 0, prevAngle = 40;
+
+  const stepConfigs = [
+    { name: "1. 예측하기",
+      prompt: "아래쪽 매질의 굴절률이 더 크다면, 빛은 법선 쪽과 법선에서 먼 쪽 중 어디로 더 가까워질까요?",
+      observeHint: "▶ 이제 n₂ 슬라이더를 1.5 이상으로 놓고 입사각을 드래그해 보세요. 예상한 방향과 실제 결과가 일치하는지 눈으로 확인한 뒤 설명을 열어보세요.",
+      choices: [{ key:"toward",text:"법선 쪽으로 더 가까워진다"},{key:"away",text:"법선에서 더 멀어진다"},{key:"same",text:"거의 변하지 않는다"}],
+      correct:"toward", explain:"굴절률이 더 큰 매질로 들어갈수록 빛은 법선 쪽으로 굴절합니다." },
+    { name: "2. 굴절률 비교",
+      prompt: "n₂를 더 크게 만들면, 같은 입사각에서 굴절각 θ₂는 어떻게 변할까요?",
+      observeHint: "▶ 입사각을 고정한 채 n₂ 슬라이더를 천천히 오른쪽으로 움직여 보세요. 위 θ₂ 값이 어떻게 바뀌는지 직접 확인한 뒤 설명을 열어보세요.",
+      choices: [{key:"smaller",text:"더 작아진다"},{key:"larger",text:"더 커진다"},{key:"same",text:"거의 같게 유지된다"}],
+      correct:"smaller", explain:"n₂가 커질수록 같은 조건에서 θ₂는 더 작아져 법선 쪽으로 가까워집니다." },
+    { name: "3. 입사각 변화",
+      prompt: "n₁과 n₂를 고정한 채 입사각 θ₁을 키우면, 굴절각 θ₂는 어떤 경향을 보일까요?",
+      observeHint: "▶ n₁과 n₂를 고정한 상태에서 입사각 슬라이더를 0°에서 80°까지 천천히 올려 보세요. θ₂의 변화 방향과 속도를 직접 관찰한 뒤 설명을 열어보세요.",
+      choices: [{key:"larger",text:"같이 커진다"},{key:"smaller",text:"점점 작아진다"},{key:"same",text:"거의 변하지 않는다"}],
+      correct:"larger", explain:"굴절률이 고정되어 있으면 θ₁이 커질수록 θ₂도 함께 커집니다. 다만 증가 방식은 단순 비례가 아닙니다." },
+    { name: "4. 전반사 찾기",
+      prompt: "전반사가 나타나려면 어떤 조건이 먼저 만족되어야 할까요?",
+      observeHint: "▶ n₁ > n₂ 와 n₁ < n₂ 두 경우를 직접 만들어 입사각을 키워 보세요. 어느 쪽에서만 전반사(θ₂ 없음)가 나타나는지 확인한 뒤 설명을 열어보세요.",
+      choices: [{key:"n1gt",text:"위쪽 굴절률 n₁이 아래쪽보다 커야 한다"},{key:"n2gt",text:"아래쪽 굴절률 n₂가 더 커야 한다"},{key:"any",text:"어느 경우든 입사각만 크면 된다"}],
+      correct:"n1gt", explain:"전반사는 빛이 더 큰 굴절률의 매질에서 더 작은 굴절률의 매질로 진행할 때만 가능합니다." }
+  ];
+
+  const els = {
+    angleRange:document.getElementById('angleRange'), n1Range:document.getElementById('n1Range'), n2Range:document.getElementById('n2Range'),
+    angleVal:document.getElementById('angleVal'), n1Val:document.getElementById('n1Val'), n2Val:document.getElementById('n2Val'),
+    resetBtn:document.getElementById('resetBtn'), swapBtn:document.getElementById('swapBtn'),
+    stateChip:document.getElementById('stateChip'), criticalChip:document.getElementById('criticalChip'), modeChip:document.getElementById('modeChip'),
+    topMediumChip:document.getElementById('topMediumChip'), bottomMediumChip:document.getElementById('bottomMediumChip'),
+    thetaChip:document.getElementById('thetaChip'), theta2Chip:document.getElementById('theta2Chip'),
+    promptBox:document.getElementById('promptBox'), choiceGrid:document.getElementById('choiceGrid'),
+    checkBtn:document.getElementById('checkBtn'), clearBtn:document.getElementById('clearBtn'),
+    feedbackBox:document.getElementById('feedbackBox'),
+    observeHintBox:document.getElementById('observeHintBox'),
+    explainBtnRow:document.getElementById('explainBtnRow'),
+    explainBtn:document.getElementById('explainBtn'),
+    explainBox:document.getElementById('explainBox'),
+    stepBtns:[...document.querySelectorAll('.step-btn')],
+  };
+
+  function rad(d){return d*Math.PI/180;} function deg(r){return r*180/Math.PI;}
+
+  function computeRefraction(){
+    const s1=Math.sin(rad(state.angle)),ratio=(state.n1/state.n2)*s1,hc=state.n1>state.n2;
+    if(hc&&ratio>1) return{tir:true,theta1:state.angle,theta2:null,critical:deg(Math.asin(state.n2/state.n1)),behavior:'전반사 발생'};
+    const theta2=deg(Math.asin(Math.min(1,Math.max(-1,ratio))));
+    let b='거의 직진';
+    if(Math.abs(state.n1-state.n2)>.0001) b=state.n2>state.n1?'법선 쪽으로 굴절':'법선에서 멀어지며 굴절';
+    return{tir:false,theta1:state.angle,theta2,critical:hc?deg(Math.asin(state.n2/state.n1)):null,behavior:b};
+  }
+
+  function renderChoices(){
+    const c=stepConfigs[state.step];
+    els.promptBox.textContent=c.prompt; els.choiceGrid.innerHTML='';
+    c.choices.forEach(ch=>{
+      const b=document.createElement('button');
+      b.className='choice-btn'+(state.selectedChoice===ch.key?' selected':'');
+      b.textContent=ch.text; b.type='button';
+      b.addEventListener('click',()=>{state.selectedChoice=ch.key;renderChoices();});
+      els.choiceGrid.appendChild(b);
+    });
+    els.modeChip.textContent=c.name;
+  }
+  function updateStepButtons(){els.stepBtns.forEach((b,i)=>b.classList.toggle('active',i===state.step));}
+  function clearFeedback(){
+    els.feedbackBox.textContent=''; els.feedbackBox.className='feedback';
+    els.observeHintBox.style.display='none'; els.observeHintBox.textContent='';
+    els.explainBtnRow.style.display='none';
+    els.explainBox.style.display='none'; els.explainBox.textContent='';
+  }
+
+  function updateUI(){
+    const r=computeRefraction();
+    els.angleVal.textContent=`${state.angle.toFixed(1)}°`;
+    els.n1Val.textContent=state.n1.toFixed(2); els.n2Val.textContent=state.n2.toFixed(2);
+    els.stateChip.textContent=r.behavior;
+    els.criticalChip.textContent=r.critical==null?'임계각: 없음':`임계각: ${r.critical.toFixed(1)}°`;
+    els.topMediumChip.textContent=`n₁ = ${state.n1.toFixed(2)}`;
+    els.bottomMediumChip.textContent=`n₂ = ${state.n2.toFixed(2)}`;
+    els.thetaChip.textContent=`θ₁ = ${r.theta1.toFixed(1)}°`;
+    els.theta2Chip.textContent=r.tir?'θ₂ = 없음 (전반사)':`θ₂ = ${r.theta2.toFixed(1)}°`;
+    els.theta2Chip.className='stat-chip '+(r.tir?'chip-tir':'chip-t2');
+  }
+
+  els.stepBtns.forEach((b,i)=>b.addEventListener('click',()=>{state.step=i;state.selectedChoice=null;updateStepButtons();renderChoices();clearFeedback();}));
+  els.checkBtn.addEventListener('click',()=>{
+    const c=stepConfigs[state.step];
+    if(!state.selectedChoice){els.feedbackBox.textContent='먼저 하나를 선택해 주세요.';els.feedbackBox.className='feedback bad';return;}
+    const correct=state.selectedChoice===c.correct;
+    els.feedbackBox.textContent=correct?'맞았습니다.':'다시 생각해 보세요.';
+    els.feedbackBox.className='feedback '+(correct?'ok':'bad');
+    els.observeHintBox.textContent=c.observeHint;
+    els.observeHintBox.style.display='block';
+    els.explainBtnRow.style.display='';
+    els.explainBox.style.display='none'; els.explainBox.textContent='';
+  });
+  els.explainBtn.addEventListener('click',()=>{
+    const c=stepConfigs[state.step];
+    els.explainBox.textContent=c.explain;
+    els.explainBox.className='feedback ok';
+    els.explainBox.style.display='block';
+  });
+  els.clearBtn.addEventListener('click',()=>{state.selectedChoice=null;renderChoices();clearFeedback();});
+  els.angleRange.addEventListener('input',e=>{state.angle=parseFloat(e.target.value);updateUI();clearFeedback();});
+  els.n1Range.addEventListener('input',e=>{state.n1=parseFloat(e.target.value);updateUI();clearFeedback();});
+  els.n2Range.addEventListener('input',e=>{state.n2=parseFloat(e.target.value);updateUI();clearFeedback();});
+  els.resetBtn.addEventListener('click',()=>{
+    state.angle=40;state.n1=1.0;state.n2=1.5;
+    els.angleRange.value=state.angle;els.n1Range.value=state.n1;els.n2Range.value=state.n2;
+    updateUI();clearFeedback();
+  });
+  els.swapBtn.addEventListener('click',()=>{
+    [state.n1,state.n2]=[state.n2,state.n1];
+    els.n1Range.value=state.n1;els.n2Range.value=state.n2;updateUI();clearFeedback();
+  });
+
+  /* ── p5.js helpers ── */
+  function getHandlePos(r){
+    const cx=width/2,cy=height/2,len=min(width,height)*.40;
+    return{x:cx-sin(rad(r.theta1))*len,y:cy-cos(rad(r.theta1))*len};
+  }
+
+  function isNearHandle(px,py){
+    const r=computeRefraction(),h=getHandlePos(r);
+    return dist(px,py,h.x,h.y)<32;
+  }
+
+  function setAngleFromPointer(px,py){
+    const cx=width/2,cy=height/2;
+    if(py<cy-5){
+      let a=atan2(cx-px,cy-py)*180/PI;
+      a=constrain(a,0,80);
+      state.angle=a;
+      els.angleRange.value=a.toFixed(1);
+      updateUI();
+      clearFeedback();
+    }
+  }
+
+  function setup(){
+    const h=document.getElementById('sketch-holder');
+    const w=h.clientWidth||Math.floor(window.innerWidth*.5),ht=h.clientHeight||Math.floor(window.innerHeight*.56);
+    createCanvas(w,ht).parent('sketch-holder');
+    renderChoices();updateStepButtons();updateUI();
+  }
+  function windowResized(){
+    const h=document.getElementById('sketch-holder');
+    resizeCanvas(h.clientWidth||Math.floor(window.innerWidth*.5),h.clientHeight||Math.floor(window.innerHeight*.56));
+  }
+  function draw(){
+    tAnim+=.014;pulse+=.032;
+    if(Math.abs(state.angle-prevAngle)>.05){lastAngleChange=tAnim;prevAngle=state.angle;}
+    drawScene(computeRefraction());
+  }
+
+  function mousePressed(){if(isNearHandle(mouseX,mouseY))dragging=true;}
+  function mouseDragged(){if(dragging)setAngleFromPointer(mouseX,mouseY);}
+  function mouseReleased(){dragging=false;}
+  function mouseMoved(){
+    hoverHandle=isNearHandle(mouseX,mouseY);
+    cursor(hoverHandle||dragging?HAND:ARROW);
+  }
+  function touchStarted(){
+    if(touches.length<1) return;
+    const t=touches[0];
+    hoverHandle=isNearHandle(t.x,t.y);
+    if(hoverHandle){
+      dragging=true;
+      setAngleFromPointer(t.x,t.y);
+      return false;
+    }
+  }
+  function touchMoved(){
+    if(touches.length<1) return;
+    const t=touches[0];
+    hoverHandle=isNearHandle(t.x,t.y);
+    if(dragging){
+      setAngleFromPointer(t.x,t.y);
+      return false;
+    }
+  }
+  function touchEnded(){
+    dragging=false;
+    hoverHandle=false;
+  }
+
+  /* ── Draw scene ── */
+  function drawScene(r){
+    const cx=width*.5,cy=height*.5;
+    drawBackground(cx,cy,r.tir);drawBoundary(cy,r);drawNormal(cx,cy);
+    drawRays(cx,cy,r);drawAngles(cx,cy,r);
+    if(r.critical!=null)drawCriticalGuide(cx,cy,r.critical);
+    drawRefractionPoint(cx,cy,r.tir);
+    if(r.tir)drawTIRLabel(cx,cy-72);
+    drawDragHandle(getHandlePos(r));drawFormulaBar(r);drawCornerLabels(r);
+  }
+
+  function drawBackground(cx,cy,isTir){
+    noStroke();
+    for(let y=0;y<cy;y+=2){fill(lerpColor(color(228,248,243),color(212,244,236),map(y,0,cy,0,1)));rect(0,y,width,2);}
+    for(let y=cy;y<height;y+=2){fill(lerpColor(color(205,240,228),color(190,235,220),map(y,cy,height,0,1)));rect(0,y,width,2);}
+    stroke(5,150,105,18);strokeWeight(1);noFill();
+    for(let j=0;j<7;j++){beginShape();for(let x=0;x<=width;x+=14)vertex(x,cy*.10+j*(cy*.12)+sin(x*.008+tAnim*1.1+j*.9)*7);endShape();}
+    stroke(13,148,136,20);strokeWeight(1);noFill();
+    for(let j=0;j<9;j++){beginShape();for(let x=0;x<=width;x+=12){const yd=cy+18+j*((height-cy-18)/9);vertex(x,yd+sin(x*.007+tAnim*.65+j*.75)*5);}endShape();}
+    noStroke();
+    for(let i=0;i<12;i++){const s=i*1.618,px=(sin(s*3.1+tAnim*.18+i)*.5+.5)*width,py=(sin(s*2.7+tAnim*.14+i*2)*.5+.5)*cy;fill(5,150,105,16+10*sin(tAnim+s));circle(px,py,1.4+.6*sin(tAnim*1.3+s));}
+    for(let i=0;i<22;i++){const s=i*2.41,px=(sin(s*2.8+tAnim*.10+i)*.5+.5)*width,py=cy+(sin(s*3.3+tAnim*.08+i*1.5)*.5+.5)*(height-cy);fill(13,148,136,12+8*sin(tAnim*.9+s));circle(px,py,1.8+.7*sin(tAnim*1.0+s));}
+    if(isTir){noStroke();fill(220,38,38,22+12*sin(pulse*2.8));rect(0,cy,width,height-cy);}
+    noStroke();
+    for(let r=180;r>0;r-=14){fill(5,150,105,map(r,180,0,0,isTir?20:12));circle(width/2,cy,r*2);}
+  }
+
+  function drawBoundary(cy,r){
+    const fa=tAnim-lastAngleChange,fl=fa<.6?map(fa,0,.6,200,0):0;
+    if(fl>1){stroke(5,150,105,fl);strokeWeight(5);line(0,cy,width,cy);}
+    stroke(5,120,80,180);strokeWeight(2.8);line(0,cy,width,cy);
+    stroke(52,211,153,55);strokeWeight(1.2);line(0,cy-2,width,cy);
+    noStroke();fill(4,78,50,160);textSize(11);textAlign(LEFT,BOTTOM);textStyle(BOLD);
+    text('공기 (n₁)',14,cy-6);textAlign(LEFT,TOP);text('유리 (n₂)',14,cy+6);textStyle(NORMAL);
+  }
+
+  function drawNormal(cx,cy){
+    drawingContext.setLineDash([9,7]);stroke(5,120,80,100);strokeWeight(1.8);line(cx,20,cx,height-20);drawingContext.setLineDash([]);
+    noStroke();fill(4,78,50,150);textAlign(CENTER,TOP);textSize(11);textStyle(BOLD);text('법선',cx,24);textStyle(NORMAL);
+  }
+
+  function drawRays(cx,cy,r){
+    const il=min(width,height)*.40,rl=min(width,height)*.34,fl=min(width,height)*.48;
+    const id=createVector(sin(rad(r.theta1)),cos(rad(r.theta1)));
+    drawBeam(cx-id.x*il,cy-id.y*il,cx,cy,color(255,85,85),7);
+    drawBeam(cx,cy,cx+id.x*rl,cy-id.y*rl,color(255,180,50),5);
+    if(!r.tir){const rd=createVector(sin(rad(r.theta2)),cos(rad(r.theta2)));drawBeam(cx,cy,cx+rd.x*fl,cy+rd.y*fl,color(55,140,255),7);}
+  }
+
+  function drawBeam(x1,y1,x2,y2,col,cw){
+    [{a:8,w:cw+24},{a:14,w:cw+16},{a:22,w:cw+10},{a:36,w:cw+5},{a:55,w:cw+2}].forEach(({a,w})=>{stroke(red(col),green(col),blue(col),a);strokeWeight(w);line(x1,y1,x2,y2);});
+    stroke(red(col),green(col),blue(col),210);strokeWeight(cw);line(x1,y1,x2,y2);
+    stroke(255,255,255,90);strokeWeight(max(1.4,cw*.22));line(x1,y1,x2,y2);
+    drawArrowHead(x2,y2,x1,y1,col,cw);drawBeamParticles(x1,y1,x2,y2,col);
+  }
+
+  function drawBeamParticles(x1,y1,x2,y2,col){
+    noStroke();
+    for(let i=0;i<9;i++){const tt=(tAnim*.5+i/9)%1,px=lerp(x1,x2,tt),py=lerp(y1,y2,tt),sz=5+2*sin(pulse*2.2+i*1.1);fill(red(col),green(col),blue(col),170);circle(px,py,sz);fill(255,255,255,130);circle(px,py,sz*.38);}
+  }
+  function drawArrowHead(x1,y1,x2,y2,col,cw){const a=atan2(y1-y2,x1-x2),s=max(12,cw*2);push();translate(x1,y1);rotate(a);noStroke();fill(col);triangle(0,0,-s,s*.42,-s,-s*.42);pop();}
+
+  function drawAngles(cx,cy,r){
+    drawArc(cx,cy,108,-HALF_PI-rad(r.theta1),-HALF_PI,color(255,85,85),'θ₁');
+    drawArc(cx,cy,78,-HALF_PI,-HALF_PI+rad(r.theta1),color(255,180,50),'θr');
+    if(!r.tir)drawArc(cx,cy,92,HALF_PI-rad(r.theta2),HALF_PI,color(55,140,255),'θ₂');
+  }
+  function drawArc(cx,cy,r,a1,a2,col,lbl){
+    noFill();[{a:8,w:8},{a:18,w:5},{a:40,w:3}].forEach(({a,w})=>{stroke(red(col),green(col),blue(col),a);strokeWeight(w);arc(cx,cy,r*2,r*2,a1,a2);});
+    stroke(col);strokeWeight(2.8);arc(cx,cy,r*2,r*2,a1,a2);
+    const mid=(a1+a2)/2,tx=cx+cos(mid)*(r+20),ty=cy+sin(mid)*(r+20);
+    noStroke();fill(255,255,255,200);circle(tx,ty,28);fill(red(col),green(col),blue(col),230);textAlign(CENTER,CENTER);textSize(13);textStyle(BOLD);text(lbl,tx,ty);textStyle(NORMAL);
+  }
+
+  function drawCriticalGuide(cx,cy,cd){
+    const a1=-HALF_PI,a2=-HALF_PI+rad(cd);
+    stroke(255,220,80,130);strokeWeight(1.8);drawingContext.setLineDash([6,5]);noFill();arc(cx,cy,260,260,a1,a2);drawingContext.setLineDash([]);
+    const mid=(a1+a2)/2,tx=cx+cos(mid)*140,ty=cy+sin(mid)*140;
+    noStroke();fill(180,150,30,200);circle(tx,ty,24);fill(255,240,160);textAlign(CENTER,CENTER);textSize(12);textStyle(BOLD);text('θc',tx,ty);textStyle(NORMAL);
+  }
+
+  function drawRefractionPoint(cx,cy,isTir){
+    const pv=1+.18*sin(pulse*3.2),col=isTir?[255,60,60]:[120,180,255];
+    noStroke();for(let r=52;r>0;r-=6){fill(col[0],col[1],col[2],map(r,52,0,0,38)*pv);circle(cx,cy,r*2);}
+    fill(255,255,255,200);circle(cx,cy,8*pv);fill(255,255,255,255);circle(cx,cy,3);
+  }
+
+  function drawTIRLabel(x,y){
+    const s=1+.05*sin(pulse*2.8);push();translate(x,y);scale(s);
+    noStroke();fill(180,20,40,50);rectMode(CENTER);rect(0,0,230,58,18);fill(200,40,60,230);rect(0,0,200,44,14);
+    fill(255);textAlign(CENTER,CENTER);textSize(17);textStyle(BOLD);text('전반사 발생',0,0);textStyle(NORMAL);rectMode(CORNER);pop();
+  }
+
+  function drawDragHandle(h){
+    const active=hoverHandle||dragging,beat=sin(pulse*2.4),sz=active?20+beat*2:16+beat*1.5,gold=active?color(255,225,50):color(255,200,60);
+    for(let i=4;i>0;i--){noStroke();fill(255,200,60,active?i*16:i*8);circle(h.x,h.y,sz*2+i*14);}
+    noStroke();fill(gold);circle(h.x,h.y,sz*2);stroke(255,255,200,200);strokeWeight(1.8);noFill();circle(h.x,h.y,sz*1.15);
+    noStroke();fill(255,255,255,240);circle(h.x,h.y,5.5);
+    const lbl=dragging?`θ₁ = ${state.angle.toFixed(1)}°`:(active?'드래그로 이동':'← 여기를 드래그');
+    noStroke();fill(255,255,255,210);rectMode(CENTER);rect(h.x,h.y-sz-16,textWidth(lbl)+16,20,6);rectMode(CORNER);
+    fill(80,60,0);textAlign(CENTER,CENTER);textSize(11);textStyle(BOLD);text(lbl,h.x,h.y-sz-16);textStyle(NORMAL);
+  }
+
+  function drawFormulaBar(r){
+    const fw=min(width-24,420),fx=width/2,fy=height-18;
+    const lhs=`n₁ sinθ₁ = ${state.n1.toFixed(2)} × ${Math.sin(rad(r.theta1)).toFixed(3)} = ${(state.n1*Math.sin(rad(r.theta1))).toFixed(3)}`;
+    const rhs=r.tir?`전반사 (θ₂ 없음)`:`n₂ sinθ₂ = ${state.n2.toFixed(2)} × ${Math.sin(rad(r.theta2)).toFixed(3)} = ${(state.n2*Math.sin(rad(r.theta2))).toFixed(3)}`;
+    noStroke();fill(255,255,255,210);rectMode(CENTER);rect(fx,fy-11,fw,28,14);rectMode(CORNER);
+    fill(r.tir?color(180,30,30):color(4,78,50));textAlign(CENTER,CENTER);textSize(11);textStyle(BOLD);text(`${lhs}   =   ${rhs}`,fx,fy-11);textStyle(NORMAL);
+  }
+
+  function drawCornerLabels(r){
+    noStroke();textAlign(LEFT,TOP);textSize(max(13,width*.012));
+    fill(4,78,50,200);text('법선',width/2+9,20);
+    fill(200,40,40,220);text(`θ₁ = ${r.theta1.toFixed(1)}°`,18,18);
+    fill(r.tir?color(200,40,40):color(4,78,50),210);text(r.tir?'θ₂ = 없음 (전반사)':`θ₂ = ${r.theta2.toFixed(1)}°`,18,38);
+  }
+</script>
+</body>
+</html>
