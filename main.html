@@ -40,7 +40,8 @@
 
       <div class="top-right-wrap">
         <div class="controls">
-          <input id="q" type="search" placeholder="검색: 제목·태그" autocomplete="off" spellcheck="false" />
+          <input id="q" type="search" placeholder="검색: 제목·태그" autocomplete="off" spellcheck="false" name="search-dummy" />
+          <button id="search-btn" type="button">검색</button>
           <select id="sort">
             <option value="updated">최신순</option>
             <option value="title">가나다순</option>
@@ -68,19 +69,35 @@
 
       <div id="info-section" class="auth-section" style="display:none;">
         <div class="info-id" id="info-id-label">아이디: -</div>
-        <div class="info-score-label">현재 점수</div>
-        <div class="info-score-big" id="info-score-big">0점</div>
 
-        <div id="rank-img-wrap" style="text-align:center; margin-top:8px;">
-          <img id="rank-img" src="" style="width:80px; height:80px; object-fit:contain;">
-          <div id="rank-name"
-            style="text-align:center;margin-top:6px;font-weight:700;font-size:18px;letter-spacing:2px;text-transform:uppercase;">
+        <div class="rank-card-wrap" id="rank-card-wrap">
+        <div class="rank-card" id="rank-card">
+          <img id="rank-img" src="" class="rank-card-img" alt="랭크 이미지">
+          <div class="rank-card-right">
+            <div id="rank-name" class="rank-card-name"></div>
+            <div class="rank-score-row">
+              <span class="rank-score-label">총 점수</span>
+              <span class="info-score-big" id="info-score-big">0점</span>
+            </div>
+            <div class="rank-progress-row">
+              <img id="rank-cur-small" src="" class="rank-small-img" alt="현재 랭크">
+              <div class="rank-progress-track">
+                <div class="rank-progress-bar" id="rank-progress-bar" style="width:0%"></div>
+              </div>
+              <img id="rank-next-img" src="" class="rank-small-img rank-next-img-dim" alt="다음 랭크">
+            </div>
+            <div class="rank-next-info" id="rank-next-info"></div>
           </div>
+        </div>
+        </div>
+
+        <div style="margin-top:10px; text-align:right;">
+          <button type="button" class="auth-btn outline small" onclick="openChangeMode()">비밀번호 변경</button>
         </div>
       </div>
       <div id="login-section" class="auth-section">
-        <input type="text" id="loginId" placeholder="아이디 (선생님이 준 ID)" />
-        <input type="password" id="loginPassword" placeholder="비밀번호" />
+        <input type="text" id="loginId" placeholder="아이디 (선생님이 준 ID)" onkeydown="if(event.key==='Enter')login()" />
+        <input type="password" id="loginPassword" placeholder="비밀번호" onkeydown="if(event.key==='Enter')login()" />
         <button type="button" onclick="login()">로그인</button>
       </div>
 

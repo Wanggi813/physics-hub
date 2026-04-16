@@ -111,6 +111,20 @@ h1 {
   align-items: center
 }
 
+#search-btn {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.07);
+  color: var(--fg);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+#search-btn:hover {
+  background: rgba(255,255,255,0.15);
+}
+
 
 input[type="search"],
 select {
@@ -592,20 +606,235 @@ input[type="search"] {
 .info-id {
   font-size: 12px;
   color: #9ca3af;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
-.info-score-label {
+/* 랭크 카드 레이아웃 */
+
+/* C: 회전 빛 테두리 래퍼 */
+.rank-card-wrap {
+  position: relative;
+  border-radius: 18px;
+  padding: 2px;
+  overflow: hidden;
+}
+.rank-card-wrap::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 300%; height: 300%;
+  background: conic-gradient(
+    transparent 0deg,
+    var(--rc, #888) 40deg,
+    #fff 70deg,
+    var(--rc, #888) 100deg,
+    transparent 140deg
+  );
+  animation: spin-border 2.5s linear infinite;
+  transform: translate(-50%, -50%) rotate(0deg);
+  z-index: 0;
+}
+@keyframes spin-border {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.rank-card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(22, 22, 28, 0.97);
+  border: none;
+  border-radius: 16px;
+  padding: 16px 18px;
+}
+
+/* E: 랭크 이미지 bounce-in + flash */
+.rank-card-img {
+  width: 110px;
+  height: 110px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6));
+}
+
+.rank-card-img.rank-bounce {
+  animation:
+    rank-bounce-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards,
+    rank-flash      0.85s ease-out forwards;
+}
+
+.rank-card-img.rank-floating {
+  animation: rank-float 3s ease-in-out infinite;
+}
+
+@keyframes rank-bounce-in {
+  0%   { transform: scale(0.15) translateY(20px); opacity: 0; }
+  55%  { transform: scale(1.22) translateY(-10px); opacity: 1; }
+  75%  { transform: scale(0.94) translateY(3px); }
+  90%  { transform: scale(1.04) translateY(-3px); }
+  100% { transform: scale(1)    translateY(0px); }
+}
+
+@keyframes rank-flash {
+  0%   { filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6)) brightness(1); }
+  20%  { filter: drop-shadow(0 0 35px #fff) brightness(3); }
+  100% { filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6)) brightness(1); }
+}
+
+.rank-card-right {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.rank-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.rank-card-name {
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.rank-card-name-ko {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  opacity: 0.7;
+}
+
+/* 승급 임박 뱃지 */
+.rank-promo-badge {
+  display: inline-block;
+  background: linear-gradient(90deg, #f97316, #ef4444);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 99px;
+  letter-spacing: 0.5px;
+  animation: promo-pulse 1.2s ease-in-out infinite;
+  vertical-align: middle;
+}
+
+@keyframes promo-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.8; transform: scale(1.05); }
+}
+
+@keyframes rank-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+
+.rank-score-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.rank-score-label {
   font-size: 11px;
   color: #9ca3af;
 }
 
 .info-score-big {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
-  margin-top: 2px;
+  color: #f9fafb;
+  line-height: 1;
+}
+
+/* 진행 바 행 (현재 랭크 아이콘 + 바 + 다음 랭크 아이콘) */
+.rank-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.rank-small-img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 4px rgba(0,0,0,0.5));
+}
+
+.rank-next-img-dim {
+  opacity: 0.45;
+  filter: drop-shadow(0 1px 4px rgba(0,0,0,0.5)) grayscale(30%);
+}
+
+/* 진행 바 */
+.rank-progress-track {
+  flex: 1 1 auto;
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.rank-progress-bar {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1), background 0.4s;
+  width: 0%;
+}
+
+/* 다음 랭크 텍스트 */
+.rank-next-info {
+  font-size: 10px;
+  color: #9ca3af;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rank-next-pct {
+  font-weight: 700;
+  color: #e5e7eb;
+}
+
+.rank-next-txt strong {
   color: #f9fafb;
 }
+
+/* ===== 토스트 알림 ===== */
+.toast {
+  position: fixed;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: rgba(28, 28, 34, 0.95);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #e5e7eb;
+  padding: 10px 22px;
+  border-radius: 99px;
+  font-size: 14px;
+  white-space: nowrap;
+  z-index: 99997;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  backdrop-filter: blur(8px);
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.toast.ok  { border-color: #22c55e66; color: #86efac; }
+.toast.err { border-color: #ef444466; color: #fca5a5; }
 
 .footer-admin {
   margin-top: 12px;

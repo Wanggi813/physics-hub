@@ -52,8 +52,8 @@
         position: fixed;
         top: 50%; left: 50%;
         transform: translate(-50%, -40%) scale(0.95);
-        width: 320px;
-        max-width: 90%;
+        width: 420px;
+        max-width: 95%;
         background: rgba(30, 30, 35, 0.85);
         border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 20px;
@@ -1934,7 +1934,9 @@ function render() {
   });
 }
 
-q.addEventListener('input', render);
+const searchBtn = document.getElementById('search-btn');
+if (searchBtn) searchBtn.addEventListener('click', render);
+q.addEventListener('keydown', e => { if (e.key === 'Enter') render(); });
 document.querySelector('.b-sidebar').addEventListener('click', e => {
   const tab = e.target.closest('.b-side-tab');
   if (!tab) return;
@@ -2107,11 +2109,20 @@ render();
   let dpr = Math.min(window.devicePixelRatio || 1, 2);
   let W = 0, H = 0;
 
+  let initialized = false;
   new ResizeObserver(() => {
     const r = canvas.getBoundingClientRect();
     W = r.width; H = r.height;
     canvas.width = W * dpr; canvas.height = H * dpr;
     ctx.scale(dpr, dpr);
+    if (!initialized && W > 0 && H > 0) {
+      initialized = true;
+      initSolarSystem();
+    } else if (initialized && attractors.length > 0) {
+      // 태양을 새 중앙으로 이동
+      attractors[0].x = W / 2;
+      attractors[0].y = H / 2;
+    }
   }).observe(canvas);
 
   let PARTICLE_COUNT = 350;
@@ -2467,7 +2478,6 @@ render();
   }
 
   setTimeout(() => {
-    initSolarSystem();
     requestAnimationFrame(loop);
   }, 100);
 
@@ -2488,9 +2498,25 @@ render();
   }
 
   function openModal() {
+    // 비밀번호 변경 중이었으면 내 정보(또는 로그인) 화면으로 리셋
+    const changeSec = document.getElementById('change-section');
+    const infoSec = document.getElementById('info-section');
+    const loginSec = document.getElementById('login-section');
+    const pwStatus = document.getElementById('pw-status');
+    if (changeSec && changeSec.style.display !== 'none') {
+      changeSec.style.display = 'none';
+      const user = window.getCurrentUser ? window.getCurrentUser() : null;
+      if (user && infoSec) infoSec.style.display = 'flex';
+      else if (loginSec) loginSec.style.display = 'flex';
+      if (pwStatus) { pwStatus.textContent = ''; pwStatus.className = 'auth-status'; }
+    }
+
     panel.classList.add('open');
     backdrop.classList.add('visible');
     panel.setAttribute('aria-hidden', 'false');
+
+    // A·C·E 랭크 애니메이션 트리거
+    requestAnimationFrame(() => window.playRankOpenAnimation?.());
   }
 
   function closeModal() {
@@ -2498,6 +2524,7 @@ render();
     backdrop.classList.remove('visible');
     panel.setAttribute('aria-hidden', 'true');
   }
+  window.closeAuthPanel = closeModal;
 
   openBtn.addEventListener('click', (e) => {
     e.stopPropagation();
