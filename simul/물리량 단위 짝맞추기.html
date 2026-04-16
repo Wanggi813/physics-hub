@@ -3,67 +3,48 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>물리량 단위 짝맞추기 | 시(물리)에이션</title>
+  <title>단위 짝꿍을 찾아라! | 시(물리)에이션</title>
   <style>
     @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
 
     :root {
       --purple: #7c3aed;
-      --purple-light: #ede9f8;
       --purple-mid: #a78bfa;
       --teal: #059669;
-      --teal-light: #d1fae5;
       --teal-mid: #34d399;
-      --ink: #1e1e3a;
+      --ink: #1a1535;
       --sub: #64748b;
       --muted: #94a3b8;
-      --border: rgba(148,163,184,.2);
-      --card-bg: rgba(255,255,255,.9);
-      --radius: 20px;
-      /* 인트로 전용 네온 */
-      --n-easy:   #00e887;
-      --n-mid:    #38b6ff;
-      --n-hard:   #ff4d6d;
-      --n-purple: #c084fc;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html, body { height: 100%; overflow: hidden; }
+
     body {
       font-family: "Pretendard", 'Segoe UI', 'Noto Sans KR', system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       background: #f0f4ff;
       color: var(--ink);
     }
 
     /* ── 헤더 ── */
     header {
-      width: 100%;
-      background: rgba(255,255,255,.92);
-      backdrop-filter: blur(12px);
-      border-bottom: 1.5px solid rgba(255,255,255,.8);
-      padding: 14px 24px;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 57px;
+      background: #fff;
+      border-bottom: 2px solid #ede9fe;
+      padding: 0 24px;
       display: flex;
       align-items: center;
       gap: 14px;
-      box-shadow: 0 2px 12px rgba(15,25,60,.06);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      transition: background 0.3s, border-color 0.3s;
-    }
-    body.intro-active header {
-      background: rgba(8,6,22,.9);
-      border-bottom-color: rgba(192,132,252,.2);
-      box-shadow: 0 2px 20px rgba(0,0,0,.4);
+      z-index: 200;
+      box-shadow: 0 2px 10px rgba(124,58,237,.07);
     }
     .back-btn {
-      background: #f1f5f9;
-      border: 1.5px solid #e2e8f0;
-      color: #475569;
+      background: #f5f3ff;
+      border: 2px solid #ddd6fe;
+      color: #6d28d9;
       padding: 6px 16px;
       border-radius: 99px;
       cursor: pointer;
@@ -72,65 +53,47 @@
       transition: all 0.15s;
       font-family: inherit;
     }
-    .back-btn:hover { background: #e9edf7; border-color: #cbd5e1; }
-    body.intro-active .back-btn {
-      background: rgba(255,255,255,.08);
-      border-color: rgba(192,132,252,.35);
-      color: #e2d9f3;
-    }
-    body.intro-active .back-btn:hover {
-      background: rgba(192,132,252,.15);
-      border-color: rgba(192,132,252,.6);
-      color: #fff;
-    }
-    .header-title { font-size: 17px; font-weight: 800; color: var(--ink); transition: color 0.3s; }
-    .header-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; font-weight: 600; transition: color 0.3s; }
-    body.intro-active .header-title { color: #f3eeff; }
-    body.intro-active .header-sub   { color: rgba(192,132,252,.6); }
+    .back-btn:hover { background: #ede9fe; }
+    .header-title { font-size: 17px; font-weight: 800; color: var(--ink); }
+    .header-sub   { font-size: 11px; color: var(--muted); margin-top: 1px; font-weight: 600; }
 
-    /* ── 공통 화면 ── */
-    .screen { display: none; width: 100%; }
+    /* ── 공통 화면 ── 헤더 아래 고정 위치에 겹쳐서 하나씩만 표시 */
+    .screen {
+      display: none;
+      position: fixed;
+      top: 57px; left: 0; right: 0; bottom: 0;
+      overflow-y: auto;
+      width: 100%;
+    }
     .screen.active { display: block; }
 
     /* ══════════════════════════════════════════
-       인트로 화면  —  네온 아케이드 테마
+       인트로 화면  —  밝고 활기찬 테마
     ══════════════════════════════════════════ */
     #intro-screen {
-      position: relative;
-      min-height: calc(100vh - 58px);
-      align-items: center;
-      justify-content: center;
-      /* 어두운 우주 배경 + 보라 빛 구름 */
-      background:
-        radial-gradient(ellipse 90% 60% at 50% -10%, rgba(124,58,237,.35) 0%, transparent 65%),
-        radial-gradient(ellipse 60% 40% at 80%  90%, rgba(56,182,255,.18) 0%, transparent 55%),
-        radial-gradient(ellipse 50% 35% at 10%  80%, rgba(0,232,135,.12) 0%, transparent 50%),
-        #07060f;
-      /* 점 격자 오버레이 */
-      background-image:
-        radial-gradient(ellipse 90% 60% at 50% -10%, rgba(124,58,237,.35) 0%, transparent 65%),
-        radial-gradient(ellipse 60% 40% at 80%  90%, rgba(56,182,255,.18) 0%, transparent 55%),
-        radial-gradient(ellipse 50% 35% at 10%  80%, rgba(0,232,135,.12) 0%, transparent 50%),
-        radial-gradient(circle, rgba(255,255,255,.055) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px;
+      background: linear-gradient(160deg, #fef9c3 0%, #fce7f3 45%, #ede9fe 100%);
       overflow: hidden;
     }
-    #intro-screen.active { display: flex; }
+    #intro-screen.active { display: flex; align-items: center; justify-content: center; }
 
-    /* 스캔라인 느낌 미세 줄 */
+    /* 배경 장식 원들 */
+    #intro-screen::before {
+      content: '';
+      position: absolute;
+      width: 520px; height: 520px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(167,139,250,.22) 0%, transparent 70%);
+      top: -120px; right: -100px;
+      pointer-events: none;
+    }
     #intro-screen::after {
       content: '';
       position: absolute;
-      inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 3px,
-        rgba(0,0,0,.04) 3px,
-        rgba(0,0,0,.04) 4px
-      );
+      width: 400px; height: 400px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(52,211,153,.18) 0%, transparent 70%);
+      bottom: -80px; left: -80px;
       pointer-events: none;
-      z-index: 0;
     }
 
     #intro-canvas {
@@ -139,242 +102,189 @@
       width: 100%;
       height: 100%;
       pointer-events: none;
-      z-index: 1;
+      z-index: 0;
     }
     .intro-content {
       position: relative;
-      z-index: 2;
+      z-index: 1;
       max-width: 600px;
       width: 100%;
-      padding: 52px 24px;
+      padding: 48px 24px;
       text-align: center;
     }
 
-    /* 상단 태그라인 */
-    .intro-tagline {
-      font-size: 11px;
+    /* 탑 배지 */
+    .intro-top-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #fff;
+      border: 2px solid #ddd6fe;
+      color: var(--purple);
+      font-size: 12px;
       font-weight: 800;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      color: var(--n-purple);
-      margin-bottom: 16px;
-      text-shadow: 0 0 12px rgba(192,132,252,.7);
-    }
-    .intro-tagline::before,
-    .intro-tagline::after {
-      content: ' ── ';
-      opacity: 0.5;
+      padding: 5px 16px;
+      border-radius: 99px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 10px rgba(124,58,237,.1);
     }
 
     /* 메인 타이틀 */
     .intro-title {
-      font-size: clamp(36px, 7vw, 60px);
+      font-size: clamp(34px, 6.5vw, 56px);
       font-weight: 900;
-      color: #fff;
+      color: var(--ink);
       line-height: 1.1;
-      margin-bottom: 14px;
-      letter-spacing: -0.03em;
-      text-shadow:
-        0 0 20px rgba(192,132,252,.8),
-        0 0 50px rgba(192,132,252,.4),
-        0 0 100px rgba(192,132,252,.15);
+      letter-spacing: -0.04em;
+      margin-bottom: 8px;
     }
-    .intro-title .highlight {
-      display: inline-block;
+    /* "짝꿍" 강조: 노란 마커 효과 */
+    .intro-title .mark {
       position: relative;
-      color: var(--n-purple);
-      text-shadow:
-        0 0 15px rgba(192,132,252,1),
-        0 0 35px rgba(192,132,252,.7),
-        0 0 70px rgba(192,132,252,.3);
+      display: inline-block;
+      color: var(--purple);
+      z-index: 0;
     }
-    /* 타이틀 아래 밑줄 글로우 */
-    .intro-title .highlight::after {
+    .intro-title .mark::before {
       content: '';
       position: absolute;
-      left: 5%; right: 5%;
-      bottom: -4px;
-      height: 3px;
-      background: var(--n-purple);
-      border-radius: 2px;
-      filter: blur(3px);
-      box-shadow: 0 0 12px var(--n-purple), 0 0 24px var(--n-purple);
-      animation: glow-pulse 2.4s ease-in-out infinite;
+      left: -3px; right: -3px;
+      bottom: 4px;
+      height: 40%;
+      background: #fde68a;
+      border-radius: 4px;
+      z-index: -1;
+      transform: rotate(-1deg);
     }
-    @keyframes glow-pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.5; }
+
+    .intro-subtitle {
+      font-size: 14px;
+      color: var(--sub);
+      font-weight: 700;
+      margin-bottom: 24px;
+      letter-spacing: 0.3px;
     }
 
     .intro-desc {
-      color: rgba(210,200,240,.65);
+      color: var(--sub);
       font-size: 14px;
-      margin-bottom: 36px;
+      margin-bottom: 30px;
       line-height: 1.8;
+      background: rgba(255,255,255,.6);
+      border-radius: 14px;
+      padding: 12px 20px;
+      border: 1.5px solid rgba(255,255,255,.9);
     }
 
     /* 범례 */
     .legend-row {
       display: flex;
       justify-content: center;
-      gap: 10px;
-      margin-bottom: 36px;
+      gap: 8px;
+      margin-bottom: 28px;
     }
     .legend-chip {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       font-size: 12px;
       font-weight: 800;
-      padding: 6px 18px;
+      padding: 5px 14px;
       border-radius: 99px;
-      letter-spacing: 0.3px;
     }
-    .legend-chip.name {
-      background: rgba(192,132,252,.12);
-      color: var(--n-purple);
-      border: 1.5px solid rgba(192,132,252,.35);
-      box-shadow: 0 0 12px rgba(192,132,252,.15), inset 0 1px 0 rgba(255,255,255,.08);
-    }
-    .legend-chip.unit {
-      background: rgba(0,232,135,.1);
-      color: var(--n-easy);
-      border: 1.5px solid rgba(0,232,135,.3);
-      box-shadow: 0 0 12px rgba(0,232,135,.12), inset 0 1px 0 rgba(255,255,255,.06);
-    }
+    .legend-chip.name { background: #ede9fe; color: #6d28d9; border: 1.5px solid #ddd6fe; }
+    .legend-chip.unit { background: #d1fae5; color: #065f46; border: 1.5px solid #a7f3d0; }
 
-    /* ── 난이도 카드 ── */
-    .diff-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-    }
+    /* ── 난이도 버튼 ── */
+    .diff-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
     .diff-btn {
       position: relative;
-      background: rgba(255,255,255,.04);
-      border: 1.5px solid rgba(255,255,255,.1);
-      border-radius: 18px;
+      border: none;
+      border-radius: 20px;
       padding: 0;
       cursor: pointer;
       font-family: inherit;
       overflow: hidden;
-      transition: transform 0.22s cubic-bezier(0.22,1,0.36,1),
-                  box-shadow 0.22s,
-                  border-color 0.22s;
+      transition: transform 0.2s cubic-bezier(0.22,1,0.36,1), box-shadow 0.2s;
+      box-shadow: 0 6px 20px rgba(0,0,0,.1);
     }
-    /* 난이도별 색상 변수 */
-    .diff-btn:nth-child(1) { --ac: var(--n-easy);  --ac-rgb: 0,232,135; }
-    .diff-btn:nth-child(2) { --ac: var(--n-mid);   --ac-rgb: 56,182,255; }
-    .diff-btn:nth-child(3) { --ac: var(--n-hard);  --ac-rgb: 255,77,109; }
+    /* 각 버튼 배경 색상 */
+    .diff-btn:nth-child(1) { background: linear-gradient(160deg, #d1fae5, #a7f3d0); }
+    .diff-btn:nth-child(2) { background: linear-gradient(160deg, #ede9fe, #ddd6fe); }
+    .diff-btn:nth-child(3) { background: linear-gradient(160deg, #fce7f3, #fbcfe8); }
 
-    /* 상단 컬러 바 */
-    .diff-btn::before {
-      content: '';
-      display: block;
-      height: 4px;
-      background: var(--ac);
-      box-shadow: 0 0 12px var(--ac), 0 0 24px var(--ac);
-    }
-    .diff-btn-body {
-      padding: 22px 14px 24px;
-      text-align: center;
-    }
     .diff-btn:hover {
-      transform: translateY(-8px) scale(1.03);
-      border-color: rgba(var(--ac-rgb), .5);
-      box-shadow:
-        0 20px 50px rgba(var(--ac-rgb), .25),
-        0 0 0 1px rgba(var(--ac-rgb), .3) inset;
+      transform: translateY(-7px) scale(1.03);
     }
-    .diff-icon {
-      font-size: 46px;
-      line-height: 1;
-      margin-bottom: 12px;
-      display: block;
-      filter: drop-shadow(0 0 8px rgba(var(--ac-rgb), .5));
-      transition: filter 0.2s;
-    }
-    .diff-btn:hover .diff-icon {
-      filter: drop-shadow(0 0 16px rgba(var(--ac-rgb), .9));
-    }
-    .diff-name {
-      font-size: 18px;
-      font-weight: 900;
-      color: #fff;
-      margin-bottom: 5px;
-      letter-spacing: -0.02em;
-    }
-    .diff-info {
-      font-size: 12px;
-      color: rgba(255,255,255,.4);
-      font-weight: 600;
-      margin-bottom: 12px;
-    }
-    .diff-range {
-      display: inline-block;
-      font-size: 12px;
-      font-weight: 800;
-      padding: 4px 14px;
-      border-radius: 99px;
-      background: rgba(var(--ac-rgb), .12);
-      color: var(--ac);
-      border: 1px solid rgba(var(--ac-rgb), .35);
-      letter-spacing: 0.3px;
-      box-shadow: 0 0 8px rgba(var(--ac-rgb), .2);
-    }
+    .diff-btn:nth-child(1):hover { box-shadow: 0 18px 40px rgba(52,211,153,.35); }
+    .diff-btn:nth-child(2):hover { box-shadow: 0 18px 40px rgba(124,58,237,.3); }
+    .diff-btn:nth-child(3):hover { box-shadow: 0 18px 40px rgba(236,72,153,.3); }
 
-    /* ──────────────────────────────────────────
-       게임 화면
-    ────────────────────────────────────────── */
-    #game-screen { padding: 16px; background: #f0f4ff; min-height: calc(100vh - 58px); }
+    .diff-btn-body { padding: 32px 16px 30px; text-align: center; }
+
+    .diff-icon {
+      font-size: 56px;
+      line-height: 1;
+      margin-bottom: 14px;
+      display: block;
+    }
+    .diff-name { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
+    .diff-btn:nth-child(1) .diff-name { color: #064e3b; }
+    .diff-btn:nth-child(2) .diff-name { color: #4c1d95; }
+    .diff-btn:nth-child(3) .diff-name { color: #831843; }
+
+    .diff-info { font-size: 13px; font-weight: 700; margin-bottom: 0; opacity: .7; }
+    .diff-btn:nth-child(1) .diff-info { color: #065f46; }
+    .diff-btn:nth-child(2) .diff-info { color: #5b21b6; }
+    .diff-btn:nth-child(3) .diff-info { color: #9d174d; }
+
+    /* ══════════════════════════════════════════
+       게임 화면  —  한 화면에 카드 전체 표시
+    ══════════════════════════════════════════ */
+    #game-screen {
+      padding: 10px 14px 8px;
+      background: #f0f4ff;
+      overflow: hidden;
+    }
+    #game-screen.active {
+      display: flex;
+      flex-direction: column;
+      /* top:57px; bottom:0 으로 이미 높이 확정 — height 별도 지정 불필요 */
+    }
 
     .game-topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      max-width: 900px;
-      margin: 0 auto 12px;
-      gap: 12px;
-      flex-wrap: wrap;
+      display: flex; align-items: center; justify-content: space-between;
+      max-width: 900px; width: 100%; margin: 0 auto 8px; gap: 10px; flex-wrap: wrap;
+      flex-shrink: 0;
     }
-    .stat-group { display: flex; gap: 10px; }
+    .stat-group { display: flex; gap: 8px; }
     .stat {
       text-align: center;
-      background: rgba(255,255,255,.92);
-      backdrop-filter: blur(8px);
-      border-radius: 14px;
-      padding: 8px 20px;
-      border: 1.5px solid rgba(255,255,255,.9);
-      box-shadow: 0 2px 12px rgba(15,25,60,.06);
-      min-width: 70px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 6px 16px;
+      border: 2px solid #ede9fe;
+      box-shadow: 0 2px 8px rgba(124,58,237,.06);
+      min-width: 60px;
     }
-    .stat-val   { font-size: 22px; font-weight: 900; font-variant-numeric: tabular-nums; color: var(--ink); }
-    .stat-label { font-size: 10px; color: var(--muted); margin-top: 2px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+    .stat-val   { font-size: 20px; font-weight: 900; font-variant-numeric: tabular-nums; color: var(--ink); }
+    .stat-label { font-size: 9px; color: var(--muted); margin-top: 1px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
     .stat-val.timer-val { color: var(--purple); }
 
     .restart-btn {
-      background: rgba(255,255,255,.9);
-      border: 1.5px solid #e2e8f0;
-      padding: 9px 20px;
-      border-radius: 99px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--sub);
-      transition: all 0.15s;
-      font-family: inherit;
+      background: #fff; border: 2px solid #ddd6fe; padding: 7px 16px;
+      border-radius: 99px; cursor: pointer; font-size: 13px; font-weight: 700;
+      color: var(--purple); transition: all 0.15s; font-family: inherit;
+      flex-shrink: 0;
     }
-    .restart-btn:hover { background: #fff; border-color: var(--purple-mid); color: var(--purple); }
+    .restart-btn:hover { background: #f5f3ff; }
 
     /* 진행 바 */
     .progress-wrap {
-      max-width: 900px;
-      margin: 0 auto 16px;
-      height: 8px;
-      background: rgba(255,255,255,.6);
-      border-radius: 99px;
-      overflow: hidden;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,.06);
+      max-width: 900px; width: 100%; margin: 0 auto 8px; height: 8px;
+      background: #e8e4f8; border-radius: 99px; overflow: hidden;
+      flex-shrink: 0;
     }
     .progress-fill {
       height: 100%;
@@ -386,131 +296,87 @@
 
     /* ── 카운트다운 오버레이 ── */
     #preview-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(15,15,40,.08);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding-top: 80px;
-      gap: 8px;
-      z-index: 999;
-      pointer-events: none;
+      position: fixed; inset: 0;
+      background: rgba(240,238,255,.15);
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: flex-start; padding-top: 80px;
+      gap: 8px; z-index: 999; pointer-events: none;
     }
     #preview-overlay.hidden { display: none; }
     .preview-msg {
-      color: #5b21b6;
-      font-size: 15px;
-      font-weight: 800;
-      background: rgba(255,255,255,.9);
-      backdrop-filter: blur(8px);
-      padding: 7px 22px;
-      border-radius: 99px;
-      border: 1.5px solid rgba(124,58,237,.25);
-      box-shadow: 0 4px 16px rgba(124,58,237,.15);
+      color: #5b21b6; font-size: 15px; font-weight: 800;
+      background: #fff; padding: 7px 22px; border-radius: 99px;
+      border: 2px solid #ddd6fe; box-shadow: 0 4px 16px rgba(124,58,237,.15);
     }
     .preview-count {
-      font-size: 64px;
-      font-weight: 900;
-      color: #7c3aed;
-      line-height: 1;
-      text-shadow: 0 4px 16px rgba(124,58,237,.25);
+      font-size: 68px; font-weight: 900; color: var(--purple); line-height: 1;
+      filter: drop-shadow(0 4px 12px rgba(124,58,237,.3));
     }
     .preview-count.pop { animation: count-pop 0.35s cubic-bezier(0.22,1,0.36,1); }
     @keyframes count-pop {
-      0%   { transform: scale(1.6); opacity: 0.5; }
-      100% { transform: scale(1);   opacity: 1; }
+      0%   { transform: scale(1.6); opacity: .5; }
+      100% { transform: scale(1);   opacity: 1;  }
     }
 
     /* ── 카드 그리드 ── */
     #card-grid {
       display: grid;
-      gap: 10px;
+      grid-auto-rows: 1fr;   /* 남은 높이를 행이 균등 분배 */
+      gap: 8px;
       max-width: 900px;
+      width: 100%;
       margin: 0 auto;
+      flex: 1;               /* 게임화면 남은 공간 모두 차지 */
+      min-height: 0;
     }
 
     /* ── 카드 ── */
-    .card-wrap { perspective: 700px; aspect-ratio: 1 / 1; }
+    .card-wrap {
+      perspective: 700px;
+      min-height: 0;         /* aspect-ratio 제거 → 그리드 행 높이에 맞춤 */
+    }
     .card-inner {
-      width: 100%;
-      height: 100%;
-      position: relative;
+      width: 100%; height: 100%; position: relative;
       transform-style: preserve-3d;
       transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
-      cursor: pointer;
-      border-radius: 16px;
+      cursor: pointer; border-radius: 12px;
     }
     .card-inner.flipped { transform: rotateY(180deg); }
 
     .card-face, .card-reveal {
-      position: absolute;
-      inset: 0;
-      border-radius: 16px;
+      position: absolute; inset: 0; border-radius: 12px;
       backface-visibility: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 5px;
-      user-select: none;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 5px; user-select: none;
     }
 
-    /* 뒷면 */
     .card-face {
       background: linear-gradient(145deg, #ddd6fe, #c7d2fe);
-      border: 2px solid rgba(255,255,255,.6);
-      box-shadow: 0 4px 16px rgba(124,58,237,.12), inset 0 1px 0 rgba(255,255,255,.5);
+      border: 2px solid rgba(255,255,255,.7);
+      box-shadow: 0 4px 14px rgba(124,58,237,.14), inset 0 1px 0 rgba(255,255,255,.6);
     }
-    .card-face-pattern {
-      font-size: clamp(20px, 3.5vw, 32px);
-      opacity: 0.5;
-      filter: drop-shadow(0 2px 4px rgba(124,58,237,.2));
-    }
+    .card-face-pattern { font-size: clamp(20px, 3.5vw, 32px); opacity: .45; }
 
-    /* 앞면 */
     .card-reveal { transform: rotateY(180deg); }
     .card-reveal.type-name {
       background: linear-gradient(145deg, #f5f3ff, #ede9f8);
       border: 2px solid #c4b5fd;
-      box-shadow: 0 4px 16px rgba(124,58,237,.14);
+      box-shadow: 0 4px 14px rgba(124,58,237,.13);
     }
     .card-reveal.type-unit {
       background: linear-gradient(145deg, #f0fdf4, #d1fae5);
       border: 2px solid #6ee7b7;
-      box-shadow: 0 4px 16px rgba(5,150,105,.12);
+      box-shadow: 0 4px 14px rgba(5,150,105,.11);
     }
-    .card-text {
-      font-size: clamp(13px, 2.8vw, 22px);
-      font-weight: 900;
-      text-align: center;
-      line-height: 1.2;
-      padding: 0 6px;
-    }
-    .card-badge {
-      font-size: clamp(8px, 1.2vw, 10px);
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 99px;
-      letter-spacing: 0.3px;
-    }
+    .card-text { font-size: clamp(13px, 2.8vw, 22px); font-weight: 900; text-align: center; line-height: 1.2; padding: 0 6px; }
+    .card-badge { font-size: clamp(8px, 1.2vw, 10px); font-weight: 700; padding: 2px 8px; border-radius: 99px; }
     .type-name .card-text  { color: #5b21b6; }
     .type-name .card-badge { background: #ddd6fe; color: #6d28d9; }
     .type-unit .card-text  { color: #065f46; }
     .type-unit .card-badge { background: #a7f3d0; color: #047857; }
 
-    /* 매칭 */
-    .card-inner.matched {
-      cursor: default;
-      pointer-events: none;
-      animation: match-pop 0.5s cubic-bezier(0.22,1,0.36,1);
-    }
-    .card-inner.matched .card-reveal {
-      background: linear-gradient(145deg, #ecfdf5, #d1fae5) !important;
-      border-color: #34d399 !important;
-      box-shadow: 0 0 0 3px rgba(52,211,153,.25) !important;
-    }
+    .card-inner.matched { cursor: default; pointer-events: none; animation: match-pop 0.5s cubic-bezier(0.22,1,0.36,1); }
+    .card-inner.matched .card-reveal { background: linear-gradient(145deg,#ecfdf5,#d1fae5) !important; border-color: #34d399 !important; box-shadow: 0 0 0 3px rgba(52,211,153,.25) !important; }
     .card-inner.matched .card-text  { color: #065f46 !important; }
     .card-inner.matched .card-badge { background: #a7f3d0 !important; color: #047857 !important; }
 
@@ -521,102 +387,101 @@
     }
     .card-inner.shake { animation: card-shake 0.38s ease; }
     @keyframes card-shake {
-      0%, 100% { transform: rotateY(180deg) translateX(0); }
-      25%       { transform: rotateY(180deg) translateX(-7px); }
-      75%       { transform: rotateY(180deg) translateX(7px); }
+      0%,100% { transform: rotateY(180deg) translateX(0); }
+      25%     { transform: rotateY(180deg) translateX(-7px); }
+      75%     { transform: rotateY(180deg) translateX(7px); }
     }
 
-    /* ──────────────────────────────────────────
-       완료 화면
-    ────────────────────────────────────────── */
-    #complete-screen {
-      max-width: 520px;
-      margin: 0 auto;
-      padding: 52px 24px;
-      text-align: center;
+    /* ══════════════════════════════════════════
+       모바일 반응형
+    ══════════════════════════════════════════ */
+    @media (max-width: 520px) {
+      /* 헤더 */
+      header { padding: 10px 14px; }
+      .header-title { font-size: 15px; }
+
+      /* 인트로 */
+      .intro-content { padding: 32px 16px 28px; }
+      .intro-title { font-size: clamp(30px, 9vw, 44px); }
+      .intro-desc { font-size: 13px; padding: 10px 14px; }
+      .diff-grid { gap: 8px; }
+      .diff-btn-body { padding: 22px 10px 20px; }
+      .diff-icon { font-size: 40px; margin-bottom: 10px; }
+      .diff-name { font-size: 18px; }
+      .diff-info { font-size: 12px; }
+      .legend-row { gap: 6px; margin-bottom: 20px; }
+
+      /* 게임 화면 */
+      #game-screen { padding: 8px 8px 6px; }
+      .game-topbar { margin-bottom: 6px; gap: 6px; }
+      .stat { padding: 5px 10px; min-width: 52px; }
+      .stat-val { font-size: 17px; }
+      .stat-label { font-size: 8px; }
+      .restart-btn { padding: 6px 12px; font-size: 12px; }
+      .progress-wrap { margin-bottom: 6px; height: 6px; }
+      #card-grid { gap: 5px; }
+      .card-text { font-size: clamp(10px, 3.5vw, 16px); }
+      .card-badge { font-size: clamp(7px, 1.8vw, 9px); }
+      .card-inner { border-radius: 8px; }
+      .card-face, .card-reveal { border-radius: 8px; }
     }
+
+    @media (max-width: 360px) {
+      .diff-grid { grid-template-columns: 1fr; max-width: 240px; margin: 0 auto; }
+      .diff-btn-body { padding: 16px 24px; }
+      .diff-icon { display: inline; margin-right: 8px; font-size: 28px; }
+      .diff-name { display: inline; font-size: 18px; }
+      .diff-info { margin-top: 4px; }
+    }
+
+    /* ══════════════════════════════════════════
+       완료 화면
+    ══════════════════════════════════════════ */
+    #complete-screen { overflow-y: auto; background: #f0f4ff; }
+    .complete-inner { max-width: 520px; margin: 0 auto; padding: 52px 24px; text-align: center; }
     .complete-emoji { font-size: 72px; margin-bottom: 10px; line-height: 1; }
     .stars-row { font-size: 40px; letter-spacing: 6px; margin-bottom: 16px; }
-    .complete-title {
-      font-size: 32px;
-      font-weight: 900;
-      margin-bottom: 6px;
-      color: var(--ink);
-      letter-spacing: -0.03em;
-    }
+    .complete-title { font-size: 32px; font-weight: 900; margin-bottom: 6px; color: var(--ink); letter-spacing: -0.03em; }
     .complete-sub { color: var(--sub); font-size: 15px; margin-bottom: 28px; font-weight: 600; }
 
-    /* 점수 표시 */
     .score-display {
-      background: linear-gradient(135deg, #ede9f8, #d1fae5);
+      background: linear-gradient(135deg, #ede9fe, #d1fae5);
       border: 2px solid rgba(124,58,237,.2);
-      border-radius: 24px;
-      padding: 28px 40px;
-      margin-bottom: 20px;
+      border-radius: 24px; padding: 28px 40px; margin-bottom: 20px;
       box-shadow: 0 8px 32px rgba(124,58,237,.1);
     }
     .score-label { font-size: 11px; font-weight: 800; color: var(--purple); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
     .score-value {
-      font-size: 58px;
-      font-weight: 900;
+      font-size: 58px; font-weight: 900;
       background: linear-gradient(125deg, #7c3aed, #34d399);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       line-height: 1.1;
       animation: score-pop 0.6s cubic-bezier(0.22,1,0.36,1);
     }
-    @keyframes score-pop {
-      0%   { transform: scale(0.5); opacity: 0; }
-      100% { transform: scale(1);   opacity: 1; }
-    }
+    @keyframes score-pop { 0% { transform: scale(.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
     .score-save-msg { font-size: 13px; margin-top: 6px; font-weight: 700; min-height: 20px; }
     .score-save-msg.new-best { color: var(--teal); }
     .score-save-msg.no-login { color: var(--muted); }
 
-    .result-cards {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-bottom: 28px;
-    }
-    .result-card {
-      background: rgba(255,255,255,.9);
-      border: 1.5px solid rgba(255,255,255,.9);
-      border-radius: 16px;
-      padding: 18px 8px;
-      box-shadow: 0 2px 12px rgba(15,25,60,.06);
-    }
+    .result-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 28px; }
+    .result-card { background: #fff; border: 2px solid #ede9fe; border-radius: 16px; padding: 18px 8px; }
     .result-val   { font-size: 20px; font-weight: 900; color: var(--ink); }
-    .result-label { font-size: 11px; color: var(--muted); margin-top: 4px; font-weight: 700; letter-spacing: 0.3px; }
+    .result-label { font-size: 11px; color: var(--muted); margin-top: 4px; font-weight: 700; }
 
     .btn-row { display: flex; gap: 10px; justify-content: center; }
     .btn-primary {
-      background: linear-gradient(125deg, #7c3aed, #a78bfa);
-      color: #fff;
-      border: none;
-      padding: 14px 36px;
-      border-radius: 99px;
-      font-size: 15px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: all 0.15s;
-      font-family: inherit;
+      background: linear-gradient(125deg, #7c3aed, #a78bfa); color: #fff; border: none;
+      padding: 14px 36px; border-radius: 99px; font-size: 15px; font-weight: 800;
+      cursor: pointer; transition: all 0.15s; font-family: inherit;
       box-shadow: 0 4px 20px rgba(124,58,237,.3);
     }
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(124,58,237,.4); }
     .btn-secondary {
-      background: rgba(255,255,255,.9);
-      border: 1.5px solid #e2e8f0;
-      color: var(--sub);
-      padding: 14px 28px;
-      border-radius: 99px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s;
-      font-family: inherit;
+      background: #fff; border: 2px solid #ddd6fe; color: var(--purple);
+      padding: 14px 28px; border-radius: 99px; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: all 0.15s; font-family: inherit;
     }
-    .btn-secondary:hover { background: #fff; border-color: #c7d2fe; color: var(--purple); }
+    .btn-secondary:hover { background: #f5f3ff; }
   </style>
 </head>
 <body>
@@ -624,8 +489,8 @@
 <header>
   <button class="back-btn" onclick="goBack()">← 뒤로</button>
   <div>
-    <div class="header-title">물리량 단위 짝맞추기</div>
-    <div class="header-sub">SI 단위계 학습 카드 게임</div>
+    <div class="header-title">단위 짝꿍을 찾아라!</div>
+    <div class="header-sub">물리량 단위 짝맞추기 카드 게임</div>
   </div>
 </header>
 
@@ -633,15 +498,16 @@
 <div id="intro-screen" class="screen active">
   <canvas id="intro-canvas"></canvas>
   <div class="intro-content">
-    <div class="intro-tagline">Physics Card Match</div>
-    <h1 class="intro-title">물리량 단위<br><span class="highlight">짝맞추기</span></h1>
-    <p class="intro-desc">
-      카드를 뒤집어 물리량 이름과 SI 단위 짝을 맞춰보세요<br>
+    <div class="intro-top-badge">⚛ Physics Card Match</div>
+    <h1 class="intro-title">단위 <span class="mark">짝꿍</span>을<br>찾아라!</h1>
+    <div class="intro-subtitle">물리량 단위 짝맞추기</div>
+    <div class="intro-desc">
+      카드를 뒤집어 물리량 이름 🟣 과 SI 단위 🟢 짝을 맞춰보세요<br>
       빠르고 정확할수록 높은 점수!
-    </p>
+    </div>
     <div class="legend-row">
-      <div class="legend-chip name">◈ 물리량 이름</div>
-      <div class="legend-chip unit">◈ SI 단위</div>
+      <div class="legend-chip name">🟣 물리량 이름</div>
+      <div class="legend-chip unit">🟢 SI 단위</div>
     </div>
     <div class="diff-grid">
       <button class="diff-btn" onclick="startGame(8)">
@@ -649,7 +515,6 @@
           <span class="diff-icon">🌱</span>
           <div class="diff-name">쉬움</div>
           <div class="diff-info">8쌍 · 16장</div>
-          <div class="diff-range">최대 500점</div>
         </div>
       </button>
       <button class="diff-btn" onclick="startGame(12)">
@@ -657,7 +522,6 @@
           <span class="diff-icon">⚡</span>
           <div class="diff-name">보통</div>
           <div class="diff-info">12쌍 · 24장</div>
-          <div class="diff-range">최대 1,200점</div>
         </div>
       </button>
       <button class="diff-btn" onclick="startGame(18)">
@@ -665,7 +529,6 @@
           <span class="diff-icon">🔥</span>
           <div class="diff-name">어려움</div>
           <div class="diff-info">18쌍 · 36장</div>
-          <div class="diff-range">최대 2,000점</div>
         </div>
       </button>
     </div>
@@ -705,32 +568,34 @@
 
 <!-- 완료 화면 -->
 <div id="complete-screen" class="screen">
-  <div class="complete-emoji">🎉</div>
-  <div class="stars-row" id="stars"></div>
-  <div class="complete-title">완성!</div>
-  <div class="complete-sub" id="complete-sub"></div>
-  <div class="score-display">
-    <div class="score-label">이번 점수</div>
-    <div class="score-value" id="r-score">0</div>
-    <div class="score-save-msg" id="score-save-msg"></div>
-  </div>
-  <div class="result-cards">
-    <div class="result-card">
-      <div class="result-val" id="r-time">-</div>
-      <div class="result-label">걸린 시간</div>
+  <div class="complete-inner">
+    <div class="complete-emoji">🎉</div>
+    <div class="stars-row" id="stars"></div>
+    <div class="complete-title">완성!</div>
+    <div class="complete-sub" id="complete-sub"></div>
+    <div class="score-display">
+      <div class="score-label">이번 점수</div>
+      <div class="score-value" id="r-score">0</div>
+      <div class="score-save-msg" id="score-save-msg"></div>
     </div>
-    <div class="result-card">
-      <div class="result-val" id="r-moves">-</div>
-      <div class="result-label">시도 횟수</div>
+    <div class="result-cards">
+      <div class="result-card">
+        <div class="result-val" id="r-time">-</div>
+        <div class="result-label">걸린 시간</div>
+      </div>
+      <div class="result-card">
+        <div class="result-val" id="r-moves">-</div>
+        <div class="result-label">시도 횟수</div>
+      </div>
+      <div class="result-card">
+        <div class="result-val" id="r-acc">-</div>
+        <div class="result-label">정확도</div>
+      </div>
     </div>
-    <div class="result-card">
-      <div class="result-val" id="r-acc">-</div>
-      <div class="result-label">정확도</div>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goIntro()">← 메뉴</button>
+      <button class="btn-primary"   onclick="restart()">다시하기</button>
     </div>
-  </div>
-  <div class="btn-row">
-    <button class="btn-secondary" onclick="goIntro()">← 메뉴</button>
-    <button class="btn-primary"   onclick="restart()">다시하기</button>
   </div>
 </div>
 
@@ -757,20 +622,21 @@ const ALL_PAIRS = [
 ];
 
 let pairCount = 0, cards = [], flipped = [], matchedCount = 0, moves = 0;
-let locked = false, timerInterval = null, seconds = 0;
+let locked = false, timerInterval = null, previewTick = null, seconds = 0;
 
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
 
 function show(id) {
   ['intro-screen','game-screen','complete-screen'].forEach(s =>
     document.getElementById(s).classList.toggle('active', s === id));
-  document.body.classList.toggle('intro-active', id === 'intro-screen');
 }
 
 function startGame(n) {
   pairCount = n;
   flipped = []; matchedCount = 0; moves = 0; locked = true;
   clearInterval(timerInterval);
+  clearInterval(previewTick);   // 이전 프리뷰 타이머 초기화
+  previewTick = null;
   seconds = 0; updateTimer();
   updateStats();
   buildGrid(n);
@@ -780,16 +646,18 @@ function startGame(n) {
 
 function startPreview() {
   document.querySelectorAll('.card-inner').forEach(c => c.classList.add('flipped'));
-  const overlay  = document.getElementById('preview-overlay');
-  const countEl  = document.getElementById('preview-count');
+  const overlay = document.getElementById('preview-overlay');
+  const countEl = document.getElementById('preview-count');
   overlay.classList.remove('hidden');
   let count = 5;
   countEl.textContent = count;
 
-  const tick = setInterval(() => {
+  clearInterval(previewTick);   // 혹시 남아있는 것 제거
+  previewTick = setInterval(() => {
     count--;
     if (count <= 0) {
-      clearInterval(tick);
+      clearInterval(previewTick);
+      previewTick = null;
       overlay.classList.add('hidden');
       document.querySelectorAll('.card-inner').forEach(c => c.classList.remove('flipped'));
       setTimeout(() => {
@@ -881,7 +749,6 @@ function updateTimer() {
 }
 
 // ── 점수 계산 ──
-// 하(8쌍): 0~500 / 중(12쌍): 501~1200 / 상(18쌍): 1201~2000
 const SCORE_CFG = {
   8:  { base: 0,    timeBonus: 300, timeLimit: 150, accBonus: 200 },
   12: { base: 501,  timeBonus: 420, timeLimit: 200, accBonus: 279 },
@@ -942,16 +809,29 @@ async function saveScore(score) {
   }
 }
 
-function restart()  { startGame(pairCount); }
-function goIntro()  { clearInterval(timerInterval); show('intro-screen'); startIntroCanvas(); }
+function stopPreview() {
+  clearInterval(previewTick);
+  previewTick = null;
+  document.getElementById('preview-overlay').classList.add('hidden');
+  document.querySelectorAll('.card-inner').forEach(c => c.classList.remove('flipped'));
+}
+
+function restart() { startGame(pairCount); }
+
+function goIntro() {
+  clearInterval(timerInterval);
+  stopPreview();
+  show('intro-screen');
+  startIntroCanvas();
+}
 
 function goBack() {
   const onIntro = document.getElementById('intro-screen').classList.contains('active');
-  if (onIntro) { window.close(); }
-  else         { goIntro(); }
+  if (onIntro) window.close();
+  else         goIntro();
 }
 
-// ── 인트로 배경 캔버스 (밝은 테마) ──
+// ── 인트로 배경 캔버스 ──
 let introRAF = null;
 
 function startIntroCanvas() {
@@ -980,9 +860,9 @@ function startIntroCanvas() {
       x:      Math.random(),
       y:      Math.random(),
       size:   13 + Math.random() * 20,
-      alpha:  0.12 + Math.random() * 0.18,
-      vx:     (Math.random() - 0.5) * 0.00020,
-      vy:     (Math.random() - 0.5) * 0.00020,
+      alpha:  0.10 + Math.random() * 0.15,
+      vx:     (Math.random() - 0.5) * 0.00018,
+      vy:     (Math.random() - 0.5) * 0.00018,
       angle:  (Math.random() - 0.5) * 0.3,
     };
   });
@@ -1000,7 +880,7 @@ function startIntroCanvas() {
       ctx.save();
       ctx.globalAlpha = p.alpha;
       ctx.font        = `800 ${p.size}px "Pretendard", system-ui, sans-serif`;
-      ctx.fillStyle   = p.isName ? '#c084fc' : '#00e887';
+      ctx.fillStyle   = p.isName ? '#7c3aed' : '#059669';
       ctx.translate(p.x * W, p.y * H);
       ctx.rotate(p.angle);
       ctx.fillText(p.text, 0, 0);
@@ -1011,7 +891,6 @@ function startIntroCanvas() {
   draw();
 }
 
-document.body.classList.add('intro-active');
 startIntroCanvas();
 </script>
 
