@@ -38,48 +38,223 @@ const db = getFirestore(app);
 let currentUser = null;
 let currentScore = 0;
 let currentUserIdText = "";
+let currentRankIdx = -1; // 랭크업 감지용 (-1 = 첫 로드)
+let justLoggedIn = false; // 로그인 직후 패널 자동 닫힘용
+
+// ====================== 토스트 알림 ======================
+function showToast(msg, type = 'info') {
+  const prev = document.querySelector('.toast');
+  if (prev) { clearTimeout(prev._timer); prev.remove(); }
+
+  const el = document.createElement('div');
+  el.className = 'toast' + (type !== 'info' ? ' ' + type : '');
+  el.textContent = msg;
+  document.body.appendChild(el);
+
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+
+  el._timer = setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 250);
+  }, 2600);
+}
 
 // ====================== 랭크 메타 / 이미지 / 이름 ======================
 
-const rankMeta = {
-  "아이언.png": { en: "IRON", color: "#594946" },
-  "브론즈.png": { en: "BRONZE", color: "#593C39" },
-  "실버.png": { en: "SILVER", color: "#A3B4BF" },
-  "골드.png": { en: "GOLD", color: "#FBEBBC" },
-  "에메랄드.png": { en: "EMERALD", color: "#7ABFB3" },
-  "다이아.png": { en: "DIAMOND", color: "#BBE8F2" },
-  "마스터.png": { en: "MASTER", color: "#885BA6" },
-  "그랜드마스터.png": { en: "GRANDMASTER", color: "#A62626" },
-  "챌린저.png": { en: "CHALLENGER", color: "#6CA6D9" }
-};
+const rankTiers = [
+  { file: "아이언.png",       en: "IRON",        ko: "아이언",       color: "#8c7b79", from: 0,     to: 500   },
+  { file: "브론즈.png",       en: "BRONZE",       ko: "브론즈",       color: "#cd7f46", from: 500,   to: 1000  },
+  { file: "실버.png",         en: "SILVER",       ko: "실버",         color: "#A3B4BF", from: 1000,  to: 2000  },
+  { file: "골드.png",         en: "GOLD",         ko: "골드",         color: "#f5c842", from: 2000,  to: 5000  },
+  { file: "에메랄드.png",     en: "EMERALD",      ko: "에메랄드",     color: "#7ABFB3", from: 5000,  to: 7000  },
+  { file: "다이아.png",       en: "DIAMOND",      ko: "다이아",       color: "#BBE8F2", from: 7000,  to: 9000  },
+  { file: "마스터.png",       en: "MASTER",       ko: "마스터",       color: "#b06fe8", from: 9000,  to: 11000 },
+  { file: "그랜드마스터.png", en: "GRANDMASTER",  ko: "그랜드마스터", color: "#e85252", from: 11000, to: 15000 },
+  { file: "챌린저.png",       en: "CHALLENGER",   ko: "챌린저",       color: "#6CA6D9", from: 15000, to: null  },
+];
+
+// 하위 호환 유지용
+const rankMeta = Object.fromEntries(rankTiers.map(r => [r.file, { en: r.en, color: r.color }]));
 
 function getRankImageFile(score) {
   const s = Number(score) || 0;
-  if (s < 500) return "아이언.png";
-  if (s < 1000) return "브론즈.png";
-  if (s < 2000) return "실버.png";
-  if (s < 5000) return "골드.png";
-  if (s < 7000) return "에메랄드.png";
-  if (s < 9000) return "다이아.png";
-  if (s < 11000) return "마스터.png";
-  if (s < 15000) return "그랜드마스터.png";
-  return "챌린저.png";
+  const tier = rankTiers.slice().reverse().find(r => s >= r.from);
+  return tier ? tier.file : "아이언.png";
 }
 
-function applyRankImage(score) {
+function getRankProgress(score) {
+  const s = Number(score) || 0;
+  const idx = rankTiers.findIndex(r => r.to === null || s < r.to);
+  const tier = rankTiers[idx];
+  if (!tier || tier.to === null) {
+    return { pct: 100, remaining: 0, nextKo: null, color: rankTiers[rankTiers.length - 1].color };
+  }
+  const pct = Math.min(100, Math.round(((s - tier.from) / (tier.to - tier.from)) * 100));
+  const next = rankTiers[idx + 1];
+  return { pct, remaining: tier.to - s, nextKo: next ? next.ko : null, color: tier.color };
+}
+
+// C: 폭죽(confetti) 이펙트
+function launchConfetti(rankColor) {
+  const canvas = document.createElement("canvas");
+  canvas.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:99999;";
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext("2d");
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  // 랭크 컬러 기반 팔레트 (메인색 + 밝은 변형 + 흰색)
+  const hex = rankColor.replace("#", "");
+  const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+  const lighter = `rgb(${Math.min(255,r+80)},${Math.min(255,g+80)},${Math.min(255,b+80)})`;
+  const palette = [rankColor, lighter, "#ffffff", rankColor, "#ffffff", lighter];
+
+  const COUNT = 160;
+  const cx = canvas.width / 2;
+  const particles = Array.from({ length: COUNT }, (_, i) => {
+    const angle = (Math.random() * 2 - 1) * Math.PI; // 왼쪽↔오른쪽 부채꼴
+    const speed = 6 + Math.random() * 12;
+    return {
+      x: cx + (Math.random() - 0.5) * 200,
+      y: canvas.height * 0.35,
+      vx: Math.cos(angle) * speed,
+      vy: -Math.abs(Math.sin(angle) * speed) - 4, // 항상 위로 터짐
+      w: 7 + Math.random() * 7,
+      h: 3 + Math.random() * 4,
+      color: palette[i % palette.length],
+      rot: Math.random() * 360,
+      rotV: (Math.random() - 0.5) * 12,
+      gravity: 0.35 + Math.random() * 0.2,
+    };
+  });
+
+  const DURATION = 2800;
+  let start = null;
+  function animate(ts) {
+    if (!start) start = ts;
+    const elapsed = ts - start;
+    const alpha = Math.max(0, 1 - elapsed / DURATION);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.vy += p.gravity;
+      p.x  += p.vx;
+      p.y  += p.vy;
+      p.rot += p.rotV;
+      if (p.y > canvas.height + 20) return;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    });
+
+    if (elapsed < DURATION) requestAnimationFrame(animate);
+    else canvas.remove();
+  }
+  requestAnimationFrame(animate);
+}
+
+// A: 점수 카운트업
+function animateCount(el, target, duration = 1300) {
+  const start = performance.now();
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(target * ease).toLocaleString() + "점";
+    if (t < 1) requestAnimationFrame(step);
+    else el.textContent = target.toLocaleString() + "점";
+  }
+  requestAnimationFrame(step);
+}
+
+// 패널 열릴 때 호출 — A·E·진행 바 동시 재생
+window.playRankOpenAnimation = function () {
+  // A: 카운트업
+  const scoreBig = document.getElementById("info-score-big");
+  if (scoreBig && currentScore >= 0) animateCount(scoreBig, currentScore);
+
+  // E: bounce-in → floating 전환
   const imgEl = document.getElementById("rank-img");
-  const nameEl = document.getElementById("rank-name");
+  if (imgEl) {
+    imgEl.classList.remove("rank-bounce", "rank-floating");
+    void imgEl.offsetWidth; // reflow로 애니메이션 리셋
+    imgEl.classList.add("rank-bounce");
+    setTimeout(() => {
+      imgEl.classList.remove("rank-bounce");
+      imgEl.classList.add("rank-floating");
+    }, 900);
+  }
+
+  // 진행 바 재생
+  const barEl = document.getElementById("rank-progress-bar");
+  if (barEl && barEl.dataset.targetPct) {
+    barEl.style.width = "0%";
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { barEl.style.width = barEl.dataset.targetPct; });
+    });
+  }
+};
+
+function applyRankImage(score) {
+  const imgEl     = document.getElementById("rank-img");
+  const nameEl    = document.getElementById("rank-name");
+  const barEl     = document.getElementById("rank-progress-bar");
+  const nextEl    = document.getElementById("rank-next-info");
+  const curSmall  = document.getElementById("rank-cur-small");
+  const nextSmall = document.getElementById("rank-next-img");
+  const wrapEl    = document.getElementById("rank-card-wrap");
+
   if (!imgEl || !nameEl) return;
 
-  const fileName = getRankImageFile(score);
-  imgEl.src = `./rank/${fileName}`;
+  const s = Number(score) || 0;
+  const idx = rankTiers.findIndex(r => r.to === null || s < r.to);
+  const tier = rankTiers[Math.max(0, idx)];
+  const nextTier = rankTiers[idx + 1] ?? null;
 
-  const meta = rankMeta[fileName];
-  if (meta) {
-    nameEl.textContent = meta.en;
-    nameEl.style.color = meta.color;
-  } else {
-    nameEl.textContent = "";
+  // C: 랭크업 감지 → 폭죽 (첫 로드 제외)
+  if (currentRankIdx !== -1 && idx > currentRankIdx) {
+    setTimeout(() => launchConfetti(tier.color), 400);
+  }
+  currentRankIdx = idx;
+
+  imgEl.src = `./rank/${tier.file}`;
+  if (curSmall) curSmall.src = `./rank/${tier.file}`;
+
+  nameEl.textContent = tier.en;
+  nameEl.style.color = tier.color;
+
+  // C: 회전 테두리 색상 설정
+  if (wrapEl) wrapEl.style.setProperty("--rc", tier.color);
+
+  if (nextSmall) {
+    if (nextTier) {
+      nextSmall.src = `./rank/${nextTier.file}`;
+      nextSmall.style.display = "";
+    } else {
+      nextSmall.style.display = "none";
+    }
+  }
+
+  const { pct, remaining, nextKo, color } = getRankProgress(score);
+
+  if (barEl) {
+    barEl.dataset.targetPct = pct + "%";
+    barEl.style.background = color;
+    barEl.style.boxShadow = `0 0 8px ${color}88`;
+    barEl.style.width = pct + "%";
+  }
+
+  if (nextEl) {
+    if (nextKo) {
+      const badge = pct >= 80 ? `<span class="rank-promo-badge">🔥 승급 임박!</span> ` : "";
+      nextEl.innerHTML = `${badge}<span class="rank-next-pct">${pct}%</span> <span class="rank-next-txt">${nextKo}까지 <strong>${remaining.toLocaleString()}점</strong> 남았어요!</span>`;
+    } else {
+      nextEl.innerHTML = `<span class="rank-next-txt">🏆 최고 랭크 달성!</span>`;
+    }
   }
 }
 
@@ -112,11 +287,11 @@ async function login() {
   const password = document.getElementById("loginPassword").value;
 
   if (!userId) {
-    alert("아이디를 입력해 주세요 (선생님이 준 ID).");
+    showToast("아이디를 입력해 주세요.", 'err');
     return;
   }
   if (!password) {
-    alert("비밀번호를 입력해 주세요.");
+    showToast("비밀번호를 입력해 주세요.", 'err');
     return;
   }
 
@@ -124,17 +299,25 @@ async function login() {
   console.log("[login] 시도 이메일:", email);
 
   try {
+    justLoggedIn = true;
     await signInWithEmailAndPassword(auth, email, password);
-    alert("로그인 성공: " + userId);
   } catch (err) {
+    justLoggedIn = false;
     console.error("[login] 실패:", err.code, err.message);
-    alert("로그인 오류: " + err.message);
+    const code = err.code;
+    if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+      showToast("아이디 또는 비밀번호가 올바르지 않습니다.", 'err');
+    } else if (code === 'auth/too-many-requests') {
+      showToast("시도 횟수 초과. 잠시 후 다시 시도해 주세요.", 'err');
+    } else {
+      showToast("로그인에 실패했습니다.", 'err');
+    }
   }
 }
 
 async function logout() {
   await signOut(auth);
-  alert("로그아웃 완료");
+  showToast("로그아웃 완료");
 }
 
 // ====================== 점수 불러오기 / 저장 ======================
@@ -190,7 +373,7 @@ async function saveScore(user, score) {
 
 async function addPoint() {
   if (!currentUser) {
-    alert("로그인 후 사용하세요!");
+    showToast("로그인 후 사용하세요!", 'err');
     return;
   }
   currentScore += 1;
@@ -259,7 +442,6 @@ async function changePassword() {
       statusEl.textContent = "먼저 로그인해야 합니다.";
       statusEl.classList.add("err");
     }
-    alert("로그인 후 비밀번호를 변경할 수 있습니다.");
     return;
   }
   if (!changeId || !curPw || !newPw) {
@@ -295,20 +477,20 @@ async function changePassword() {
       statusEl.textContent = "비밀번호가 성공적으로 변경되었습니다.";
       statusEl.classList.add("ok");
     }
+    document.getElementById("changeId").value = "";
     document.getElementById("changeCurrentPassword").value = "";
     document.getElementById("changeNewPassword").value = "";
-    alert("비밀번호가 변경되었습니다.");
+    showToast("비밀번호가 변경되었습니다.", 'ok');
   } catch (err) {
     console.error("비밀번호 변경 오류:", err);
     let msg = "비밀번호 변경 중 오류가 발생했습니다.";
-    if (err.code === "auth/wrong-password") {
+    if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
       msg = "현재 비밀번호가 올바르지 않습니다.";
     }
     if (statusEl) {
       statusEl.textContent = msg;
       statusEl.classList.add("err");
     }
-    alert(msg);
   }
 }
 
@@ -316,7 +498,7 @@ async function changePassword() {
 
 onAuthStateChanged(auth, async (user) => {
   if (user && user.isAnonymous) {
-    alert("이 페이지는 로그인 후에만 이용할 수 있어요.");
+    showToast("이 페이지는 로그인 후에만 이용할 수 있어요.", 'err');
     await signOut(auth);
     return;
   }
@@ -372,10 +554,18 @@ onAuthStateChanged(auth, async (user) => {
 
     await loadScore(user);
     updateInfoPanel();
+
+    // 로그인 버튼으로 직접 로그인한 경우 패널 자동 닫기
+    if (justLoggedIn) {
+      justLoggedIn = false;
+      showToast(displayId + " 님, 반갑습니다!", 'ok');
+      setTimeout(() => window.closeAuthPanel?.(), 400);
+    }
   } else {
     currentUser = null;
     currentUserIdText = "";
     currentScore = 0;
+    currentRankIdx = -1;
 
     if (statusEl) statusEl.innerText = "로그인 상태: 없음";
     if (scoreEl) scoreEl.innerText = "0";
@@ -416,12 +606,12 @@ function closeSugg() {
 }
 
 async function sendSugg() {
-  if (!currentUser) { alert("로그인이 필요합니다."); return; }
+  if (!currentUser) { showToast("로그인이 필요합니다.", 'err'); return; }
 
   const title = document.getElementById("s-title").value.trim();
   const content = document.getElementById("s-content").value.trim();
 
-  if (!title || !content) { alert("제목과 내용을 모두 적어주세요."); return; }
+  if (!title || !content) { showToast("제목과 내용을 모두 적어주세요.", 'err'); return; }
 
   try {
     await addDoc(collection(db, "suggestions"), {
@@ -431,11 +621,11 @@ async function sendSugg() {
       content: content,
       date: serverTimestamp()
     });
-    alert("소중한 의견이 선생님께 전달되었습니다!");
+    showToast("소중한 의견이 선생님께 전달되었습니다! 💌", 'ok');
     closeSugg();
   } catch (err) {
     console.error(err);
-    alert("오류 발생: " + err.message);
+    showToast("전송 중 오류가 발생했습니다.", 'err');
   }
 }
 
