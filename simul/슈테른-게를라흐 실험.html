@@ -1,0 +1,2405 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>슈테른-게를라흐 실험 - 고전 예측과 실제 관측</title>
+  <style>
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+
+    :root {
+      --bg: #eef4fb;
+      --panel: rgba(255, 255, 255, 0.9);
+      --border: rgba(15, 23, 42, 0.1);
+      --text: #112235;
+      --muted: #61768f;
+      --cyan: #31d8ff;
+      --cyan-soft: rgba(49, 216, 255, 0.18);
+      --blue: #2f68ff;
+      --pink: #ff5d7a;
+      --magnet: #d9dee7;
+      --magnet-edge: #aeb8c8;
+      --shadow: 0 18px 38px rgba(17, 34, 53, 0.1);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top left, rgba(49, 216, 255, 0.14), transparent 28%),
+        radial-gradient(circle at top right, rgba(47, 104, 255, 0.12), transparent 26%),
+        linear-gradient(180deg, #edf4fb 0%, #f8fbfe 100%);
+      color: var(--text);
+      font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body { padding: 0; }
+
+    .app {
+      position: fixed;
+      inset: 0;
+      display: block;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      width: 340px;
+      max-width: calc(100vw - 40px);
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      padding: 24px;
+      z-index: 25;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+
+    .sidebar::-webkit-scrollbar { width: 6px; }
+    .sidebar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+
+    .stage {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+
+    .panel {
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      padding: 0;
+      margin: 0 0 18px;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .hero {
+      background: transparent;
+    }
+
+    .hero h1 {
+      margin: 0 0 5px 0;
+      font-size: 1.3rem;
+      color: #1e293b;
+      text-align: center;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .hero p, .body-text, .obs-text {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #64748b;
+      line-height: 1.65;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 11px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .chip.exp { background: rgba(47, 104, 255, 0.1); color: var(--blue); }
+    .chip.obs { background: rgba(255, 93, 122, 0.1); color: #d94164; }
+
+    .section-title {
+      margin: 0 0 10px;
+      font-size: 0.95rem;
+      color: #334155;
+      font-weight: 700;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 100px 1fr 64px;
+      gap: 8px;
+      align-items: center;
+      margin: 8px 0;
+    }
+
+    .row label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    select, input[type="range"], button { width: 100%; }
+    select {
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 10px 11px;
+      font-size: 13px;
+      background: #fff;
+      color: var(--text);
+    }
+    input[type="range"] { accent-color: var(--blue); cursor: pointer; }
+
+    .value {
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #334155;
+      text-align: center;
+      padding: 6px 8px;
+      font-size: 12px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .mode-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 8px 0 12px;
+    }
+
+    .mode-btn.active {
+      background: #334155;
+      border-color: #1e293b;
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 700;
+      transition: all 0.2s ease;
+      font-family: "Pretendard", sans-serif;
+    }
+    button:hover { background: #f1f5f9; transform: none; filter: none; }
+    .btn-main {
+      background: #334155;
+      border: 1px solid #1e293b;
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .btn-sub {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      color: #334155;
+    }
+
+    .info-button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .zoom-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .stat {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 10px;
+      background: #fff;
+    }
+    .stat .label {
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+    .stat .num {
+      font-size: 21px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+    .stat .sub {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .canvas-panel {
+      position: fixed;
+      inset: 0;
+      padding: 0;
+      margin: 0;
+    }
+    .canvas-topbar {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      z-index: 20;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.95);
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    .legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .legend span::before {
+      content: "";
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .legend .classical::before { background: var(--cyan); }
+    .legend .quantum::before { background: var(--pink); }
+
+    .canvas-wrap {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      background: linear-gradient(180deg, #fbfdff, #edf4fb);
+    }
+
+    #scene {
+      position: absolute;
+      inset: 0;
+      cursor: grab;
+    }
+
+    #scene canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+
+    #scene.is-dragging {
+      cursor: grabbing;
+    }
+
+    .caption {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      bottom: 20px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      pointer-events: none;
+      z-index: 12;
+    }
+
+    .mode-transition {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(0.96);
+      min-width: 260px;
+      padding: 16px 22px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(203, 213, 225, 0.95);
+      box-shadow: 0 16px 44px rgba(15, 23, 42, 0.18);
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 16;
+      transition: opacity 0.45s ease, transform 0.45s ease;
+    }
+
+    .mode-transition.open {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .mode-transition .kicker {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      color: #64748b;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .mode-transition .title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #1e293b;
+      letter-spacing: -0.02em;
+    }
+
+    .caption-box, .status-box {
+      border-radius: 16px;
+      background: rgba(12, 23, 38, 0.66);
+      color: #eef6ff;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .caption-box { padding: 12px 14px; font-size: 13px; line-height: 1.6; }
+    .status-box { padding: 12px 14px; min-width: 190px; text-align: right; }
+    .status-box .top { display: block; color: rgba(238, 246, 255, 0.72); font-size: 11px; margin-bottom: 3px; }
+    .status-box .big { font-size: 20px; font-weight: 900; letter-spacing: -0.02em; }
+
+    .check-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.75;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.32);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      z-index: 40;
+      padding: 20px;
+    }
+
+    .overlay.open {
+      display: flex;
+    }
+
+    .overlay-card {
+      width: min(620px, 100%);
+      background: rgba(255,255,255,0.97);
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      box-shadow: 0 25px 60px rgba(15,23,42,0.18);
+      padding: 22px;
+    }
+
+    .overlay-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .overlay-top h3 {
+      margin: 0;
+      font-size: 1.15rem;
+      color: #1e293b;
+    }
+
+    .overlay-close {
+      width: auto;
+      padding: 10px 14px;
+      margin: 0;
+    }
+
+    .overlay-body {
+      color: #475569;
+      font-size: 0.95rem;
+      line-height: 1.8;
+    }
+
+    .overlay-body strong {
+      color: #1e293b;
+    }
+
+    @media (max-width: 1040px) {
+      .sidebar {
+        width: 320px;
+      }
+      .stats {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      #scene {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        width: 100% !important;
+        height: 45vh !important;
+        z-index: 0;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .sidebar {
+        top: 45vh;
+        left: 0;
+        width: 100%;
+        max-width: none;
+        max-height: 55vh;
+        border-radius: 20px 20px 0 0;
+        border: none;
+        border-top: 1px solid #cbd5e1;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+        padding: 20px;
+      }
+
+      .canvas-topbar {
+        top: 12px;
+        right: 12px;
+        max-width: calc(100vw - 24px);
+      }
+
+      .caption {
+        left: 12px;
+        right: 12px;
+        bottom: calc(55vh + 12px);
+      }
+
+      .button-row,
+      .info-button-row,
+      .row,
+      .caption {
+        grid-template-columns: 1fr;
+      }
+
+      .status-box {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <section class="panel hero">
+        <div class="chip-row">
+          <span class="chip exp">고전 예측</span>
+          <span class="chip obs">실제 관측</span>
+        </div>
+        <h1>슈테른-게를라흐 실험<br />장치와 검출 무늬</h1>
+      </section>
+
+      <section class="panel">
+        <h2 class="section-title">실험 설정</h2>
+        <label>표시 모드</label>
+        <div class="mode-buttons">
+          <button class="btn-sub mode-btn active" id="modeClassicalBtn" type="button">고전 예측</button>
+          <button class="btn-sub mode-btn" id="modeQuantumBtn" type="button">실제 관측</button>
+          <button class="btn-sub mode-btn" id="modeCompareBtn" type="button">비교</button>
+        </div>
+        <div class="row">
+          <label for="gradient">자기장 기울기</label>
+          <input id="gradient" type="range" min="20" max="100" step="1" value="58" />
+          <div class="value" id="gradientValue">58</div>
+        </div>
+        <div class="row">
+          <label for="slit">슬릿 폭</label>
+          <input id="slit" type="range" min="1" max="25" step="1" value="13" />
+          <div class="value" id="slitValue">13</div>
+        </div>
+
+        <div class="button-row">
+          <button class="btn-main" id="runBtn">실행</button>
+          <button class="btn-sub" id="pauseBtn">일시정지</button>
+          <button class="btn-sub" id="resetBtn">초기화</button>
+        </div>
+        <div style="margin-top:8px;">
+          <button class="btn-sub" id="spinInfoBtn" style="width:100%">스핀 설명 보기</button>
+        </div>
+      </section>
+
+
+      <section class="panel">
+        <h2 class="section-title">실험 요약</h2>
+        <div class="stats">
+          <div class="stat">
+            <div class="label">방출됨</div>
+            <div class="num" id="emittedCount">0</div>
+            <div class="sub">누적 입자 수</div>
+          </div>
+          <div class="stat">
+            <div class="label">고전 띠 폭</div>
+            <div class="num" id="classicalWidth">0</div>
+            <div class="sub">검출 분포 범위</div>
+          </div>
+          <div class="stat">
+            <div class="label">양자 분리</div>
+            <div class="num" id="quantumGap">0</div>
+            <div class="sub">두 무리 중심 거리</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <p class="obs-text" id="insightBox">
+          비교 모드에서는 고전 예측의 연속 띠와 실제 관측의 두 갈래 점무늬를 한 화면에서 함께 볼 수 있습니다.
+        </p>
+      </section>
+    </aside>
+
+    <main class="stage">
+      <section class="panel canvas-panel">
+        <div class="canvas-topbar">
+          <strong>실험 장치</strong>
+          <div class="legend">
+            <span class="classical">고전 예측</span>
+            <span class="quantum">실제 관측</span>
+          </div>
+        </div>
+        <div class="canvas-wrap">
+          <div id="scene"></div>
+          <div class="mode-transition" id="modeTransition">
+            <span class="kicker">MODE SHIFT</span>
+            <div class="title" id="modeTransitionText">고전 예측</div>
+          </div>
+          <div class="caption">
+            <div class="caption-box" id="captionBox">
+              Furnace에서 나온 은 원자 빔이 슬릿을 지나 비균일 자기장으로 들어갑니다.
+            </div>
+            <div class="status-box">
+              <span class="top">현재 표시</span>
+              <div class="big" id="statusText">비교</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="overlay" id="infoOverlay" aria-hidden="true">
+    <div class="overlay-card" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
+      <div class="overlay-top">
+        <h3 id="overlayTitle">설명</h3>
+        <button class="btn-sub overlay-close" id="closeOverlayBtn">닫기</button>
+      </div>
+      <div class="overlay-body" id="overlayBody"></div>
+    </div>
+  </div>
+
+  <script src="../libs/three.min.js"></script>
+  <script>
+    const ui = {
+      gradient: document.getElementById("gradient"),
+      slit: document.getElementById("slit"),
+      runBtn: document.getElementById("runBtn"),
+      pauseBtn: document.getElementById("pauseBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      modeClassicalBtn: document.getElementById("modeClassicalBtn"),
+      modeQuantumBtn: document.getElementById("modeQuantumBtn"),
+      modeCompareBtn: document.getElementById("modeCompareBtn"),
+      spinInfoBtn: document.getElementById("spinInfoBtn"),
+      gradientValue: document.getElementById("gradientValue"),
+      slitValue: document.getElementById("slitValue"),
+      emittedCount: document.getElementById("emittedCount"),
+      classicalWidth: document.getElementById("classicalWidth"),
+      quantumGap: document.getElementById("quantumGap"),
+      captionBox: document.getElementById("captionBox"),
+      statusText: document.getElementById("statusText"),
+      insightBox: document.getElementById("insightBox"),
+      scene: document.getElementById("scene"),
+      modeTransition: document.getElementById("modeTransition"),
+      modeTransitionText: document.getElementById("modeTransitionText"),
+      infoOverlay: document.getElementById("infoOverlay"),
+      overlayTitle: document.getElementById("overlayTitle"),
+      overlayBody: document.getElementById("overlayBody"),
+      closeOverlayBtn: document.getElementById("closeOverlayBtn")
+    };
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, 16 / 9, 0.1, 100);
+    const clock = new THREE.Clock();
+
+    const apparatus = {
+      root: new THREE.Group(),
+      screen: null,
+      screenHits: new THREE.Group(),
+      beamCore: null,
+      upperMagnet: null,
+      lowerMagnet: null,
+      slitPairs: [],
+      fieldGroup: null,
+      labelN: null,
+      labelS: null
+    };
+
+    const state = {
+      mode: "classical",
+      running: false,
+      emitted: 0,
+      particles: [],
+      classicalHits: [],
+      quantumHits: [],
+      classicalBandMeshes: [],
+      quantumBandMeshes: [],
+      accumulator: 0,
+      zoom: 1,
+      transitionTimer: null,
+      orbitYaw: 0.27,
+      orbitPitch: 0.32,
+      dragging: false,
+      dragStartX: 0,
+      dragStartY: 0
+    };
+
+    const DEFAULT_SHOTS = 180;
+    const DEFAULT_RATE = 14;
+    const DEFAULT_THERMAL = 6;
+    const WORLD_OFFSET_X = 2.4;
+
+    const modeLabelMap = {
+      compare: "비교",
+      classical: "고전",
+      quantum: "양자"
+    };
+
+    const infoContent = {
+      spin: {
+        title: "전자 스핀이란?",
+        body: `
+          <div id="spinAnimContainer" style="width:100%;height:200px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:14px;overflow:hidden;"></div>
+          <p style="margin:0 0 8px"><strong>스핀</strong>은 전자가 가진 양자역학적 고유 성질입니다. 측정하면 반드시 <strong>두 방향 중 하나</strong>만 나타납니다.</p>
+          <p style="margin:0">비균일 자기장에서 자기모멘트 <em>μ</em>의 방향에 따라 받는 힘이 달라집니다. <strong>스핀 위(↑) 원자는 위로, 스핀 아래(↓) 원자는 아래로</strong> 편향되어 검출기에 두 줄로 찍힙니다.</p>
+        `
+      }
+    };
+
+    let spinAnimId = null;
+    function stopSpinAnimation() {
+      if (spinAnimId) { cancelAnimationFrame(spinAnimId); spinAnimId = null; }
+    }
+    function initSpinAnimation() {
+      const container = document.getElementById("spinAnimContainer");
+      if (!container) return;
+      const canvas = document.createElement("canvas");
+      canvas.style.cssText = "width:100%;height:100%;display:block;";
+      container.appendChild(canvas);
+      function resize() {
+        const rect = container.getBoundingClientRect();
+        canvas.width = Math.max(1, rect.width);
+        canvas.height = Math.max(1, rect.height);
+      }
+      resize();
+      const ctx = canvas.getContext("2d");
+      let t = 0;
+      function drawElectron(cx, cy, phase, spinDir) {
+        const r = Math.min(canvas.width * 0.065, 26);
+        const col = spinDir > 0 ? "#ef4444" : "#3b82f6";
+        // Sphere gradient
+        const g = ctx.createRadialGradient(cx - r*0.32, cy - r*0.32, r*0.05, cx, cy, r);
+        g.addColorStop(0, spinDir > 0 ? "rgba(255,180,180,0.9)" : "rgba(150,180,255,0.9)");
+        g.addColorStop(1, spinDir > 0 ? "rgba(220,50,50,0.4)" : "rgba(40,90,220,0.4)");
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+        ctx.fillStyle = g; ctx.fill();
+        ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
+        // Equatorial spin ring (back half, dashed)
+        ctx.save(); ctx.translate(cx, cy);
+        ctx.strokeStyle = col + "66"; ctx.lineWidth = 1.5;
+        ctx.setLineDash([3,3]);
+        ctx.beginPath(); ctx.ellipse(0, 0, r*1.05, r*0.28, 0, 0, Math.PI*2);
+        ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+        // Spinning dot on ring
+        const dot = { x: cx + r*1.05*Math.cos(phase * spinDir), y: cy + r*0.28*Math.sin(phase * spinDir) };
+        ctx.beginPath(); ctx.arc(dot.x, dot.y, 4, 0, Math.PI*2);
+        ctx.fillStyle = col; ctx.fill();
+        // Magnetic moment arrow (μ)
+        const aLen = r * 2.0;
+        const ayEnd = spinDir > 0 ? cy - aLen : cy + aLen;
+        ctx.beginPath(); ctx.moveTo(cx, cy - r*0.15); ctx.lineTo(cx, ayEnd);
+        ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.stroke();
+        // Arrowhead
+        const hd = spinDir > 0 ? -1 : 1;
+        ctx.beginPath(); ctx.moveTo(cx, ayEnd);
+        ctx.lineTo(cx-6, ayEnd + hd*11); ctx.lineTo(cx+6, ayEnd + hd*11);
+        ctx.closePath(); ctx.fillStyle = col; ctx.fill();
+        // μ label
+        ctx.fillStyle = col; ctx.font = "italic bold 13px serif"; ctx.textAlign = "left";
+        ctx.fillText("μ", cx + 8, ayEnd + (spinDir > 0 ? 6 : -2));
+        // Deflection arrow
+        const defY = spinDir > 0 ? cy - r*2.9 : cy + r*2.9;
+        const defH = 18 * spinDir;
+        ctx.beginPath(); ctx.moveTo(cx, defY + defH*0.4);
+        ctx.lineTo(cx, defY - defH*0.4);
+        ctx.strokeStyle = col + "bb"; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx, defY - defH*0.4);
+        ctx.lineTo(cx-5, defY + defH*0.15); ctx.lineTo(cx+5, defY + defH*0.15);
+        ctx.closePath(); ctx.fillStyle = col + "bb"; ctx.fill();
+      }
+      function frame() {
+        const w = canvas.width, h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        // Background
+        ctx.fillStyle = "#f8fafc"; ctx.fillRect(0, 0, w, h);
+        // Center divider
+        ctx.strokeStyle = "#e2e8f0"; ctx.lineWidth = 1;
+        ctx.setLineDash([5,4]); ctx.beginPath();
+        ctx.moveTo(w/2, 12); ctx.lineTo(w/2, h-12); ctx.stroke();
+        ctx.setLineDash([]);
+        // B field direction label at top
+        ctx.fillStyle = "#64748b"; ctx.font = "12px Pretendard, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("B (자기장 방향 ↑)", w/2, 14);
+        // Draw electrons
+        drawElectron(w * 0.28, h * 0.50, t, +1);
+        drawElectron(w * 0.72, h * 0.50, t, -1);
+        // Panel labels
+        ctx.textAlign = "center";
+        ctx.font = "bold 13px Pretendard, sans-serif";
+        ctx.fillStyle = "#ef4444"; ctx.fillText("스핀 위  ms = +½", w*0.28, h - 28);
+        ctx.fillStyle = "#3b82f6"; ctx.fillText("스핀 아래  ms = −½", w*0.72, h - 28);
+        ctx.font = "12px Pretendard, sans-serif";
+        ctx.fillStyle = "#ef444488"; ctx.fillText("▲ 위쪽으로 편향", w*0.28, h - 12);
+        ctx.fillStyle = "#3b82f688"; ctx.fillText("▼ 아래쪽으로 편향", w*0.72, h - 12);
+        t += 0.028;
+        spinAnimId = requestAnimationFrame(frame);
+      }
+      frame();
+    }
+
+    function buildSpinOverlayContent() {
+      return `
+        <div id="spinDemoCanvas" style="width:100%;height:220px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:14px;overflow:hidden;"></div>
+        <p style="margin:0 0 8px"><strong>스핀</strong>은 전자의 고유한 양자 성질입니다. 아래 그림은 전자 자체가 도는 모습을 비유적으로 보여 줍니다.</p>
+        <p style="margin:0">자기장 속에서는 자기모멘트 <strong>μ</strong>의 방향에 따라 힘의 방향이 달라집니다. 그래서 <strong>스핀 위</strong>는 위쪽으로, <strong>스핀 아래</strong>는 아래쪽으로 편향됩니다.</p>
+      `;
+    }
+
+    function startSpinDemo() {
+      const container = document.getElementById("spinDemoCanvas");
+      if (!container) return;
+
+      const canvas = document.createElement("canvas");
+      canvas.style.cssText = "width:100%;height:100%;display:block;";
+      container.appendChild(canvas);
+
+      const resize = () => {
+        const rect = container.getBoundingClientRect();
+        canvas.width = Math.max(1, rect.width);
+        canvas.height = Math.max(1, rect.height);
+      };
+      resize();
+
+      const ctx = canvas.getContext("2d");
+      let phase = 0;
+
+      const drawArrow = (x1, y1, x2, y2, color) => {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len = Math.max(0.001, Math.hypot(dx, dy));
+        const ux = dx / len;
+        const uy = dy / len;
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        const size = 9;
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - ux * size - uy * 5, y2 - uy * size + ux * 5);
+        ctx.lineTo(x2 - ux * size + uy * 5, y2 - uy * size - ux * 5);
+        ctx.closePath();
+        ctx.fill();
+      };
+
+      const drawElectron = (cx, cy, spinDir, color) => {
+        const r = Math.min(canvas.width * 0.07, 28);
+        const glow = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.35, r * 0.1, cx, cy, r);
+        glow.addColorStop(0, spinDir > 0 ? "rgba(255,196,204,0.95)" : "rgba(201,222,255,0.95)");
+        glow.addColorStop(1, spinDir > 0 ? "rgba(242,169,182,0.48)" : "rgba(174,200,245,0.48)");
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = glow;
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.strokeStyle = color + "88";
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, r * 1.1, r * 0.32, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        const dotX = cx + Math.cos(phase * spinDir) * r * 1.08;
+        const dotY = cy + Math.sin(phase * spinDir) * r * 0.32;
+        ctx.beginPath();
+        ctx.arc(dotX, dotY, 4.2, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        const muEndY = spinDir > 0 ? cy - r * 2.0 : cy + r * 2.0;
+        drawArrow(cx, cy, cx, muEndY, color);
+        ctx.fillStyle = color;
+        ctx.font = "italic 700 16px serif";
+        ctx.textAlign = "left";
+        ctx.fillText("μ", cx + 10, spinDir > 0 ? muEndY + 4 : muEndY - 6);
+
+        const deflectEndY = spinDir > 0 ? cy - r * 3.3 : cy + r * 3.3;
+        drawArrow(cx + r * 1.45, cy, cx + r * 1.45, deflectEndY, color);
+      };
+
+      const frame = () => {
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = "#f8fafc";
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.strokeStyle = "#e2e8f0";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        ctx.moveTo(w / 2, 18);
+        ctx.lineTo(w / 2, h - 18);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = "#64748b";
+        ctx.font = "12px Pretendard, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("자기장 B는 아래 방향", w / 2, 18);
+        drawArrow(w / 2, 30, w / 2, 58, "#64748b");
+
+        drawElectron(w * 0.28, h * 0.52, 1, "#e77f93");
+        drawElectron(w * 0.72, h * 0.52, -1, "#5f8fdc");
+
+        ctx.font = "700 13px Pretendard, sans-serif";
+        ctx.fillStyle = "#b84f65";
+        ctx.fillText("스핀 위", w * 0.28, h - 30);
+        ctx.fillStyle = "#406bb5";
+        ctx.fillText("스핀 아래", w * 0.72, h - 30);
+
+        ctx.font = "12px Pretendard, sans-serif";
+        ctx.fillStyle = "#b84f65";
+        ctx.fillText("검출기 위쪽으로 편향", w * 0.28, h - 12);
+        ctx.fillStyle = "#406bb5";
+        ctx.fillText("검출기 아래쪽으로 편향", w * 0.72, h - 12);
+
+        phase += 0.05;
+        spinAnimId = requestAnimationFrame(frame);
+      };
+
+      frame();
+    }
+
+    function settings() {
+      return {
+        mode: state.mode,
+        shots: DEFAULT_SHOTS,
+        rate: DEFAULT_RATE,
+        gradient: Number(ui.gradient.value),
+        slit: mapSlitControlToSimulation(Number(ui.slit.value)),
+        thermal: DEFAULT_THERMAL
+      };
+    }
+
+    function mapSlitControlToSimulation(rawValue) {
+      const clamped = Math.max(1, Math.min(25, rawValue));
+      return 4 + ((clamped - 1) / 24) * 0.75;
+    }
+
+    function randomRange(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function mmValue(worldUnits) {
+      return Math.round(worldUnits * 22);
+    }
+
+    function updateLabels() {
+      const label = modeLabelMap[state.mode];
+      ui.gradientValue.textContent = ui.gradient.value;
+      ui.slitValue.textContent = ui.slit.value;
+      ui.statusText.textContent = label;
+      [
+        [ui.modeClassicalBtn, "classical"],
+        [ui.modeQuantumBtn, "quantum"],
+        [ui.modeCompareBtn, "compare"]
+      ].forEach(([button, mode]) => {
+        button.classList.toggle("active", state.mode === mode);
+      });
+      updateApparatusFromControls();
+      updateReadouts();
+    }
+
+    function updateApparatusFromControls() {
+      const s = settings();
+      const gradientRatio = (s.gradient - 20) / 80;
+      const slitRatio = (s.slit - 4) / 3;
+
+      const magnetCenterY = 1.92 - gradientRatio * 0.52;
+      if (apparatus.upperMagnet) apparatus.upperMagnet.position.y = magnetCenterY;
+      if (apparatus.lowerMagnet) apparatus.lowerMagnet.position.y = -magnetCenterY;
+
+      const slitGap = 0.26 + slitRatio * 0.52;
+      const plateHeight = 0.62;
+      const plateOffset = slitGap / 2 + plateHeight / 2;
+      apparatus.slitPairs.forEach(({ upper, lower }) => {
+        upper.position.y = plateOffset;
+        lower.position.y = -plateOffset;
+      });
+      if (typeof rebuildFieldLines === "function") rebuildFieldLines();
+    }
+
+    function playModeTransition(fromMode, toMode) {
+      if (state.transitionTimer) {
+        clearTimeout(state.transitionTimer);
+      }
+      ui.modeTransitionText.textContent = `${modeLabelMap[fromMode]} → ${modeLabelMap[toMode]}`;
+      ui.modeTransition.classList.add("open");
+      state.transitionTimer = setTimeout(() => {
+        ui.modeTransition.classList.remove("open");
+      }, 950);
+    }
+
+    function setMode(mode) {
+      const previous = state.mode;
+      if (previous !== mode) {
+        playModeTransition(previous, mode);
+        state.running = false;
+        state.emitted = 0;
+        state.accumulator = 0;
+        clearEffects();
+      }
+      state.mode = mode;
+      updateLabels();
+    }
+
+    function setZoom(nextZoom) {
+      state.zoom = Math.max(0.72, Math.min(1.45, nextZoom));
+    }
+
+    function bindSceneDrag() {
+      const beginDrag = (x, y) => {
+        state.dragging = true;
+        state.dragStartX = x;
+        state.dragStartY = y;
+        ui.scene.classList.add("is-dragging");
+      };
+
+      const moveDrag = (x, y) => {
+        if (!state.dragging) return;
+        const dx = x - state.dragStartX;
+        const dy = y - state.dragStartY;
+        state.dragStartX = x;
+        state.dragStartY = y;
+        state.orbitYaw -= dx * 0.006;
+        state.orbitPitch = Math.max(0.08, Math.min(0.62, state.orbitPitch - dy * 0.004));
+      };
+
+      const endDrag = () => {
+        state.dragging = false;
+        ui.scene.classList.remove("is-dragging");
+      };
+
+      ui.scene.addEventListener("mousedown", (event) => {
+        beginDrag(event.clientX, event.clientY);
+      });
+
+      window.addEventListener("mousemove", (event) => {
+        moveDrag(event.clientX, event.clientY);
+      });
+
+      window.addEventListener("mouseup", endDrag);
+
+      ui.scene.addEventListener("touchstart", (event) => {
+        if (!event.touches.length) return;
+        const touch = event.touches[0];
+        beginDrag(touch.clientX, touch.clientY);
+      }, { passive: true });
+
+      window.addEventListener("touchmove", (event) => {
+        if (!state.dragging || !event.touches.length) return;
+        const touch = event.touches[0];
+        moveDrag(touch.clientX, touch.clientY);
+      }, { passive: true });
+
+      window.addEventListener("touchend", endDrag);
+      window.addEventListener("touchcancel", endDrag);
+    }
+
+    function openInfo(type) {
+      stopSpinAnimation();
+      if (type === "spin") {
+        ui.overlayTitle.textContent = "전자 스핀 설명";
+        ui.overlayBody.innerHTML = buildSpinOverlayContent();
+        ui.infoOverlay.classList.add("open");
+        ui.infoOverlay.setAttribute("aria-hidden", "false");
+        requestAnimationFrame(startSpinDemo);
+        return;
+      }
+      const info = infoContent[type];
+      if (!info) return;
+      ui.overlayTitle.textContent = info.title;
+      ui.overlayBody.innerHTML = info.body;
+      ui.infoOverlay.classList.add("open");
+      ui.infoOverlay.setAttribute("aria-hidden", "false");
+      if (type === "spin") requestAnimationFrame(initSpinAnimation);
+    }
+
+    function closeInfo() {
+      stopSpinAnimation();
+      ui.infoOverlay.classList.remove("open");
+      ui.infoOverlay.setAttribute("aria-hidden", "true");
+    }
+
+    function setupRenderer() {
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      if ("outputColorSpace" in renderer && "SRGBColorSpace" in THREE) {
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+      } else if ("outputEncoding" in renderer && "sRGBEncoding" in THREE) {
+        renderer.outputEncoding = THREE.sRGBEncoding;
+      }
+      ui.scene.innerHTML = "";
+      ui.scene.appendChild(renderer.domElement);
+      resizeScene();
+    }
+
+    function resizeScene() {
+      const rect = ui.scene.getBoundingClientRect();
+      const width = Math.max(1, rect.width);
+      const height = Math.max(1, rect.height);
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    }
+
+    function createTextSprite(text, options = {}) {
+      const canvas = document.createElement("canvas");
+      canvas.width = 256;
+      canvas.height = 128;
+      const c = canvas.getContext("2d");
+      c.clearRect(0, 0, canvas.width, canvas.height);
+      c.fillStyle = options.bg || "rgba(255,255,255,0.72)";
+      c.strokeStyle = options.border || "rgba(17,34,53,0.16)";
+      c.lineWidth = 4;
+      c.beginPath();
+      c.roundRect(8, 20, 240, 66, 20);
+      c.fill();
+      c.stroke();
+      c.fillStyle = options.color || "#112235";
+      c.font = "700 28px Pretendard, sans-serif";
+      c.textAlign = "center";
+      c.textBaseline = "middle";
+      c.fillText(text, 128, 54);
+      const texture = new THREE.CanvasTexture(canvas);
+      const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      const sprite = new THREE.Sprite(material);
+      sprite.scale.set(1.6, 0.8, 1);
+      return sprite;
+    }
+
+    function buildFieldLines() {
+      const group = new THREE.Group();
+      // Curved magnetic field lines from N (top, wedge tip) to S (bottom, flat)
+      // Lines are denser near the N-pole tip center (x=1.18) — non-uniform B field
+      const nY = 0.72;   // N face bottom (tip) y-position
+      const sY = -0.74;  // S face top y-position
+      const cx = 1.18;   // magnet center x in apparatus.root coords
+
+      // [dx from center, z-depth, bow (midpoint x offset), opacity]
+      const configs = [
+        [  0.0,  0.0,  0.00, 0.82],
+        [ 0.42,  0.0,  0.05, 0.68],
+        [-0.42,  0.0, -0.05, 0.68],
+        [ 0.90,  0.0,  0.13, 0.50],
+        [-0.90,  0.0, -0.13, 0.50],
+        [ 1.50,  0.0,  0.26, 0.30],
+        [-1.50,  0.0, -0.26, 0.30],
+        [  0.0,  0.60,  0.00, 0.55],
+        [ 0.55,  0.60,  0.07, 0.38],
+        [-0.55,  0.60, -0.07, 0.38],
+        [  0.0, -0.60,  0.00, 0.55],
+        [ 0.55, -0.60,  0.07, 0.38],
+        [-0.55, -0.60, -0.07, 0.38],
+      ];
+
+      configs.forEach(([dx, dz, bow, opacity]) => {
+        const x0 = cx + dx;
+        const xMid = cx + dx + bow;
+        const pts = [
+          new THREE.Vector3(x0,   nY,              dz),
+          new THREE.Vector3(xMid, (nY + sY) * 0.5, dz),
+          new THREE.Vector3(x0,   sY,              dz),
+        ];
+        const curve = new THREE.CatmullRomCurve3(pts);
+        const lineGeom = new THREE.BufferGeometry().setFromPoints(curve.getPoints(28));
+        const mat = new THREE.LineBasicMaterial({ color: 0x3d6eea, transparent: true, opacity });
+        group.add(new THREE.Line(lineGeom, mat));
+
+        // Arrowhead at mid-line in z=0 plane to show N→S direction (downward)
+        if (Math.abs(dz) < 0.05) {
+          const pA = curve.getPointAt(0.48);
+          const pB = curve.getPointAt(0.54);
+          const dir = pB.clone().sub(pA).normalize();
+          const up  = new THREE.Vector3(0, 1, 0);
+          const cone = new THREE.Mesh(
+            new THREE.ConeGeometry(0.040, 0.14, 8),
+            new THREE.MeshBasicMaterial({ color: 0x2d5cd8, transparent: true, opacity: opacity * 0.95 })
+          );
+          cone.position.copy(pA);
+          cone.quaternion.setFromUnitVectors(up, dir);
+          group.add(cone);
+        }
+      });
+
+      apparatus.fieldGroup = group;
+      apparatus.root.add(group);
+    }
+
+    function createFaceLabel(text, options = {}) {
+      const canvas = document.createElement("canvas");
+      canvas.width = 384;
+      canvas.height = 128;
+      const c = canvas.getContext("2d");
+      c.clearRect(0, 0, canvas.width, canvas.height);
+      c.fillStyle = options.bg || "rgba(255,255,255,0.92)";
+      c.strokeStyle = options.border || "rgba(17,34,53,0.18)";
+      c.lineWidth = 4;
+      c.beginPath();
+      c.roundRect(10, 22, 364, 84, 24);
+      c.fill();
+      c.stroke();
+      c.fillStyle = options.color || "#112235";
+      c.font = options.font || "700 34px Pretendard, sans-serif";
+      c.textAlign = "center";
+      c.textBaseline = "middle";
+      c.fillText(text, 192, 64);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      return new THREE.Mesh(
+        new THREE.PlaneGeometry(options.width || 1.5, options.height || 0.5),
+        new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: true,
+          side: THREE.DoubleSide
+        })
+      );
+    }
+
+    function buildSpinOverlayContent() {
+      return `
+        <div style="display:grid;grid-template-columns:minmax(0,1.45fr) minmax(220px,0.95fr);gap:18px;align-items:stretch;">
+          <div id="spinDemoCanvas" style="width:100%;height:292px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;overflow:hidden;"></div>
+          <div style="border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;padding:16px 16px 14px;display:flex;flex-direction:column;justify-content:center;gap:12px;">
+            <div>
+              <div style="font-size:12px;font-weight:800;color:#64748b;letter-spacing:0.02em;margin-bottom:6px;">핵심 개념</div>
+              <div style="font-size:14px;line-height:1.7;color:#334155;">
+                스핀은 전자가 실제로 빙글빙글 도는 그림이 아니라, <strong style="color:#1e293b;">전자에 고유한 양자 상태</strong>를 나타내는 표현입니다.
+              </div>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:800;color:#64748b;letter-spacing:0.02em;margin-bottom:6px;">그림 읽기</div>
+              <div style="font-size:14px;line-height:1.7;color:#334155;">
+                왼쪽은 측정 전 상태를, 오른쪽은 측정 뒤 <strong style="color:#e77f93;">스핀 위</strong>와 <strong style="color:#5f8fdc;">스핀 아래</strong>로 구분되는 모습을 보여줍니다.
+              </div>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:800;color:#64748b;letter-spacing:0.02em;margin-bottom:6px;">실험 연결</div>
+              <div style="font-size:14px;line-height:1.7;color:#334155;">
+                슈테른-게를라흐 실험에서는 이 두 상태가 서로 다른 경로로 편향되어 검출기에 분리되어 나타납니다.
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function startSpinDemo() {
+      const container = document.getElementById("spinDemoCanvas");
+      if (!container) return;
+
+      const canvas = document.createElement("canvas");
+      canvas.style.cssText = "width:100%;height:100%;display:block;";
+      container.appendChild(canvas);
+
+      const resize = () => {
+        const rect = container.getBoundingClientRect();
+        canvas.width = Math.max(1, rect.width);
+        canvas.height = Math.max(1, rect.height);
+      };
+      resize();
+
+      const ctx = canvas.getContext("2d");
+      let t = 0;
+
+      function drawArrow(x1, y1, x2, y2, color, alpha = 1, width = 2.4) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len = Math.max(0.001, Math.hypot(dx, dy));
+        const ux = dx / len;
+        const uy = dy / len;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        const size = 9;
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - ux * size - uy * 5, y2 - uy * size + ux * 5);
+        ctx.lineTo(x2 - ux * size + uy * 5, y2 - uy * size - ux * 5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawElectronBody(cx, cy, radius, tint) {
+        const g = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.32, radius * 0.08, cx, cy, radius);
+        g.addColorStop(0, "rgba(255,255,255,0.96)");
+        g.addColorStop(1, tint);
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.strokeStyle = "rgba(60,92,140,0.32)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      function drawMeasuredState(cx, cy, spinDir, color, title) {
+        const r = Math.min(canvas.width * 0.055, 22);
+        const bob = Math.sin(t * 1.6 + (spinDir > 0 ? 0 : Math.PI)) * 3;
+        drawElectronBody(cx, cy + bob, r, spinDir > 0 ? "rgba(242,169,182,0.64)" : "rgba(174,200,245,0.64)");
+        const endY = spinDir > 0 ? cy - r * 1.85 + bob : cy + r * 1.85 + bob;
+        drawArrow(cx, cy + bob, cx, endY, color, 0.95, 2.5);
+        ctx.fillStyle = color;
+        ctx.font = "italic bold 14px serif";
+        ctx.textAlign = "left";
+        ctx.fillText("μ", cx + 8, spinDir > 0 ? endY + 4 : endY - 4);
+
+        const sideX = cx + r * 1.7;
+        const deflectY = spinDir > 0 ? cy - r * 2.45 : cy + r * 2.45;
+        drawArrow(sideX, cy + bob, sideX, deflectY + bob, color, 0.5, 1.8);
+
+        ctx.textAlign = "center";
+        ctx.font = "700 13px Pretendard, sans-serif";
+        ctx.fillStyle = color;
+        ctx.fillText(title, cx, cy + r * 2.65);
+      }
+
+      function frame() {
+        const w = canvas.width;
+        const h = canvas.height;
+        const leftCx = w * 0.22;
+        const rightCx = w * 0.72;
+        const cy = h * 0.44;
+        const r = Math.min(w * 0.055, 22);
+        const mix = (Math.sin(t) + 1) / 2;
+        const upAlpha = 0.3 + mix * 0.48;
+        const downAlpha = 0.3 + (1 - mix) * 0.48;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = "#f8fafc";
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.strokeStyle = "#e2e8f0";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        ctx.moveTo(w * 0.49, 14);
+        ctx.lineTo(w * 0.49, h - 14);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = "#64748b";
+        ctx.font = "12px Pretendard, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("측정 전", leftCx, 18);
+        ctx.fillText("측정 후", rightCx, 18);
+
+        drawElectronBody(leftCx, cy, r, "rgba(198,216,241,0.62)");
+        drawArrow(leftCx, cy, leftCx, cy - r * 1.9, "#e77f93", upAlpha, 2.4);
+        drawArrow(leftCx, cy, leftCx, cy + r * 1.9, "#5f8fdc", downAlpha, 2.4);
+        ctx.fillStyle = "#64748b";
+        ctx.font = "12px Pretendard, sans-serif";
+        ctx.fillText("가능한 상태가 겹쳐 보이는 단계", leftCx, h - 22);
+
+        drawMeasuredState(rightCx, cy - 40, 1, "#e77f93", "스핀 위");
+        drawMeasuredState(rightCx, cy + 46, -1, "#5f8fdc", "스핀 아래");
+
+        const bridgeY = cy + Math.sin(t * 1.15) * 4;
+        ctx.strokeStyle = "rgba(99,116,139,0.32)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(leftCx + r * 1.5, bridgeY);
+        ctx.bezierCurveTo(w * 0.36, bridgeY - 6, w * 0.56, bridgeY - 30, rightCx - r * 1.55, cy - 40);
+        ctx.moveTo(leftCx + r * 1.5, bridgeY);
+        ctx.bezierCurveTo(w * 0.36, bridgeY + 6, w * 0.56, bridgeY + 30, rightCx - r * 1.55, cy + 46);
+        ctx.stroke();
+
+        t += 0.035;
+        spinAnimId = requestAnimationFrame(frame);
+      }
+
+      frame();
+    }
+
+    function rebuildFieldLines() {
+      if (apparatus.fieldGroup) {
+        apparatus.root.remove(apparatus.fieldGroup);
+      }
+      const group = new THREE.Group();
+      const centerX = apparatus.upperMagnet ? apparatus.upperMagnet.position.x : 1.18;
+      const topCenterY = apparatus.upperMagnet ? apparatus.upperMagnet.position.y : 1.78;
+      const bottomCenterY = apparatus.lowerMagnet ? apparatus.lowerMagnet.position.y : -1.78;
+      const xOffsets = [-2.2, 0, 2.2];
+      const zOffsets = [-0.55, 0, 0.55];
+
+      xOffsets.forEach((xOffset) => {
+        zOffsets.forEach((z) => {
+          const absZ = Math.abs(z);
+          const startLocalY = -0.86 + (absZ / 0.92) * 0.72;
+          const start = new THREE.Vector3(centerX + xOffset, topCenterY + startLocalY, z);
+          const end = new THREE.Vector3(centerX + xOffset, bottomCenterY + 0.78, z * 0.16);
+          const normalZ = absZ < 0.03 ? 0 : -Math.sign(z) * 0.66;
+          const control1 = start.clone().add(new THREE.Vector3(0, -0.56, normalZ));
+          const control2 = end.clone().add(new THREE.Vector3(0, 0.58, 0));
+          const curve = new THREE.CubicBezierCurve3(start, control1, control2, end);
+          const lineGeom = new THREE.BufferGeometry().setFromPoints(curve.getPoints(36));
+          const opacity = xOffset === 0 ? 0.82 : 0.54;
+          group.add(new THREE.Line(
+            lineGeom,
+            new THREE.LineBasicMaterial({ color: 0x4678ea, transparent: true, opacity })
+          ));
+
+          const arrowPos = curve.getPointAt(0.6);
+          const arrowNext = curve.getPointAt(0.64);
+          const dir = arrowNext.clone().sub(arrowPos).normalize();
+          const cone = new THREE.Mesh(
+            new THREE.ConeGeometry(0.045, 0.16, 10),
+            new THREE.MeshBasicMaterial({ color: 0x3566d8, transparent: true, opacity: opacity * 0.96 })
+          );
+          cone.position.copy(arrowPos);
+          cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+          group.add(cone);
+        });
+      });
+
+      apparatus.fieldGroup = group;
+      apparatus.root.add(group);
+    }
+
+    function createSternGerlachMagnet(isUpper, material) {
+      const face = new THREE.Shape();
+      if (isUpper) {
+        face.moveTo(-0.92, 0.78);
+        face.lineTo(0.92, 0.78);
+        face.lineTo(0.92, -0.14);
+        face.lineTo(0.00, -0.86);
+        face.lineTo(-0.92, -0.14);
+      } else {
+        face.moveTo(-0.92, 0.78);
+        face.lineTo(0.92, 0.78);
+        face.lineTo(0.92, -0.78);
+        face.lineTo(-0.92, -0.78);
+      }
+      face.closePath();
+
+      const geometry = new THREE.ExtrudeGeometry(face, {
+        depth: 8.1,
+        bevelEnabled: false
+      });
+
+      geometry.rotateY(Math.PI / 2);
+      geometry.center();
+
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
+      return mesh;
+    }
+
+    function buildApparatus() {
+      scene.add(apparatus.root);
+      apparatus.root.clear();
+      apparatus.screenHits.clear();
+      apparatus.root.position.set(WORLD_OFFSET_X, 0, 0);
+
+      const ambient = new THREE.AmbientLight(0xffffff, 0.85);
+      const key = new THREE.DirectionalLight(0xffffff, 1.2);
+      key.position.set(5, 7, 8);
+      const rim = new THREE.DirectionalLight(0x8bc7ff, 0.6);
+      rim.position.set(-8, 3, -6);
+      scene.add(ambient, key, rim);
+
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(24, 12),
+        new THREE.MeshStandardMaterial({
+          color: 0xe8f0f8,
+          roughness: 0.98,
+          metalness: 0.02
+        })
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.y = -2.75;
+      scene.add(floor);
+
+      const grid = new THREE.GridHelper(24, 24, 0xbcd1e5, 0xdfeaf5);
+      grid.position.y = -2.74;
+      scene.add(grid);
+
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x454f5f, roughness: 0.55, metalness: 0.35 });
+      const northMat = new THREE.MeshStandardMaterial({ color: 0xf2a9b6, roughness: 0.44, metalness: 0.18 });
+      const southMat = new THREE.MeshStandardMaterial({ color: 0xaec8f5, roughness: 0.44, metalness: 0.18 });
+      const slitMat = new THREE.MeshStandardMaterial({ color: 0xf4f7fb, roughness: 0.22, metalness: 0.55 });
+      const cyanMat = new THREE.MeshStandardMaterial({
+        color: 0x5ae4ff,
+        emissive: 0x2cc9f3,
+        emissiveIntensity: 0.7,
+        transparent: true,
+        opacity: 0.72
+      });
+
+      const furnace = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, 1.2), bodyMat);
+      furnace.position.set(7.2, -0.1, 0);
+      apparatus.root.add(furnace);
+      const furnaceHole = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.08, 24), new THREE.MeshStandardMaterial({ color: 0x111827 }));
+      furnaceHole.rotation.z = Math.PI / 2;
+      furnaceHole.position.set(6.5, -0.1, 0);
+      apparatus.root.add(furnaceHole);
+
+      const slitPositions = [6.05, 5.55];
+      apparatus.slitPairs = [];
+      slitPositions.forEach((x) => {
+        const upper = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.62, 0.86), slitMat);
+        const lower = upper.clone();
+        upper.position.set(x, 0.58, 0);
+        lower.position.set(x, -0.58, 0);
+        apparatus.root.add(upper, lower);
+        apparatus.slitPairs.push({ upper, lower });
+      });
+
+      const upperMagnet = createSternGerlachMagnet(true, northMat);
+      upperMagnet.position.set(1.18, 1.78, 0);
+      const lowerMagnet = createSternGerlachMagnet(false, southMat);
+      lowerMagnet.position.set(1.18, -1.78, 0);
+      apparatus.root.add(upperMagnet, lowerMagnet);
+      apparatus.upperMagnet = upperMagnet;
+      apparatus.lowerMagnet = lowerMagnet;
+
+      const screen = new THREE.Mesh(
+        new THREE.BoxGeometry(0.18, 5.4, 3.5),
+        new THREE.MeshStandardMaterial({ color: 0xe7ebf2, roughness: 0.4, metalness: 0.12 })
+      );
+      screen.position.set(-7.3, 0, 0);
+      apparatus.root.add(screen);
+      apparatus.screen = screen;
+
+      const beam = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.07, 0.07, 3.2, 18),
+        cyanMat
+      );
+      beam.rotation.z = Math.PI / 2;
+      beam.position.set(5.7, -0.1, 0);
+      apparatus.root.add(beam);
+      apparatus.beamCore = beam;
+
+      apparatus.root.add(apparatus.screenHits);
+
+      const labelFurnace = createTextSprite("원자로");
+      labelFurnace.position.set(7.25, 1.15, 1.05);
+      apparatus.root.add(labelFurnace);
+
+      const labelSlit = createTextSprite("슬릿");
+      labelSlit.scale.set(1.0, 0.58, 1);
+      labelSlit.position.set(5.8, -1.55, 1.0);
+      apparatus.root.add(labelSlit);
+
+      const labelScreen = createTextSprite("검출기");
+      labelScreen.position.set(-7.25, 3.1, 1.0);
+      apparatus.root.add(labelScreen);
+
+      const labelField = createTextSprite("비균일 자기장", { bg: "rgba(235,244,255,0.85)", color: "#2d4da0" });
+      labelField.position.set(1.0, -3.0, 0.9);
+      apparatus.root.add(labelField);
+
+      const labelN = createTextSprite("N극", { bg: "rgba(255,229,236,0.95)", color: "#7a3140" });
+      labelN.scale.set(0.9, 0.62, 1);
+      labelN.position.set(-0.25, 2.55, 1.05);
+      apparatus.root.add(labelN);
+      apparatus.labelN = labelN;
+
+      const labelS = createTextSprite("S극", { bg: "rgba(231,241,255,0.95)", color: "#2e4d82" });
+      labelS.scale.set(0.9, 0.62, 1);
+      labelS.position.set(-0.25, -2.52, 1.05);
+      apparatus.root.add(labelS);
+      apparatus.labelS = labelS;
+
+      buildFieldLines();
+
+      if (apparatus.beamCore) {
+        apparatus.root.remove(apparatus.beamCore);
+        apparatus.beamCore = null;
+      }
+
+      apparatus.root.children.slice().forEach((child) => {
+        if (child.type === "Sprite") {
+          apparatus.root.remove(child);
+        }
+      });
+
+      const surfaceLabelFurnace = createFaceLabel("원자로", { width: 1.15, height: 0.38 });
+      surfaceLabelFurnace.position.set(0, 0.55, 0.62);
+      furnace.add(surfaceLabelFurnace);
+
+      const surfaceLabelSlit = createFaceLabel("슬릿", { width: 0.9, height: 0.32, font: "700 30px Pretendard, sans-serif" });
+      surfaceLabelSlit.position.set(0, 0, 0.45);
+      apparatus.slitPairs[0].upper.add(surfaceLabelSlit);
+
+      const surfaceLabelScreen = createFaceLabel("검출기", { width: 1.15, height: 0.38 });
+      surfaceLabelScreen.position.set(0.1, 2.25, 1.76);
+      screen.add(surfaceLabelScreen);
+
+      const surfaceLabelN = createFaceLabel("N극", { width: 0.95, height: 0.36, bg: "rgba(255,229,236,0.95)", color: "#7a3140" });
+      surfaceLabelN.position.set(0, 0.18, 1.03);
+      upperMagnet.add(surfaceLabelN);
+      apparatus.labelN = surfaceLabelN;
+
+      const surfaceLabelS = createFaceLabel("S극", { width: 0.95, height: 0.36, bg: "rgba(231,241,255,0.95)", color: "#2e4d82" });
+      surfaceLabelS.position.set(0, 0.1, 1.03);
+      lowerMagnet.add(surfaceLabelS);
+      apparatus.labelS = surfaceLabelS;
+
+      rebuildFieldLines();
+
+      updateApparatusFromControls();
+    }
+
+    function buildSpinOverlayContent() {
+      return `
+        <div id="spinDemoCanvas" style="width:100%;height:248px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:14px;overflow:hidden;"></div>
+        <p style="margin:0 0 8px"><strong>스핀</strong>은 전자의 고유한 양자 성질입니다. 아래 그림은 전자 자체의 회전 방향을 비유적으로 보여 줍니다.</p>
+        <p style="margin:0">자기장 속에서는 자기모멘트 <strong>μ</strong>의 방향에 따라 힘의 방향이 달라집니다. 그래서 <strong>스핀 위</strong>는 위쪽으로, <strong>스핀 아래</strong>는 아래쪽으로 편향됩니다.</p>
+      `;
+    }
+
+    function startSpinDemo() {
+      const container = document.getElementById("spinDemoCanvas");
+      if (!container) return;
+
+      const canvas = document.createElement("canvas");
+      canvas.style.cssText = "width:100%;height:100%;display:block;";
+      container.appendChild(canvas);
+
+      const resize = () => {
+        const rect = container.getBoundingClientRect();
+        canvas.width = Math.max(1, rect.width);
+        canvas.height = Math.max(1, rect.height);
+      };
+      resize();
+
+      const ctx = canvas.getContext("2d");
+      let phase = 0;
+
+      const drawArrow = (x1, y1, x2, y2, color, width = 2.6) => {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len = Math.max(0.001, Math.hypot(dx, dy));
+        const ux = dx / len;
+        const uy = dy / len;
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        const size = 9;
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - ux * size - uy * 5, y2 - uy * size + ux * 5);
+        ctx.lineTo(x2 - ux * size + uy * 5, y2 - uy * size - ux * 5);
+        ctx.closePath();
+        ctx.fill();
+      };
+
+      const drawSpinRotation = (cx, cy, r, spinDir, color) => {
+        const start = phase * spinDir;
+        const end = start + Math.PI * 1.28;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 1.18, start, end, false);
+        ctx.stroke();
+
+        const hx = Math.cos(end) * r * 1.18;
+        const hy = Math.sin(end) * r * 1.18;
+        const tx = -Math.sin(end) * spinDir;
+        const ty = Math.cos(end) * spinDir;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(hx, hy);
+        ctx.lineTo(hx - tx * 10 - Math.cos(end) * 4, hy - ty * 10 - Math.sin(end) * 4);
+        ctx.lineTo(hx - tx * 10 + Math.cos(end) * 4, hy - ty * 10 + Math.sin(end) * 4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      };
+
+      const drawElectron = (cx, cy, spinDir, color, labels) => {
+        const r = Math.min(canvas.width * 0.065, 26);
+        const glow = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.35, r * 0.1, cx, cy, r);
+        glow.addColorStop(0, spinDir > 0 ? "rgba(255,196,204,0.95)" : "rgba(201,222,255,0.95)");
+        glow.addColorStop(1, spinDir > 0 ? "rgba(242,169,182,0.52)" : "rgba(174,200,245,0.52)");
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = glow;
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        drawSpinRotation(cx, cy, r, spinDir, color);
+
+        const muEndY = spinDir > 0 ? cy - r * 1.95 : cy + r * 1.95;
+        drawArrow(cx, cy, cx, muEndY, color, 2.8);
+        ctx.fillStyle = color;
+        ctx.font = "italic 700 16px serif";
+        ctx.textAlign = "left";
+        ctx.fillText("μ", cx + 10, spinDir > 0 ? muEndY + 4 : muEndY - 6);
+
+        const sideX = cx + r * 2.0;
+        const deflectEndY = spinDir > 0 ? cy - r * 2.55 : cy + r * 2.55;
+        drawArrow(sideX, cy - 2, sideX, deflectEndY, color, 2.2);
+
+        ctx.textAlign = "center";
+        ctx.font = "700 13px Pretendard, sans-serif";
+        ctx.fillStyle = color;
+        ctx.fillText(labels.title, cx, cy + r * 2.55);
+
+        ctx.font = "12px Pretendard, sans-serif";
+        ctx.fillText(labels.subtitle, cx, cy + r * 3.35);
+      };
+
+      const frame = () => {
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = "#f8fafc";
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.strokeStyle = "#e2e8f0";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        ctx.moveTo(w / 2, 18);
+        ctx.lineTo(w / 2, h - 18);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = "#64748b";
+        ctx.font = "12px Pretendard, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("자기장 B는 아래 방향", w / 2, 18);
+        drawArrow(w / 2, 30, w / 2, 58, "#64748b", 2.2);
+
+        drawElectron(w * 0.28, h * 0.43, 1, "#e77f93", {
+          title: "스핀 위",
+          subtitle: "검출기 위쪽으로 편향"
+        });
+        drawElectron(w * 0.72, h * 0.43, -1, "#5f8fdc", {
+          title: "스핀 아래",
+          subtitle: "검출기 아래쪽으로 편향"
+        });
+
+        phase += 0.05;
+        spinAnimId = requestAnimationFrame(frame);
+      };
+
+      frame();
+    }
+
+    function rebuildFieldLines() {
+      if (apparatus.fieldGroup) {
+        apparatus.root.remove(apparatus.fieldGroup);
+      }
+
+      const group = new THREE.Group();
+      const centerX = apparatus.upperMagnet ? apparatus.upperMagnet.position.x : 1.18;
+      const topCenterY = apparatus.upperMagnet ? apparatus.upperMagnet.position.y : 1.78;
+      const bottomCenterY = apparatus.lowerMagnet ? apparatus.lowerMagnet.position.y : -1.78;
+      const xOffsets = [-2.0, 0, 2.0];
+      const zOffsets = [-0.62, -0.34, 0, 0.34, 0.62];
+      const halfFaceWidth = 0.92;
+      const faceRise = 0.72;
+      const normalYZ = new THREE.Vector2(faceRise, halfFaceWidth).normalize();
+
+      xOffsets.forEach((xOffset) => {
+        zOffsets.forEach((z) => {
+          const zRatio = Math.min(1, Math.abs(z) / halfFaceWidth);
+          const startY = topCenterY + (-0.86 + zRatio * faceRise);
+          const start = new THREE.Vector3(centerX + xOffset, startY, z);
+          const end = new THREE.Vector3(centerX + xOffset * 0.18, bottomCenterY + 0.78, z * 0.12);
+
+          const zTowardCenter = Math.abs(z) < 0.001 ? 0 : -Math.sign(z) * normalYZ.y;
+          const normal = new THREE.Vector3(0, -normalYZ.x, zTowardCenter).normalize();
+          const control1 = start.clone().add(normal.clone().multiplyScalar(0.88));
+          const control2 = end.clone().add(new THREE.Vector3(0, 0.7, -z * 0.1));
+
+          const curve = new THREE.CubicBezierCurve3(start, control1, control2, end);
+          const opacity = xOffset === 0 ? 0.82 : 0.5;
+          const lineGeom = new THREE.BufferGeometry().setFromPoints(curve.getPoints(42));
+          group.add(new THREE.Line(
+            lineGeom,
+            new THREE.LineBasicMaterial({ color: 0x4678ea, transparent: true, opacity })
+          ));
+
+          const arrowPos = curve.getPointAt(0.62);
+          const arrowNext = curve.getPointAt(0.66);
+          const dir = arrowNext.clone().sub(arrowPos).normalize();
+          const cone = new THREE.Mesh(
+            new THREE.ConeGeometry(0.045, 0.16, 10),
+            new THREE.MeshBasicMaterial({ color: 0x3566d8, transparent: true, opacity: opacity * 0.96 })
+          );
+          cone.position.copy(arrowPos);
+          cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+          group.add(cone);
+        });
+      });
+
+      apparatus.fieldGroup = group;
+      apparatus.root.add(group);
+    }
+
+    function buildSpinOverlayContent() {
+      return `
+        <div id="spinDemoCanvas" style="width:100%;height:280px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:14px;overflow:hidden;"></div>
+        <p style="margin:0 0 8px"><strong>스핀</strong>은 전자의 고유한 양자 성질입니다. 아래 그림의 화살표는 전자가 실제로 도는 모습이 아니라 <strong>스핀 상태를 상징적으로</strong> 나타냅니다.</p>
+        <p style="margin:0">측정 전에는 한 축에 대해 결과가 정해지지 않은 상태로 볼 수 있고, 측정하면 <strong>스핀 위</strong> 또는 <strong>스핀 아래</strong>로 구분되어 검출됩니다.</p>
+      `;
+    }
+
+    function startSpinDemo() {
+      const container = document.getElementById("spinDemoCanvas");
+      if (!container) return;
+
+      const canvas = document.createElement("canvas");
+      canvas.style.cssText = "width:100%;height:100%;display:block;";
+      container.appendChild(canvas);
+
+      const resize = () => {
+        const rect = container.getBoundingClientRect();
+        canvas.width = Math.max(1, rect.width);
+        canvas.height = Math.max(1, rect.height);
+      };
+      resize();
+
+      const ctx = canvas.getContext("2d");
+      let t = 0;
+
+      function drawArrow(x1, y1, x2, y2, color, alpha = 1, width = 2.4) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len = Math.max(0.001, Math.hypot(dx, dy));
+        const ux = dx / len;
+        const uy = dy / len;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        const size = 9;
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - ux * size - uy * 5, y2 - uy * size + ux * 5);
+        ctx.lineTo(x2 - ux * size + uy * 5, y2 - uy * size - ux * 5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawElectronBody(cx, cy, radius, tint) {
+        const g = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.32, radius * 0.08, cx, cy, radius);
+        g.addColorStop(0, "rgba(255,255,255,0.96)");
+        g.addColorStop(1, tint);
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.strokeStyle = "rgba(60,92,140,0.32)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      function drawMeasuredState(cx, cy, spinDir, color, title, subtitle) {
+        const r = Math.min(canvas.width * 0.06, 24);
+        const bob = Math.sin(t * 1.6 + (spinDir > 0 ? 0 : Math.PI)) * 3;
+        drawElectronBody(cx, cy + bob, r, spinDir > 0 ? "rgba(242,169,182,0.64)" : "rgba(174,200,245,0.64)");
+        const endY = spinDir > 0 ? cy - r * 1.9 + bob : cy + r * 1.9 + bob;
+        drawArrow(cx, cy + bob, cx, endY, color, 0.95, 2.6);
+        ctx.fillStyle = color;
+        ctx.font = "italic bold 14px serif";
+        ctx.textAlign = "left";
+        ctx.fillText("μ", cx + 9, spinDir > 0 ? endY + 4 : endY - 4);
+
+        const sideX = cx + r * 1.65;
+        const deflectY = spinDir > 0 ? cy - r * 2.6 : cy + r * 2.6;
+        drawArrow(sideX, cy + bob, sideX, deflectY + bob, color, 0.55, 1.9);
+
+        ctx.textAlign = "center";
+        ctx.font = "700 14px Pretendard, sans-serif";
+        ctx.fillStyle = color;
+        ctx.fillText(title, cx, cy + r * 2.95);
+        ctx.font = "12px Pretendard, sans-serif";
+        ctx.fillStyle = color + "cc";
+        ctx.fillText(subtitle, cx, cy + r * 3.85);
+      }
+
+      function frame() {
+        const w = canvas.width;
+        const h = canvas.height;
+        const leftCx = w * 0.28;
+        const rightCx = w * 0.72;
+        const cy = h * 0.4;
+        const r = Math.min(w * 0.06, 24);
+        const mix = (Math.sin(t) + 1) / 2;
+        const upAlpha = 0.28 + mix * 0.52;
+        const downAlpha = 0.28 + (1 - mix) * 0.52;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = "#f8fafc";
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.strokeStyle = "#e2e8f0";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        ctx.moveTo(w / 2, 12);
+        ctx.lineTo(w / 2, h - 12);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = "#64748b";
+        ctx.font = "12px Pretendard, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("측정 전", leftCx, 18);
+        ctx.fillText("측정 후", rightCx, 18);
+
+        drawElectronBody(leftCx, cy, r, "rgba(198,216,241,0.62)");
+        drawArrow(leftCx, cy, leftCx, cy - r * 1.9, "#e77f93", upAlpha, 2.5);
+        drawArrow(leftCx, cy, leftCx, cy + r * 1.9, "#5f8fdc", downAlpha, 2.5);
+        ctx.fillStyle = "#64748b";
+        ctx.font = "12px Pretendard, sans-serif";
+        ctx.fillText("한 축에 대해 두 가능성이 공존", leftCx, h - 40);
+        ctx.fillText("화살표는 스핀 상태의 상징", leftCx, h - 22);
+
+        drawMeasuredState(rightCx, cy - 38, 1, "#e77f93", "스핀 위", "검출기 위쪽으로 편향");
+        drawMeasuredState(rightCx, cy + 54, -1, "#5f8fdc", "스핀 아래", "검출기 아래쪽으로 편향");
+
+        const bridgeY = cy + Math.sin(t * 1.2) * 5;
+        ctx.strokeStyle = "rgba(99,116,139,0.32)";
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(leftCx + r * 1.45, bridgeY);
+        ctx.bezierCurveTo(w * 0.44, bridgeY - 8, w * 0.56, bridgeY - 32, rightCx - r * 1.5, cy - 38);
+        ctx.moveTo(leftCx + r * 1.45, bridgeY);
+        ctx.bezierCurveTo(w * 0.44, bridgeY + 8, w * 0.56, bridgeY + 32, rightCx - r * 1.5, cy + 54);
+        ctx.stroke();
+
+        t += 0.035;
+        spinAnimId = requestAnimationFrame(frame);
+      }
+
+      frame();
+    }
+
+    function rebuildFieldLines() {
+      if (apparatus.fieldGroup) {
+        apparatus.root.remove(apparatus.fieldGroup);
+      }
+
+      const group = new THREE.Group();
+      const centerX = apparatus.upperMagnet ? apparatus.upperMagnet.position.x : 1.18;
+      const topCenterY = apparatus.upperMagnet ? apparatus.upperMagnet.position.y : 1.78;
+      const bottomCenterY = apparatus.lowerMagnet ? apparatus.lowerMagnet.position.y : -1.78;
+      const xOffsets = [-2.2, 0, 2.2];
+      const zOffsets = [-0.58, 0, 0.58];
+      const slopeRatio = 0.72 / 0.92;
+
+      xOffsets.forEach((xOffset) => {
+        zOffsets.forEach((z) => {
+          const absZ = Math.abs(z);
+          const startLocalY = -0.86 + (absZ / 0.92) * 0.72;
+          const start = new THREE.Vector3(centerX + xOffset, topCenterY + startLocalY, z);
+          const end = new THREE.Vector3(centerX + xOffset, bottomCenterY + 0.78, z * 0.78);
+
+          const startNormal = new THREE.Vector3(
+            0,
+            -1,
+            absZ < 0.03 ? 0 : Math.sign(z) * slopeRatio
+          ).normalize();
+          const control1 = start.clone().add(startNormal.multiplyScalar(0.84));
+
+          // End tangent is vertical so the field appears to enter the lower face normally.
+          const control2 = end.clone().add(new THREE.Vector3(0, 0.84, 0));
+          const curve = new THREE.CubicBezierCurve3(start, control1, control2, end);
+          const lineGeom = new THREE.BufferGeometry().setFromPoints(curve.getPoints(36));
+          const opacity = xOffset === 0 ? 0.82 : 0.54;
+          group.add(new THREE.Line(
+            lineGeom,
+            new THREE.LineBasicMaterial({ color: 0x4678ea, transparent: true, opacity })
+          ));
+
+          const arrowPos = curve.getPointAt(0.6);
+          const arrowNext = curve.getPointAt(0.64);
+          const dir = arrowNext.clone().sub(arrowPos).normalize();
+          const cone = new THREE.Mesh(
+            new THREE.ConeGeometry(0.045, 0.16, 10),
+            new THREE.MeshBasicMaterial({ color: 0x3566d8, transparent: true, opacity: opacity * 0.96 })
+          );
+          cone.position.copy(arrowPos);
+          cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+          group.add(cone);
+        });
+      });
+
+      apparatus.fieldGroup = group;
+      apparatus.root.add(group);
+    }
+
+    function clearEffects() {
+      state.particles.forEach((particle) => {
+        scene.remove(particle.ball);
+        scene.remove(particle.line);
+      });
+      state.particles = [];
+      state.classicalHits = [];
+      state.quantumHits = [];
+
+      apparatus.screenHits.children.slice().forEach((child) => {
+        apparatus.screenHits.remove(child);
+      });
+    }
+
+    function addHit(model, y, z) {
+      const hitMat = new THREE.MeshBasicMaterial({
+        color: model === "classical" ? 0x31d8ff : 0xff5d7a,
+        transparent: true,
+        opacity: model === "classical" ? 0.42 : 0.72
+      });
+      const hit = new THREE.Mesh(new THREE.CircleGeometry(model === "classical" ? 0.11 : 0.08, 18), hitMat);
+      hit.rotation.y = Math.PI / 2;
+      hit.position.set(-7.19, y, z);
+      apparatus.screenHits.add(hit);
+
+      if (model === "classical") state.classicalHits.push(y);
+      else state.quantumHits.push(y);
+      updateReadouts();
+    }
+
+    function makeParticle(model) {
+      const s = settings();
+      const beamNoise = randomRange(-1, 1) * ((s.slit - 4) / 3) * 0.32;
+      const depthNoise = randomRange(-0.28, 0.28);
+      const thermalNoise = randomRange(-1, 1) * (s.thermal / 18) * 0.45;
+      const separation = 0.38 + ((s.gradient - 20) / 80) * 0.50;
+
+      let targetY;
+      if (model === "classical") {
+        targetY = randomRange(-1, 1) * separation + thermalNoise;
+      } else {
+        targetY = (Math.random() < 0.5 ? -1 : 1) * separation + thermalNoise * 0.45;
+      }
+
+      const pts = [
+        new THREE.Vector3(6.4 + WORLD_OFFSET_X, beamNoise * 0.2, depthNoise * 0.35),
+        new THREE.Vector3(5.25 + WORLD_OFFSET_X, beamNoise, depthNoise * 0.3),
+        new THREE.Vector3(4.65 + WORLD_OFFSET_X, beamNoise * 0.9, depthNoise * 0.25),
+        new THREE.Vector3(2.2 + WORLD_OFFSET_X, beamNoise * 0.8, depthNoise * 0.2),
+        new THREE.Vector3(0.6 + WORLD_OFFSET_X, targetY * 0.55, depthNoise * 0.12),
+        new THREE.Vector3(-2.6 + WORLD_OFFSET_X, targetY * 0.92, depthNoise * 0.08),
+        new THREE.Vector3(-7.18 + WORLD_OFFSET_X, targetY, depthNoise * 0.05)
+      ];
+
+      const curve = new THREE.CatmullRomCurve3(pts);
+      const lineGeom = new THREE.BufferGeometry().setFromPoints(curve.getPoints(80));
+      const line = new THREE.Line(
+        lineGeom,
+        new THREE.LineBasicMaterial({
+          color: model === "classical" ? 0x31d8ff : 0xff5d7a,
+          transparent: true,
+          opacity: model === "classical" ? 0.32 : 0.52
+        })
+      );
+      scene.add(line);
+
+      const ball = new THREE.Mesh(
+        new THREE.SphereGeometry(model === "classical" ? 0.07 : 0.08, 16, 16),
+        new THREE.MeshStandardMaterial({
+          color: model === "classical" ? 0x67ebff : 0xff8298,
+          emissive: model === "classical" ? 0x2bc7ed : 0xff5575,
+          emissiveIntensity: 0.8,
+          roughness: 0.25,
+          metalness: 0.15
+        })
+      );
+      scene.add(ball);
+
+      return {
+        model,
+        curve,
+        line,
+        ball,
+        progress: 0,
+        speed: randomRange(0.45, 0.78),
+        done: false,
+        targetY,
+        targetZ: depthNoise * 0.05
+      };
+    }
+
+    function emitParticles() {
+      const mode = settings().mode;
+      if (mode === "compare") {
+        state.particles.push(makeParticle("classical"));
+        state.particles.push(makeParticle("quantum"));
+      } else if (mode === "classical") {
+        state.particles.push(makeParticle("classical"));
+      } else {
+        state.particles.push(makeParticle("quantum"));
+      }
+      state.emitted += 1;
+      updateReadouts();
+    }
+
+    function spreadOf(values) {
+      if (!values.length) return 0;
+      return Math.max(...values) - Math.min(...values);
+    }
+
+    function quantumGap(values) {
+      const upper = values.filter((v) => v < 0);
+      const lower = values.filter((v) => v > 0);
+      if (!upper.length || !lower.length) return 0;
+      const avg = (arr) => arr.reduce((sum, v) => sum + v, 0) / arr.length;
+      return avg(lower) - avg(upper);
+    }
+
+    function updateInsight() {
+      const mode = settings().mode;
+      if (mode === "classical") {
+        ui.insightBox.textContent = "고전 모형에서는 자기모멘트 방향을 연속값으로 가정하므로 검출면에 하나의 연속 띠가 형성됩니다.";
+        ui.captionBox.textContent = "화면에는 고전 예측만 표시됩니다. 자기모멘트 방향이 연속적으로 분포한다고 가정해 보세요.";
+      } else if (mode === "quantum") {
+        ui.insightBox.textContent = "양자 모형에서는 측정 결과가 두 값으로 양자화되어 검출면에 두 갈래의 점무늬가 쌓입니다.";
+        ui.captionBox.textContent = "화면에는 실제 관측만 표시됩니다. 입자 하나는 점으로 도착하지만 전체적으로 두 무리로 모입니다.";
+      } else {
+        ui.insightBox.textContent = "비교 모드에서는 고전 예측의 연속 띠와 실제 관측의 두 갈래 점무늬를 한 화면에서 함께 볼 수 있습니다.";
+        ui.captionBox.textContent = "같은 장치에서도 고전 예측은 연속 띠, 실제 관측은 두 갈래 분리로 나타납니다.";
+      }
+    }
+
+    function updateReadouts() {
+      ui.emittedCount.textContent = state.emitted;
+      ui.classicalWidth.textContent = mmValue(spreadOf(state.classicalHits));
+      ui.quantumGap.textContent = mmValue(quantumGap(state.quantumHits));
+      updateInsight();
+    }
+
+    function resetRun() {
+      state.running = false;
+      state.emitted = 0;
+      state.accumulator = 0;
+      clearEffects();
+      updateReadouts();
+    }
+
+    function updateParticles(delta) {
+      state.particles = state.particles.filter((particle) => {
+        particle.progress = Math.min(1.02, particle.progress + delta * particle.speed);
+        const pos = particle.curve.getPointAt(Math.min(1, particle.progress));
+        particle.ball.position.copy(pos);
+
+        if (particle.progress >= 1 && !particle.done) {
+          particle.done = true;
+          addHit(particle.model, particle.targetY, particle.targetZ);
+        }
+
+        if (particle.progress >= 1.02) {
+          scene.remove(particle.ball);
+          scene.remove(particle.line);
+          return false;
+        }
+        return true;
+      });
+    }
+
+    function animate() {
+      const delta = Math.min(0.05, clock.getDelta());
+
+      if (state.running) {
+        const s = settings();
+        if (state.emitted < s.shots) {
+          state.accumulator += delta * s.rate;
+          while (state.accumulator >= 1 && state.emitted < s.shots) {
+            emitParticles();
+            state.accumulator -= 1;
+          }
+        } else if (state.particles.length === 0) {
+          state.running = false;
+        }
+      }
+
+      updateParticles(delta);
+
+      const target = new THREE.Vector3(2.8, 0, 0);
+      const radius = 15.7 / state.zoom;
+      const horiz = Math.cos(state.orbitPitch) * radius;
+      camera.position.x = target.x + Math.sin(state.orbitYaw) * horiz;
+      camera.position.y = target.y + Math.sin(state.orbitPitch) * radius;
+      camera.position.z = target.z + Math.cos(state.orbitYaw) * horiz;
+      camera.lookAt(target);
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    function wireUi() {
+      [ui.gradient, ui.slit].forEach((el) => {
+        el.addEventListener("input", updateLabels);
+        el.addEventListener("change", updateLabels);
+      });
+
+      ui.modeClassicalBtn.addEventListener("click", () => setMode("classical"));
+      ui.modeQuantumBtn.addEventListener("click", () => setMode("quantum"));
+      ui.modeCompareBtn.addEventListener("click", () => setMode("compare"));
+
+      ui.runBtn.addEventListener("click", () => {
+        if (state.emitted >= settings().shots && state.particles.length === 0) resetRun();
+        state.running = true;
+      });
+
+      ui.pauseBtn.addEventListener("click", () => {
+        state.running = false;
+      });
+
+      ui.resetBtn.addEventListener("click", resetRun);
+      ui.spinInfoBtn.addEventListener("click", () => openInfo("spin"));
+      ui.closeOverlayBtn.addEventListener("click", closeInfo);
+      ui.infoOverlay.addEventListener("click", (event) => {
+        if (event.target === ui.infoOverlay) closeInfo();
+      });
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeInfo();
+      });
+      ui.scene.addEventListener("wheel", (event) => {
+        event.preventDefault();
+        setZoom(state.zoom + (event.deltaY < 0 ? 0.08 : -0.08));
+      }, { passive: false });
+      window.addEventListener("resize", resizeScene);
+    }
+
+    function init() {
+      setupRenderer();
+      camera.position.set(6.8, 4.9, 14.4);
+      buildApparatus();
+      bindSceneDrag();
+      wireUi();
+      setMode("classical");
+      updateLabels();
+      animate();
+    }
+
+    function buildSpinOverlayContent() {
+      return `
+        <div id="spinDemoCanvas" style="width:100%;height:280px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:14px;overflow:hidden;"></div>
+        <p style="margin:0 0 8px"><strong>스핀</strong>은 전자가 실제로 도는 모습이 아니라, 전자에 고유한 양자 상태를 나타내는 상징적 표현입니다.</p>
+        <p style="margin:0">왼쪽은 측정 전 상태를, 오른쪽은 측정 후 <strong>스핀 위</strong>와 <strong>스핀 아래</strong>로 구분되는 모습을 보여줍니다.</p>
+      `;
+    }
+
+    function startSpinDemo() {
+      const container = document.getElementById("spinDemoCanvas");
+      if (!container) return;
+
+      const canvas = document.createElement("canvas");
+      canvas.style.cssText = "width:100%;height:100%;display:block;";
+      container.appendChild(canvas);
+
+      const resize = () => {
+        const rect = container.getBoundingClientRect();
+        canvas.width = Math.max(1, rect.width);
+        canvas.height = Math.max(1, rect.height);
+      };
+      resize();
+
+      const ctx = canvas.getContext("2d");
+      let t = 0;
+
+      function drawArrow(x1, y1, x2, y2, color, alpha = 1, width = 2.4) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len = Math.max(0.001, Math.hypot(dx, dy));
+        const ux = dx / len;
+        const uy = dy / len;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        const size = 9;
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - ux * size - uy * 5, y2 - uy * size + ux * 5);
+        ctx.lineTo(x2 - ux * size + uy * 5, y2 - uy * size - ux * 5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawElectronBody(cx, cy, radius, tint) {
+        const g = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.32, radius * 0.08, cx, cy, radius);
+        g.addColorStop(0, "rgba(255,255,255,0.96)");
+        g.addColorStop(1, tint);
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.strokeStyle = "rgba(60,92,140,0.32)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      function drawMeasuredState(cx, cy, spinDir, color, title, subtitle) {
+        const r = Math.min(canvas.width * 0.052, 21);
+        const bob = Math.sin(t * 1.6 + (spinDir > 0 ? 0 : Math.PI)) * 2.6;
+        drawElectronBody(cx, cy + bob, r, spinDir > 0 ? "rgba(242,169,182,0.64)" : "rgba(174,200,245,0.64)");
+        const endY = spinDir > 0 ? cy - r * 1.85 + bob : cy + r * 1.85 + bob;
+        drawArrow(cx, cy + bob, cx, endY, color, 0.95, 2.5);
+        ctx.fillStyle = color;
+        ctx.font = "italic bold 14px serif";
+        ctx.textAlign = "left";
+        ctx.fillText("μ", cx + 8, spinDir > 0 ? endY + 4 : endY - 4);
+
+        const sideX = cx + r * 1.7;
+        const deflectY = spinDir > 0 ? cy - r * 2.35 : cy + r * 2.35;
+        drawArrow(sideX, cy + bob, sideX, deflectY + bob, color, 0.5, 1.8);
+
+        ctx.textAlign = "left";
+        const labelX = cx + r * 2.2;
+        ctx.font = "700 13px Pretendard, sans-serif";
+        ctx.fillStyle = color;
+        ctx.fillText(title, labelX, cy + 6);
+        ctx.font = "12px Pretendard, sans-serif";
+        ctx.fillStyle = color + "cc";
+        ctx.fillText(subtitle, labelX, cy + 24);
+      }
+
+      function frame() {
+        const w = canvas.width;
+        const h = canvas.height;
+        const leftCx = w * 0.22;
+        const rightCx = w * 0.72;
+        const cy = h * 0.43;
+        const r = Math.min(w * 0.052, 21);
+        const mix = (Math.sin(t) + 1) / 2;
+        const upAlpha = 0.3 + mix * 0.48;
+        const downAlpha = 0.3 + (1 - mix) * 0.48;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = "#f8fafc";
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.strokeStyle = "#e2e8f0";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        ctx.moveTo(w * 0.47, 14);
+        ctx.lineTo(w * 0.47, h - 14);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = "#64748b";
+        ctx.font = "12px Pretendard, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("측정 전", leftCx, 20);
+        ctx.fillText("측정 후", rightCx, 20);
+
+        drawElectronBody(leftCx, cy, r, "rgba(198,216,241,0.62)");
+        drawArrow(leftCx, cy, leftCx, cy - r * 1.9, "#e77f93", upAlpha, 2.4);
+        drawArrow(leftCx, cy, leftCx, cy + r * 1.9, "#5f8fdc", downAlpha, 2.4);
+        ctx.fillStyle = "#64748b";
+        ctx.font = "12px Pretendard, sans-serif";
+        ctx.fillText("한 축에 대해 두 가능성이 공존", leftCx, h - 34);
+        ctx.fillText("화살표는 스핀 상태의 상징", leftCx, h - 16);
+
+        drawMeasuredState(rightCx, cy - 42, 1, "#e77f93", "스핀 위", "검출기 위쪽으로 편향");
+        drawMeasuredState(rightCx, cy + 42, -1, "#5f8fdc", "스핀 아래", "검출기 아래쪽으로 편향");
+
+        const bridgeY = cy + Math.sin(t * 1.15) * 4;
+        ctx.strokeStyle = "rgba(99,116,139,0.32)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(leftCx + r * 1.45, bridgeY);
+        ctx.bezierCurveTo(w * 0.31, bridgeY - 6, w * 0.54, bridgeY - 30, rightCx - r * 1.55, cy - 42);
+        ctx.moveTo(leftCx + r * 1.45, bridgeY);
+        ctx.bezierCurveTo(w * 0.31, bridgeY + 6, w * 0.54, bridgeY + 30, rightCx - r * 1.55, cy + 42);
+        ctx.stroke();
+
+        t += 0.035;
+        spinAnimId = requestAnimationFrame(frame);
+      }
+
+      frame();
+    }
+
+    init();
+    const captionLayer = document.querySelector(".caption");
+    if (captionLayer) captionLayer.style.display = "none";
+  </script>
+</body>
+</html>
