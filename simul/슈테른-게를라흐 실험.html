@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
@@ -22,9 +23,12 @@
       --shadow: 0 18px 38px rgba(17, 34, 53, 0.1);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
-    html, body {
+    html,
+    body {
       margin: 0;
       width: 100%;
       height: 100%;
@@ -37,7 +41,9 @@
       font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
-    body { padding: 0; }
+    body {
+      padding: 0;
+    }
 
     .app {
       position: fixed;
@@ -61,8 +67,14 @@
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     }
 
-    .sidebar::-webkit-scrollbar { width: 6px; }
-    .sidebar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+    .sidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 999px;
+    }
 
     .stage {
       position: fixed;
@@ -93,7 +105,9 @@
       letter-spacing: -0.5px;
     }
 
-    .hero p, .body-text, .obs-text {
+    .hero p,
+    .body-text,
+    .obs-text {
       margin: 0;
       font-size: 0.9rem;
       color: #64748b;
@@ -107,6 +121,7 @@
       justify-content: center;
       margin-bottom: 10px;
     }
+
     .chip {
       display: inline-flex;
       align-items: center;
@@ -115,8 +130,16 @@
       font-size: 12px;
       font-weight: 800;
     }
-    .chip.exp { background: rgba(47, 104, 255, 0.1); color: var(--blue); }
-    .chip.obs { background: rgba(255, 93, 122, 0.1); color: #d94164; }
+
+    .chip.exp {
+      background: rgba(47, 104, 255, 0.1);
+      color: var(--blue);
+    }
+
+    .chip.obs {
+      background: rgba(255, 93, 122, 0.1);
+      color: #d94164;
+    }
 
     .section-title {
       margin: 0 0 10px;
@@ -139,7 +162,12 @@
       color: var(--muted);
     }
 
-    select, input[type="range"], button { width: 100%; }
+    select,
+    input[type="range"],
+    button {
+      width: 100%;
+    }
+
     select {
       border: 1px solid #cbd5e1;
       border-radius: 12px;
@@ -148,7 +176,11 @@
       background: #fff;
       color: var(--text);
     }
-    input[type="range"] { accent-color: var(--blue); cursor: pointer; }
+
+    input[type="range"] {
+      accent-color: var(--blue);
+      cursor: pointer;
+    }
 
     .value {
       border-radius: 999px;
@@ -192,13 +224,20 @@
       transition: all 0.2s ease;
       font-family: "Pretendard", sans-serif;
     }
-    button:hover { background: #f1f5f9; transform: none; filter: none; }
+
+    button:hover {
+      background: #f1f5f9;
+      transform: none;
+      filter: none;
+    }
+
     .btn-main {
       background: #334155;
       border: 1px solid #1e293b;
       color: #fff;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
+
     .btn-sub {
       background: #f8fafc;
       border: 1px solid #cbd5e1;
@@ -231,16 +270,19 @@
       padding: 10px;
       background: #fff;
     }
+
     .stat .label {
       color: var(--muted);
       font-size: 11px;
       margin-bottom: 4px;
     }
+
     .stat .num {
       font-size: 21px;
       font-weight: 900;
       letter-spacing: -0.02em;
     }
+
     .stat .sub {
       color: var(--muted);
       font-size: 12px;
@@ -253,6 +295,7 @@
       padding: 0;
       margin: 0;
     }
+
     .canvas-topbar {
       position: fixed;
       top: 20px;
@@ -265,10 +308,11 @@
       z-index: 20;
       padding: 12px 14px;
       border-radius: 14px;
-      background: rgba(255,255,255,0.95);
+      background: rgba(255, 255, 255, 0.95);
       border: 1px solid #e2e8f0;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     }
+
     .legend {
       display: flex;
       gap: 12px;
@@ -276,6 +320,7 @@
       color: var(--muted);
       font-size: 12px;
     }
+
     .legend span::before {
       content: "";
       display: inline-block;
@@ -285,8 +330,14 @@
       margin-right: 6px;
       vertical-align: middle;
     }
-    .legend .classical::before { background: var(--cyan); }
-    .legend .quantum::before { background: var(--pink); }
+
+    .legend .classical::before {
+      background: var(--cyan);
+    }
+
+    .legend .quantum::before {
+      background: var(--pink);
+    }
 
     .canvas-wrap {
       position: fixed;
@@ -362,7 +413,8 @@
       letter-spacing: -0.02em;
     }
 
-    .caption-box, .status-box {
+    .caption-box,
+    .status-box {
       border-radius: 16px;
       background: rgba(12, 23, 38, 0.66);
       color: #eef6ff;
@@ -370,10 +422,31 @@
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
-    .caption-box { padding: 12px 14px; font-size: 13px; line-height: 1.6; }
-    .status-box { padding: 12px 14px; min-width: 190px; text-align: right; }
-    .status-box .top { display: block; color: rgba(238, 246, 255, 0.72); font-size: 11px; margin-bottom: 3px; }
-    .status-box .big { font-size: 20px; font-weight: 900; letter-spacing: -0.02em; }
+
+    .caption-box {
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .status-box {
+      padding: 12px 14px;
+      min-width: 190px;
+      text-align: right;
+    }
+
+    .status-box .top {
+      display: block;
+      color: rgba(238, 246, 255, 0.72);
+      font-size: 11px;
+      margin-bottom: 3px;
+    }
+
+    .status-box .big {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
 
     .check-list {
       margin: 0;
@@ -402,10 +475,10 @@
 
     .overlay-card {
       width: min(620px, 100%);
-      background: rgba(255,255,255,0.97);
+      background: rgba(255, 255, 255, 0.97);
       border: 1px solid #e2e8f0;
       border-radius: 18px;
-      box-shadow: 0 25px 60px rgba(15,23,42,0.18);
+      box-shadow: 0 25px 60px rgba(15, 23, 42, 0.18);
       padding: 22px;
     }
 
@@ -443,6 +516,7 @@
       .sidebar {
         width: 320px;
       }
+
       .stats {
         grid-template-columns: 1fr;
       }
@@ -497,6 +571,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="app">
     <aside class="sidebar">
@@ -534,6 +609,7 @@
         </div>
         <div style="margin-top:8px;">
           <button class="btn-sub" id="spinInfoBtn" style="width:100%">스핀 설명 보기</button>
+          <button class="btn-sub" id="theoryInfoBtn" style="width:100%">고전 vs 양자 이론 보기</button>
         </div>
       </section>
 
@@ -617,6 +693,7 @@
       modeQuantumBtn: document.getElementById("modeQuantumBtn"),
       modeCompareBtn: document.getElementById("modeCompareBtn"),
       spinInfoBtn: document.getElementById("spinInfoBtn"),
+      theoryInfoBtn: document.getElementById("theoryInfoBtn"),
       gradientValue: document.getElementById("gradientValue"),
       slitValue: document.getElementById("slitValue"),
       emittedCount: document.getElementById("emittedCount"),
@@ -690,6 +767,19 @@
           <p style="margin:0 0 8px"><strong>스핀</strong>은 전자가 가진 양자역학적 고유 성질입니다. 측정하면 반드시 <strong>두 방향 중 하나</strong>만 나타납니다.</p>
           <p style="margin:0">비균일 자기장에서 자기모멘트 <em>μ</em>의 방향에 따라 받는 힘이 달라집니다. <strong>스핀 위(↑) 원자는 위로, 스핀 아래(↓) 원자는 아래로</strong> 편향되어 검출기에 두 줄로 찍힙니다.</p>
         `
+      },
+      theory: {
+        title: "고전 예측과 양자 관측",
+        body: `
+<h4 style="color:#1e293b; margin:0 0 8px;">고전 물리학의 예측</h4>
+      <p style="margin:0 0 16px; font-size:14px; color:#334155; line-height:1.7;">
+        고전 이론에서는 은 원자를 '작은 자석'으로 봅니다. 이 자석들의 방향은 3차원 공간에서 무작위이므로, 자기장 속에서 받는 힘도 연속적입니다. 따라서 스크린에 <strong>길게 이어진 하나의 띠</strong>가 나타날 것으로 예측했습니다.
+      </p>
+      <h4 style="color:#1e293b; margin:0 0 8px;">양자역학의 실제 관측</h4>
+      <p style="margin:0; font-size:14px; color:#334155; line-height:1.7;">
+        하지만 실제 실험에서는 정확히 <strong>위, 아래 두 개의 점</strong>으로만 나뉘어 찍혔습니다. 이는 전자의 스핀 방향이 연속적이지 않고, <strong>오직 두 가지 상태(위, 아래)로만 존재함(양자화)</strong>을 완벽하게 증명한 결과입니다.
+      </p>
+    `
       }
     };
 
@@ -715,43 +805,43 @@
         const r = Math.min(canvas.width * 0.065, 26);
         const col = spinDir > 0 ? "#ef4444" : "#3b82f6";
         // Sphere gradient
-        const g = ctx.createRadialGradient(cx - r*0.32, cy - r*0.32, r*0.05, cx, cy, r);
+        const g = ctx.createRadialGradient(cx - r * 0.32, cy - r * 0.32, r * 0.05, cx, cy, r);
         g.addColorStop(0, spinDir > 0 ? "rgba(255,180,180,0.9)" : "rgba(150,180,255,0.9)");
         g.addColorStop(1, spinDir > 0 ? "rgba(220,50,50,0.4)" : "rgba(40,90,220,0.4)");
-        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
         ctx.fillStyle = g; ctx.fill();
         ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
         // Equatorial spin ring (back half, dashed)
         ctx.save(); ctx.translate(cx, cy);
         ctx.strokeStyle = col + "66"; ctx.lineWidth = 1.5;
-        ctx.setLineDash([3,3]);
-        ctx.beginPath(); ctx.ellipse(0, 0, r*1.05, r*0.28, 0, 0, Math.PI*2);
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath(); ctx.ellipse(0, 0, r * 1.05, r * 0.28, 0, 0, Math.PI * 2);
         ctx.stroke(); ctx.setLineDash([]); ctx.restore();
         // Spinning dot on ring
-        const dot = { x: cx + r*1.05*Math.cos(phase * spinDir), y: cy + r*0.28*Math.sin(phase * spinDir) };
-        ctx.beginPath(); ctx.arc(dot.x, dot.y, 4, 0, Math.PI*2);
+        const dot = { x: cx + r * 1.05 * Math.cos(phase * spinDir), y: cy + r * 0.28 * Math.sin(phase * spinDir) };
+        ctx.beginPath(); ctx.arc(dot.x, dot.y, 4, 0, Math.PI * 2);
         ctx.fillStyle = col; ctx.fill();
         // Magnetic moment arrow (μ)
         const aLen = r * 2.0;
         const ayEnd = spinDir > 0 ? cy - aLen : cy + aLen;
-        ctx.beginPath(); ctx.moveTo(cx, cy - r*0.15); ctx.lineTo(cx, ayEnd);
+        ctx.beginPath(); ctx.moveTo(cx, cy - r * 0.15); ctx.lineTo(cx, ayEnd);
         ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.stroke();
         // Arrowhead
         const hd = spinDir > 0 ? -1 : 1;
         ctx.beginPath(); ctx.moveTo(cx, ayEnd);
-        ctx.lineTo(cx-6, ayEnd + hd*11); ctx.lineTo(cx+6, ayEnd + hd*11);
+        ctx.lineTo(cx - 6, ayEnd + hd * 11); ctx.lineTo(cx + 6, ayEnd + hd * 11);
         ctx.closePath(); ctx.fillStyle = col; ctx.fill();
         // μ label
         ctx.fillStyle = col; ctx.font = "italic bold 13px serif"; ctx.textAlign = "left";
         ctx.fillText("μ", cx + 8, ayEnd + (spinDir > 0 ? 6 : -2));
         // Deflection arrow
-        const defY = spinDir > 0 ? cy - r*2.9 : cy + r*2.9;
+        const defY = spinDir > 0 ? cy - r * 2.9 : cy + r * 2.9;
         const defH = 18 * spinDir;
-        ctx.beginPath(); ctx.moveTo(cx, defY + defH*0.4);
-        ctx.lineTo(cx, defY - defH*0.4);
+        ctx.beginPath(); ctx.moveTo(cx, defY + defH * 0.4);
+        ctx.lineTo(cx, defY - defH * 0.4);
         ctx.strokeStyle = col + "bb"; ctx.lineWidth = 1.5; ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(cx, defY - defH*0.4);
-        ctx.lineTo(cx-5, defY + defH*0.15); ctx.lineTo(cx+5, defY + defH*0.15);
+        ctx.beginPath(); ctx.moveTo(cx, defY - defH * 0.4);
+        ctx.lineTo(cx - 5, defY + defH * 0.15); ctx.lineTo(cx + 5, defY + defH * 0.15);
         ctx.closePath(); ctx.fillStyle = col + "bb"; ctx.fill();
       }
       function frame() {
@@ -761,24 +851,24 @@
         ctx.fillStyle = "#f8fafc"; ctx.fillRect(0, 0, w, h);
         // Center divider
         ctx.strokeStyle = "#e2e8f0"; ctx.lineWidth = 1;
-        ctx.setLineDash([5,4]); ctx.beginPath();
-        ctx.moveTo(w/2, 12); ctx.lineTo(w/2, h-12); ctx.stroke();
+        ctx.setLineDash([5, 4]); ctx.beginPath();
+        ctx.moveTo(w / 2, 12); ctx.lineTo(w / 2, h - 12); ctx.stroke();
         ctx.setLineDash([]);
         // B field direction label at top
         ctx.fillStyle = "#64748b"; ctx.font = "12px Pretendard, sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("B (자기장 방향 ↑)", w/2, 14);
+        ctx.fillText("B (자기장 방향 ↑)", w / 2, 14);
         // Draw electrons
         drawElectron(w * 0.28, h * 0.50, t, +1);
         drawElectron(w * 0.72, h * 0.50, t, -1);
         // Panel labels
         ctx.textAlign = "center";
         ctx.font = "bold 13px Pretendard, sans-serif";
-        ctx.fillStyle = "#ef4444"; ctx.fillText("스핀 위  ms = +½", w*0.28, h - 28);
-        ctx.fillStyle = "#3b82f6"; ctx.fillText("스핀 아래  ms = −½", w*0.72, h - 28);
+        ctx.fillStyle = "#ef4444"; ctx.fillText("스핀 위  ms = +½", w * 0.28, h - 28);
+        ctx.fillStyle = "#3b82f6"; ctx.fillText("스핀 아래  ms = −½", w * 0.72, h - 28);
         ctx.font = "12px Pretendard, sans-serif";
-        ctx.fillStyle = "#ef444488"; ctx.fillText("▲ 위쪽으로 편향", w*0.28, h - 12);
-        ctx.fillStyle = "#3b82f688"; ctx.fillText("▼ 아래쪽으로 편향", w*0.72, h - 12);
+        ctx.fillStyle = "#ef444488"; ctx.fillText("▲ 위쪽으로 편향", w * 0.28, h - 12);
+        ctx.fillStyle = "#3b82f688"; ctx.fillText("▼ 아래쪽으로 편향", w * 0.72, h - 12);
         t += 0.028;
         spinAnimId = requestAnimationFrame(frame);
       }
@@ -1136,18 +1226,18 @@
 
       // [dx from center, z-depth, bow (midpoint x offset), opacity]
       const configs = [
-        [  0.0,  0.0,  0.00, 0.82],
-        [ 0.42,  0.0,  0.05, 0.68],
-        [-0.42,  0.0, -0.05, 0.68],
-        [ 0.90,  0.0,  0.13, 0.50],
-        [-0.90,  0.0, -0.13, 0.50],
-        [ 1.50,  0.0,  0.26, 0.30],
-        [-1.50,  0.0, -0.26, 0.30],
-        [  0.0,  0.60,  0.00, 0.55],
-        [ 0.55,  0.60,  0.07, 0.38],
-        [-0.55,  0.60, -0.07, 0.38],
-        [  0.0, -0.60,  0.00, 0.55],
-        [ 0.55, -0.60,  0.07, 0.38],
+        [0.0, 0.0, 0.00, 0.82],
+        [0.42, 0.0, 0.05, 0.68],
+        [-0.42, 0.0, -0.05, 0.68],
+        [0.90, 0.0, 0.13, 0.50],
+        [-0.90, 0.0, -0.13, 0.50],
+        [1.50, 0.0, 0.26, 0.30],
+        [-1.50, 0.0, -0.26, 0.30],
+        [0.0, 0.60, 0.00, 0.55],
+        [0.55, 0.60, 0.07, 0.38],
+        [-0.55, 0.60, -0.07, 0.38],
+        [0.0, -0.60, 0.00, 0.55],
+        [0.55, -0.60, 0.07, 0.38],
         [-0.55, -0.60, -0.07, 0.38],
       ];
 
@@ -1155,9 +1245,9 @@
         const x0 = cx + dx;
         const xMid = cx + dx + bow;
         const pts = [
-          new THREE.Vector3(x0,   nY,              dz),
+          new THREE.Vector3(x0, nY, dz),
           new THREE.Vector3(xMid, (nY + sY) * 0.5, dz),
-          new THREE.Vector3(x0,   sY,              dz),
+          new THREE.Vector3(x0, sY, dz),
         ];
         const curve = new THREE.CatmullRomCurve3(pts);
         const lineGeom = new THREE.BufferGeometry().setFromPoints(curve.getPoints(28));
@@ -1169,7 +1259,7 @@
           const pA = curve.getPointAt(0.48);
           const pB = curve.getPointAt(0.54);
           const dir = pB.clone().sub(pA).normalize();
-          const up  = new THREE.Vector3(0, 1, 0);
+          const up = new THREE.Vector3(0, 1, 0);
           const cone = new THREE.Mesh(
             new THREE.ConeGeometry(0.040, 0.14, 8),
             new THREE.MeshBasicMaterial({ color: 0x2d5cd8, transparent: true, opacity: opacity * 0.95 })
@@ -2225,6 +2315,7 @@
 
       ui.resetBtn.addEventListener("click", resetRun);
       ui.spinInfoBtn.addEventListener("click", () => openInfo("spin"));
+      ui.theoryInfoBtn.addEventListener("click", () => openInfo("theory"));
       ui.closeOverlayBtn.addEventListener("click", closeInfo);
       ui.infoOverlay.addEventListener("click", (event) => {
         if (event.target === ui.infoOverlay) closeInfo();
@@ -2402,4 +2493,5 @@
     if (captionLayer) captionLayer.style.display = "none";
   </script>
 </body>
+
 </html>
