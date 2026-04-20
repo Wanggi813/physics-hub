@@ -80,6 +80,7 @@ const projects = [
   { title: "물리량 단위 짝맞추기", category: "게임", desc: "물리량 이름과 SI 단위 카드를 뒤집어 짝을 맞춰보세요!", tags: ["물리", "SI단위", "단위", "카드게임", "짝맞추기"], emoji: "🃏", demo: "./simul/물리량 단위 짝맞추기.html", curriculumId: "ALL", thumb: "./thumb_nail/물리량 단위 짝맞추기.png" },
   { title: "물리 공식 맞추기", category: "게임", desc: "떨어지는 물리 공식을 맞추자!", tags: ["물리", "공식"], emoji: "❤️", demo: "./simul/물리 공식 맞추기.html", curriculumId: "ALL", thumb: "./thumb_nail/물리 공식 맞추기.png" },
   { title: "물리 퀴즈 도전!", category: "게임", desc: "물리 퀴즈를 맞추자!", tags: ["물리", "문제", "시뮬레이션"], emoji: "❤️", demo: "./simul/물리 퀴즈.html", curriculumId: "ALL", thumb: "./thumb_nail/물리 퀴즈.png" },
+  { title: "물리학 타자연습", category: "게임", desc: "물리학 핵심 법칙을 따라 타이핑하며 타수와 물리 지식을 동시에 키워보세요!", tags: ["타자", "타수", "물리법칙", "게임"], emoji: "⌨️", demo: "./simul/physics-typing.html", curriculumId: "ALL", thumb: "./thumb_nail/physics-typing.png" },
 
   // ===== 12물리 =====
   { title: "토크와 평형", category: "역학", desc: "여러 물체를 이용해 토크평형 만들기", tags: ["토크", "평형"], emoji: "🧗‍♀️", demo: "./simul/토크와 평형.html", curriculumId: "[12물리01-01]", thumb: "./thumb_nail/토크와_평형.png" },
