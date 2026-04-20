@@ -496,6 +496,7 @@ body.prelaunch main{
 .s-title{
   display:flex;flex-direction:column;align-items:center;
   gap:2px;
+  padding:8px 26px 10px;
   font-size:clamp(2.4rem,7vw,5.4rem);
   font-weight:900;
   letter-spacing:-0.06em;
@@ -505,6 +506,16 @@ body.prelaunch main{
   position:relative;
   isolation:isolate;
   animation:titleGlitchMain 6.6s steps(1,end) infinite;
+}
+.s-title::before{
+  content:'';
+  position:absolute;
+  inset:-10px -24px;
+  border-radius:28px;
+  background:radial-gradient(circle at center,rgba(255,255,255,0.96) 0%,rgba(255,255,255,0.86) 46%,rgba(255,255,255,0) 82%);
+  filter:blur(12px);
+  z-index:-1;
+  pointer-events:none;
 }
 .s-title span,
 .s-title em{
@@ -2207,43 +2218,7 @@ onAuthStateChanged(auth,async user=>{
         emitting:false
       });
 
-      this.core=this.add.container(width*0.5,height*0.4);
-      this.coreGlow=this.add.circle(0,0,170,0x60a5fa,0.08);
-      this.coreGlow2=this.add.circle(0,0,108,0xa78bfa,0.12);
-      this.ringA=this.add.rectangle(0,0,254,154).setStrokeStyle(2,0x7dd3fc,0.24).setAngle(18);
-      this.ringB=this.add.rectangle(0,0,206,108).setStrokeStyle(2,0xa78bfa,0.18).setAngle(-18);
-      this.coreHalo=this.add.ellipse(0,0,116,116,0xffffff,0.07).setStrokeStyle(1,0xffffff,0.34);
-      this.coreOrb=this.add.rectangle(0,0,16,172,0x38bdf8,0.15);
-      this.coreOrb2=this.add.rectangle(0,0,172,16,0xffffff,0.1);
-      this.corePulse=this.add.rectangle(0,0,72,72,0xe0f2fe,0.14).setAngle(45);
-      this.core.add([
-        this.coreGlow,
-        this.coreGlow2,
-        this.ringA,
-        this.ringB,
-        this.coreHalo,
-        this.coreOrb,
-        this.coreOrb2,
-        this.corePulse
-      ]);
-
-      const orbiterColors=[0x60a5fa,0x22d3ee,0xf59e0b,0xa78bfa];
-      for(let i=0;i<4;i++){
-        const shard=this.add.rectangle(
-          Phaser.Math.Between(-126,126),
-          Phaser.Math.Between(-82,82),
-          Phaser.Math.Between(34,64),
-          Phaser.Math.Between(4,8),
-          orbiterColors[i],
-          0.26
-        ).setAngle(Phaser.Math.Between(-32,32));
-        shard.baseX=shard.x;
-        shard.baseY=shard.y;
-        shard.travel=Phaser.Math.FloatBetween(6,16);
-        shard.speed=Phaser.Math.FloatBetween(0.55,1.05);
-        this.core.add(shard);
-        this.orbiters.push(shard);
-      }
+      this.core=this.add.container(width*0.5,height*0.4).setAlpha(0);
 
       this.time.addEvent({
         delay:460,
@@ -2362,6 +2337,34 @@ onAuthStateChanged(auth,async user=>{
       return {x:rect.left+rect.width*0.5,y:rect.top+rect.height*0.5};
     }
 
+    getIntroWordLane(labelWidth=0){
+      const {width}=this.scale;
+      const halfWidth=Math.ceil(labelWidth*0.5) + 24;
+      const minX=Math.round(width*0.08) + halfWidth;
+      const maxX=Math.round(width*0.92) - halfWidth;
+      if(minX >= maxX){
+        return {minX:Math.round(width*0.08), maxX:Math.round(width*0.92)};
+      }
+
+      const titleBox=document.querySelector('.s-top');
+      if(!titleBox) return {minX,maxX};
+
+      const rect=titleBox.getBoundingClientRect();
+      const margin=Math.max(28,Math.ceil(labelWidth*0.28));
+      const avoidLeft=Math.max(minX,Math.round(rect.left - margin));
+      const avoidRight=Math.min(maxX,Math.round(rect.right + margin));
+      const lanes=[];
+
+      if(avoidLeft - minX >= 88){
+        lanes.push({minX,maxX:avoidLeft});
+      }
+      if(maxX - avoidRight >= 88){
+        lanes.push({minX:avoidRight,maxX});
+      }
+
+      return lanes.length ? Phaser.Utils.Array.GetRandom(lanes) : {minX,maxX};
+    }
+
     clearFormulaTexts(){
       this.floatTexts.forEach(label=>label.destroy());
       this.floatTexts.length=0;
@@ -2373,10 +2376,7 @@ onAuthStateChanged(auth,async user=>{
       const labelText=Phaser.Utils.Array.GetRandom(this.wordPool);
       const labelColor=Phaser.Utils.Array.GetRandom(['#1d4ed8','#0f766e','#7c3aed','#ea580c','#0284c7']);
       const labelSize=Phaser.Math.Between(14,24)+'px';
-      const container=this.add.container(
-        Phaser.Math.Between(Math.round(width*0.08),Math.round(width*0.92)),
-        height+24
-      ).setAlpha(0);
+      const container=this.add.container(0,height+24).setAlpha(0);
       container.setAngle(Phaser.Math.Between(-14,14));
 
       const baseStyle={
@@ -2416,13 +2416,17 @@ onAuthStateChanged(auth,async user=>{
       sliceBottom.setCrop(0,Math.floor(label.height*0.72),cropW,Math.max(cropH,Math.ceil(label.height*0.28)));
       const scanline=this.add.rectangle(0,0,Math.max(100,label.width+20),3,0xffffff,0)
         .setBlendMode(Phaser.BlendModes.ADD);
+      const lane=this.getIntroWordLane(label.width);
+      const spawnX=Phaser.Math.Between(Math.round(lane.minX),Math.round(lane.maxX));
+      const targetX=Phaser.Math.Between(Math.round(lane.minX),Math.round(lane.maxX));
+      container.setX(spawnX);
 
       container.add([label,ghostA,ghostB,sliceTop,sliceMid,sliceBottom,scanline]);
       this.wordLayer.add(container);
       this.floatTexts.push(container);
       this.tweens.add({
         targets:container,
-        x:container.x + Phaser.Math.Between(-60,60),
+        x:targetX,
         y:Phaser.Math.Between(Math.round(height*0.1),Math.round(height*0.7)),
         alpha:0.88,
         duration:Phaser.Math.Between(2500,3600),
@@ -2443,10 +2447,11 @@ onAuthStateChanged(auth,async user=>{
 
       // RGB split style ghost layers that twitch briefly while the word rises.
       const glitchEvent=this.time.addEvent({
-        delay:Phaser.Math.Between(220,520),
+        delay:Phaser.Math.Between(1200,2200),
         loop:true,
         callback:()=>{
           if(!container.scene || this.mode!=='intro') return;
+          if(Math.random()<0.35) return;
           const glitchX=Phaser.Math.Between(4,10);
           const glitchY=Phaser.Math.Between(-3,3);
           const sliceShift=Phaser.Math.Between(8,18);
@@ -2549,33 +2554,12 @@ onAuthStateChanged(auth,async user=>{
     }
 
     update(time,delta){
-      const t=time*0.001;
       this.core.x=Phaser.Math.Linear(this.core.x,this.targetCore.x,0.06);
       this.core.y=Phaser.Math.Linear(this.core.y,this.targetCore.y,0.06);
       const nextScale=Phaser.Math.Linear(this.core.scaleX,this.targetCore.scale,0.08);
       this.core.setScale(nextScale);
       this.core.alpha=Phaser.Math.Linear(this.core.alpha,this.targetCoreAlpha,0.06);
       this.overlay.alpha=Phaser.Math.Linear(this.overlay.alpha,this.targetOverlayAlpha,0.04);
-
-      this.coreGlow.scaleX=1+Math.sin(t*1.5)*0.08;
-      this.coreGlow.scaleY=1+Math.sin(t*1.5)*0.08;
-      this.coreGlow2.scaleX=1+Math.cos(t*1.9)*0.06;
-      this.coreGlow2.scaleY=1+Math.cos(t*1.9)*0.06;
-      this.ringA.rotation+=0.0001*delta;
-      this.ringB.rotation-=0.00014*delta;
-      this.coreHalo.rotation-=0.00008*delta;
-      this.coreOrb.scaleY=1+Math.sin(t*2.1)*0.14;
-      this.coreOrb2.scaleX=1+Math.cos(t*1.7)*0.16;
-      this.corePulse.rotation+=0.00016*delta;
-      const pulseScale=1+Math.sin(t*2.6)*0.12;
-      this.corePulse.setScale(pulseScale);
-      this.corePulse.alpha=0.1 + (Math.sin(t*2.6)+1)*0.03;
-
-      this.orbiters.forEach((dot,index)=>{
-        dot.x=dot.baseX + Math.sin(t*dot.speed + index)*dot.travel;
-        dot.y=dot.baseY + Math.cos(t*(dot.speed*0.92) + index)*dot.travel*0.7;
-        dot.alpha=0.12 + (Math.sin(t*(dot.speed*1.8) + index)+1)*0.08;
-      });
     }
   }
 
