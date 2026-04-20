@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>물리학 타자연습</title>
+<script src="../config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#eef2ff;
+  --bg2:#f8faff;
+  --panel:#ffffff;
+  --border:#c7d7f0;
+  --border2:#dbe8ff;
+  --accent:#2563eb;
+  --accent2:#7c3aed;
+  --accent3:#0ea5e9;
+  --correct:#059669;
+  --wrong:#dc2626;
+  --warn:#d97706;
+  --text:#1e293b;
+  --text2:#334155;
+  --muted:#64748b;
+  --cursor-bg:#2563eb22;
+  --glow:0 0 20px #2563eb33;
+  --shadow:0 4px 24px #2563eb18;
+  --shadow2:0 2px 8px #00000010;
+}
+
+body{
+  font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  overflow-x:hidden;
+}
+
+/* ── 배경 캔버스 ── */
+#bgCanvas{
+  position:fixed;inset:0;
+  pointer-events:none;
+  z-index:0;
+  opacity:0.35;
+}
+
+/* ── 파티클 캔버스 ── */
+#fxCanvas{
+  position:fixed;inset:0;
+  pointer-events:none;
+  z-index:999;
+}
+
+/* ── 헤더 ── */
+header{
+  position:relative;z-index:10;
+  width:100%;
+  background:linear-gradient(135deg,#2563eb,#7c3aed);
+  padding:16px 40px;
+  display:flex;align-items:center;gap:14px;
+  box-shadow:0 4px 20px #2563eb33;
+}
+header .logo{
+  font-size:1.5rem;font-weight:800;
+  color:#fff;letter-spacing:-0.5px;
+  text-shadow:0 2px 8px #0005;
+}
+header .subtitle{font-size:0.78rem;color:#ffffffaa;margin-top:2px;}
+.atom-icon{font-size:2rem;filter:drop-shadow(0 0 10px #fff8);}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.combo-display{
+  background:#ffffff22;border:1px solid #ffffff44;
+  border-radius:10px;padding:6px 16px;
+  color:#fff;font-size:0.85rem;font-weight:700;
+  display:flex;align-items:center;gap:6px;
+  transition:all 0.3s;
+}
+.combo-display.combo-fire{
+  background:#ff6b0033;border-color:#ff6b00aa;
+  animation:comboPulse 0.4s ease;
+}
+@keyframes comboPulse{0%{transform:scale(1.2)}100%{transform:scale(1)}}
+.combo-num{font-size:1.2rem;color:#ffd700;}
+
+/* ── 메인 ── */
+main{
+  position:relative;z-index:10;
+  width:100%;max-width:940px;
+  padding:28px 20px 60px;
+  display:flex;flex-direction:column;gap:18px;
+}
+
+/* ── 주제 탭 ── */
+.topic-tabs{display:flex;gap:8px;flex-wrap:wrap;}
+.topic-btn{
+  padding:8px 18px;border-radius:999px;
+  border:2px solid var(--border);
+  background:var(--panel);color:var(--muted);
+  cursor:pointer;font-size:0.82rem;font-family:inherit;
+  font-weight:600;transition:all 0.2s;
+  box-shadow:var(--shadow2);
+}
+.topic-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);}
+.topic-btn.active{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-color:transparent;color:#fff;
+  box-shadow:0 4px 14px #2563eb44;
+  transform:translateY(-1px);
+}
+
+/* ── 통계 바 ── */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.stat-card{
+  background:var(--panel);border:2px solid var(--border2);
+  border-radius:14px;padding:14px 18px;
+  display:flex;flex-direction:column;gap:3px;
+  box-shadow:var(--shadow);
+  transition:transform 0.2s,box-shadow 0.2s;
+}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px #2563eb22;}
+.stat-label{
+  font-size:0.68rem;color:var(--muted);
+  text-transform:uppercase;letter-spacing:0.1em;font-weight:600;
+}
+.stat-value{
+  font-size:1.7rem;font-weight:800;
+  color:var(--accent);line-height:1.1;
+  font-variant-numeric:tabular-nums;
+  transition:color 0.3s;
+}
+.stat-value.v-purple{color:var(--accent2);}
+.stat-value.v-green{color:var(--correct);}
+.stat-value.v-sky{color:var(--accent3);}
+.stat-unit{font-size:0.68rem;color:var(--muted);font-weight:500;}
+
+/* ── 진행률 ── */
+.progress-wrap{
+  background:var(--panel);border:2px solid var(--border2);
+  border-radius:14px;padding:14px 20px;
+  display:flex;flex-direction:column;gap:10px;
+  box-shadow:var(--shadow);
+}
+.progress-header{
+  display:flex;justify-content:space-between;
+  font-size:0.8rem;font-weight:600;color:var(--text2);
+}
+.progress-header span:last-child{color:var(--accent);font-weight:700;}
+.progress-track{
+  height:10px;background:#e2e8f0;
+  border-radius:999px;overflow:hidden;
+  position:relative;
+}
+.progress-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  border-radius:999px;
+  transition:width 0.5s cubic-bezier(.34,1.56,.64,1);
+  width:0%;position:relative;
+}
+.progress-fill::after{
+  content:'';position:absolute;right:0;top:0;bottom:0;width:6px;
+  background:#fff5;border-radius:999px;
+  animation:shimmer 1.2s ease infinite;
+}
+@keyframes shimmer{0%,100%{opacity:0}50%{opacity:1}}
+
+/* 문장 지표 */
+.sentence-dots{
+  display:flex;gap:6px;flex-wrap:wrap;
+}
+.dot{
+  width:10px;height:10px;border-radius:50%;
+  background:#e2e8f0;transition:all 0.3s;
+}
+.dot.done{background:var(--correct);box-shadow:0 0 6px #05996944;}
+.dot.current{background:var(--accent);box-shadow:0 0 8px #2563eb66;animation:dotPulse 1s ease infinite;}
+@keyframes dotPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
+
+/* ── 타이핑 패널 ── */
+.typing-panel{
+  background:var(--panel);border:2px solid var(--border2);
+  border-radius:18px;padding:28px 32px 90px;
+  display:flex;flex-direction:column;gap:18px;
+  box-shadow:var(--shadow);
+  position:relative;overflow:hidden;
+  transition:box-shadow 0.3s;
+}
+.typing-panel::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));
+}
+.typing-panel.panel-success{
+  box-shadow:0 0 0 3px #05996944,var(--shadow);
+  animation:successPulse 0.4s ease;
+}
+.typing-panel.panel-error{animation:shake 0.4s ease;}
+@keyframes successPulse{0%{transform:scale(1.005)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+
+.sentence-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.badge{
+  font-size:0.72rem;padding:4px 12px;border-radius:999px;
+  background:linear-gradient(135deg,#2563eb15,#7c3aed15);
+  border:1.5px solid #2563eb44;
+  color:var(--accent);font-weight:700;
+}
+.sentence-number{font-size:0.78rem;color:var(--muted);font-weight:600;}
+.sentence-hint{
+  font-size:0.72rem;color:var(--muted);margin-left:auto;
+  background:#f1f5f9;padding:3px 10px;border-radius:6px;
+}
+
+/* 표시 문장 */
+.display-text{
+  font-size:1.22rem;line-height:2.1;
+  letter-spacing:0.025em;word-break:keep-all;
+  user-select:none;min-height:90px;
+}
+.display-text span{position:relative;transition:color 0.06s;}
+.display-text span.typed-correct{
+  color:var(--correct);
+}
+.display-text span.typed-wrong{
+  color:var(--wrong);
+  text-decoration:underline;
+  text-decoration-style:wavy;
+  text-decoration-color:var(--wrong);
+}
+.display-text span.cursor{
+  background:var(--cursor-bg);
+  border-left:2.5px solid var(--accent);
+  border-radius:2px;padding-left:1px;
+  animation:cursorBlink 0.9s step-end infinite;
+}
+.display-text span.untyped{color:#94a3b8;}
+
+@keyframes cursorBlink{0%,100%{border-color:var(--accent)}50%{border-color:transparent}}
+
+/* 구분선 */
+.divider{height:1.5px;background:linear-gradient(90deg,transparent,var(--border),transparent);}
+
+/* 현재 줄 하이라이트 */
+.line-highlight{
+  position:absolute;left:28px;right:28px;
+  background:linear-gradient(90deg,#2563eb0c,#7c3aed08,transparent);
+  border-left:3px solid var(--accent);
+  border-radius:0 4px 4px 0;
+  transition:top 0.38s cubic-bezier(0.34,1.56,0.64,1),height 0.25s ease;
+  pointer-events:none;
+  opacity:0.9;
+}
+
+/* 입력창 */
+.input-wrap{
+  display:flex;align-items:center;gap:12px;
+  position:absolute;left:32px;right:32px;
+  transition:top 0.38s cubic-bezier(0.34,1.56,0.64,1);
+}
+.input-icon{font-size:1.2rem;}
+#typingInput{
+  flex:1;background:#f8faff;
+  border:2px solid var(--border);
+  border-radius:12px;padding:13px 18px;
+  font-size:1.12rem;
+  font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+  color:var(--text);outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;
+  letter-spacing:0.025em;
+}
+#typingInput:focus{
+  border-color:var(--accent);
+  box-shadow:var(--glow);background:#fff;
+}
+#typingInput.has-error{
+  border-color:var(--wrong);
+  box-shadow:0 0 12px #dc262622;
+  background:#fff8f8;
+}
+#typingInput.has-success{
+  border-color:var(--correct);
+  box-shadow:0 0 12px #05996922;
+}
+
+/* ── 컨트롤 ── */
+.controls{display:flex;gap:10px;justify-content:flex-end;}
+.btn{
+  padding:10px 24px;border-radius:10px;border:none;
+  cursor:pointer;font-size:0.85rem;font-family:inherit;
+  font-weight:700;transition:all 0.2s;
+  letter-spacing:0.01em;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--accent),#1d4ed8);
+  color:#fff;box-shadow:0 4px 12px #2563eb44;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 18px #2563eb55;}
+.btn-secondary{
+  background:var(--panel);border:2px solid var(--border);
+  color:var(--muted);box-shadow:var(--shadow2);
+}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);}
+
+/* ── 플로팅 점수 텍스트 ── */
+.float-score{
+  position:fixed;pointer-events:none;z-index:998;
+  font-size:1.4rem;font-weight:900;
+  animation:floatUp 1s ease forwards;
+}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-80px) scale(0.6)}}
+
+/* ── 결과 오버레이 ── */
+#resultOverlay{
+  display:none;position:fixed;inset:0;
+  background:#1e293bcc;backdrop-filter:blur(8px);
+  z-index:200;align-items:center;justify-content:center;
+}
+#resultOverlay.show{display:flex;}
+.result-card{
+  background:var(--panel);border:2px solid var(--border2);
+  border-radius:24px;padding:44px 52px;
+  width:540px;max-width:94vw;text-align:center;
+  box-shadow:0 20px 60px #2563eb22,0 0 0 1px #ffffff80;
+  animation:cardIn 0.4s cubic-bezier(.34,1.56,.64,1);
+  position:relative;overflow:hidden;
+}
+.result-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:5px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));
+}
+@keyframes cardIn{0%{transform:scale(0.8);opacity:0}100%{transform:scale(1);opacity:1}}
+.result-grade{font-size:3.5rem;margin-bottom:6px;animation:gradeIn 0.6s 0.2s both;}
+@keyframes gradeIn{0%{transform:scale(0) rotate(-180deg)}100%{transform:scale(1) rotate(0)}}
+.result-title{
+  font-size:1.8rem;font-weight:800;margin-bottom:6px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.result-subtitle{font-size:0.88rem;color:var(--muted);margin-bottom:30px;}
+.result-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:14px;margin-bottom:24px;
+}
+.result-item{
+  background:#f8faff;border:1.5px solid var(--border2);
+  border-radius:14px;padding:18px;
+  transition:transform 0.2s;
+}
+.result-item:hover{transform:translateY(-2px);}
+.result-item .val{
+  font-size:2.2rem;font-weight:800;color:var(--accent);
+  font-variant-numeric:tabular-nums;
+}
+.result-item .lbl{font-size:0.74rem;color:var(--muted);margin-top:4px;font-weight:600;}
+.grade-text{
+  font-size:1rem;font-weight:700;color:var(--text2);
+  margin-bottom:26px;line-height:1.5;
+}
+.result-btns{display:flex;gap:12px;justify-content:center;}
+
+/* ── 시작 화면 ── */
+#startScreen{
+  position:fixed;inset:0;
+  background:#eef2ff;
+  z-index:100;overflow:hidden;
+  transition:opacity 0.5s ease;
+}
+#startScreen.fade-out{opacity:0;pointer-events:none;}
+
+#p5Mount{
+  position:absolute;inset:0;
+  pointer-events:none;
+}
+#p5Mount canvas{pointer-events:auto;}
+
+/* UI 오버레이 */
+.s-ui{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  align-items:center;
+  justify-content:space-between;
+  padding:52px 24px 56px;
+  pointer-events:none;
+  z-index:10;
+}
+.s-ui>*{pointer-events:auto;}
+
+/* 상단 타이틀 */
+.s-top{
+  text-align:center;
+  display:flex;flex-direction:column;gap:8px;
+}
+.s-title{
+  font-size:clamp(2rem,5vw,3.2rem);
+  font-weight:900;
+  letter-spacing:-1.5px;
+  line-height:1.05;
+}
+.s-title span{
+  background:linear-gradient(120deg,#2563eb,#7c3aed,#2563eb);
+  background-size:200% auto;
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
+  animation:shimmerText 4s linear infinite;
+}
+@keyframes shimmerText{to{background-position:200% center}}
+.s-sub{
+  font-size:0.8rem;color:rgba(99,102,241,0.5);
+  font-weight:600;letter-spacing:0.25em;text-transform:uppercase;
+}
+
+/* 하단 섹션 */
+.s-bottom{
+  display:flex;flex-direction:column;
+  align-items:center;gap:18px;
+  text-align:center;
+}
+.s-desc{
+  color:#475569;
+  font-size:0.95rem;line-height:1.85;max-width:420px;
+}
+.s-tags{
+  display:flex;gap:7px;flex-wrap:wrap;
+  justify-content:center;max-width:480px;
+}
+.s-tag{
+  padding:5px 15px;border-radius:999px;
+  background:rgba(255,255,255,0.7);
+  border:1.5px solid rgba(99,102,241,0.22);
+  font-size:0.78rem;font-weight:700;
+  color:#4338ca;
+  backdrop-filter:blur(6px);
+  box-shadow:0 2px 8px rgba(99,102,241,0.08);
+  transition:border-color 0.2s,transform 0.2s,box-shadow 0.2s;
+  cursor:default;
+}
+.s-tag:hover{
+  border-color:rgba(99,102,241,0.5);
+  transform:translateY(-2px);
+  box-shadow:0 4px 14px rgba(99,102,241,0.18);
+}
+.s-meta{
+  font-size:0.75rem;
+  color:rgba(99,102,241,0.4);
+  letter-spacing:0.06em;
+}
+/* 시작 버튼 */
+.s-btn{
+  position:relative;overflow:hidden;
+  padding:16px 56px;
+  background:linear-gradient(135deg,#3b82f6,#7c3aed);
+  border:none;border-radius:16px;
+  color:#fff;font-size:1.08rem;font-weight:800;
+  cursor:pointer;font-family:inherit;
+  letter-spacing:0.04em;
+  box-shadow:0 0 40px rgba(99,102,241,0.3),0 8px 24px rgba(99,102,241,0.25);
+  transition:transform 0.3s,box-shadow 0.3s;
+}
+.s-btn::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.18),transparent 60%);
+  border-radius:inherit;
+}
+.s-btn::after{
+  content:'';position:absolute;
+  top:-50%;left:-60%;width:40%;height:200%;
+  background:rgba(255,255,255,0.12);
+  transform:skewX(-20deg);
+  animation:btnSheen 3.5s ease infinite;
+}
+@keyframes btnSheen{
+  0%{left:-60%}60%,100%{left:140%}
+}
+.s-btn:hover{
+  transform:translateY(-4px) scale(1.02);
+  box-shadow:0 0 80px rgba(59,130,246,0.65),0 14px 36px rgba(0,0,0,0.5);
+}
+
+/* ── auth 뱃지 ── */
+.auth-badge{
+  display:flex;align-items:center;gap:6px;
+  background:#ffffff22;border:1px solid #ffffff44;
+  border-radius:10px;padding:6px 14px;
+  color:#fff;font-size:0.8rem;font-weight:600;
+  cursor:pointer;transition:background 0.2s;
+  white-space:nowrap;
+}
+.auth-badge:hover{background:#ffffff33;}
+.auth-badge.logged-in{
+  background:#059669aa;border-color:#34d39988;
+}
+
+/* ── 결과 점수 하이라이트 ── */
+.result-score-box{
+  background:linear-gradient(135deg,#eef2ff,#ede9fe);
+  border:2px solid #c7d2fe;border-radius:16px;
+  padding:16px 24px;margin:4px 0;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+}
+.result-score-num{
+  font-size:2.6rem;font-weight:900;
+  background:linear-gradient(135deg,#2563eb,#7c3aed);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
+  line-height:1.1;
+}
+.result-score-formula{
+  font-size:0.75rem;color:#64748b;font-weight:500;
+}
+.result-save-status{
+  font-size:0.82rem;font-weight:600;padding:6px 14px;
+  border-radius:8px;text-align:center;
+}
+.result-save-status.saved{background:#dcfce7;color:#166534;}
+.result-save-status.best{background:#fef9c3;color:#92400e;}
+.result-save-status.not-logged{background:#f1f5f9;color:#64748b;}
+.result-save-status.err{background:#fee2e2;color:#991b1b;}
+
+/* ── 리더보드 ── */
+.leaderboard-wrap{
+  width:100%;margin-top:2px;
+  border:2px solid var(--border2);
+  border-radius:14px;overflow:hidden;
+}
+.leaderboard-header{
+  background:linear-gradient(135deg,#2563eb,#7c3aed);
+  color:#fff;font-weight:700;font-size:0.85rem;
+  padding:9px 16px;display:flex;align-items:center;gap:6px;
+}
+.lb-row{
+  display:grid;grid-template-columns:28px 1fr auto;
+  align-items:center;gap:8px;
+  padding:8px 16px;border-bottom:1px solid var(--border2);
+  font-size:0.82rem;transition:background 0.15s;
+}
+.lb-row:last-child{border-bottom:none;}
+.lb-row:hover{background:#f8faff;}
+.lb-row.me{background:#eef2ff;font-weight:700;}
+.lb-rank{
+  font-weight:800;color:var(--muted);text-align:center;
+  font-size:0.78rem;
+}
+.lb-rank.top1{color:#f59e0b;}
+.lb-rank.top2{color:#94a3b8;}
+.lb-rank.top3{color:#cd7c3e;}
+.lb-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2);}
+.lb-score{font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;}
+.lb-loading{padding:16px;text-align:center;color:var(--muted);font-size:0.82rem;}
+
+/* result-card 너비 확장 */
+.result-card{width:560px;}
+
+@media(max-width:640px){
+  .stats-bar{grid-template-columns:repeat(2,1fr);}
+  .display-text{font-size:1.05rem;}
+  .typing-panel{padding:18px 16px 80px;}
+  .input-wrap{left:16px;right:16px;}
+  .line-highlight{left:12px;right:12px;}
+  .result-card{width:94vw;padding:28px 20px;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+<canvas id="fxCanvas"></canvas>
+
+<!-- ── 시작 화면 ── -->
+<div id="startScreen">
+  <div id="p5Mount"></div>
+  <div class="s-ui">
+    <div class="s-top">
+      <div class="s-title"><span>물리학 타자연습</span></div>
+      <div class="s-sub">Physics Typing Practice</div>
+    </div>
+    <div class="s-bottom">
+      <p class="s-desc">물리학의 핵심 법칙과 개념들을 따라 타이핑하며<br>타자 실력과 물리학 지식을 동시에 키워보세요.</p>
+      <div class="s-tags">
+        <span class="s-tag">⚙️ 고전역학</span>
+        <span class="s-tag">⚡ 전자기학</span>
+        <span class="s-tag">🔥 열역학</span>
+        <span class="s-tag">🌌 상대성이론</span>
+        <span class="s-tag">🔬 양자역학</span>
+        <span class="s-tag">🌊 파동/광학</span>
+      </div>
+      <div class="s-meta">랜덤 10문장 &nbsp;·&nbsp; 타수 &nbsp;·&nbsp; 정확도 &nbsp;·&nbsp; 콤보</div>
+      <button class="s-btn" onclick="startGame()">연습 시작하기 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 헤더 ── -->
+<header>
+  <div>
+    <div class="logo">물리학 타자연습</div>
+    <div class="subtitle">Physics Typing Practice</div>
+  </div>
+  <div class="header-right">
+    <div class="auth-badge" id="authBadge" onclick="window.open('../main.html','_blank')">
+      <span id="authIcon">👤</span>
+      <span id="authLabel">로그인 필요</span>
+    </div>
+    <div class="combo-display" id="comboDisplay">
+      <span>🔥 콤보</span>
+      <span class="combo-num" id="comboNum">0</span>
+    </div>
+  </div>
+</header>
+
+<!-- ── 메인 ── -->
+<main>
+
+  <!-- 통계 -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-label">타수 (분당)</div>
+      <div class="stat-value v-purple" id="statCPM">0</div>
+      <div class="stat-unit">타/분</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">정확도</div>
+      <div class="stat-value v-green" id="statAcc">100</div>
+      <div class="stat-unit">%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">경과 시간</div>
+      <div class="stat-value v-sky" id="statTime">0:00</div>
+      <div class="stat-unit">분:초</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">완료 문장</div>
+      <div class="stat-value" id="statDone">0</div>
+      <div class="stat-unit" id="statTotal">/ 10 문장</div>
+    </div>
+  </div>
+
+  <!-- 진행률 + 점 표시 -->
+  <div class="progress-wrap">
+    <div class="progress-header">
+      <span>진행률</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="sentence-dots" id="sentenceDots"></div>
+  </div>
+
+  <!-- 타이핑 패널 -->
+  <div class="typing-panel" id="typingPanel">
+    <div class="sentence-meta">
+      <span class="badge" id="topicBadge">전체</span>
+      <span class="sentence-number" id="sentenceNum">문장 1 / 10</span>
+      <span class="sentence-hint" id="sentenceHint">0 / 0 자</span>
+    </div>
+
+    <div class="display-text" id="displayText"></div>
+
+    <div class="line-highlight" id="lineHighlight"></div>
+
+    <div class="input-wrap" id="inputWrap">
+      <span class="input-icon">✏️</span>
+      <input
+        type="text" id="typingInput"
+        placeholder="여기에 타이핑하세요..."
+        autocomplete="off" autocorrect="off"
+        autocapitalize="off" spellcheck="false"
+      />
+    </div>
+  </div>
+
+  <!-- 컨트롤 -->
+  <div class="controls">
+    <button class="btn btn-secondary" onclick="skipSentence()">건너뛰기 ↷</button>
+    <button class="btn btn-secondary" onclick="resetSession()">🔄 다시 시작</button>
+    <button class="btn btn-primary" onclick="showResult()">결과 보기 →</button>
+  </div>
+
+</main>
+
+<!-- ── 결과 오버레이 ── -->
+<div id="resultOverlay">
+  <div class="result-card">
+    <div class="result-grade" id="resultGrade">🏆</div>
+    <div class="result-title">연습 완료!</div>
+    <div class="result-subtitle" id="resultSubtitle">수고하셨습니다</div>
+
+    <div class="result-grid">
+      <div class="result-item">
+        <div class="val" id="rCPM">0</div>
+        <div class="lbl">⌨️ 타수 (타/분)</div>
+      </div>
+      <div class="result-item">
+        <div class="val" id="rAcc">0%</div>
+        <div class="lbl">🎯 정확도</div>
+      </div>
+      <div class="result-item">
+        <div class="val" id="rTime">0:00</div>
+        <div class="lbl">⏱ 소요 시간</div>
+      </div>
+      <div class="result-item">
+        <div class="val" id="rCombo">0</div>
+        <div class="lbl">🔥 최대 콤보</div>
+      </div>
+    </div>
+
+    <!-- 점수 박스 -->
+    <div class="result-score-box">
+      <div class="result-score-num" id="rScore">0</div>
+      <div class="result-score-formula" id="rFormula">정확도×2 + 타수 = 0점</div>
+    </div>
+
+    <!-- 저장 상태 -->
+    <div class="result-save-status not-logged" id="rSaveStatus">로그인 후 점수가 저장됩니다</div>
+
+    <div class="grade-text" id="gradeText"></div>
+
+    <!-- 리더보드 -->
+    <div class="leaderboard-wrap">
+      <div class="leaderboard-header">🏆 물리학 타자 TOP 10</div>
+      <div id="lbBody"><div class="lb-loading">불러오는 중...</div></div>
+    </div>
+
+    <div class="result-btns" style="margin-top:16px;">
+      <button class="btn btn-secondary" onclick="closeResult()">계속하기</button>
+      <button class="btn btn-primary" onclick="resetSession()">🔄 처음부터</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  배경 캔버스 – 물리학 기호 파티클
+// ══════════════════════════════════════════
+(function initBg(){
+  const canvas = document.getElementById('bgCanvas');
+  const ctx = canvas.getContext('2d');
+  const symbols = ['E=mc²','F=ma','∇·E=ρ/ε₀','ΔS≥0','ℏ','∫','∂','Σ','λ','ψ',
+                   'PV=nRT','ω','∞','∇×B','h·ν','p=mv','α','β','γ','δ'];
+  let W,H,items=[];
+
+  function resize(){
+    W=canvas.width=window.innerWidth;
+    H=canvas.height=window.innerHeight;
+  }
+  function init(){
+    items=[];
+    for(let i=0;i<28;i++){
+      items.push({
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-0.5)*0.5, vy:-Math.random()*1.2-0.5,
+        sym:symbols[Math.floor(Math.random()*symbols.length)],
+        size:12+Math.random()*20, alpha:0.1+Math.random()*0.25,
+        rot:Math.random()*Math.PI*2, rotV:(Math.random()-0.5)*0.008
+      });
+    }
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    items.forEach(p=>{
+      ctx.save();
+      ctx.translate(p.x,p.y);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha=p.alpha;
+      ctx.fillStyle='#2563eb';
+      ctx.font=`600 ${p.size}px 'Courier New',monospace`;
+      ctx.textAlign='center';
+      ctx.fillText(p.sym,0,0);
+      ctx.restore();
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.rotV;
+      if(p.y<-40){p.y=H+20;p.x=Math.random()*W;}
+      if(p.x<-60)p.x=W+20; if(p.x>W+60)p.x=-20;
+    });
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',()=>{resize();init();});
+  resize();init();draw();
+})();
+
+// ══════════════════════════════════════════
+//  파티클 FX 시스템
+// ══════════════════════════════════════════
+const fxCanvas = document.getElementById('fxCanvas');
+const fxCtx = fxCanvas.getContext('2d');
+let particles = [];
+
+function resizeFx(){
+  fxCanvas.width=window.innerWidth;
+  fxCanvas.height=window.innerHeight;
+}
+resizeFx();
+window.addEventListener('resize',resizeFx);
+
+function spawnBurst(x,y,count,colors){
+  for(let i=0;i<count;i++){
+    const angle=Math.random()*Math.PI*2;
+    const speed=2+Math.random()*6;
+    particles.push({
+      x,y,
+      vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,
+      life:1,decay:0.02+Math.random()*0.03,
+      size:3+Math.random()*5,
+      color:colors[Math.floor(Math.random()*colors.length)],
+      shape:Math.random()<0.3?'star':'circle'
+    });
+  }
+}
+
+function spawnConfetti(){
+  const W=fxCanvas.width, H=fxCanvas.height;
+  const colors=['#2563eb','#7c3aed','#059669','#f59e0b','#ec4899','#0ea5e9'];
+  for(let i=0;i<120;i++){
+    particles.push({
+      x:Math.random()*W, y:-20,
+      vx:(Math.random()-0.5)*4, vy:2+Math.random()*4,
+      life:1, decay:0.006+Math.random()*0.008,
+      size:4+Math.random()*8,
+      color:colors[Math.floor(Math.random()*colors.length)],
+      shape:'rect',
+      rot:Math.random()*Math.PI*2,
+      rotV:(Math.random()-0.5)*0.2
+    });
+  }
+}
+
+(function fxLoop(){
+  fxCtx.clearRect(0,0,fxCanvas.width,fxCanvas.height);
+  particles=particles.filter(p=>p.life>0);
+  particles.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.12; p.life-=p.decay;
+    fxCtx.save();
+    fxCtx.globalAlpha=Math.max(0,p.life);
+    fxCtx.fillStyle=p.color;
+    fxCtx.translate(p.x,p.y);
+    if(p.rot!==undefined){p.rot+=p.rotV||0;}
+    if(p.shape==='rect'){
+      fxCtx.rotate(p.rot||0);
+      fxCtx.fillRect(-p.size/2,-p.size/4,p.size,p.size/2);
+    } else if(p.shape==='star'){
+      fxCtx.rotate(p.rot||0);
+      fxCtx.font=`${p.size*2}px sans-serif`;
+      fxCtx.textAlign='center';
+      fxCtx.fillStyle=p.color;
+      fxCtx.fillText('★',0,p.size);
+    } else {
+      fxCtx.beginPath();
+      fxCtx.arc(0,0,p.size/2,0,Math.PI*2);
+      fxCtx.fill();
+    }
+    fxCtx.restore();
+  });
+  requestAnimationFrame(fxLoop);
+})();
+
+function spawnFloatScore(text,x,y,color){
+  const el=document.createElement('div');
+  el.className='float-score';
+  el.style.cssText=`left:${x}px;top:${y}px;color:${color}`;
+  el.textContent=text;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1000);
+}
+
+// ══════════════════════════════════════════
+//  데이터: 물리학 긴 문장
+// ══════════════════════════════════════════
+const SENTENCES = [
+  // ── 고전역학 ──
+  { badge:'⚙️ 고전역학', text:'뉴턴의 제1법칙은 관성의 법칙이라고도 불리며, 외부에서 힘이 작용하지 않는 한 정지한 물체는 계속 정지해 있고 운동하는 물체는 같은 속도와 방향으로 계속 운동한다는 것을 의미한다.' },
+  { badge:'⚙️ 고전역학', text:'뉴턴의 제2법칙은 물리학에서 가장 중요한 법칙 중 하나로, 물체에 작용하는 알짜 힘은 물체의 질량과 가속도의 곱과 같으며 이를 통해 운동 변화를 정량적으로 분석할 수 있다.' },
+  { badge:'⚙️ 고전역학', text:'뉴턴의 제3법칙인 작용·반작용의 법칙에 따르면 한 물체가 다른 물체에 힘을 가하면 상대 물체도 크기가 같고 방향이 반대인 힘을 동시에 가하며, 두 힘은 항상 쌍으로 존재한다.' },
+  { badge:'⚙️ 고전역학', text:'만유인력의 법칙은 모든 두 물체 사이에는 질량의 곱에 비례하고 거리의 제곱에 반비례하는 인력이 작용함을 나타내며, 뉴턴은 이로써 지상과 천상의 운동을 하나의 법칙으로 통합하였다.' },
+  { badge:'⚙️ 고전역학', text:'역학적 에너지 보존 법칙에 따르면 마찰이나 공기 저항과 같은 비보존력이 없는 계에서는 운동 에너지와 위치 에너지의 합인 역학적 에너지가 항상 일정하게 유지된다.' },
+  { badge:'⚙️ 고전역학', text:'케플러의 세 가지 행성 운동 법칙은 행성이 타원 궤도로 공전하고, 태양과 행성을 잇는 선분이 같은 시간 동안 같은 넓이를 쓸며, 공전 주기의 제곱은 궤도 반지름의 세제곱에 비례함을 나타낸다.' },
+  { badge:'⚙️ 고전역학', text:'단순조화운동은 평형 위치에서의 변위에 비례하는 복원력이 작용할 때 발생하며, 용수철에 매달린 물체나 작은 진폭으로 흔들리는 단진자가 대표적인 예로 주기와 진폭이 독립적인 특성을 가진다.' },
+  { badge:'⚙️ 고전역학', text:'운동량은 질량과 속도의 곱으로 정의되며, 외부 합력이 없는 계에서는 운동량의 합이 항상 보존된다. 이 운동량 보존 법칙은 충돌과 폭발 현상을 분석하는 데 핵심적인 도구가 된다.' },
+  { badge:'⚙️ 고전역학', text:'포물선 운동은 수평 방향으로는 등속 직선 운동을, 수직 방향으로는 중력에 의한 등가속도 운동을 동시에 하는 합성 운동으로, 두 운동을 독립적으로 분리하여 분석하는 것이 핵심이다.' },
+  { badge:'⚙️ 고전역학', text:'원운동에서 구심 가속도는 항상 원의 중심 방향을 향하며, 그 크기는 속력의 제곱을 반지름으로 나눈 값과 같다. 인공위성의 궤도 운동과 자동차의 곡선 도로 주행이 대표적인 예이다.' },
+  { badge:'⚙️ 고전역학', text:'토크는 회전축에서 힘의 작용점까지의 거리와 힘의 크기 및 두 벡터 사이 각도의 사인 값을 곱한 물리량으로, 회전 운동에서 힘의 역할을 담당하며 정역학적 평형 조건의 핵심 요소이다.' },
+  { badge:'⚙️ 고전역학', text:'탄성 충돌에서는 운동량과 운동 에너지가 모두 보존되지만, 비탄성 충돌에서는 운동량만 보존되고 일부 에너지는 열이나 소리, 변형 에너지 등의 형태로 전환되어 운동 에너지가 감소한다.' },
+  { badge:'⚙️ 고전역학', text:'각운동량은 질량, 속도, 회전 반지름에 의존하는 벡터량으로, 외부 토크가 없는 계에서는 각운동량이 보존된다. 피겨 스케이터가 팔을 오므려 회전 속도를 높이는 것이 그 예이다.' },
+  { badge:'⚙️ 고전역학', text:'중력 퍼텐셜 에너지는 물체의 질량, 중력 가속도, 기준점으로부터의 높이의 곱으로 나타내며, 위치 에너지가 운동 에너지로 전환되는 과정은 자유 낙하와 롤러코스터 설계의 기본 원리이다.' },
+  { badge:'⚙️ 고전역학', text:'부력은 유체 속에 잠긴 물체가 받는 위쪽 방향의 힘으로, 그 크기는 물체가 밀어낸 유체의 무게와 같다는 아르키메데스의 원리는 선박 설계와 잠수함 부력 조절의 근본 원리이다.' },
+  { badge:'⚙️ 고전역학', text:'베르누이 방정식은 유체의 속력, 압력, 높이 사이의 관계를 나타내며, 유체의 속력이 빠를수록 압력이 낮아지는 원리는 비행기 날개의 양력 발생과 야구공의 커브 등을 설명한다.' },
+
+  // ── 전자기학 ──
+  { badge:'⚡ 전자기학', text:'맥스웰 방정식은 전기장과 자기장의 발생 및 상호작용을 기술하는 네 개의 방정식으로 구성되어 있으며, 이를 통해 전자기파의 존재를 이론적으로 예측하고 빛이 전자기파임을 밝혔다.' },
+  { badge:'⚡ 전자기학', text:'패러데이의 전자기 유도 법칙에 의하면 폐쇄 회로를 관통하는 자기 선속이 시간에 따라 변할 때 회로에 기전력이 유도되며, 유도된 기전력의 크기는 자기 선속의 변화율에 비례한다.' },
+  { badge:'⚡ 전자기학', text:'쿨롱의 법칙은 두 점전하 사이에 작용하는 전기력의 크기가 각 전하량의 곱에 비례하고 두 전하 사이의 거리의 제곱에 반비례함을 나타내며, 이는 중력 법칙과 유사한 역제곱 법칙을 따른다.' },
+  { badge:'⚡ 전자기학', text:'전자기파는 서로 수직으로 진동하는 전기장과 자기장이 에너지를 전달하며 광속으로 진행하는 파동으로, 라디오파에서 가시광선, 엑스선, 감마선에 이르기까지 다양한 진동수 범위를 가진다.' },
+  { badge:'⚡ 전자기학', text:'옴의 법칙은 도체에 흐르는 전류가 도체 양단의 전압에 비례하고 저항에 반비례함을 나타내며, 직렬 연결에서는 전류가 일정하고 병렬 연결에서는 전압이 일정하다는 차이가 있다.' },
+  { badge:'⚡ 전자기학', text:'앙페르의 법칙에 의하면 전류가 흐르는 도선 주위에는 자기장이 형성되며, 오른손을 이용한 규칙으로 자기장의 방향을 결정할 수 있다. 솔레노이드 내부의 균일한 자기장이 그 응용 사례이다.' },
+  { badge:'⚡ 전자기학', text:'로런츠 힘은 자기장 속에서 운동하는 전하가 받는 힘으로, 전하량, 속도, 자기장의 벡터곱으로 표현된다. 이 힘은 항상 운동 방향에 수직이므로 입자를 원운동시키며 입자 가속기의 원리가 된다.' },
+  { badge:'⚡ 전자기학', text:'전기 용량은 축전기가 전하를 저장할 수 있는 능력을 나타내는 물리량으로, 두 도체판의 면적에 비례하고 간격에 반비례한다. 축전기는 에너지를 전기 에너지 형태로 저장하는 소자이다.' },
+  { badge:'⚡ 전자기학', text:'자기 쌍극자는 전류 고리나 영구 자석처럼 북극과 남극을 갖는 자기적 구조체로, 균일한 자기장 속에서 회전력을 받으며 정렬하려는 경향이 있다. 나침반의 작동 원리가 이를 바탕으로 한다.' },
+
+  // ── 열역학 ──
+  { badge:'🔥 열역학', text:'열역학 제1법칙은 에너지 보존 법칙의 열역학적 표현으로, 계에 가해진 열에너지는 계의 내부 에너지 증가분과 계가 외부에 한 일의 합과 같으며 에너지는 새로 생성되거나 소멸하지 않는다.' },
+  { badge:'🔥 열역학', text:'열역학 제2법칙은 자연계에서 일어나는 변화의 방향성을 설명하며, 고립계에서 엔트로피는 자발적 과정에서 항상 증가하거나 일정하며 결코 감소하지 않는다는 비가역성의 원리를 나타낸다.' },
+  { badge:'🔥 열역학', text:'열역학 제0법칙은 두 계가 각각 세 번째 계와 열적 평형을 이루고 있다면 이 두 계도 서로 열적 평형 상태에 있음을 말하며, 이는 온도라는 개념을 정의하고 온도계 사용의 근거가 된다.' },
+  { badge:'🔥 열역학', text:'카르노 기관은 고온 열원과 저온 열원 사이에서 작동하는 이상적인 가역 열기관으로, 열역학적으로 도달 가능한 최대 효율을 제시하며 실제 열기관은 항상 카르노 효율보다 낮은 효율을 가진다.' },
+  { badge:'🔥 열역학', text:'이상 기체 상태 방정식은 기체의 압력, 부피, 온도, 몰수 사이의 관계를 나타내는 식으로, 기체 분자 사이의 상호작용과 분자 자체의 부피를 무시한 이상화된 모델에서 성립한다.' },
+  { badge:'🔥 열역학', text:'열전도는 온도가 높은 곳에서 낮은 곳으로 열이 이동하는 현상으로, 푸리에 법칙에 따르면 열 전달률은 온도 기울기와 열전도도, 단면적에 비례한다. 금속이 나무보다 차갑게 느껴지는 이유이다.' },
+  { badge:'🔥 열역학', text:'기체 분자 운동론은 기체를 무수히 많은 분자들의 집합으로 보고, 분자들의 무작위 열운동이 압력과 온도를 만들어 낸다고 설명한다. 절대 온도는 분자의 평균 운동 에너지에 비례한다.' },
+  { badge:'🔥 열역학', text:'엔트로피는 계의 무질서도 또는 가능한 미시 상태의 수를 나타내는 양으로, 자연은 항상 낮은 엔트로피에서 높은 엔트로피로 변화하는 방향을 선호한다. 이는 시간의 화살을 결정하는 원리이다.' },
+  { badge:'🔥 열역학', text:'흑체는 입사하는 모든 전자기 복사를 완전히 흡수하는 이상적인 물체로, 플랑크의 흑체 복사 공식은 온도에 따른 복사 에너지의 파장별 분포를 정확히 기술하며 양자역학의 출발점이 되었다.' },
+
+  // ── 상대성이론 ──
+  { badge:'🌌 상대성이론', text:'아인슈타인의 특수 상대성이론은 모든 관성 기준계에서 물리 법칙이 동일하며 진공 중에서 빛의 속도는 광원이나 관찰자의 운동 상태에 관계없이 항상 일정하다는 두 가지 공리를 바탕으로 수립되었다.' },
+  { badge:'🌌 상대성이론', text:'질량과 에너지는 서로 전환될 수 있다는 질량-에너지 등가 원리에 의하면 정지한 물체의 에너지는 질량에 빛 속도의 제곱을 곱한 값과 같으며, 아주 작은 질량도 막대한 에너지에 해당한다.' },
+  { badge:'🌌 상대성이론', text:'일반 상대성이론은 중력을 시공간의 기하학적 곡률로 해석하며, 거대한 질량을 가진 천체 주변에서는 시공간이 휘어져 빛의 경로가 굽어 보이고 시간이 더 느리게 흐르는 중력 시간 지연 현상이 발생한다.' },
+  { badge:'🌌 상대성이론', text:'블랙홀은 탈출 속도가 광속을 초과하여 빛조차 빠져나올 수 없는 극도로 밀집된 천체이며, 그 경계면인 사건 지평선 너머에서는 어떠한 정보도 외부로 전달될 수 없다는 신비로운 특성을 가진다.' },
+  { badge:'🌌 상대성이론', text:'시간 팽창은 빠르게 운동하는 물체에서 시간이 더 느리게 흐르는 특수 상대성 효과로, 위성 항법 장치의 인공위성은 지구보다 빠르게 운동하므로 이 효과를 보정하지 않으면 위치 오차가 누적되어 부정확해진다.' },
+  { badge:'🌌 상대성이론', text:'길이 수축은 운동 방향으로 물체의 길이가 줄어드는 특수 상대성 효과로, 물체의 속도가 광속에 가까울수록 운동 방향의 길이가 정지 상태에 비해 현저히 짧아진다.' },
+  { badge:'🌌 상대성이론', text:'중력파는 질량을 가진 물체가 가속 운동할 때 시공간이 잔물결처럼 퍼져 나가는 현상으로, 2015년 라이고 검출기가 두 블랙홀 합병으로 발생한 중력파를 최초로 직접 관측하는 데 성공하였다.' },
+  { badge:'🌌 상대성이론', text:'쌍둥이 역설은 한 명이 빠른 우주선을 타고 여행하고 돌아오면 지구에 남은 쌍둥이보다 덜 늙어 있다는 특수 상대성이론의 결과로, 이는 역설처럼 보이지만 비관성계와 관성계의 차이로 설명된다.' },
+
+  // ── 양자역학 ──
+  { badge:'🔬 양자역학', text:'하이젠베르크의 불확정성 원리에 따르면 입자의 위치와 운동량을 동시에 정확히 측정하는 것은 원리적으로 불가능하며, 위치의 불확정도와 운동량의 불확정도의 곱은 항상 플랑크 상수의 절반 이상이다.' },
+  { badge:'🔬 양자역학', text:'슈뢰딩거의 파동 방정식은 양자 역학의 핵심 방정식으로, 입자의 양자 상태를 기술하는 파동 함수의 시간적 변화를 결정하며 파동 함수의 절댓값 제곱은 입자를 특정 위치에서 발견할 확률을 나타낸다.' },
+  { badge:'🔬 양자역학', text:'양자 얽힘 현상은 두 입자가 아무리 멀리 떨어져 있어도 한 입자의 상태를 측정하면 나머지 입자의 상태가 즉각적으로 결정되는 현상으로, 아인슈타인은 이를 유령 같은 원격 작용이라고 불렀다.' },
+  { badge:'🔬 양자역학', text:'플랑크의 양자 가설은 에너지가 연속적이지 않고 플랑크 상수와 진동수의 곱에 해당하는 불연속적인 단위, 즉 양자로만 방출되거나 흡수된다는 것을 제안하였으며, 이는 흑체 복사 문제를 해결하는 데 결정적인 역할을 하였다.' },
+  { badge:'🔬 양자역학', text:'보어의 원자 모형에 따르면 전자는 특정한 에너지 준위를 가진 궤도에서만 존재할 수 있으며, 전자가 높은 에너지 준위에서 낮은 에너지 준위로 전이할 때 두 준위 차이에 해당하는 에너지를 빛으로 방출한다.' },
+  { badge:'🔬 양자역학', text:'광전 효과는 금속 표면에 빛을 비추면 전자가 튀어나오는 현상으로, 아인슈타인은 빛이 광자라는 입자로 이루어져 있으며 광자 하나가 전자 하나에 에너지를 전달한다고 설명하여 노벨 물리학상을 받았다.' },
+  { badge:'🔬 양자역학', text:'드브로이의 물질파 가설은 전자와 같은 입자도 파동의 성질을 가지며, 파장은 플랑크 상수를 운동량으로 나눈 값과 같다고 제안하였다. 이는 전자 회절 실험으로 확인되어 양자역학 발전의 토대가 되었다.' },
+  { badge:'🔬 양자역학', text:'파울리의 배타 원리는 동일한 양자 상태를 두 개 이상의 페르미온이 동시에 점유할 수 없다는 법칙으로, 원소의 주기율표와 원자의 전자 배치, 백색 왜성과 중성자 별의 안정성을 설명하는 데 핵심적이다.' },
+  { badge:'🔬 양자역학', text:'슈뢰딩거의 고양이는 상자 속 고양이가 방사성 물질의 붕괴 여부에 따라 살아 있기도 하고 죽어 있기도 한 중첩 상태에 있다는 사고 실험으로, 양자역학의 측정 문제와 코펜하겐 해석의 한계를 지적한다.' },
+  { badge:'🔬 양자역학', text:'터널링 효과는 입자가 고전 역학적으로는 넘을 수 없는 에너지 장벽을 통과하는 양자 현상으로, 핵융합 반응과 주사 터널링 현미경의 원리, 플래시 메모리 소자의 작동 방식에 응용된다.' },
+
+  // ── 파동·광학 ──
+  { badge:'🌊 파동/광학', text:'빛의 이중성은 빛이 파동과 입자의 성질을 동시에 나타내는 현상으로, 회절과 간섭 실험에서는 파동으로 행동하고 광전 효과에서는 광자라는 입자로 행동하며 이는 양자역학의 핵심 개념이다.' },
+  { badge:'🌊 파동/광학', text:'도플러 효과는 파원과 관찰자가 서로 상대적으로 운동할 때 관측되는 파동의 진동수가 변하는 현상으로, 파원이 가까워질 때는 진동수가 높아지고 멀어질 때는 낮아지며 천체 분광학에서 널리 활용된다.' },
+  { badge:'🌊 파동/광학', text:'영의 이중 슬릿 실험은 두 개의 좁은 슬릿을 통과한 빛이 스크린에 밝고 어두운 간섭 무늬를 형성하는 것을 보여줌으로써 빛의 파동성을 명확하게 입증하였으며, 이후 전자를 이용한 실험에서도 동일한 결과가 관측되었다.' },
+  { badge:'🌊 파동/광학', text:'스넬의 법칙은 빛이 서로 다른 매질의 경계면에서 굴절될 때 입사각의 사인과 굴절각의 사인의 비가 두 매질의 굴절률의 비와 같음을 나타내며, 이는 렌즈와 광섬유 설계의 근본 원리가 된다.' },
+  { badge:'🌊 파동/광학', text:'전반사는 빛이 굴절률이 큰 매질에서 작은 매질로 진행할 때 입사각이 임계각보다 커지면 빛이 굴절되지 않고 전부 반사되는 현상으로, 광섬유 통신과 내시경의 작동 원리에 응용된다.' },
+  { badge:'🌊 파동/광학', text:'회절은 파동이 장애물의 모서리나 좁은 틈새를 지날 때 직진하지 않고 휘어지는 현상으로, 빛의 파장이 슬릿 폭과 비슷할 때 두드러지게 나타나며 엑스선 회절로 결정 구조를 분석할 수 있다.' },
+  { badge:'🌊 파동/광학', text:'정상파는 진폭과 파장이 같은 두 파동이 반대 방향으로 진행할 때 중첩되어 생기는 파동으로, 마디와 배를 형성하고 에너지를 전달하지 않는다. 현악기의 줄과 관악기의 공기 기둥이 대표적인 예이다.' },
+  { badge:'🌊 파동/광학', text:'공명은 외부에서 가해진 진동수가 물체의 고유 진동수와 일치할 때 진폭이 급격히 커지는 현상으로, 악기의 음색 결정과 전자 회로의 주파수 선택, 구조물의 공진 붕괴 방지에 중요하게 활용된다.' },
+  { badge:'🌊 파동/광학', text:'편광은 횡파인 빛의 진동 방향이 특정 방향으로 제한된 상태를 말하며, 편광 필터를 이용해 반사광을 차단하거나 액정 화면의 화소를 제어하는 데 활용되고 입체 영화의 원리이기도 하다.' },
+
+  // ── 핵물리·현대물리 ──
+  { badge:'☢️ 핵물리', text:'방사성 붕괴는 불안정한 원자핵이 알파선, 베타선, 감마선 등을 방출하며 더 안정한 상태로 변화하는 과정으로, 반감기는 방사성 물질의 양이 처음의 절반으로 줄어드는 데 걸리는 시간이다.' },
+  { badge:'☢️ 핵물리', text:'핵융합은 가벼운 원자핵들이 결합하여 더 무거운 원자핵을 이루는 과정으로, 질량 결손에 해당하는 막대한 에너지가 방출된다. 태양의 에너지원이 바로 수소 핵융합 반응이며 인공 핵융합 연구가 활발히 진행 중이다.' },
+  { badge:'☢️ 핵물리', text:'핵분열은 무거운 원자핵이 중성자를 흡수하여 두 개 이상의 가벼운 핵으로 쪼개지는 반응으로, 이 과정에서 방출되는 중성자가 또 다른 핵분열을 유발하는 연쇄 반응이 원자력 발전소와 핵무기의 원리이다.' },
+  { badge:'☢️ 핵물리', text:'결합 에너지는 원자핵을 구성하는 핵자들을 완전히 분리시키는 데 필요한 에너지로, 핵자당 결합 에너지가 클수록 핵이 안정하다. 철-56이 가장 큰 핵자당 결합 에너지를 가지는 안정한 핵이다.' },
+  { badge:'☢️ 핵물리', text:'방사선의 투과력은 종류에 따라 크게 다르다. 알파선은 종이 한 장으로도 차단되지만 내부 피폭이 위험하고, 베타선은 얇은 알루미늄판으로, 감마선은 두꺼운 납이나 콘크리트로 차폐할 수 있다.' },
+
+  // ── 고체·반도체 ──
+  { badge:'💻 고체물리', text:'반도체는 전기 전도성이 도체와 절연체의 중간인 물질로, 온도가 높아지면 전도성이 증가하는 특성을 가진다. 실리콘에 불순물을 도핑하여 엔형과 피형 반도체를 만들고 이를 접합하여 다이오드와 트랜지스터를 구성한다.' },
+  { badge:'💻 고체물리', text:'초전도 현상은 특정 물질이 임계 온도 이하로 냉각되면 전기 저항이 완전히 사라지는 현상으로, 에너지 손실 없는 전력 전송과 강력한 전자석 제작에 응용되며 자기 공명 영상 장치와 자기 부상 열차에 활용된다.' },
+  { badge:'💻 고체물리', text:'에너지 띠 이론은 고체 내 전자들이 가질 수 있는 에너지를 허용 띠와 금지 띠의 구조로 설명하며, 도체는 전도 띠에 전자가 채워져 있고 절연체는 매우 넓은 띠 간격을, 반도체는 좁은 띠 간격을 가진다.' },
+  { badge:'💻 고체물리', text:'홀 효과는 전류가 흐르는 도체에 수직으로 자기장을 가했을 때 전류 방향과 자기장 방향 모두에 수직인 방향으로 전압이 발생하는 현상으로, 전하 운반자의 종류와 농도를 측정하는 데 이용된다.' },
+
+  // ── 천체·우주 ──
+  { badge:'🌠 천체물리', text:'허블의 법칙은 멀리 있는 은하일수록 더 빠른 속도로 멀어지고 있음을 나타내며, 이는 우주가 팽창하고 있음을 보여주는 관측적 증거이다. 허블 상수는 우주의 나이를 추정하는 중요한 물리량이다.' },
+  { badge:'🌠 천체물리', text:'빅뱅 이론은 우주가 약 138억 년 전 극도로 뜨겁고 밀도가 높은 상태에서 시작하여 팽창과 냉각을 거치며 현재의 모습이 되었다고 설명하며, 우주 배경 복사의 발견으로 강력한 지지를 받는다.' },
+  { badge:'🌠 천체물리', text:'암흑 물질은 직접적으로 관측되지 않지만 중력적 효과를 통해 그 존재가 간접적으로 확인된 물질로, 은하 회전 곡선과 중력 렌즈 현상을 설명하며 우주 총 질량의 약 27%를 차지하는 것으로 추정된다.' },
+  { badge:'🌠 천체물리', text:'암흑 에너지는 우주의 가속 팽창을 유발하는 정체불명의 에너지로, 우주 전체 에너지의 약 68%를 차지한다. 1998년 초신성 관측으로 우주 팽창이 가속되고 있음이 발견되어 암흑 에너지의 존재가 제기되었다.' },
+  { badge:'🌠 천체물리', text:'중성자 별은 초신성 폭발 후 남겨진 극도로 밀집된 천체로, 반지름이 약 10킬로미터에 불과하지만 태양 질량의 1~2배에 달한다. 빠르게 자전하는 중성자 별인 펄사는 주기적인 전파 신호를 방출한다.' },
+
+  // ── 유체·광학 심화 ──
+  { badge:'🌀 유체역학', text:'레이놀즈 수는 유체 흐름에서 관성력과 점성력의 비를 나타내는 무차원 수로, 레이놀즈 수가 작으면 층류가 발생하고 크면 난류가 발생한다. 이 값은 유체 흐름 형태를 예측하는 핵심 지표이다.' },
+  { badge:'🌀 유체역학', text:'표면 장력은 액체 표면의 분자들이 내부 분자보다 더 큰 인력을 받아 표면적을 최소화하려는 힘으로, 물방울이 구형을 유지하고 소금쟁이가 물 위를 걷는 현상, 모세관 현상을 설명한다.' },
+  { badge:'🌈 광학', text:'레이저는 유도 방출에 의한 빛의 증폭 원리를 이용하여 단색성, 간섭성, 지향성이 매우 높은 광선을 발생시키는 장치로, 광통신, 외과 수술, 정밀 측정, 홀로그래피 등 다양한 분야에 응용된다.' },
+  { badge:'🌈 광학', text:'홀로그래피는 레이저 빛의 간섭 무늬를 기록하여 3차원 입체 영상을 재현하는 기술로, 물체에서 반사된 빛과 기준 빛의 간섭 패턴을 필름에 기록하고 레이저를 비추면 입체 영상이 나타난다.' },
+];
+
+const SESSION_SIZE = 10;
+
+// ══════════════════════════════════════════
+//  게임 상태
+// ══════════════════════════════════════════
+let state = {
+  pool:[],currentIdx:0,currentText:'',typed:'',
+  startTime:null,timerInterval:null,
+  totalTyped:0,totalErrors:0,completedCount:0,
+  currentTopic:'all',sessionActive:false,
+  combo:0,maxCombo:0,lastWasCorrect:true
+};
+
+// ══════════════════════════════════════════
+//  초기화
+// ══════════════════════════════════════════
+function startGame(){
+  const screen=document.getElementById('startScreen');
+  screen.classList.add('fade-out');
+  setTimeout(()=>{
+    screen.style.display='none';
+    buildPool();
+    buildDots();
+    loadSentence();
+    document.getElementById('typingInput').focus();
+  },500);
+}
+
+function buildPool(){
+  const source=[...SENTENCES];
+  for(let i=source.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [source[i],source[j]]=[source[j],source[i]];
+  }
+  state.pool=source.slice(0,SESSION_SIZE);
+  state.currentIdx=0;
+  document.getElementById('statTotal').textContent=`/ ${state.pool.length} 문장`;
+}
+
+function buildDots(){
+  const container=document.getElementById('sentenceDots');
+  container.innerHTML='';
+  state.pool.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='dot'+(i===0?' current':'');
+    d.id=`dot${i}`;
+    container.appendChild(d);
+  });
+}
+
+function updateDots(){
+  state.pool.forEach((_,i)=>{
+    const d=document.getElementById(`dot${i}`);
+    if(!d)return;
+    if(i<state.currentIdx){d.className='dot done';}
+    else if(i===state.currentIdx){d.className='dot current';}
+    else{d.className='dot';}
+  });
+}
+
+function loadSentence(){
+  if(state.currentIdx>=state.pool.length){showResult();return;}
+  const s=state.pool[state.currentIdx];
+  state.currentText=s.text;
+  state.typed='';
+
+  document.getElementById('topicBadge').textContent=s.badge;
+  document.getElementById('sentenceNum').textContent=`문장 ${state.currentIdx+1} / ${state.pool.length}`;
+  document.getElementById('sentenceHint').textContent=`0 / ${s.text.length} 자`;
+
+  renderDisplay();
+  const inp=document.getElementById('typingInput');
+  inp.value='';
+  inp.classList.remove('has-error','has-success');
+  updateProgress();
+  updateDots();
+  // 새 문장 로드 시 트랜지션 없이 즉시 위치 설정
+  const inputWrap=document.getElementById('inputWrap');
+  const hl=document.getElementById('lineHighlight');
+  if(inputWrap){inputWrap.style.transition='none';}
+  if(hl){hl.style.transition='none';}
+  updateInputPosition();
+  requestAnimationFrame(()=>{
+    if(inputWrap){inputWrap.style.transition='';}
+    if(hl){hl.style.transition='';}
+  });
+}
+
+// ══════════════════════════════════════════
+//  렌더링 – 글자 단위 즉시 오류 표시
+// ══════════════════════════════════════════
+function renderDisplay(){
+  const text=state.currentText, typed=state.typed;
+  const container=document.getElementById('displayText');
+  container.innerHTML='';
+  for(let i=0;i<text.length;i++){
+    const span=document.createElement('span');
+    span.textContent=text[i];
+    if(i<typed.length){
+      span.className=typed[i]===text[i]?'typed-correct':'typed-wrong';
+    } else if(i===typed.length){
+      span.className='cursor';
+    } else {
+      span.className='untyped';
+    }
+    container.appendChild(span);
+  }
+  updateInputPosition();
+}
+
+function updateInputPosition(){
+  const container=document.getElementById('displayText');
+  const inputWrap=document.getElementById('inputWrap');
+  const highlight=document.getElementById('lineHighlight');
+  const panel=document.getElementById('typingPanel');
+  if(!inputWrap||!panel)return;
+  const spans=Array.from(container.querySelectorAll('span'));
+  if(!spans.length)return;
+  const cursorIdx=Math.min(state.typed.length,spans.length-1);
+  const cursorSpan=spans[cursorIdx];
+  const panelRect=panel.getBoundingClientRect();
+  const cursorRect=cursorSpan.getBoundingClientRect();
+  const lineTopY=cursorRect.top;
+  let lineBottom=cursorRect.bottom;
+  spans.forEach(s=>{
+    const r=s.getBoundingClientRect();
+    if(Math.abs(r.top-lineTopY)<8) lineBottom=Math.max(lineBottom,r.bottom);
+  });
+  inputWrap.style.top=(lineBottom-panelRect.top+10)+'px';
+  if(highlight){
+    highlight.style.top=(lineTopY-panelRect.top-4)+'px';
+    highlight.style.height=(lineBottom-lineTopY+8)+'px';
+  }
+}
+
+// ══════════════════════════════════════════
+//  입력 처리
+// ══════════════════════════════════════════
+(function(){
+  const inp=document.getElementById('typingInput');
+  ['paste','copy','cut','drop'].forEach(evt=>
+    inp.addEventListener(evt,e=>e.preventDefault())
+  );
+})();
+
+document.getElementById('typingInput').addEventListener('input',function(){
+  const val=this.value;
+
+  if(!state.startTime&&val.length>0){
+    state.startTime=Date.now();
+    state.sessionActive=true;
+    startTimer();
+  }
+
+  if(val.length>state.currentText.length){
+    this.value=val.slice(0,state.currentText.length);
+    return;
+  }
+
+  const prevLen=state.typed.length;
+  state.typed=val;
+
+  // 오류 집계: 커서가 앞으로 이동할 때만 (한글 조합 완성 기준)
+  // val.length-1은 아직 조합 중일 수 있으므로 val.length-2까지만 확인
+  if(val.length>prevLen){
+    for(let i=Math.max(0,prevLen-1);i<val.length-1;i++){
+      if(val[i]!==state.currentText[i]) state.totalErrors++;
+    }
+  }
+
+  // 입력창 테두리는 항상 중립 (포커스 색만 유지)
+  this.classList.remove('has-error');
+
+  document.getElementById('sentenceHint').textContent=`${val.length} / ${state.currentText.length} 자`;
+  renderDisplay();
+  updateStats();
+
+  if(val.length>=state.currentText.length){completeSentence();}
+});
+
+document.getElementById('typingInput').addEventListener('keydown',function(e){
+  if(e.key==='Backspace'){
+    this.classList.remove('has-error');
+  }
+});
+
+function completeSentence(){
+  // 정확 타수 누적 + 마지막 글자 오류 집계 (input에서 미처리)
+  let correct=0;
+  for(let i=0;i<state.currentText.length;i++){
+    if(state.typed[i]===state.currentText[i])correct++;
+  }
+  const lastIdx=state.currentText.length-1;
+  if(state.typed[lastIdx]!==state.currentText[lastIdx]) state.totalErrors++;
+  state.totalTyped+=correct;
+  state.completedCount++;
+  state.combo++;
+  if(state.combo>state.maxCombo)state.maxCombo=state.combo;
+  updateCombo();
+  state.currentIdx++;
+  document.getElementById('statDone').textContent=state.completedCount;
+  updateProgress();
+
+  // 성공 이펙트
+  const inp=document.getElementById('typingInput');
+  inp.classList.add('has-success');
+  const panel=document.getElementById('typingPanel');
+  panel.classList.add('panel-success');
+  setTimeout(()=>panel.classList.remove('panel-success'),400);
+
+  // 파티클 버스트
+  const rect=inp.getBoundingClientRect();
+  const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+  spawnBurst(cx,cy,30,['#2563eb','#7c3aed','#059669','#f59e0b','#ec4899']);
+
+  // 콤보에 따른 추가 효과
+  if(state.combo>=3){
+    spawnBurst(cx,cy,20,['#ffd700','#ff6b00']);
+    spawnFloatScore(state.combo>=5?`🔥 ${state.combo} 콤보!!`:`✨ ${state.combo} 콤보!`,
+      cx-40,cy-60,state.combo>=5?'#ff6b00':'#7c3aed');
+  }
+  if(state.completedCount===state.pool.length){
+    spawnConfetti();
+  }
+
+  setTimeout(()=>{
+    inp.classList.remove('has-success');
+    loadSentence();
+    inp.focus();
+  },350);
+}
+
+// ══════════════════════════════════════════
+//  콤보
+// ══════════════════════════════════════════
+function updateCombo(){
+  const el=document.getElementById('comboNum');
+  const disp=document.getElementById('comboDisplay');
+  el.textContent=state.combo;
+  if(state.combo>=3){
+    disp.classList.add('combo-fire');
+    setTimeout(()=>disp.classList.remove('combo-fire'),400);
+  }
+}
+
+// ══════════════════════════════════════════
+//  타이머 & 통계
+// ══════════════════════════════════════════
+function startTimer(){
+  if(state.timerInterval)clearInterval(state.timerInterval);
+  state.timerInterval=setInterval(updateStats,500);
+}
+function stopTimer(){
+  if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
+}
+function getElapsed(){return state.startTime?(Date.now()-state.startTime)/1000:0;}
+function formatTime(sec){
+  const m=Math.floor(sec/60),s=Math.floor(sec%60);
+  return `${m}:${s.toString().padStart(2,'0')}`;
+}
+function updateStats(){
+  const elapsed=getElapsed();
+  const cpm=elapsed>0?Math.round((state.totalTyped/elapsed)*60):0;
+  const tot=state.totalTyped+state.totalErrors;
+  const acc=tot>0?Math.round((state.totalTyped/tot)*100):100;
+
+  document.getElementById('statCPM').textContent=cpm;
+  const accEl=document.getElementById('statAcc');
+  accEl.textContent=acc;
+  accEl.style.color=acc>=95?'var(--correct)':acc>=80?'var(--warn)':'var(--wrong)';
+  document.getElementById('statTime').textContent=formatTime(elapsed);
+}
+function updateProgress(){
+  const total=state.pool.length, done=state.currentIdx;
+  const pct=total>0?Math.round((done/total)*100):0;
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressPct').textContent=pct+'%';
+}
+
+// ══════════════════════════════════════════
+//  컨트롤
+// ══════════════════════════════════════════
+function skipSentence(){
+  state.combo=0;updateCombo();
+  state.currentIdx++;
+  if(state.currentIdx>=state.pool.length){showResult();return;}
+  loadSentence();
+  document.getElementById('typingInput').focus();
+}
+
+function resetSession(rebuild=true){
+  stopTimer();
+  state.startTime=null;state.typed='';
+  state.totalTyped=0;state.totalErrors=0;
+  state.completedCount=0;state.sessionActive=false;
+  state.combo=0;state.maxCombo=0;
+  updateCombo();
+
+  if(rebuild){buildPool();}
+  else{state.currentIdx=0;}
+
+  document.getElementById('statCPM').textContent='0';
+  document.getElementById('statAcc').textContent='100';
+  document.getElementById('statAcc').style.color='';
+  document.getElementById('statTime').textContent='0:00';
+  document.getElementById('statDone').textContent='0';
+
+  buildDots();
+  loadSentence();
+  closeResult();
+  document.getElementById('typingInput').focus();
+}
+
+// ══════════════════════════════════════════
+//  결과
+// ══════════════════════════════════════════
+function showResult(){
+  stopTimer();
+  const elapsed=getElapsed();
+  const cpm=elapsed>0?Math.round((state.totalTyped/elapsed)*60):0;
+  const tot=state.totalTyped+state.totalErrors;
+  const acc=tot>0?Math.round((state.totalTyped/tot)*100):100;
+  const score=Math.round(acc*2+cpm);
+
+  document.getElementById('rCPM').textContent=cpm;
+  document.getElementById('rAcc').textContent=acc+'%';
+  document.getElementById('rTime').textContent=formatTime(elapsed);
+  document.getElementById('rCombo').textContent=state.maxCombo;
+
+  // 점수 표시
+  document.getElementById('rScore').textContent=score.toLocaleString()+'점';
+  document.getElementById('rFormula').textContent=
+    `정확도 ${acc}% × 2  +  타수 ${cpm} = ${score.toLocaleString()}점`;
+
+  let grade='⭐',gradeText='';
+  if(acc>=97&&cpm>=450){grade='🏆';gradeText='완벽합니다! 노벨 물리학상 감이에요!';}
+  else if(acc>=95&&cpm>=350){grade='🥇';gradeText='훌륭해요! 물리학자처럼 정확하고 빠릅니다.';}
+  else if(acc>=90&&cpm>=250){grade='🥈';gradeText='잘 하셨어요! 꾸준히 연습하면 더 빨라질 거예요.';}
+  else if(acc>=80&&cpm>=150){grade='🥉';gradeText='좋은 시작! 정확도를 조금 더 높여보세요.';}
+  else{grade='📚';gradeText='차근차근 연습해봐요. 물리학 공부도 같이 되고 있어요!';}
+
+  document.getElementById('resultGrade').textContent=grade;
+  document.getElementById('gradeText').textContent=gradeText;
+  document.getElementById('resultSubtitle').textContent=
+    state.completedCount>=state.pool.length
+      ?'모든 문장 완료! 대단해요 🎉'
+      :`${state.completedCount}개 문장 완료`;
+
+  document.getElementById('resultOverlay').classList.add('show');
+  if(acc>=90)spawnConfetti();
+
+  // Firebase 점수 저장 + 리더보드 로드
+  if(typeof window.fbSaveAndLoad==='function'){
+    window.fbSaveAndLoad(score,acc,cpm);
+  } else {
+    renderLeaderboard([]);
+  }
+}
+
+window.renderLeaderboard=function renderLeaderboard(rows, myUid){
+  const body=document.getElementById('lbBody');
+  if(!rows||rows.length===0){
+    body.innerHTML='<div class="lb-loading">아직 기록이 없어요 — 첫 번째 주인공이 되세요!</div>';
+    return;
+  }
+  body.innerHTML=rows.map((r,i)=>{
+    const rankCls=i===0?'top1':i===1?'top2':i===2?'top3':'';
+    const rankIcon=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+    const meCls=r.uid===myUid?' me':'';
+    return `<div class="lb-row${meCls}">
+      <div class="lb-rank ${rankCls}">${rankIcon}</div>
+      <div class="lb-name">${r.id}${r.uid===myUid?' ✦':''}</div>
+      <div class="lb-score">${r.score.toLocaleString()}점</div>
+    </div>`;
+  }).join('');
+}
+
+function closeResult(){
+  document.getElementById('resultOverlay').classList.remove('show');
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeResult();});
+</script>
+
+<!-- ── Firebase 연동 (모듈) ── -->
+<script type="module">
+import { initializeApp }       from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+import { getAuth, onAuthStateChanged }
+                               from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc,
+  collection, getDocs, query, orderBy, limit, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+const cfg = window.APP_CONFIG;
+const app = initializeApp({
+  apiKey:            cfg.FIREBASE_API_KEY,
+  authDomain:        cfg.FIREBASE_AUTH_DOMAIN,
+  projectId:         cfg.FIREBASE_PROJECT_ID,
+  storageBucket:     cfg.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: cfg.FIREBASE_MESSAGING_SENDER_ID,
+  appId:             cfg.FIREBASE_APP_ID,
+});
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+let fbUser=null, fbUserID='';
+
+// ── 리더보드 불러오기 ──
+async function loadLeaderboard(){
+  const q=query(collection(db,'typing-leaderboard'),orderBy('score','desc'),limit(10));
+  const snap=await getDocs(q);
+  const rows=[];
+  snap.forEach(d=>rows.push({uid:d.id, id:d.data().ID||'?', score:Number(d.data().score)||0}));
+  return rows;
+}
+
+// ── 점수 저장 (최고 점수만) ──
+async function saveScore(score,acc,cpm){
+  if(!fbUser) return 'not-logged';
+  try{
+    // 1) typing-leaderboard (리더보드용)
+    const lbRef=doc(db,'typing-leaderboard',fbUser.uid);
+    const lbSnap=await getDoc(lbRef);
+    const prev=lbSnap.exists()?Number(lbSnap.data().score||0):0;
+    const isBest=score>prev;
+    if(isBest){
+      await setDoc(lbRef,{ID:fbUserID,score,acc,cpm,date:serverTimestamp()});
+    }
+    // 2) users/{uid}/simulations/physics-typing (총점 연동)
+    const simRef=doc(db,'users',fbUser.uid,'simulations','physics-typing');
+    const simSnap=await getDoc(simRef);
+    const prevSim=simSnap.exists()?Number(simSnap.data().score||0):0;
+    if(score>prevSim){
+      await setDoc(simRef,{score,acc,cpm,date:serverTimestamp()});
+      // 총점 갱신
+      const simsSnap=await getDocs(collection(db,'users',fbUser.uid,'simulations'));
+      let total=0;
+      simsSnap.forEach(d=>total+=Number(d.data().score||0));
+      await setDoc(doc(db,'scores',fbUser.uid),{score:total,ID:fbUserID},{merge:true});
+    }
+    return isBest?'best':'saved';
+  }catch(e){
+    console.error('점수 저장 오류',e);
+    return 'err';
+  }
+}
+
+// ── 결과 화면에서 호출 ──
+window.fbSaveAndLoad=async function(score,acc,cpm){
+  const statusEl=document.getElementById('rSaveStatus');
+
+  // 리더보드 먼저 표시
+  try{
+    const rows=await loadLeaderboard();
+    window.renderLeaderboard(rows, fbUser?.uid);
+  }catch(e){
+    window.renderLeaderboard([]);
+  }
+
+  if(!fbUser){
+    statusEl.className='result-save-status not-logged';
+    statusEl.innerHTML='<a href="../main.html" target="_blank" style="color:inherit;text-decoration:underline;">로그인</a> 후 점수가 저장됩니다';
+    return;
+  }
+  statusEl.className='result-save-status';
+  statusEl.textContent='저장 중...';
+  const result=await saveScore(score,acc,cpm);
+  if(result==='best'){
+    statusEl.className='result-save-status best';
+    statusEl.textContent='🎉 최고 기록 갱신! 리더보드에 등록되었습니다';
+    // 리더보드 새로고침 (내 점수 반영)
+    const rows=await loadLeaderboard();
+    window.renderLeaderboard(rows, fbUser.uid);
+  } else if(result==='saved'){
+    statusEl.className='result-save-status saved';
+    statusEl.textContent='✅ 점수 저장 완료 (이전 최고 기록 유지)';
+  } else if(result==='err'){
+    statusEl.className='result-save-status err';
+    statusEl.textContent='⚠️ 저장 중 오류가 발생했습니다';
+  }
+};
+
+// ── 인증 상태 감지 → 헤더 뱃지 ──
+onAuthStateChanged(auth,async user=>{
+  fbUser=user;
+  const badge=document.getElementById('authBadge');
+  const label=document.getElementById('authLabel');
+  const icon =document.getElementById('authIcon');
+  if(user){
+    try{
+      const snap=await getDoc(doc(db,'users',user.uid));
+      fbUserID=snap.exists()?(snap.data().ID||user.email.split('@')[0]):user.email.split('@')[0];
+    }catch{fbUserID=user.email?.split('@')[0]||'user';}
+    label.textContent=fbUserID;
+    icon.textContent='✅';
+    badge.classList.add('logged-in');
+  }else{
+    fbUserID='';
+    label.textContent='로그인 필요';
+    icon.textContent='👤';
+    badge.classList.remove('logged-in');
+  }
+});
+</script>
+
+<script>
+// ══════════════════════════════════════════
+//  P5.js 시작 화면 스케치
+// ══════════════════════════════════════════
+new p5(function(p){
+  const NUM_PARTICLES = 80;
+  const TRAIL_LEN = 28;
+
+  // 떠다니는 한글 물리학 단어
+  const WORDS = [
+    '관성','중력','전자기','양자','파동','에너지','운동','가속도','질량','속도',
+    '엔트로피','상대성','광속','진동수','파장','굴절','간섭','회절','공명','보존',
+    '전하','자기장','전기장','광자','전자','양성자','중성자','핵력','플라즈마',
+    '초전도','레이저','블랙홀','중력파','원심력','부력','탄성력','복원력','장력',
+    '운동량','각운동량','일률','퍼텐셜','열팽창','기화','응고','승화','흡열','발열',
+    '뉴턴','아인슈타인','맥스웰','패러데이','보어','플랑크','슈뢰딩거','케플러',
+    '회전','진동','충돌','산란','방사','흡수','방출','편광','분산','반사','투과',
+  ];
+
+  const ORBITS = [
+    { rx:195, ry:52, rot:0,           spd:0.50, phase:0    },
+    { rx:195, ry:52, rot:Math.PI/3,   spd:0.37, phase:2.09 },
+    { rx:195, ry:52, rot:-Math.PI/3,  spd:0.66, phase:4.19 },
+  ];
+
+  let pts=[], floats=[], ripples=[], trails=[[],[],[]];
+  let active=true;
+
+  p.setup=function(){
+    const cnv=p.createCanvas(window.innerWidth,window.innerHeight);
+    cnv.parent('p5Mount');
+    for(let i=0;i<NUM_PARTICLES;i++){
+      pts.push({
+        x:p.random(p.width), y:p.random(p.height),
+        vx:p.random(-0.26,0.26), vy:p.random(-0.26,0.26),
+        r:p.random(1.6,3.4)
+      });
+    }
+  };
+
+  p.windowResized=function(){ p.resizeCanvas(window.innerWidth,window.innerHeight); };
+
+  p.mouseClicked=function(){
+    if(!active) return;
+    ripples.push({x:p.mouseX, y:p.mouseY, r:4, life:1});
+  };
+
+  p.draw=function(){
+    if(!active){p.clear();return;}
+
+    // 밝은 배경
+    p.background(238,242,255);
+
+    const cx=p.width/2, cy=p.height/2;
+    const t=p.millis()/1000;
+
+    // ── 떠다니는 한글 단어 ──
+    if(p.frameCount%65===0 && floats.length<22){
+      const word = p.random(WORDS);
+      floats.push({
+        x: p.random(p.width*0.05, p.width*0.95),
+        y: p.height + 14,
+        txt: word,
+        sz: p.random(13, 26),
+        alpha: 0,
+        maxA: p.random(28, 65),
+        vx: p.random(-0.18, 0.18),
+        vy: p.random(-0.6, -0.25),
+        rot: p.random(-0.04, 0.04),
+        rotV: p.random(-0.0015, 0.0015),
+        // 단어마다 색 살짝 다르게
+        hue: p.random([
+          [99,102,241],   // indigo
+          [124,58,237],   // violet
+          [37,99,235],    // blue
+          [6,182,212],    // cyan
+          [79,70,229],    // deep indigo
+        ])
+      });
+    }
+    for(let i=floats.length-1;i>=0;i--){
+      const f=floats[i];
+      f.x+=f.vx; f.y+=f.vy; f.rot+=f.rotV;
+      const inZone = f.y < p.height*0.9 && f.y > p.height*0.12;
+      if(inZone) f.alpha=Math.min(f.alpha+0.7, f.maxA);
+      else if(f.y < p.height*0.08) f.alpha-=0.7;
+      if(f.alpha<=0 && f.y<p.height*0.12){floats.splice(i,1);continue;}
+      p.push();
+      p.translate(f.x,f.y);
+      p.rotate(f.rot);
+      p.fill(f.hue[0], f.hue[1], f.hue[2], f.alpha);
+      p.noStroke();
+      p.textAlign(p.CENTER, p.CENTER);
+      p.textSize(f.sz);
+      p.textStyle(p.BOLD);
+      p.text(f.txt, 0, 0);
+      p.pop();
+    }
+
+    // ── 파티클 네트워크 ──
+    const mx=p.mouseX, my=p.mouseY;
+    for(let i=0;i<pts.length;i++){
+      const a=pts[i];
+      const dx=a.x-mx, dy=a.y-my, dm=Math.hypot(dx,dy);
+      if(dm<90 && dm>0){a.vx+=dx/dm*0.06;a.vy+=dy/dm*0.06;}
+      a.vx*=0.985; a.vy*=0.985;
+      const sp=Math.hypot(a.vx,a.vy);
+      if(sp>1.0){a.vx=a.vx/sp;a.vy=a.vy/sp;}
+      a.x+=a.vx; a.y+=a.vy;
+      if(a.x<0)a.x=p.width; if(a.x>p.width)a.x=0;
+      if(a.y<0)a.y=p.height; if(a.y>p.height)a.y=0;
+
+      // 밝은 배경 위의 파티클: 인디고 계열
+      p.noStroke();
+      p.fill(99,102,241,55);
+      p.circle(a.x,a.y,a.r*2);
+
+      for(let j=i+1;j<pts.length;j++){
+        const b=pts[j];
+        const dist=Math.hypot(a.x-b.x,a.y-b.y);
+        if(dist<120){
+          const al=p.map(dist,0,120,28,0);
+          p.stroke(99,102,241,al);
+          p.strokeWeight(0.7);
+          p.line(a.x,a.y,b.x,b.y);
+        }
+      }
+    }
+
+    // ── 파문 ──
+    for(let i=ripples.length-1;i>=0;i--){
+      const r=ripples[i];
+      p.noFill();
+      p.stroke(99,102,241,r.life*50);
+      p.strokeWeight(1.6);
+      p.circle(r.x,r.y,r.r*2);
+      r.r+=6; r.life-=0.024;
+      if(r.life<=0)ripples.splice(i,1);
+    }
+
+    // ── 원자 ──
+    drawAtom(cx,cy,t);
+  };
+
+  function drawAtom(cx,cy,t){
+    const pulse=1+Math.sin(t*2.4)*0.07;
+
+    // 핵 후광 – 밝은 배경 위에서는 반투명 인디고 레이어
+    p.noStroke();
+    // [반지름, 알파]
+    [
+      [230,10],[155,18],[105,28],[68,44],[40,65],[20,85],[10,100]
+    ].forEach(([r,a])=>{
+      p.fill(79,70,229,a);
+      p.circle(cx,cy,r*pulse);
+    });
+    // 핵 중심: 밝은 흰점
+    p.fill(255,255,255,220);
+    p.circle(cx,cy,8*pulse);
+    p.fill(220,220,255,255);
+    p.circle(cx,cy,4*pulse);
+
+    // 궤도 + 전자
+    ORBITS.forEach((orb,idx)=>{
+      // 궤도 링
+      p.push();
+      p.translate(cx,cy);
+      p.rotate(orb.rot);
+      p.noFill();
+      p.stroke(99,102,241,38);
+      p.strokeWeight(1.2);
+      p.ellipse(0,0,orb.rx*2,orb.ry*2);
+      p.pop();
+
+      // 전자 위치
+      const ang=t*orb.spd+orb.phase;
+      const ex=cx + orb.rx*Math.cos(ang)*Math.cos(orb.rot)
+                   - orb.ry*Math.sin(ang)*Math.sin(orb.rot);
+      const ey=cy + orb.rx*Math.cos(ang)*Math.sin(orb.rot)
+                   + orb.ry*Math.sin(ang)*Math.cos(orb.rot);
+
+      // 트레일
+      trails[idx].push({x:ex,y:ey});
+      if(trails[idx].length>TRAIL_LEN) trails[idx].shift();
+      trails[idx].forEach((pt,i)=>{
+        const ta=p.map(i,0,trails[idx].length,0,55);
+        const ts=p.map(i,0,trails[idx].length,1,6);
+        p.noStroke();
+        p.fill(79,70,229,ta);
+        p.circle(pt.x,pt.y,ts);
+      });
+
+      // 전자 본체
+      p.noStroke();
+      p.fill(99,102,241,28);  p.circle(ex,ey,24);
+      p.fill(79,70,229,75);   p.circle(ex,ey,12);
+      p.fill(49,46,129,200);  p.circle(ex,ey,5.5);
+      p.fill(255,255,255,160);p.circle(ex,ey,2.5);
+    });
+  }
+
+  const _startGame=window.startGame;
+  window.startGame=function(){
+    _startGame();
+    setTimeout(()=>{active=false;},520);
+  };
+}, document.body);
+</script>
+</body>
+</html>
