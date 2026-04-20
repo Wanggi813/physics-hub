@@ -562,6 +562,130 @@ main{
   .line-highlight{left:12px;right:12px;}
   .result-card{width:94vw;padding:28px 20px;}
 }
+
+/* ── 레벨 배지 (헤더) ── */
+.level-badge{
+  background:#ffffff22;border:1px solid #ffffff44;
+  border-radius:10px;padding:5px 12px;
+  color:#fff;font-size:0.8rem;font-weight:700;
+  display:flex;align-items:center;gap:7px;
+  white-space:nowrap;cursor:default;
+}
+.lv-icon{font-size:1.15rem;line-height:1;}
+.lv-text{display:flex;flex-direction:column;line-height:1.25;}
+.lv-name{font-size:0.78rem;}
+.lv-num{font-size:0.64rem;opacity:0.7;font-weight:600;}
+
+/* ── 뱃지 토스트 ── */
+.badge-toast{
+  position:fixed;bottom:28px;right:28px;
+  background:linear-gradient(135deg,#1e293b,#0f172a);
+  border:2px solid #f59e0b;border-radius:14px;
+  padding:13px 18px;
+  display:flex;align-items:center;gap:12px;
+  z-index:1001;box-shadow:0 8px 30px #f59e0b44;
+  transform:translateX(calc(100% + 50px));
+  transition:transform 0.42s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events:none;min-width:220px;
+}
+.badge-toast.show{transform:translateX(0);}
+.badge-toast-icon{font-size:1.9rem;line-height:1;}
+.badge-toast-label{font-size:0.65rem;color:#f59e0b;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;}
+.badge-toast-name{font-size:0.9rem;color:#fff;font-weight:700;margin-top:1px;}
+
+/* ── 레벨업 오버레이 ── */
+#levelupOverlay{
+  position:fixed;inset:0;z-index:600;
+  display:flex;align-items:center;justify-content:center;
+  background:#0009;pointer-events:none;
+  opacity:0;transition:opacity 0.3s;
+}
+#levelupOverlay.show{opacity:1;}
+.levelup-card{
+  background:linear-gradient(135deg,#1e1b4b,#312e81);
+  border:2px solid #a5b4fc;border-radius:24px;
+  padding:44px 64px;text-align:center;
+  animation:levelupPop 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes levelupPop{
+  0%{transform:scale(0.3) rotate(-8deg);opacity:0}
+  100%{transform:scale(1) rotate(0);opacity:1}
+}
+.levelup-big-icon{font-size:3.8rem;display:block;margin-bottom:6px;}
+.levelup-label{font-size:0.85rem;color:#a5b4fc;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:4px;}
+.levelup-name{font-size:2.1rem;font-weight:900;color:#fff;margin-bottom:4px;}
+.levelup-sub{font-size:0.82rem;color:#c7d2fe;opacity:0.85;}
+
+/* ── 결과 화면: 레벨·뱃지 섹션 ── */
+.result-level-wrap{
+  margin:6px 0;border:1.5px solid var(--border2);
+  border-radius:14px;overflow:hidden;text-align:left;
+}
+.result-level-header{
+  background:linear-gradient(135deg,#1e1b4b,#312e81);
+  padding:10px 16px;display:flex;align-items:center;gap:10px;
+}
+.rl-icon{font-size:1.7rem;line-height:1;}
+.rl-info{flex:1;}
+.rl-lv{font-size:0.68rem;color:#a5b4fc;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;}
+.rl-name{font-size:1rem;font-weight:800;color:#fff;}
+.rl-session-gain{font-size:1rem;color:#fde68a;font-weight:900;line-height:1.2;}
+.rl-xp{font-size:0.72rem;color:#c7d2fe;font-weight:600;opacity:0.85;}
+.result-xp-wrap{padding:10px 16px 12px;}
+.xp-bar-label{display:flex;justify-content:space-between;font-size:0.7rem;color:var(--muted);margin-bottom:5px;font-weight:600;}
+.xp-bar-track{height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden;}
+.xp-bar-fill{height:100%;background:linear-gradient(90deg,#6366f1,#a855f7);border-radius:999px;width:0%;transition:width 0.9s cubic-bezier(.34,1.56,.64,1);}
+.result-badges-section{padding:8px 16px 12px;border-top:1.5px solid var(--border2);}
+.result-badges-title{font-size:0.68rem;color:var(--muted);font-weight:800;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:7px;}
+.result-badges-row{display:flex;gap:6px;flex-wrap:wrap;}
+.badge-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:4px 11px;border-radius:999px;
+  font-size:0.76rem;font-weight:700;
+  background:#f1f5f9;border:1.5px solid #e2e8f0;color:#64748b;
+}
+.badge-chip.new{
+  background:linear-gradient(135deg,#fef3c7,#fde68a);
+  border-color:#f59e0b;color:#92400e;
+  animation:badgePopIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes badgePopIn{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+
+/* ── 스피드런 모드 ── */
+.speedrun-toggle{
+  padding:10px 20px;border-radius:10px;border:none;
+  cursor:pointer;font-size:0.85rem;font-family:inherit;
+  font-weight:700;transition:all 0.2s;
+  background:linear-gradient(135deg,#ef4444,#dc2626);
+  color:#fff;box-shadow:0 4px 12px #ef444444;
+  display:flex;align-items:center;gap:6px;
+}
+.speedrun-toggle:hover{transform:translateY(-2px);box-shadow:0 6px 18px #ef444455;}
+.speedrun-toggle.active{
+  background:linear-gradient(135deg,#6366f1,#4f46e5);
+  box-shadow:0 4px 12px #6366f144;
+}
+.speedrun-bar{
+  background:linear-gradient(135deg,#fef2f2,#fff7ed);
+  border:2px solid #fca5a5;border-radius:14px;
+  padding:14px 22px;
+  display:none;align-items:center;justify-content:space-between;
+  gap:16px;
+}
+.speedrun-bar.visible{display:flex;}
+.speedrun-countdown{
+  font-size:2.6rem;font-weight:900;
+  font-variant-numeric:tabular-nums;
+  line-height:1;
+  transition:color 0.3s;
+}
+.speedrun-countdown.urgent{color:#ef4444;animation:urgentPulse 0.5s ease infinite;}
+@keyframes urgentPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.speedrun-label{font-size:0.78rem;font-weight:700;color:#ef4444;letter-spacing:0.05em;}
+.speedrun-stats{display:flex;gap:20px;}
+.speedrun-stat{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.speedrun-stat-val{font-size:1.4rem;font-weight:800;color:#1e293b;font-variant-numeric:tabular-nums;}
+.speedrun-stat-lbl{font-size:0.65rem;color:#94a3b8;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
 </style>
 </head>
 <body>
@@ -600,6 +724,13 @@ main{
     <div class="subtitle">Physics Typing Practice</div>
   </div>
   <div class="header-right">
+    <div class="level-badge" id="levelBadge">
+      <span class="lv-icon">🔭</span>
+      <div class="lv-text">
+        <span class="lv-name" id="lvName">물리 견습생</span>
+        <span class="lv-num" id="lvNum">Lv.1</span>
+      </div>
+    </div>
     <div class="auth-badge" id="authBadge" onclick="window.open('../main.html','_blank')">
       <span id="authIcon">👤</span>
       <span id="authLabel">로그인 필요</span>
@@ -613,6 +744,24 @@ main{
 
 <!-- ── 메인 ── -->
 <main>
+
+  <!-- 스피드런 바 -->
+  <div class="speedrun-bar" id="speedrunBar">
+    <div>
+      <div class="speedrun-label">⏱ 남은 시간</div>
+      <div class="speedrun-countdown" id="speedrunCountdown">30</div>
+    </div>
+    <div class="speedrun-stats">
+      <div class="speedrun-stat">
+        <span class="speedrun-stat-val" id="srChars">0</span>
+        <span class="speedrun-stat-lbl">타수</span>
+      </div>
+      <div class="speedrun-stat">
+        <span class="speedrun-stat-val" id="srAcc">100%</span>
+        <span class="speedrun-stat-lbl">정확도</span>
+      </div>
+    </div>
+  </div>
 
   <!-- 통계 -->
   <div class="stats-bar">
@@ -675,6 +824,7 @@ main{
 
   <!-- 컨트롤 -->
   <div class="controls">
+    <button class="speedrun-toggle" id="speedrunToggle" onclick="toggleSpeedrun()">⚡ 스피드런</button>
     <button class="btn btn-secondary" onclick="skipSentence()">건너뛰기 ↷</button>
     <button class="btn btn-secondary" onclick="resetSession()">🔄 다시 시작</button>
     <button class="btn btn-primary" onclick="showResult()">결과 보기 →</button>
@@ -714,6 +864,9 @@ main{
       <div class="result-score-formula" id="rFormula">정확도×2 + 타수 = 0점</div>
     </div>
 
+    <!-- 레벨·뱃지 -->
+    <div class="result-level-wrap" id="resultLevelWrap"></div>
+
     <!-- 저장 상태 -->
     <div class="result-save-status not-logged" id="rSaveStatus">로그인 후 점수가 저장됩니다</div>
 
@@ -721,7 +874,7 @@ main{
 
     <!-- 리더보드 -->
     <div class="leaderboard-wrap">
-      <div class="leaderboard-header">🏆 물리학 타자 TOP 10</div>
+      <div class="leaderboard-header">🏆 최고 기록 랭킹 TOP 10</div>
       <div id="lbBody"><div class="lb-loading">불러오는 중...</div></div>
     </div>
 
@@ -978,8 +1131,9 @@ let state = {
   pool:[],currentIdx:0,currentText:'',typed:'',
   startTime:null,timerInterval:null,
   totalTyped:0,totalErrors:0,completedCount:0,
-  currentTopic:'all',sessionActive:false,
-  combo:0,maxCombo:0,lastWasCorrect:true
+  sessionActive:false,
+  combo:0,maxCombo:0,lastWasCorrect:true,
+  speedrunMode:false,speedrunTimeLeft:30,speedrunWasActive:false,
 };
 
 // ══════════════════════════════════════════
@@ -988,6 +1142,7 @@ let state = {
 function startGame(){
   const screen=document.getElementById('startScreen');
   screen.classList.add('fade-out');
+  refreshLevelBadge();
   setTimeout(()=>{
     screen.style.display='none';
     buildPool();
@@ -1196,6 +1351,11 @@ function completeSentence(){
 
   setTimeout(()=>{
     inp.classList.remove('has-success');
+    // 스피드런: 풀 소진 시 새 풀로 교체
+    if(state.speedrunMode && state.currentIdx>=state.pool.length){
+      buildPool();
+      buildDots();
+    }
     loadSentence();
     inp.focus();
   },350);
@@ -1220,6 +1380,10 @@ function updateCombo(){
 function startTimer(){
   if(state.timerInterval)clearInterval(state.timerInterval);
   state.timerInterval=setInterval(updateStats,500);
+  if(state.speedrunMode){
+    state.speedrunWasActive=true;
+    startSpeedrunCountdown();
+  }
 }
 function stopTimer(){
   if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
@@ -1261,6 +1425,7 @@ function skipSentence(){
 
 function resetSession(rebuild=true){
   stopTimer();
+  stopSpeedrun();
   state.startTime=null;state.typed='';
   state.totalTyped=0;state.totalErrors=0;
   state.completedCount=0;state.sessionActive=false;
@@ -1283,10 +1448,225 @@ function resetSession(rebuild=true){
 }
 
 // ══════════════════════════════════════════
+//  레벨 · 뱃지 시스템
+// ══════════════════════════════════════════
+const PROGRESS_KEY='physics-typing-progress';
+
+const LEVELS=[
+  {lv:1,xp:0,    icon:'🔭',title:'물리 견습생'},
+  {lv:2,xp:300,  icon:'📚',title:'물리 입문자'},
+  {lv:3,xp:800,  icon:'🎓',title:'물리 학생'},
+  {lv:4,xp:2000, icon:'🔬',title:'물리 연구원'},
+  {lv:5,xp:5000, icon:'⚗️',title:'물리학자'},
+  {lv:6,xp:10000,icon:'🧪',title:'박사 연구원'},
+  {lv:7,xp:25000,icon:'👨‍🏫',title:'물리 교수'},
+  {lv:8,xp:60000,icon:'🏆',title:'노벨상 수상자'},
+];
+
+const BADGES_DEF=[
+  {id:'first',      icon:'🎯',name:'첫 발걸음',   check:p=>p.sessions>=1},
+  {id:'perfect',    icon:'💯',name:'완벽주의자',  check:(_,r)=>r.acc>=100},
+  {id:'cpm200',     icon:'⚡',name:'타자 입문',   check:(_,r)=>r.cpm>=200},
+  {id:'cpm400',     icon:'🚀',name:'타자 고수',   check:(_,r)=>r.cpm>=400},
+  {id:'cpm600',     icon:'⭐',name:'타자 달인',   check:(_,r)=>r.cpm>=600},
+  {id:'combo5',     icon:'🔥',name:'콤보 시작',   check:(_,r)=>r.maxCombo>=5},
+  {id:'combo10',    icon:'💪',name:'집중력왕',    check:(_,r)=>r.maxCombo>=10},
+  {id:'full10',     icon:'📖',name:'물리 완독',   check:(_,r)=>r.done>=10},
+  {id:'sessions10', icon:'🎪',name:'꾸준한 연습', check:p=>p.sessions>=10},
+  {id:'chars5000',  icon:'🏅',name:'오천 타 달성',check:p=>p.totalChars>=5000},
+  {id:'chars50000', icon:'🌟',name:'오만 타 달성',check:p=>p.totalChars>=50000},
+  {id:'score1000',  icon:'🧪',name:'고득점자',    check:(_,r)=>r.score>=1000},
+  {id:'speedrun',   icon:'⚡',name:'스피드 러너', check:(_,r)=>r.speedrun&&r.cpm>=300},
+];
+
+function loadProgress(){
+  try{return JSON.parse(localStorage.getItem(PROGRESS_KEY))||{xp:0,badges:[],sessions:0,totalChars:0};}
+  catch{return {xp:0,badges:[],sessions:0,totalChars:0};}
+}
+function saveProgress(p){localStorage.setItem(PROGRESS_KEY,JSON.stringify(p));}
+
+function getLvInfo(xp){
+  let cur=LEVELS[0];
+  for(const l of LEVELS){if(xp>=l.xp)cur=l;}
+  return cur;
+}
+function getNextLv(xp){
+  for(const l of LEVELS){if(xp<l.xp)return l;}
+  return null;
+}
+
+function refreshLevelBadge(){
+  const p=loadProgress();
+  const lv=getLvInfo(p.xp);
+  document.querySelector('#levelBadge .lv-icon').textContent=lv.icon;
+  document.getElementById('lvName').textContent=lv.title;
+  document.getElementById('lvNum').textContent=`Lv.${lv.lv}`;
+}
+
+function showLevelUp(lv){
+  const ov=document.getElementById('levelupOverlay');
+  document.getElementById('lvUpIcon').textContent=lv.icon;
+  document.getElementById('lvUpName').textContent=lv.title;
+  document.getElementById('lvUpSub').textContent=`레벨 ${lv.lv} 달성!`;
+  ov.classList.add('show');
+  spawnConfetti();
+  setTimeout(()=>ov.classList.remove('show'),2600);
+}
+
+let _toastQueue=[],_toastBusy=false;
+function showBadgeToast(badge){
+  _toastQueue.push(badge);
+  if(!_toastBusy) _drainToast();
+}
+function _drainToast(){
+  if(!_toastQueue.length){_toastBusy=false;return;}
+  _toastBusy=true;
+  const b=_toastQueue.shift();
+  const toast=document.getElementById('badgeToast');
+  document.getElementById('badgeToastIcon').textContent=b.icon;
+  document.getElementById('badgeToastName').textContent=b.name;
+  toast.classList.add('show');
+  setTimeout(()=>{toast.classList.remove('show');setTimeout(_drainToast,500);},2800);
+}
+
+function processEndOfSession(resultData){
+  const p=loadProgress();
+  const prevLv=getLvInfo(p.xp);
+
+  p.sessions++;
+  p.totalChars+=resultData.correctChars;
+
+  // 새 뱃지 수집
+  const newBadges=[];
+  for(const b of BADGES_DEF){
+    if(!p.badges.includes(b.id)&&b.check(p,resultData)){
+      p.badges.push(b.id);
+      newBadges.push(b);
+    }
+  }
+
+  // XP 적립
+  p.xp+=resultData.score;
+  const newLv=getLvInfo(p.xp);
+  saveProgress(p);
+  refreshLevelBadge();
+
+  if(newLv.lv>prevLv.lv) setTimeout(()=>showLevelUp(newLv),700);
+  if(newBadges.length) setTimeout(()=>newBadges.forEach(showBadgeToast),1200);
+
+  // 결과 화면 레벨 섹션 렌더링
+  renderResultLevel(p, newBadges, resultData.score);
+}
+
+function renderResultLevel(p, newBadges, sessionScore){
+  const lv=getLvInfo(p.xp);
+  const next=getNextLv(p.xp);
+  const pct=next?Math.round(((p.xp-lv.xp)/(next.xp-lv.xp))*100):100;
+  const allBadges=BADGES_DEF.filter(b=>p.badges.includes(b.id));
+
+  const wrap=document.getElementById('resultLevelWrap');
+  wrap.innerHTML=`
+    <div class="result-level-header">
+      <span class="rl-icon">${lv.icon}</span>
+      <div class="rl-info">
+        <div class="rl-lv">LV.${lv.lv}</div>
+        <div class="rl-name">${lv.title}</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="rl-session-gain">+${sessionScore.toLocaleString()}점</div>
+        <div class="rl-xp">누적 ${p.xp.toLocaleString()}점</div>
+      </div>
+    </div>
+    <div class="result-xp-wrap">
+      <div class="xp-bar-label">
+        <span>${next?`다음 레벨까지`:'최고 레벨!'}</span>
+        <span>${next?`${(next.xp-p.xp).toLocaleString()}점 남음`:''}</span>
+      </div>
+      <div class="xp-bar-track"><div class="xp-bar-fill" id="xpBarFill"></div></div>
+    </div>
+    ${allBadges.length?`
+    <div class="result-badges-section">
+      <div class="result-badges-title">획득 뱃지 (${allBadges.length})</div>
+      <div class="result-badges-row">${allBadges.map((b,i)=>`
+        <span class="badge-chip${newBadges.find(n=>n.id===b.id)?` new" style="animation-delay:${i*0.07}s`:''}">
+          ${b.icon} ${b.name}
+        </span>`).join('')}
+      </div>
+    </div>`:''}
+  `;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const f=document.getElementById('xpBarFill');
+    if(f) f.style.width=pct+'%';
+  }));
+}
+
+// ══════════════════════════════════════════
+//  스피드런 모드
+// ══════════════════════════════════════════
+const SPEEDRUN_SEC=30;
+let srInterval=null;
+
+function toggleSpeedrun(){
+  const btn=document.getElementById('speedrunToggle');
+  if(state.speedrunMode){
+    stopSpeedrun();
+    btn.classList.remove('active');
+    btn.textContent='⚡ 스피드런';
+  } else {
+    resetSession(true);
+    state.speedrunMode=true;
+    btn.classList.add('active');
+    btn.textContent='■ 중단';
+    document.getElementById('speedrunBar').classList.add('visible');
+    state.speedrunTimeLeft=SPEEDRUN_SEC;
+    updateSpeedrunDisplay();
+    // 첫 타이핑 때 자동 시작됨 (startTimer 연동)
+    const origStart=startTimer;
+    state._srStarted=false;
+  }
+}
+
+function startSpeedrunCountdown(){
+  if(srInterval) return;
+  srInterval=setInterval(()=>{
+    state.speedrunTimeLeft--;
+    updateSpeedrunDisplay();
+    if(state.speedrunTimeLeft<=0){
+      stopSpeedrun();
+      showResult();
+    }
+  },1000);
+}
+
+function stopSpeedrun(){
+  if(srInterval){clearInterval(srInterval);srInterval=null;}
+  state.speedrunMode=false;
+  document.getElementById('speedrunBar').classList.remove('visible');
+  const btn=document.getElementById('speedrunToggle');
+  btn.classList.remove('active');
+  btn.textContent='⚡ 스피드런';
+}
+
+function updateSpeedrunDisplay(){
+  const t=state.speedrunTimeLeft;
+  const el=document.getElementById('speedrunCountdown');
+  el.textContent=t;
+  el.classList.toggle('urgent',t<=10);
+  // 색상
+  el.style.color=t<=10?'#ef4444':t<=20?'#f59e0b':'#1e293b';
+
+  const tot=state.totalTyped+state.totalErrors;
+  const acc=tot>0?Math.round((state.totalTyped/tot)*100):100;
+  document.getElementById('srChars').textContent=state.totalTyped;
+  document.getElementById('srAcc').textContent=acc+'%';
+}
+
+// ══════════════════════════════════════════
 //  결과
 // ══════════════════════════════════════════
 function showResult(){
   stopTimer();
+  stopSpeedrun();
   const elapsed=getElapsed();
   const cpm=elapsed>0?Math.round((state.totalTyped/elapsed)*60):0;
   const tot=state.totalTyped+state.totalErrors;
@@ -1298,7 +1678,6 @@ function showResult(){
   document.getElementById('rTime').textContent=formatTime(elapsed);
   document.getElementById('rCombo').textContent=state.maxCombo;
 
-  // 점수 표시
   document.getElementById('rScore').textContent=score.toLocaleString()+'점';
   document.getElementById('rFormula').textContent=
     `정확도 ${acc}% × 2  +  타수 ${cpm} = ${score.toLocaleString()}점`;
@@ -1319,6 +1698,15 @@ function showResult(){
 
   document.getElementById('resultOverlay').classList.add('show');
   if(acc>=90)spawnConfetti();
+
+  // 레벨·뱃지 처리
+  processEndOfSession({
+    acc, cpm, score,
+    maxCombo:state.maxCombo,
+    done:state.completedCount,
+    correctChars:state.totalTyped,
+    speedrun:!!state.speedrunWasActive,
+  });
 
   // Firebase 점수 저장 + 리더보드 로드
   if(typeof window.fbSaveAndLoad==='function'){
@@ -1439,13 +1827,13 @@ window.fbSaveAndLoad=async function(score,acc,cpm){
   const result=await saveScore(score,acc,cpm);
   if(result==='best'){
     statusEl.className='result-save-status best';
-    statusEl.textContent='🎉 최고 기록 갱신! 리더보드에 등록되었습니다';
+    statusEl.textContent='🎉 랭킹 최고 기록 갱신! (누적 점수는 레벨에 반영됩니다)';
     // 리더보드 새로고침 (내 점수 반영)
     const rows=await loadLeaderboard();
     window.renderLeaderboard(rows, fbUser.uid);
   } else if(result==='saved'){
     statusEl.className='result-save-status saved';
-    statusEl.textContent='✅ 점수 저장 완료 (이전 최고 기록 유지)';
+    statusEl.textContent='✅ 누적 점수 반영 완료 (랭킹은 이전 최고 기록 유지)';
   } else if(result==='err'){
     statusEl.className='result-save-status err';
     statusEl.textContent='⚠️ 저장 중 오류가 발생했습니다';
@@ -1683,5 +2071,24 @@ new p5(function(p){
   };
 }, document.body);
 </script>
+
+<!-- ── 레벨업 오버레이 ── -->
+<div id="levelupOverlay">
+  <div class="levelup-card">
+    <span class="levelup-big-icon" id="lvUpIcon">🏆</span>
+    <div class="levelup-label">레벨 업!</div>
+    <div class="levelup-name" id="lvUpName">물리학자</div>
+    <div class="levelup-sub" id="lvUpSub">레벨 5 달성!</div>
+  </div>
+</div>
+
+<!-- ── 뱃지 토스트 ── -->
+<div class="badge-toast" id="badgeToast">
+  <span class="badge-toast-icon" id="badgeToastIcon">🎯</span>
+  <div>
+    <div class="badge-toast-label">뱃지 획득!</div>
+    <div class="badge-toast-name" id="badgeToastName">첫 발걸음</div>
+  </div>
+</div>
 </body>
 </html>
