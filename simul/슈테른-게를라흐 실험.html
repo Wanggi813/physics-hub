@@ -475,6 +475,8 @@
 
     .overlay-card {
       width: min(620px, 100%);
+      max-height: calc(100vh - 60px);
+      overflow-y: auto;
       background: rgba(255, 255, 255, 0.97);
       border: 1px solid #e2e8f0;
       border-radius: 18px;
@@ -521,6 +523,40 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* ── Video overlay (iframe) ── */
+    .video-overlay {
+      position: fixed; inset: 0;
+      display: none; align-items: center; justify-content: center;
+      background: rgba(10,18,32,0.60);
+      backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px);
+      z-index: 50; padding: 20px;
+    }
+    .video-overlay.open { display: flex; }
+    .video-card {
+      width: min(1060px, 96vw);
+      height: min(660px, 92vh);
+      background: #0d1520;
+      border-radius: 20px; overflow: hidden;
+      display: flex; flex-direction: column;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    .video-topbar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 11px 18px; flex-shrink: 0;
+      background: rgba(255,255,255,0.97); border-bottom: 1px solid #e2e8f0;
+    }
+    .video-topbar strong { font-size: 0.92rem; color: #1e293b; }
+    .video-iframe-wrap { flex: 0 0 58%; min-height: 0; }
+    .video-iframe-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
+    .video-desc {
+      flex: 1; overflow-y: auto;
+      padding: 18px 24px; background: #fff; border-top: 1px solid #e2e8f0;
+      font-size: 15px; color: #334155; line-height: 1.8;
+    }
+    .video-desc p { margin: 0; }
+    .video-desc strong { color: #1e293b; }
 
     @media (max-width: 768px) {
       #scene {
@@ -607,12 +643,12 @@
           <button class="btn-sub" id="pauseBtn">일시정지</button>
           <button class="btn-sub" id="resetBtn">초기화</button>
         </div>
-        <div style="margin-top:8px;">
-          <button class="btn-sub" id="spinInfoBtn" style="width:100%">스핀 설명 보기</button>
-          <button class="btn-sub" id="theoryInfoBtn" style="width:100%">고전 vs 양자 이론 보기</button>
+        <div style="margin-top:18px; display:flex; flex-direction:column; gap:8px;">
+          <button class="btn-sub" id="spinInfoBtn"       style="width:100%">스핀 설명 보기</button>
+          <button class="btn-sub" id="classicalInfoBtn"  style="width:100%">고전 물리학 예측 보기</button>
+          <button class="btn-sub" id="quantumVideoBtn"   style="width:100%">▶ 실제 관측 영상 보기</button>
         </div>
       </section>
-
 
       <section class="panel">
         <h2 class="section-title">실험 요약</h2>
@@ -681,6 +717,21 @@
     </div>
   </div>
 
+  <div class="video-overlay" id="videoOverlay">
+    <div class="video-card">
+      <div class="video-topbar">
+        <strong>슈테른-게를라흐 실험 — 실제 관측 시뮬레이션</strong>
+        <button class="btn-sub overlay-close" id="closeVideoBtn">닫기</button>
+      </div>
+      <div class="video-iframe-wrap">
+        <iframe id="simFrame" src="" allow="autoplay"></iframe>
+      </div>
+      <div class="video-desc">
+        <p>실제 실험에서 스크린에는 고전 물리학이 예측한 연속 띠 대신, 정확히 <strong>위·아래 두 개의 점</strong>만 나타났습니다. 전자의 스핀은 공간에서 임의의 방향을 가질 수 없고, <strong>측정 축 기준으로 오직 +½과 −½, 두 값으로만 존재</strong>합니다. 이것이 스핀의 공간 양자화입니다.</p>
+      </div>
+    </div>
+  </div>
+
   <script src="../libs/three.min.js"></script>
   <script>
     const ui = {
@@ -692,8 +743,12 @@
       modeClassicalBtn: document.getElementById("modeClassicalBtn"),
       modeQuantumBtn: document.getElementById("modeQuantumBtn"),
       modeCompareBtn: document.getElementById("modeCompareBtn"),
-      spinInfoBtn: document.getElementById("spinInfoBtn"),
-      theoryInfoBtn: document.getElementById("theoryInfoBtn"),
+      spinInfoBtn:      document.getElementById("spinInfoBtn"),
+      classicalInfoBtn: document.getElementById("classicalInfoBtn"),
+      quantumVideoBtn:  document.getElementById("quantumVideoBtn"),
+      closeVideoBtn:    document.getElementById("closeVideoBtn"),
+      videoOverlay:     document.getElementById("videoOverlay"),
+      simFrame:         document.getElementById("simFrame"),
       gradientValue: document.getElementById("gradientValue"),
       slitValue: document.getElementById("slitValue"),
       emittedCount: document.getElementById("emittedCount"),
@@ -720,13 +775,10 @@
       root: new THREE.Group(),
       screen: null,
       screenHits: new THREE.Group(),
-      beamCore: null,
       upperMagnet: null,
       lowerMagnet: null,
       slitPairs: [],
-      fieldGroup: null,
-      labelN: null,
-      labelS: null
+      fieldGroup: null
     };
 
     const state = {
@@ -760,253 +812,35 @@
     };
 
     const infoContent = {
-      spin: {
-        title: "전자 스핀이란?",
+      classical: {
+        title: "고전 물리학의 예측",
         body: `
-          <div id="spinAnimContainer" style="width:100%;height:200px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:14px;overflow:hidden;"></div>
-          <p style="margin:0 0 8px"><strong>스핀</strong>은 전자가 가진 양자역학적 고유 성질입니다. 측정하면 반드시 <strong>두 방향 중 하나</strong>만 나타납니다.</p>
-          <p style="margin:0">비균일 자기장에서 자기모멘트 <em>μ</em>의 방향에 따라 받는 힘이 달라집니다. <strong>스핀 위(↑) 원자는 위로, 스핀 아래(↓) 원자는 아래로</strong> 편향되어 검출기에 두 줄로 찍힙니다.</p>
-        `
+<p style="margin:0 0 14px; font-size:14px; color:#334155; line-height:1.7;">
+  고전 이론에서는 은 원자를 '작은 자석'으로 봅니다. 이 자석들의 방향은 3차원 공간에서 무작위이므로 자기장 속에서 받는 힘도 연속적입니다. 따라서 스크린에 <strong>길게 이어진 하나의 띠</strong>가 나타날 것으로 예측했습니다.
+</p>
+<div id="theoryClassicalCanvas" style="width:100%;height:220px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;overflow:hidden;"></div>
+`
       },
       theory: {
         title: "고전 예측과 양자 관측",
         body: `
-<h4 style="color:#1e293b; margin:0 0 8px;">고전 물리학의 예측</h4>
-      <p style="margin:0 0 16px; font-size:14px; color:#334155; line-height:1.7;">
-        고전 이론에서는 은 원자를 '작은 자석'으로 봅니다. 이 자석들의 방향은 3차원 공간에서 무작위이므로, 자기장 속에서 받는 힘도 연속적입니다. 따라서 스크린에 <strong>길게 이어진 하나의 띠</strong>가 나타날 것으로 예측했습니다.
-      </p>
-      <h4 style="color:#1e293b; margin:0 0 8px;">양자역학의 실제 관측</h4>
-      <p style="margin:0; font-size:14px; color:#334155; line-height:1.7;">
-        하지만 실제 실험에서는 정확히 <strong>위, 아래 두 개의 점</strong>으로만 나뉘어 찍혔습니다. 이는 전자의 스핀 방향이 연속적이지 않고, <strong>오직 두 가지 상태(위, 아래)로만 존재함(양자화)</strong>을 완벽하게 증명한 결과입니다.
-      </p>
-    `
+<h4 style="color:#1e293b; margin:0 0 6px;">고전 물리학의 예측</h4>
+<p style="margin:0 0 10px; font-size:14px; color:#334155; line-height:1.7;">
+  고전 이론에서는 은 원자를 '작은 자석'으로 봅니다. 이 자석들의 방향은 3차원 공간에서 무작위이므로, 자기장 속에서 받는 힘도 연속적입니다. 따라서 스크린에 <strong>길게 이어진 하나의 띠</strong>가 나타날 것으로 예측했습니다.
+</p>
+<div id="theoryClassicalCanvas" style="width:100%;height:160px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:18px;overflow:hidden;"></div>
+<h4 style="color:#1e293b; margin:0 0 6px;">양자역학의 실제 관측</h4>
+<p style="margin:0 0 10px; font-size:14px; color:#334155; line-height:1.7;">
+  하지만 실제 실험에서는 정확히 <strong>위, 아래 두 개의 점</strong>으로만 나뉘어 찍혔습니다. 이는 전자의 스핀 방향이 연속적이지 않고, <strong>오직 두 가지 상태(위, 아래)로만 존재함(양자화)</strong>을 완벽하게 증명한 결과입니다.
+</p>
+<div id="theoryQuantumCanvas" style="width:100%;height:160px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;overflow:hidden;"></div>
+`
       }
     };
 
     let spinAnimId = null;
     function stopSpinAnimation() {
       if (spinAnimId) { cancelAnimationFrame(spinAnimId); spinAnimId = null; }
-    }
-    function initSpinAnimation() {
-      const container = document.getElementById("spinAnimContainer");
-      if (!container) return;
-      const canvas = document.createElement("canvas");
-      canvas.style.cssText = "width:100%;height:100%;display:block;";
-      container.appendChild(canvas);
-      function resize() {
-        const rect = container.getBoundingClientRect();
-        canvas.width = Math.max(1, rect.width);
-        canvas.height = Math.max(1, rect.height);
-      }
-      resize();
-      const ctx = canvas.getContext("2d");
-      let t = 0;
-      function drawElectron(cx, cy, phase, spinDir) {
-        const r = Math.min(canvas.width * 0.065, 26);
-        const col = spinDir > 0 ? "#ef4444" : "#3b82f6";
-        // Sphere gradient
-        const g = ctx.createRadialGradient(cx - r * 0.32, cy - r * 0.32, r * 0.05, cx, cy, r);
-        g.addColorStop(0, spinDir > 0 ? "rgba(255,180,180,0.9)" : "rgba(150,180,255,0.9)");
-        g.addColorStop(1, spinDir > 0 ? "rgba(220,50,50,0.4)" : "rgba(40,90,220,0.4)");
-        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = g; ctx.fill();
-        ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
-        // Equatorial spin ring (back half, dashed)
-        ctx.save(); ctx.translate(cx, cy);
-        ctx.strokeStyle = col + "66"; ctx.lineWidth = 1.5;
-        ctx.setLineDash([3, 3]);
-        ctx.beginPath(); ctx.ellipse(0, 0, r * 1.05, r * 0.28, 0, 0, Math.PI * 2);
-        ctx.stroke(); ctx.setLineDash([]); ctx.restore();
-        // Spinning dot on ring
-        const dot = { x: cx + r * 1.05 * Math.cos(phase * spinDir), y: cy + r * 0.28 * Math.sin(phase * spinDir) };
-        ctx.beginPath(); ctx.arc(dot.x, dot.y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = col; ctx.fill();
-        // Magnetic moment arrow (μ)
-        const aLen = r * 2.0;
-        const ayEnd = spinDir > 0 ? cy - aLen : cy + aLen;
-        ctx.beginPath(); ctx.moveTo(cx, cy - r * 0.15); ctx.lineTo(cx, ayEnd);
-        ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.stroke();
-        // Arrowhead
-        const hd = spinDir > 0 ? -1 : 1;
-        ctx.beginPath(); ctx.moveTo(cx, ayEnd);
-        ctx.lineTo(cx - 6, ayEnd + hd * 11); ctx.lineTo(cx + 6, ayEnd + hd * 11);
-        ctx.closePath(); ctx.fillStyle = col; ctx.fill();
-        // μ label
-        ctx.fillStyle = col; ctx.font = "italic bold 13px serif"; ctx.textAlign = "left";
-        ctx.fillText("μ", cx + 8, ayEnd + (spinDir > 0 ? 6 : -2));
-        // Deflection arrow
-        const defY = spinDir > 0 ? cy - r * 2.9 : cy + r * 2.9;
-        const defH = 18 * spinDir;
-        ctx.beginPath(); ctx.moveTo(cx, defY + defH * 0.4);
-        ctx.lineTo(cx, defY - defH * 0.4);
-        ctx.strokeStyle = col + "bb"; ctx.lineWidth = 1.5; ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(cx, defY - defH * 0.4);
-        ctx.lineTo(cx - 5, defY + defH * 0.15); ctx.lineTo(cx + 5, defY + defH * 0.15);
-        ctx.closePath(); ctx.fillStyle = col + "bb"; ctx.fill();
-      }
-      function frame() {
-        const w = canvas.width, h = canvas.height;
-        ctx.clearRect(0, 0, w, h);
-        // Background
-        ctx.fillStyle = "#f8fafc"; ctx.fillRect(0, 0, w, h);
-        // Center divider
-        ctx.strokeStyle = "#e2e8f0"; ctx.lineWidth = 1;
-        ctx.setLineDash([5, 4]); ctx.beginPath();
-        ctx.moveTo(w / 2, 12); ctx.lineTo(w / 2, h - 12); ctx.stroke();
-        ctx.setLineDash([]);
-        // B field direction label at top
-        ctx.fillStyle = "#64748b"; ctx.font = "12px Pretendard, sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("B (자기장 방향 ↑)", w / 2, 14);
-        // Draw electrons
-        drawElectron(w * 0.28, h * 0.50, t, +1);
-        drawElectron(w * 0.72, h * 0.50, t, -1);
-        // Panel labels
-        ctx.textAlign = "center";
-        ctx.font = "bold 13px Pretendard, sans-serif";
-        ctx.fillStyle = "#ef4444"; ctx.fillText("스핀 위  ms = +½", w * 0.28, h - 28);
-        ctx.fillStyle = "#3b82f6"; ctx.fillText("스핀 아래  ms = −½", w * 0.72, h - 28);
-        ctx.font = "12px Pretendard, sans-serif";
-        ctx.fillStyle = "#ef444488"; ctx.fillText("▲ 위쪽으로 편향", w * 0.28, h - 12);
-        ctx.fillStyle = "#3b82f688"; ctx.fillText("▼ 아래쪽으로 편향", w * 0.72, h - 12);
-        t += 0.028;
-        spinAnimId = requestAnimationFrame(frame);
-      }
-      frame();
-    }
-
-    function buildSpinOverlayContent() {
-      return `
-        <div id="spinDemoCanvas" style="width:100%;height:220px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:14px;overflow:hidden;"></div>
-        <p style="margin:0 0 8px"><strong>스핀</strong>은 전자의 고유한 양자 성질입니다. 아래 그림은 전자 자체가 도는 모습을 비유적으로 보여 줍니다.</p>
-        <p style="margin:0">자기장 속에서는 자기모멘트 <strong>μ</strong>의 방향에 따라 힘의 방향이 달라집니다. 그래서 <strong>스핀 위</strong>는 위쪽으로, <strong>스핀 아래</strong>는 아래쪽으로 편향됩니다.</p>
-      `;
-    }
-
-    function startSpinDemo() {
-      const container = document.getElementById("spinDemoCanvas");
-      if (!container) return;
-
-      const canvas = document.createElement("canvas");
-      canvas.style.cssText = "width:100%;height:100%;display:block;";
-      container.appendChild(canvas);
-
-      const resize = () => {
-        const rect = container.getBoundingClientRect();
-        canvas.width = Math.max(1, rect.width);
-        canvas.height = Math.max(1, rect.height);
-      };
-      resize();
-
-      const ctx = canvas.getContext("2d");
-      let phase = 0;
-
-      const drawArrow = (x1, y1, x2, y2, color) => {
-        const dx = x2 - x1;
-        const dy = y2 - y1;
-        const len = Math.max(0.001, Math.hypot(dx, dy));
-        const ux = dx / len;
-        const uy = dy / len;
-        ctx.strokeStyle = color;
-        ctx.fillStyle = color;
-        ctx.lineWidth = 2.6;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-
-        const size = 9;
-        ctx.beginPath();
-        ctx.moveTo(x2, y2);
-        ctx.lineTo(x2 - ux * size - uy * 5, y2 - uy * size + ux * 5);
-        ctx.lineTo(x2 - ux * size + uy * 5, y2 - uy * size - ux * 5);
-        ctx.closePath();
-        ctx.fill();
-      };
-
-      const drawElectron = (cx, cy, spinDir, color) => {
-        const r = Math.min(canvas.width * 0.07, 28);
-        const glow = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.35, r * 0.1, cx, cy, r);
-        glow.addColorStop(0, spinDir > 0 ? "rgba(255,196,204,0.95)" : "rgba(201,222,255,0.95)");
-        glow.addColorStop(1, spinDir > 0 ? "rgba(242,169,182,0.48)" : "rgba(174,200,245,0.48)");
-
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = glow;
-        ctx.fill();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.strokeStyle = color + "88";
-        ctx.lineWidth = 1.6;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, r * 1.1, r * 0.32, 0, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-
-        const dotX = cx + Math.cos(phase * spinDir) * r * 1.08;
-        const dotY = cy + Math.sin(phase * spinDir) * r * 0.32;
-        ctx.beginPath();
-        ctx.arc(dotX, dotY, 4.2, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
-
-        const muEndY = spinDir > 0 ? cy - r * 2.0 : cy + r * 2.0;
-        drawArrow(cx, cy, cx, muEndY, color);
-        ctx.fillStyle = color;
-        ctx.font = "italic 700 16px serif";
-        ctx.textAlign = "left";
-        ctx.fillText("μ", cx + 10, spinDir > 0 ? muEndY + 4 : muEndY - 6);
-
-        const deflectEndY = spinDir > 0 ? cy - r * 3.3 : cy + r * 3.3;
-        drawArrow(cx + r * 1.45, cy, cx + r * 1.45, deflectEndY, color);
-      };
-
-      const frame = () => {
-        const w = canvas.width;
-        const h = canvas.height;
-        ctx.clearRect(0, 0, w, h);
-        ctx.fillStyle = "#f8fafc";
-        ctx.fillRect(0, 0, w, h);
-
-        ctx.strokeStyle = "#e2e8f0";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([5, 4]);
-        ctx.beginPath();
-        ctx.moveTo(w / 2, 18);
-        ctx.lineTo(w / 2, h - 18);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        ctx.fillStyle = "#64748b";
-        ctx.font = "12px Pretendard, sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("자기장 B는 아래 방향", w / 2, 18);
-        drawArrow(w / 2, 30, w / 2, 58, "#64748b");
-
-        drawElectron(w * 0.28, h * 0.52, 1, "#e77f93");
-        drawElectron(w * 0.72, h * 0.52, -1, "#5f8fdc");
-
-        ctx.font = "700 13px Pretendard, sans-serif";
-        ctx.fillStyle = "#b84f65";
-        ctx.fillText("스핀 위", w * 0.28, h - 30);
-        ctx.fillStyle = "#406bb5";
-        ctx.fillText("스핀 아래", w * 0.72, h - 30);
-
-        ctx.font = "12px Pretendard, sans-serif";
-        ctx.fillStyle = "#b84f65";
-        ctx.fillText("검출기 위쪽으로 편향", w * 0.28, h - 12);
-        ctx.fillStyle = "#406bb5";
-        ctx.fillText("검출기 아래쪽으로 편향", w * 0.72, h - 12);
-
-        phase += 0.05;
-        spinAnimId = requestAnimationFrame(frame);
-      };
-
-      frame();
     }
 
     function settings() {
@@ -1045,6 +879,9 @@
       ].forEach(([button, mode]) => {
         button.classList.toggle("active", state.mode === mode);
       });
+      // Show only the relevant theory button for the current mode
+      ui.classicalInfoBtn.style.display = state.mode === "quantum"  ? "none" : "";
+      ui.quantumVideoBtn.style.display  = state.mode === "classical" ? "none" : "";
       updateApparatusFromControls();
       updateReadouts();
     }
@@ -1147,6 +984,15 @@
 
     function openInfo(type) {
       stopSpinAnimation();
+      if (type === "classical") {
+        const info = infoContent.classical;
+        ui.overlayTitle.textContent = info.title;
+        ui.overlayBody.innerHTML = info.body;
+        ui.infoOverlay.classList.add("open");
+        ui.infoOverlay.setAttribute("aria-hidden", "false");
+        requestAnimationFrame(drawTheoryDiagrams); // only classicEl exists → draws classical only
+        return;
+      }
       if (type === "spin") {
         ui.overlayTitle.textContent = "전자 스핀 설명";
         ui.overlayBody.innerHTML = buildSpinOverlayContent();
@@ -1161,7 +1007,243 @@
       ui.overlayBody.innerHTML = info.body;
       ui.infoOverlay.classList.add("open");
       ui.infoOverlay.setAttribute("aria-hidden", "false");
-      if (type === "spin") requestAnimationFrame(initSpinAnimation);
+      if (type === "theory") requestAnimationFrame(drawTheoryDiagrams);
+    }
+
+    function drawTheoryDiagrams() {
+      // --- 고전 예측 그림: 각자 다른 자기모멘트를 가진 전자들이 왼→오른쪽으로 이동 ---
+      const classicEl = document.getElementById("theoryClassicalCanvas");
+      if (classicEl) {
+        const cvs = document.createElement("canvas");
+        cvs.style.cssText = "width:100%;height:100%;display:block;";
+        classicEl.appendChild(cvs);
+        const rect = classicEl.getBoundingClientRect();
+        cvs.width = Math.max(1, rect.width);
+        cvs.height = Math.max(1, rect.height);
+        const ctx = cvs.getContext("2d");
+        const w = cvs.width, h = cvs.height;
+        ctx.fillStyle = "#f8fafc";
+        ctx.fillRect(0, 0, w, h);
+
+        const titleH = 22;
+        ctx.fillStyle = "#1e293b";
+        ctx.font = "bold 12px Pretendard, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("고전 예측: 각 전자가 서로 다른 자기모멘트 방향 → 검출기에 연속 띠", w / 2, titleH);
+
+        // 레이아웃 영역
+        const srcX = 36;
+        const detX = w - 28;
+        const drawTop = titleH + 10;
+        const drawBot = h - 20;
+        const drawH = drawBot - drawTop;
+
+        // 전자 7개, 각각 다른 μ 방향, 세로로 분산
+        const electrons = [
+          { muDeg: 80,  color: "#e74c3c" },
+          { muDeg: 50,  color: "#e67e22" },
+          { muDeg: 20,  color: "#f1c40f" },
+          { muDeg: 0,   color: "#27ae60" },
+          { muDeg: -25, color: "#2980b9" },
+          { muDeg: -55, color: "#8e44ad" },
+          { muDeg: -80, color: "#c0392b" },
+        ];
+        const n = electrons.length;
+        // 자기장에 의한 편향: μ의 z성분(=sin(muDeg))에 비례
+        // 검출기 위치는 세로 중앙 ± 편향
+        const deflectScale = drawH * 0.38;
+        const midY = drawTop + drawH / 2;
+
+        const eR = Math.min(w * 0.032, 12);
+        const muLen = eR * 2.4;
+
+        // 소스 심볼
+        ctx.fillStyle = "#475569";
+        ctx.font = "bold 11px Pretendard, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("빔", srcX, drawTop + drawH / 2 - eR * (n / 2) - 8);
+
+        electrons.forEach(({ muDeg, color }, i) => {
+          const cy = drawTop + (drawH / (n + 1)) * (i + 1);
+          const detY = midY - Math.sin(muDeg * Math.PI / 180) * deflectScale;
+
+          // 이동 궤적 (점선, 왼→오른)
+          ctx.beginPath();
+          ctx.moveTo(srcX + eR + 2, cy);
+          ctx.lineTo(detX - 12, detY);
+          ctx.strokeStyle = color + "55";
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([4, 4]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // 전자 원
+          const grd = ctx.createRadialGradient(cy - eR * 0.3, cy - eR * 0.3, eR * 0.05, srcX, cy, eR);
+          grd.addColorStop(0, color + "cc");
+          grd.addColorStop(1, color + "33");
+          ctx.beginPath();
+          ctx.arc(srcX, cy, eR, 0, Math.PI * 2);
+          ctx.fillStyle = grd;
+          ctx.fill();
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.8;
+          ctx.stroke();
+
+          // 자기모멘트 화살표 μ (전자 바깥으로)
+          const rad = muDeg * Math.PI / 180;
+          const ax = srcX + Math.cos(rad) * muLen;
+          const ay = cy  - Math.sin(rad) * muLen;
+          ctx.beginPath();
+          ctx.moveTo(srcX, cy);
+          ctx.lineTo(ax, ay);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2.2;
+          ctx.stroke();
+          // 화살촉
+          const ux = (ax - srcX) / muLen;
+          const uy = (ay - cy)   / muLen;
+          const hs = 7;
+          ctx.beginPath();
+          ctx.moveTo(ax, ay);
+          ctx.lineTo(ax - ux * hs + uy * 4, ay - uy * hs - ux * 4);
+          ctx.lineTo(ax - ux * hs - uy * 4, ay - uy * hs + ux * 4);
+          ctx.closePath();
+          ctx.fillStyle = color;
+          ctx.fill();
+
+          // μ 레이블 (화살표 끝 옆)
+          ctx.fillStyle = color;
+          ctx.font = "italic bold 11px serif";
+          ctx.textAlign = muDeg >= 0 ? "left" : "right";
+          ctx.fillText("μ", ax + (muDeg >= 0 ? 3 : -3), ay + 4);
+
+          // 검출기 도달점 (작은 점)
+          ctx.beginPath();
+          ctx.arc(detX - 12, detY, 4.5, 0, Math.PI * 2);
+          ctx.fillStyle = color;
+          ctx.fill();
+        });
+
+        // 검출기 막대 (연속 띠)
+        const bandTop = midY - deflectScale - 10;
+        const bandBot = midY + deflectScale + 10;
+        const bandW = 10;
+        const bx = detX - 6;
+        const bgrad = ctx.createLinearGradient(bx - bandW / 2, 0, bx + bandW / 2, 0);
+        bgrad.addColorStop(0, "rgba(49,216,255,0.0)");
+        bgrad.addColorStop(0.5, "rgba(49,216,255,0.85)");
+        bgrad.addColorStop(1, "rgba(49,216,255,0.0)");
+        ctx.fillStyle = bgrad;
+        ctx.fillRect(bx - bandW / 2, bandTop, bandW, bandBot - bandTop);
+        ctx.strokeStyle = "#31d8ff";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(bx - bandW / 2, bandTop, bandW, bandBot - bandTop);
+
+        ctx.fillStyle = "#31d8ff";
+        ctx.font = "bold 10px Pretendard, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("연속 띠", bx, drawBot);
+        ctx.fillStyle = "#64748b";
+        ctx.font = "10px Pretendard, sans-serif";
+        ctx.fillText("검출기", bx, drawBot - 12);
+      }
+
+      // --- 양자 실제 그림: 스핀은 위/아래 두 방향만 ---
+      const quantumEl = document.getElementById("theoryQuantumCanvas");
+      if (quantumEl) {
+        const cvs = document.createElement("canvas");
+        cvs.style.cssText = "width:100%;height:100%;display:block;";
+        quantumEl.appendChild(cvs);
+        const rect = quantumEl.getBoundingClientRect();
+        cvs.width = Math.max(1, rect.width);
+        cvs.height = Math.max(1, rect.height);
+        const ctx = cvs.getContext("2d");
+        const w = cvs.width, h = cvs.height;
+        ctx.fillStyle = "#f8fafc";
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.fillStyle = "#1e293b";
+        ctx.font = "bold 13px Pretendard, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("실제 관측: 스핀은 위/아래 두 가지뿐 → 두 점으로 분리", w / 2, 20);
+
+        const pairs = [
+          { dir: +1, color: "#e77f93", label: "스핀 위 ↑", detY: h * 0.28 },
+          { dir: -1, color: "#5f8fdc", label: "스핀 아래 ↓", detY: h * 0.72 }
+        ];
+        const numEl = 5;
+        const spacing = (w - 200) / (numEl - 1);
+        const midY = h * 0.50;
+        const eR = Math.min(w * 0.038, 14);
+
+        pairs.forEach(({ dir, color, label, detY }) => {
+          // 전자들 (모두 같은 방향 화살표)
+          for (let i = 0; i < numEl; i++) {
+            const cx = 40 + i * spacing;
+            const cy = midY;
+            ctx.beginPath();
+            ctx.arc(cx, cy, eR, 0, Math.PI * 2);
+            ctx.fillStyle = color + "44";
+            ctx.fill();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.8;
+            ctx.stroke();
+            // 화살표 (위 or 아래)
+            const aLen = eR * 1.9;
+            const ay = cy - dir * aLen;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx, ay);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2.2;
+            ctx.stroke();
+            const hs = 7;
+            ctx.beginPath();
+            ctx.moveTo(cx, ay);
+            ctx.lineTo(cx - 5, ay + dir * hs);
+            ctx.lineTo(cx + 5, ay + dir * hs);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+          }
+
+          // 궤적 선 → 검출기
+          const lastCx = 40 + (numEl - 1) * spacing;
+          ctx.beginPath();
+          ctx.moveTo(lastCx + eR, midY);
+          ctx.lineTo(w - 50, midY);
+          ctx.lineTo(w - 22, detY);
+          ctx.strokeStyle = color + "88";
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([4, 3]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // 검출점
+          ctx.beginPath();
+          ctx.arc(w - 22, detY, 8, 0, Math.PI * 2);
+          ctx.fillStyle = color;
+          ctx.fill();
+
+          ctx.fillStyle = color;
+          ctx.font = "bold 11px Pretendard, sans-serif";
+          ctx.textAlign = "left";
+          ctx.fillText(label, w - 12, detY + 4);
+        });
+
+        // 검출기 선
+        ctx.beginPath();
+        ctx.moveTo(w - 32, h * 0.15);
+        ctx.lineTo(w - 32, h * 0.85);
+        ctx.strokeStyle = "#94a3b8";
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        ctx.fillStyle = "#64748b";
+        ctx.font = "bold 11px Pretendard, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("검출기", w - 22, h - 8);
+      }
     }
 
     function closeInfo() {
@@ -1189,89 +1271,6 @@
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
-    }
-
-    function createTextSprite(text, options = {}) {
-      const canvas = document.createElement("canvas");
-      canvas.width = 256;
-      canvas.height = 128;
-      const c = canvas.getContext("2d");
-      c.clearRect(0, 0, canvas.width, canvas.height);
-      c.fillStyle = options.bg || "rgba(255,255,255,0.72)";
-      c.strokeStyle = options.border || "rgba(17,34,53,0.16)";
-      c.lineWidth = 4;
-      c.beginPath();
-      c.roundRect(8, 20, 240, 66, 20);
-      c.fill();
-      c.stroke();
-      c.fillStyle = options.color || "#112235";
-      c.font = "700 28px Pretendard, sans-serif";
-      c.textAlign = "center";
-      c.textBaseline = "middle";
-      c.fillText(text, 128, 54);
-      const texture = new THREE.CanvasTexture(canvas);
-      const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
-      const sprite = new THREE.Sprite(material);
-      sprite.scale.set(1.6, 0.8, 1);
-      return sprite;
-    }
-
-    function buildFieldLines() {
-      const group = new THREE.Group();
-      // Curved magnetic field lines from N (top, wedge tip) to S (bottom, flat)
-      // Lines are denser near the N-pole tip center (x=1.18) — non-uniform B field
-      const nY = 0.72;   // N face bottom (tip) y-position
-      const sY = -0.74;  // S face top y-position
-      const cx = 1.18;   // magnet center x in apparatus.root coords
-
-      // [dx from center, z-depth, bow (midpoint x offset), opacity]
-      const configs = [
-        [0.0, 0.0, 0.00, 0.82],
-        [0.42, 0.0, 0.05, 0.68],
-        [-0.42, 0.0, -0.05, 0.68],
-        [0.90, 0.0, 0.13, 0.50],
-        [-0.90, 0.0, -0.13, 0.50],
-        [1.50, 0.0, 0.26, 0.30],
-        [-1.50, 0.0, -0.26, 0.30],
-        [0.0, 0.60, 0.00, 0.55],
-        [0.55, 0.60, 0.07, 0.38],
-        [-0.55, 0.60, -0.07, 0.38],
-        [0.0, -0.60, 0.00, 0.55],
-        [0.55, -0.60, 0.07, 0.38],
-        [-0.55, -0.60, -0.07, 0.38],
-      ];
-
-      configs.forEach(([dx, dz, bow, opacity]) => {
-        const x0 = cx + dx;
-        const xMid = cx + dx + bow;
-        const pts = [
-          new THREE.Vector3(x0, nY, dz),
-          new THREE.Vector3(xMid, (nY + sY) * 0.5, dz),
-          new THREE.Vector3(x0, sY, dz),
-        ];
-        const curve = new THREE.CatmullRomCurve3(pts);
-        const lineGeom = new THREE.BufferGeometry().setFromPoints(curve.getPoints(28));
-        const mat = new THREE.LineBasicMaterial({ color: 0x3d6eea, transparent: true, opacity });
-        group.add(new THREE.Line(lineGeom, mat));
-
-        // Arrowhead at mid-line in z=0 plane to show N→S direction (downward)
-        if (Math.abs(dz) < 0.05) {
-          const pA = curve.getPointAt(0.48);
-          const pB = curve.getPointAt(0.54);
-          const dir = pB.clone().sub(pA).normalize();
-          const up = new THREE.Vector3(0, 1, 0);
-          const cone = new THREE.Mesh(
-            new THREE.ConeGeometry(0.040, 0.14, 8),
-            new THREE.MeshBasicMaterial({ color: 0x2d5cd8, transparent: true, opacity: opacity * 0.95 })
-          );
-          cone.position.copy(pA);
-          cone.quaternion.setFromUnitVectors(up, dir);
-          group.add(cone);
-        }
-      });
-
-      apparatus.fieldGroup = group;
-      apparatus.root.add(group);
     }
 
     function createFaceLabel(text, options = {}) {
@@ -1302,213 +1301,6 @@
           side: THREE.DoubleSide
         })
       );
-    }
-
-    function buildSpinOverlayContent() {
-      return `
-        <div style="display:grid;grid-template-columns:minmax(0,1.45fr) minmax(220px,0.95fr);gap:18px;align-items:stretch;">
-          <div id="spinDemoCanvas" style="width:100%;height:292px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;overflow:hidden;"></div>
-          <div style="border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;padding:16px 16px 14px;display:flex;flex-direction:column;justify-content:center;gap:12px;">
-            <div>
-              <div style="font-size:12px;font-weight:800;color:#64748b;letter-spacing:0.02em;margin-bottom:6px;">핵심 개념</div>
-              <div style="font-size:14px;line-height:1.7;color:#334155;">
-                스핀은 전자가 실제로 빙글빙글 도는 그림이 아니라, <strong style="color:#1e293b;">전자에 고유한 양자 상태</strong>를 나타내는 표현입니다.
-              </div>
-            </div>
-            <div>
-              <div style="font-size:12px;font-weight:800;color:#64748b;letter-spacing:0.02em;margin-bottom:6px;">그림 읽기</div>
-              <div style="font-size:14px;line-height:1.7;color:#334155;">
-                왼쪽은 측정 전 상태를, 오른쪽은 측정 뒤 <strong style="color:#e77f93;">스핀 위</strong>와 <strong style="color:#5f8fdc;">스핀 아래</strong>로 구분되는 모습을 보여줍니다.
-              </div>
-            </div>
-            <div>
-              <div style="font-size:12px;font-weight:800;color:#64748b;letter-spacing:0.02em;margin-bottom:6px;">실험 연결</div>
-              <div style="font-size:14px;line-height:1.7;color:#334155;">
-                슈테른-게를라흐 실험에서는 이 두 상태가 서로 다른 경로로 편향되어 검출기에 분리되어 나타납니다.
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function startSpinDemo() {
-      const container = document.getElementById("spinDemoCanvas");
-      if (!container) return;
-
-      const canvas = document.createElement("canvas");
-      canvas.style.cssText = "width:100%;height:100%;display:block;";
-      container.appendChild(canvas);
-
-      const resize = () => {
-        const rect = container.getBoundingClientRect();
-        canvas.width = Math.max(1, rect.width);
-        canvas.height = Math.max(1, rect.height);
-      };
-      resize();
-
-      const ctx = canvas.getContext("2d");
-      let t = 0;
-
-      function drawArrow(x1, y1, x2, y2, color, alpha = 1, width = 2.4) {
-        const dx = x2 - x1;
-        const dy = y2 - y1;
-        const len = Math.max(0.001, Math.hypot(dx, dy));
-        const ux = dx / len;
-        const uy = dy / len;
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        ctx.strokeStyle = color;
-        ctx.fillStyle = color;
-        ctx.lineWidth = width;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-        const size = 9;
-        ctx.beginPath();
-        ctx.moveTo(x2, y2);
-        ctx.lineTo(x2 - ux * size - uy * 5, y2 - uy * size + ux * 5);
-        ctx.lineTo(x2 - ux * size + uy * 5, y2 - uy * size - ux * 5);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-      }
-
-      function drawElectronBody(cx, cy, radius, tint) {
-        const g = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.32, radius * 0.08, cx, cy, radius);
-        g.addColorStop(0, "rgba(255,255,255,0.96)");
-        g.addColorStop(1, tint);
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-        ctx.fillStyle = g;
-        ctx.fill();
-        ctx.strokeStyle = "rgba(60,92,140,0.32)";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-
-      function drawMeasuredState(cx, cy, spinDir, color, title) {
-        const r = Math.min(canvas.width * 0.055, 22);
-        const bob = Math.sin(t * 1.6 + (spinDir > 0 ? 0 : Math.PI)) * 3;
-        drawElectronBody(cx, cy + bob, r, spinDir > 0 ? "rgba(242,169,182,0.64)" : "rgba(174,200,245,0.64)");
-        const endY = spinDir > 0 ? cy - r * 1.85 + bob : cy + r * 1.85 + bob;
-        drawArrow(cx, cy + bob, cx, endY, color, 0.95, 2.5);
-        ctx.fillStyle = color;
-        ctx.font = "italic bold 14px serif";
-        ctx.textAlign = "left";
-        ctx.fillText("μ", cx + 8, spinDir > 0 ? endY + 4 : endY - 4);
-
-        const sideX = cx + r * 1.7;
-        const deflectY = spinDir > 0 ? cy - r * 2.45 : cy + r * 2.45;
-        drawArrow(sideX, cy + bob, sideX, deflectY + bob, color, 0.5, 1.8);
-
-        ctx.textAlign = "center";
-        ctx.font = "700 13px Pretendard, sans-serif";
-        ctx.fillStyle = color;
-        ctx.fillText(title, cx, cy + r * 2.65);
-      }
-
-      function frame() {
-        const w = canvas.width;
-        const h = canvas.height;
-        const leftCx = w * 0.22;
-        const rightCx = w * 0.72;
-        const cy = h * 0.44;
-        const r = Math.min(w * 0.055, 22);
-        const mix = (Math.sin(t) + 1) / 2;
-        const upAlpha = 0.3 + mix * 0.48;
-        const downAlpha = 0.3 + (1 - mix) * 0.48;
-
-        ctx.clearRect(0, 0, w, h);
-        ctx.fillStyle = "#f8fafc";
-        ctx.fillRect(0, 0, w, h);
-
-        ctx.strokeStyle = "#e2e8f0";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([5, 4]);
-        ctx.beginPath();
-        ctx.moveTo(w * 0.49, 14);
-        ctx.lineTo(w * 0.49, h - 14);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        ctx.fillStyle = "#64748b";
-        ctx.font = "12px Pretendard, sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("측정 전", leftCx, 18);
-        ctx.fillText("측정 후", rightCx, 18);
-
-        drawElectronBody(leftCx, cy, r, "rgba(198,216,241,0.62)");
-        drawArrow(leftCx, cy, leftCx, cy - r * 1.9, "#e77f93", upAlpha, 2.4);
-        drawArrow(leftCx, cy, leftCx, cy + r * 1.9, "#5f8fdc", downAlpha, 2.4);
-        ctx.fillStyle = "#64748b";
-        ctx.font = "12px Pretendard, sans-serif";
-        ctx.fillText("가능한 상태가 겹쳐 보이는 단계", leftCx, h - 22);
-
-        drawMeasuredState(rightCx, cy - 40, 1, "#e77f93", "스핀 위");
-        drawMeasuredState(rightCx, cy + 46, -1, "#5f8fdc", "스핀 아래");
-
-        const bridgeY = cy + Math.sin(t * 1.15) * 4;
-        ctx.strokeStyle = "rgba(99,116,139,0.32)";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(leftCx + r * 1.5, bridgeY);
-        ctx.bezierCurveTo(w * 0.36, bridgeY - 6, w * 0.56, bridgeY - 30, rightCx - r * 1.55, cy - 40);
-        ctx.moveTo(leftCx + r * 1.5, bridgeY);
-        ctx.bezierCurveTo(w * 0.36, bridgeY + 6, w * 0.56, bridgeY + 30, rightCx - r * 1.55, cy + 46);
-        ctx.stroke();
-
-        t += 0.035;
-        spinAnimId = requestAnimationFrame(frame);
-      }
-
-      frame();
-    }
-
-    function rebuildFieldLines() {
-      if (apparatus.fieldGroup) {
-        apparatus.root.remove(apparatus.fieldGroup);
-      }
-      const group = new THREE.Group();
-      const centerX = apparatus.upperMagnet ? apparatus.upperMagnet.position.x : 1.18;
-      const topCenterY = apparatus.upperMagnet ? apparatus.upperMagnet.position.y : 1.78;
-      const bottomCenterY = apparatus.lowerMagnet ? apparatus.lowerMagnet.position.y : -1.78;
-      const xOffsets = [-2.2, 0, 2.2];
-      const zOffsets = [-0.55, 0, 0.55];
-
-      xOffsets.forEach((xOffset) => {
-        zOffsets.forEach((z) => {
-          const absZ = Math.abs(z);
-          const startLocalY = -0.86 + (absZ / 0.92) * 0.72;
-          const start = new THREE.Vector3(centerX + xOffset, topCenterY + startLocalY, z);
-          const end = new THREE.Vector3(centerX + xOffset, bottomCenterY + 0.78, z * 0.16);
-          const normalZ = absZ < 0.03 ? 0 : -Math.sign(z) * 0.66;
-          const control1 = start.clone().add(new THREE.Vector3(0, -0.56, normalZ));
-          const control2 = end.clone().add(new THREE.Vector3(0, 0.58, 0));
-          const curve = new THREE.CubicBezierCurve3(start, control1, control2, end);
-          const lineGeom = new THREE.BufferGeometry().setFromPoints(curve.getPoints(36));
-          const opacity = xOffset === 0 ? 0.82 : 0.54;
-          group.add(new THREE.Line(
-            lineGeom,
-            new THREE.LineBasicMaterial({ color: 0x4678ea, transparent: true, opacity })
-          ));
-
-          const arrowPos = curve.getPointAt(0.6);
-          const arrowNext = curve.getPointAt(0.64);
-          const dir = arrowNext.clone().sub(arrowPos).normalize();
-          const cone = new THREE.Mesh(
-            new THREE.ConeGeometry(0.045, 0.16, 10),
-            new THREE.MeshBasicMaterial({ color: 0x3566d8, transparent: true, opacity: opacity * 0.96 })
-          );
-          cone.position.copy(arrowPos);
-          cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
-          group.add(cone);
-        });
-      });
-
-      apparatus.fieldGroup = group;
-      apparatus.root.add(group);
     }
 
     function createSternGerlachMagnet(isUpper, material) {
@@ -1574,13 +1366,6 @@
       const northMat = new THREE.MeshStandardMaterial({ color: 0xf2a9b6, roughness: 0.44, metalness: 0.18 });
       const southMat = new THREE.MeshStandardMaterial({ color: 0xaec8f5, roughness: 0.44, metalness: 0.18 });
       const slitMat = new THREE.MeshStandardMaterial({ color: 0xf4f7fb, roughness: 0.22, metalness: 0.55 });
-      const cyanMat = new THREE.MeshStandardMaterial({
-        color: 0x5ae4ff,
-        emissive: 0x2cc9f3,
-        emissiveIntensity: 0.7,
-        transparent: true,
-        opacity: 0.72
-      });
 
       const furnace = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, 1.2), bodyMat);
       furnace.position.set(7.2, -0.1, 0);
@@ -1617,58 +1402,7 @@
       apparatus.root.add(screen);
       apparatus.screen = screen;
 
-      const beam = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.07, 0.07, 3.2, 18),
-        cyanMat
-      );
-      beam.rotation.z = Math.PI / 2;
-      beam.position.set(5.7, -0.1, 0);
-      apparatus.root.add(beam);
-      apparatus.beamCore = beam;
-
       apparatus.root.add(apparatus.screenHits);
-
-      const labelFurnace = createTextSprite("원자로");
-      labelFurnace.position.set(7.25, 1.15, 1.05);
-      apparatus.root.add(labelFurnace);
-
-      const labelSlit = createTextSprite("슬릿");
-      labelSlit.scale.set(1.0, 0.58, 1);
-      labelSlit.position.set(5.8, -1.55, 1.0);
-      apparatus.root.add(labelSlit);
-
-      const labelScreen = createTextSprite("검출기");
-      labelScreen.position.set(-7.25, 3.1, 1.0);
-      apparatus.root.add(labelScreen);
-
-      const labelField = createTextSprite("비균일 자기장", { bg: "rgba(235,244,255,0.85)", color: "#2d4da0" });
-      labelField.position.set(1.0, -3.0, 0.9);
-      apparatus.root.add(labelField);
-
-      const labelN = createTextSprite("N극", { bg: "rgba(255,229,236,0.95)", color: "#7a3140" });
-      labelN.scale.set(0.9, 0.62, 1);
-      labelN.position.set(-0.25, 2.55, 1.05);
-      apparatus.root.add(labelN);
-      apparatus.labelN = labelN;
-
-      const labelS = createTextSprite("S극", { bg: "rgba(231,241,255,0.95)", color: "#2e4d82" });
-      labelS.scale.set(0.9, 0.62, 1);
-      labelS.position.set(-0.25, -2.52, 1.05);
-      apparatus.root.add(labelS);
-      apparatus.labelS = labelS;
-
-      buildFieldLines();
-
-      if (apparatus.beamCore) {
-        apparatus.root.remove(apparatus.beamCore);
-        apparatus.beamCore = null;
-      }
-
-      apparatus.root.children.slice().forEach((child) => {
-        if (child.type === "Sprite") {
-          apparatus.root.remove(child);
-        }
-      });
 
       const surfaceLabelFurnace = createFaceLabel("원자로", { width: 1.15, height: 0.38 });
       surfaceLabelFurnace.position.set(0, 0.55, 0.62);
@@ -1685,362 +1419,14 @@
       const surfaceLabelN = createFaceLabel("N극", { width: 0.95, height: 0.36, bg: "rgba(255,229,236,0.95)", color: "#7a3140" });
       surfaceLabelN.position.set(0, 0.18, 1.03);
       upperMagnet.add(surfaceLabelN);
-      apparatus.labelN = surfaceLabelN;
 
       const surfaceLabelS = createFaceLabel("S극", { width: 0.95, height: 0.36, bg: "rgba(231,241,255,0.95)", color: "#2e4d82" });
       surfaceLabelS.position.set(0, 0.1, 1.03);
       lowerMagnet.add(surfaceLabelS);
-      apparatus.labelS = surfaceLabelS;
 
       rebuildFieldLines();
 
       updateApparatusFromControls();
-    }
-
-    function buildSpinOverlayContent() {
-      return `
-        <div id="spinDemoCanvas" style="width:100%;height:248px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:14px;overflow:hidden;"></div>
-        <p style="margin:0 0 8px"><strong>스핀</strong>은 전자의 고유한 양자 성질입니다. 아래 그림은 전자 자체의 회전 방향을 비유적으로 보여 줍니다.</p>
-        <p style="margin:0">자기장 속에서는 자기모멘트 <strong>μ</strong>의 방향에 따라 힘의 방향이 달라집니다. 그래서 <strong>스핀 위</strong>는 위쪽으로, <strong>스핀 아래</strong>는 아래쪽으로 편향됩니다.</p>
-      `;
-    }
-
-    function startSpinDemo() {
-      const container = document.getElementById("spinDemoCanvas");
-      if (!container) return;
-
-      const canvas = document.createElement("canvas");
-      canvas.style.cssText = "width:100%;height:100%;display:block;";
-      container.appendChild(canvas);
-
-      const resize = () => {
-        const rect = container.getBoundingClientRect();
-        canvas.width = Math.max(1, rect.width);
-        canvas.height = Math.max(1, rect.height);
-      };
-      resize();
-
-      const ctx = canvas.getContext("2d");
-      let phase = 0;
-
-      const drawArrow = (x1, y1, x2, y2, color, width = 2.6) => {
-        const dx = x2 - x1;
-        const dy = y2 - y1;
-        const len = Math.max(0.001, Math.hypot(dx, dy));
-        const ux = dx / len;
-        const uy = dy / len;
-        ctx.strokeStyle = color;
-        ctx.fillStyle = color;
-        ctx.lineWidth = width;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-
-        const size = 9;
-        ctx.beginPath();
-        ctx.moveTo(x2, y2);
-        ctx.lineTo(x2 - ux * size - uy * 5, y2 - uy * size + ux * 5);
-        ctx.lineTo(x2 - ux * size + uy * 5, y2 - uy * size - ux * 5);
-        ctx.closePath();
-        ctx.fill();
-      };
-
-      const drawSpinRotation = (cx, cy, r, spinDir, color) => {
-        const start = phase * spinDir;
-        const end = start + Math.PI * 1.28;
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2.4;
-        ctx.beginPath();
-        ctx.arc(0, 0, r * 1.18, start, end, false);
-        ctx.stroke();
-
-        const hx = Math.cos(end) * r * 1.18;
-        const hy = Math.sin(end) * r * 1.18;
-        const tx = -Math.sin(end) * spinDir;
-        const ty = Math.cos(end) * spinDir;
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.moveTo(hx, hy);
-        ctx.lineTo(hx - tx * 10 - Math.cos(end) * 4, hy - ty * 10 - Math.sin(end) * 4);
-        ctx.lineTo(hx - tx * 10 + Math.cos(end) * 4, hy - ty * 10 + Math.sin(end) * 4);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-      };
-
-      const drawElectron = (cx, cy, spinDir, color, labels) => {
-        const r = Math.min(canvas.width * 0.065, 26);
-        const glow = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.35, r * 0.1, cx, cy, r);
-        glow.addColorStop(0, spinDir > 0 ? "rgba(255,196,204,0.95)" : "rgba(201,222,255,0.95)");
-        glow.addColorStop(1, spinDir > 0 ? "rgba(242,169,182,0.52)" : "rgba(174,200,245,0.52)");
-
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = glow;
-        ctx.fill();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        drawSpinRotation(cx, cy, r, spinDir, color);
-
-        const muEndY = spinDir > 0 ? cy - r * 1.95 : cy + r * 1.95;
-        drawArrow(cx, cy, cx, muEndY, color, 2.8);
-        ctx.fillStyle = color;
-        ctx.font = "italic 700 16px serif";
-        ctx.textAlign = "left";
-        ctx.fillText("μ", cx + 10, spinDir > 0 ? muEndY + 4 : muEndY - 6);
-
-        const sideX = cx + r * 2.0;
-        const deflectEndY = spinDir > 0 ? cy - r * 2.55 : cy + r * 2.55;
-        drawArrow(sideX, cy - 2, sideX, deflectEndY, color, 2.2);
-
-        ctx.textAlign = "center";
-        ctx.font = "700 13px Pretendard, sans-serif";
-        ctx.fillStyle = color;
-        ctx.fillText(labels.title, cx, cy + r * 2.55);
-
-        ctx.font = "12px Pretendard, sans-serif";
-        ctx.fillText(labels.subtitle, cx, cy + r * 3.35);
-      };
-
-      const frame = () => {
-        const w = canvas.width;
-        const h = canvas.height;
-        ctx.clearRect(0, 0, w, h);
-        ctx.fillStyle = "#f8fafc";
-        ctx.fillRect(0, 0, w, h);
-
-        ctx.strokeStyle = "#e2e8f0";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([5, 4]);
-        ctx.beginPath();
-        ctx.moveTo(w / 2, 18);
-        ctx.lineTo(w / 2, h - 18);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        ctx.fillStyle = "#64748b";
-        ctx.font = "12px Pretendard, sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("자기장 B는 아래 방향", w / 2, 18);
-        drawArrow(w / 2, 30, w / 2, 58, "#64748b", 2.2);
-
-        drawElectron(w * 0.28, h * 0.43, 1, "#e77f93", {
-          title: "스핀 위",
-          subtitle: "검출기 위쪽으로 편향"
-        });
-        drawElectron(w * 0.72, h * 0.43, -1, "#5f8fdc", {
-          title: "스핀 아래",
-          subtitle: "검출기 아래쪽으로 편향"
-        });
-
-        phase += 0.05;
-        spinAnimId = requestAnimationFrame(frame);
-      };
-
-      frame();
-    }
-
-    function rebuildFieldLines() {
-      if (apparatus.fieldGroup) {
-        apparatus.root.remove(apparatus.fieldGroup);
-      }
-
-      const group = new THREE.Group();
-      const centerX = apparatus.upperMagnet ? apparatus.upperMagnet.position.x : 1.18;
-      const topCenterY = apparatus.upperMagnet ? apparatus.upperMagnet.position.y : 1.78;
-      const bottomCenterY = apparatus.lowerMagnet ? apparatus.lowerMagnet.position.y : -1.78;
-      const xOffsets = [-2.0, 0, 2.0];
-      const zOffsets = [-0.62, -0.34, 0, 0.34, 0.62];
-      const halfFaceWidth = 0.92;
-      const faceRise = 0.72;
-      const normalYZ = new THREE.Vector2(faceRise, halfFaceWidth).normalize();
-
-      xOffsets.forEach((xOffset) => {
-        zOffsets.forEach((z) => {
-          const zRatio = Math.min(1, Math.abs(z) / halfFaceWidth);
-          const startY = topCenterY + (-0.86 + zRatio * faceRise);
-          const start = new THREE.Vector3(centerX + xOffset, startY, z);
-          const end = new THREE.Vector3(centerX + xOffset * 0.18, bottomCenterY + 0.78, z * 0.12);
-
-          const zTowardCenter = Math.abs(z) < 0.001 ? 0 : -Math.sign(z) * normalYZ.y;
-          const normal = new THREE.Vector3(0, -normalYZ.x, zTowardCenter).normalize();
-          const control1 = start.clone().add(normal.clone().multiplyScalar(0.88));
-          const control2 = end.clone().add(new THREE.Vector3(0, 0.7, -z * 0.1));
-
-          const curve = new THREE.CubicBezierCurve3(start, control1, control2, end);
-          const opacity = xOffset === 0 ? 0.82 : 0.5;
-          const lineGeom = new THREE.BufferGeometry().setFromPoints(curve.getPoints(42));
-          group.add(new THREE.Line(
-            lineGeom,
-            new THREE.LineBasicMaterial({ color: 0x4678ea, transparent: true, opacity })
-          ));
-
-          const arrowPos = curve.getPointAt(0.62);
-          const arrowNext = curve.getPointAt(0.66);
-          const dir = arrowNext.clone().sub(arrowPos).normalize();
-          const cone = new THREE.Mesh(
-            new THREE.ConeGeometry(0.045, 0.16, 10),
-            new THREE.MeshBasicMaterial({ color: 0x3566d8, transparent: true, opacity: opacity * 0.96 })
-          );
-          cone.position.copy(arrowPos);
-          cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
-          group.add(cone);
-        });
-      });
-
-      apparatus.fieldGroup = group;
-      apparatus.root.add(group);
-    }
-
-    function buildSpinOverlayContent() {
-      return `
-        <div id="spinDemoCanvas" style="width:100%;height:280px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:14px;overflow:hidden;"></div>
-        <p style="margin:0 0 8px"><strong>스핀</strong>은 전자의 고유한 양자 성질입니다. 아래 그림의 화살표는 전자가 실제로 도는 모습이 아니라 <strong>스핀 상태를 상징적으로</strong> 나타냅니다.</p>
-        <p style="margin:0">측정 전에는 한 축에 대해 결과가 정해지지 않은 상태로 볼 수 있고, 측정하면 <strong>스핀 위</strong> 또는 <strong>스핀 아래</strong>로 구분되어 검출됩니다.</p>
-      `;
-    }
-
-    function startSpinDemo() {
-      const container = document.getElementById("spinDemoCanvas");
-      if (!container) return;
-
-      const canvas = document.createElement("canvas");
-      canvas.style.cssText = "width:100%;height:100%;display:block;";
-      container.appendChild(canvas);
-
-      const resize = () => {
-        const rect = container.getBoundingClientRect();
-        canvas.width = Math.max(1, rect.width);
-        canvas.height = Math.max(1, rect.height);
-      };
-      resize();
-
-      const ctx = canvas.getContext("2d");
-      let t = 0;
-
-      function drawArrow(x1, y1, x2, y2, color, alpha = 1, width = 2.4) {
-        const dx = x2 - x1;
-        const dy = y2 - y1;
-        const len = Math.max(0.001, Math.hypot(dx, dy));
-        const ux = dx / len;
-        const uy = dy / len;
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        ctx.strokeStyle = color;
-        ctx.fillStyle = color;
-        ctx.lineWidth = width;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-        const size = 9;
-        ctx.beginPath();
-        ctx.moveTo(x2, y2);
-        ctx.lineTo(x2 - ux * size - uy * 5, y2 - uy * size + ux * 5);
-        ctx.lineTo(x2 - ux * size + uy * 5, y2 - uy * size - ux * 5);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-      }
-
-      function drawElectronBody(cx, cy, radius, tint) {
-        const g = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.32, radius * 0.08, cx, cy, radius);
-        g.addColorStop(0, "rgba(255,255,255,0.96)");
-        g.addColorStop(1, tint);
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-        ctx.fillStyle = g;
-        ctx.fill();
-        ctx.strokeStyle = "rgba(60,92,140,0.32)";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-
-      function drawMeasuredState(cx, cy, spinDir, color, title, subtitle) {
-        const r = Math.min(canvas.width * 0.06, 24);
-        const bob = Math.sin(t * 1.6 + (spinDir > 0 ? 0 : Math.PI)) * 3;
-        drawElectronBody(cx, cy + bob, r, spinDir > 0 ? "rgba(242,169,182,0.64)" : "rgba(174,200,245,0.64)");
-        const endY = spinDir > 0 ? cy - r * 1.9 + bob : cy + r * 1.9 + bob;
-        drawArrow(cx, cy + bob, cx, endY, color, 0.95, 2.6);
-        ctx.fillStyle = color;
-        ctx.font = "italic bold 14px serif";
-        ctx.textAlign = "left";
-        ctx.fillText("μ", cx + 9, spinDir > 0 ? endY + 4 : endY - 4);
-
-        const sideX = cx + r * 1.65;
-        const deflectY = spinDir > 0 ? cy - r * 2.6 : cy + r * 2.6;
-        drawArrow(sideX, cy + bob, sideX, deflectY + bob, color, 0.55, 1.9);
-
-        ctx.textAlign = "center";
-        ctx.font = "700 14px Pretendard, sans-serif";
-        ctx.fillStyle = color;
-        ctx.fillText(title, cx, cy + r * 2.95);
-        ctx.font = "12px Pretendard, sans-serif";
-        ctx.fillStyle = color + "cc";
-        ctx.fillText(subtitle, cx, cy + r * 3.85);
-      }
-
-      function frame() {
-        const w = canvas.width;
-        const h = canvas.height;
-        const leftCx = w * 0.28;
-        const rightCx = w * 0.72;
-        const cy = h * 0.4;
-        const r = Math.min(w * 0.06, 24);
-        const mix = (Math.sin(t) + 1) / 2;
-        const upAlpha = 0.28 + mix * 0.52;
-        const downAlpha = 0.28 + (1 - mix) * 0.52;
-
-        ctx.clearRect(0, 0, w, h);
-        ctx.fillStyle = "#f8fafc";
-        ctx.fillRect(0, 0, w, h);
-
-        ctx.strokeStyle = "#e2e8f0";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([5, 4]);
-        ctx.beginPath();
-        ctx.moveTo(w / 2, 12);
-        ctx.lineTo(w / 2, h - 12);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        ctx.fillStyle = "#64748b";
-        ctx.font = "12px Pretendard, sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("측정 전", leftCx, 18);
-        ctx.fillText("측정 후", rightCx, 18);
-
-        drawElectronBody(leftCx, cy, r, "rgba(198,216,241,0.62)");
-        drawArrow(leftCx, cy, leftCx, cy - r * 1.9, "#e77f93", upAlpha, 2.5);
-        drawArrow(leftCx, cy, leftCx, cy + r * 1.9, "#5f8fdc", downAlpha, 2.5);
-        ctx.fillStyle = "#64748b";
-        ctx.font = "12px Pretendard, sans-serif";
-        ctx.fillText("한 축에 대해 두 가능성이 공존", leftCx, h - 40);
-        ctx.fillText("화살표는 스핀 상태의 상징", leftCx, h - 22);
-
-        drawMeasuredState(rightCx, cy - 38, 1, "#e77f93", "스핀 위", "검출기 위쪽으로 편향");
-        drawMeasuredState(rightCx, cy + 54, -1, "#5f8fdc", "스핀 아래", "검출기 아래쪽으로 편향");
-
-        const bridgeY = cy + Math.sin(t * 1.2) * 5;
-        ctx.strokeStyle = "rgba(99,116,139,0.32)";
-        ctx.lineWidth = 1.6;
-        ctx.beginPath();
-        ctx.moveTo(leftCx + r * 1.45, bridgeY);
-        ctx.bezierCurveTo(w * 0.44, bridgeY - 8, w * 0.56, bridgeY - 32, rightCx - r * 1.5, cy - 38);
-        ctx.moveTo(leftCx + r * 1.45, bridgeY);
-        ctx.bezierCurveTo(w * 0.44, bridgeY + 8, w * 0.56, bridgeY + 32, rightCx - r * 1.5, cy + 54);
-        ctx.stroke();
-
-        t += 0.035;
-        spinAnimId = requestAnimationFrame(frame);
-      }
-
-      frame();
     }
 
     function rebuildFieldLines() {
@@ -2315,7 +1701,15 @@
 
       ui.resetBtn.addEventListener("click", resetRun);
       ui.spinInfoBtn.addEventListener("click", () => openInfo("spin"));
-      ui.theoryInfoBtn.addEventListener("click", () => openInfo("theory"));
+      ui.classicalInfoBtn.addEventListener("click", () => openInfo("classical"));
+      ui.quantumVideoBtn.addEventListener("click", () => {
+        ui.simFrame.src = "슈테른-게를라흐 전자시점.html?autoplay=1";
+        ui.videoOverlay.classList.add("open");
+      });
+      ui.closeVideoBtn.addEventListener("click", () => {
+        ui.videoOverlay.classList.remove("open");
+        ui.simFrame.src = ""; // stop the simulation
+      });
       ui.closeOverlayBtn.addEventListener("click", closeInfo);
       ui.infoOverlay.addEventListener("click", (event) => {
         if (event.target === ui.infoOverlay) closeInfo();

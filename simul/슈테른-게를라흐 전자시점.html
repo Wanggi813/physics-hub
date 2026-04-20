@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>슈테른-게를라흐 — 전자 시점</title>
+  <style>
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+    :root {
+      --accent: #0088dd;
+      --pink:   #cc2255;
+      --panel:  rgba(255,255,255,0.97);
+      --text:   #1a2a40;
+      --muted:  #5a7090;
+      --border: rgba(0,100,200,0.15);
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html,body { width:100%; height:100%; overflow:hidden; background:#ddeef8;
+      color:var(--text); font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      position:fixed; top:20px; left:20px; width:292px;
+      max-height:calc(100vh - 40px); overflow-y:auto;
+      padding:22px; z-index:25; border-radius:16px;
+      background:var(--panel);
+      border:1px solid var(--border);
+      box-shadow:0 4px 32px rgba(0,80,180,0.10),0 20px 60px rgba(0,0,0,0.08);
+    }
+    .sidebar::-webkit-scrollbar { width:4px; }
+    .sidebar::-webkit-scrollbar-thumb { background:rgba(0,120,220,0.22); border-radius:999px; }
+
+    .chip-row { display:flex; gap:8px; justify-content:center; margin-bottom:12px; }
+    .chip { padding:4px 12px; border-radius:999px; font-size:11px; font-weight:800; }
+    .chip-e { background:rgba(0,136,221,0.10); color:var(--accent); border:1px solid rgba(0,136,221,0.30); }
+    .chip-q { background:rgba(204,34,85,0.10);  color:var(--pink);   border:1px solid rgba(204,34,85,0.28); }
+
+    h1 { font-size:1.1rem; font-weight:800; color:#0d1e33; text-align:center; letter-spacing:-0.4px; margin-bottom:4px; }
+    .hero-sub { font-size:0.82rem; color:var(--muted); text-align:center; line-height:1.5; margin-bottom:18px; }
+    .divider { height:1px; background:rgba(0,0,0,0.07); margin:14px 0; }
+    .sec-title { font-size:0.72rem; font-weight:800; color:var(--accent); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:9px; }
+
+    button { width:100%; border-radius:10px; cursor:pointer; font-size:0.88rem; font-weight:700;
+      transition:all 0.18s; font-family:inherit; padding:10px; border:1px solid transparent; }
+
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:14px; }
+
+    .btn-toggle { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.10); color:var(--muted); }
+    .btn-toggle:hover { background:rgba(0,0,0,0.08); color:var(--text); }
+    .btn-toggle.on-c { background:rgba(0,136,221,0.10); border-color:rgba(0,136,221,0.50); color:var(--accent); box-shadow:0 0 10px rgba(0,136,221,0.15); }
+
+    .btn-fire { background:linear-gradient(135deg,rgba(0,136,221,0.15),rgba(47,104,255,0.12));
+      border-color:rgba(0,136,221,0.55); color:var(--accent); font-size:0.95rem; padding:13px;
+      margin-bottom:8px; box-shadow:0 0 16px rgba(0,136,221,0.10); }
+    .btn-fire:hover { box-shadow:0 0 28px rgba(0,136,221,0.24); background:linear-gradient(135deg,rgba(0,136,221,0.22),rgba(47,104,255,0.18)); }
+    .btn-fire:disabled { opacity:0.35; cursor:not-allowed; box-shadow:none; }
+    .btn-sub { background:rgba(0,0,0,0.03); border-color:rgba(0,0,0,0.09); color:var(--muted); }
+    .btn-sub:hover { color:var(--text); background:rgba(0,0,0,0.07); }
+
+    /* Legend */
+    .legend-box { background:rgba(0,0,0,0.03); border:1px solid rgba(0,0,0,0.08); border-radius:10px; padding:10px 12px; margin-bottom:14px; }
+    .leg-row { display:flex; align-items:center; gap:8px; font-size:12px; margin-bottom:5px; }
+    .leg-row:last-child { margin-bottom:0; }
+    .leg-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+    /* Phase bar */
+    .ph-bar { display:flex; gap:5px; margin:14px 0 10px; }
+    .ph { flex:1; height:3px; border-radius:999px; background:rgba(0,0,0,0.08); transition:background 0.3s,box-shadow 0.3s; }
+    .ph.done   { background:rgba(0,136,221,0.35); }
+    .ph.active { background:var(--accent); box-shadow:0 0 8px rgba(0,136,221,0.5); }
+
+    /* Status */
+    .stat-box { background:rgba(0,0,0,0.03); border:1px solid rgba(0,0,0,0.08); border-radius:12px; padding:12px 14px; }
+    .st-row { display:flex; justify-content:space-between; align-items:center; font-size:12px; margin-bottom:7px; }
+    .st-row:last-child { margin-bottom:0; }
+    .st-lbl { color:var(--muted); }
+    .st-val { font-weight:700; }
+    .c-c { color:var(--accent); } .c-p { color:var(--pink); }
+    .c-g { color:#16a34a; }       .c-y { color:#b45309; }   .c-w { color:#0d1e33; }
+
+    /* Result */
+    .result { border-radius:12px; padding:14px; text-align:center; margin-top:12px; display:none; border:1px solid; }
+    .result.both { border-color:rgba(0,100,200,0.25); background:rgba(0,100,200,0.05); }
+    .result-big { font-size:1.2rem; font-weight:900; margin-bottom:4px; line-height:1.5; }
+    .result-sub { font-size:12px; color:var(--muted); }
+
+    /* Scene & Caption */
+    #scene { position:fixed; inset:0; z-index:1; }
+    .caption { position:fixed; bottom:20px; left:332px; right:20px; z-index:20; pointer-events:none; }
+    .cap-box { background:rgba(255,255,255,0.88); border:1px solid rgba(0,80,180,0.14); border-radius:13px;
+      padding:11px 15px; font-size:12.5px; color:var(--text); line-height:1.65;
+      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+      box-shadow:0 2px 16px rgba(0,60,140,0.08); }
+
+    @media(max-width:768px){
+      .sidebar { top:auto; bottom:0; left:0; width:100%; max-width:none; max-height:50vh; border-radius:20px 20px 0 0; }
+      .caption { left:12px; right:12px; bottom:calc(50vh+12px); }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="chip-row">
+      <span class="chip chip-e">전자 시점</span>
+      <span class="chip chip-q">양자 스핀</span>
+    </div>
+    <h1>슈테른-게를라흐 실험</h1>
+    <p class="hero-sub">전자를 따라가며 보는<br>비균일 자기장 속 스핀 편향</p>
+    <div class="divider"></div>
+
+    <div class="sec-title">발사 전자</div>
+    <div class="legend-box">
+      <div class="leg-row"><div class="leg-dot" style="background:#0099ee"></div><span style="color:#0077cc;font-weight:700">↑ 스핀 위</span><span style="color:var(--muted);margin-left:4px">ms = +½</span></div>
+      <div class="leg-row"><div class="leg-dot" style="background:#dd2255"></div><span style="color:#cc2255;font-weight:700">↓ 스핀 아래</span><span style="color:var(--muted);margin-left:4px">ms = −½</span></div>
+    </div>
+
+    <div class="sec-title">카메라</div>
+    <div class="grid2">
+      <button class="btn-toggle"      id="camOverBtn">전체 보기</button>
+      <button class="btn-toggle on-c" id="camFollowBtn">전자 추적</button>
+    </div>
+
+    <button class="btn-fire" id="fireBtn">▶ 발사</button>
+    <button class="btn-sub"  id="resetBtn">초기화</button>
+
+    <div class="ph-bar">
+      <div class="ph" id="ph0"></div>
+      <div class="ph" id="ph1"></div>
+      <div class="ph" id="ph2"></div>
+      <div class="ph" id="ph3"></div>
+      <div class="ph" id="ph4"></div>
+    </div>
+
+    <div class="stat-box">
+      <div class="st-row"><span class="st-lbl">단계</span>      <span class="st-val c-c" id="stPhase">대기 중</span></div>
+      <div class="st-row"><span class="st-lbl">↑ 편향</span>   <span class="st-val c-c" id="stDeflectUp">—</span></div>
+      <div class="st-row"><span class="st-lbl">↓ 편향</span>   <span class="st-val c-p" id="stDeflectDn">—</span></div>
+      <div class="st-row"><span class="st-lbl">자기력</span>   <span class="st-val c-y" id="stForce">—</span></div>
+    </div>
+
+    <div class="result" id="resultBox">
+      <div class="result-big" id="resultBig"></div>
+      <div class="result-sub" id="resultSub"></div>
+    </div>
+  </aside>
+
+  <div id="scene"></div>
+
+  <div class="caption">
+    <div class="cap-box" id="captionBox">원자로에서 전자가 방출될 준비가 되었습니다. 발사 버튼을 눌러 두 전자를 동시에 쏩니다.</div>
+  </div>
+
+  <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // ── Autoplay / video mode ──
+    const AUTOPLAY = new URLSearchParams(location.search).has('autoplay');
+    if (AUTOPLAY) {
+      document.querySelector('.sidebar').style.display = 'none';
+      // Restyle caption as a subtitle bar
+      const cap = document.querySelector('.caption');
+      cap.style.cssText = 'position:fixed;left:0;right:0;bottom:0;padding:0;pointer-events:none;z-index:20;';
+      const capBox = document.querySelector('.cap-box');
+      capBox.style.cssText = 'background:rgba(0,0,0,0.52);border:none;border-radius:0;padding:9px 24px;font-size:13px;color:#fff;line-height:1.5;text-align:center;backdrop-filter:none;-webkit-backdrop-filter:none;';
+    }
+
+    // ── DOM ──
+    const $ = id => document.getElementById(id);
+    const ui = {
+      scene:        $('scene'),
+      fireBtn:      $('fireBtn'),
+      resetBtn:     $('resetBtn'),
+      camOverBtn:   $('camOverBtn'),
+      camFollowBtn: $('camFollowBtn'),
+      stPhase:      $('stPhase'),
+      stDeflectUp:  $('stDeflectUp'),
+      stDeflectDn:  $('stDeflectDn'),
+      stForce:      $('stForce'),
+      caption:      $('captionBox'),
+      resultBox:    $('resultBox'),
+      resultBig:    $('resultBig'),
+      resultSub:    $('resultSub'),
+      phs:          [0,1,2,3,4].map(i => $('ph'+i)),
+    };
+
+    // ── Renderer ──
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(innerWidth, innerHeight);
+    ui.scene.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xddeef8);
+    scene.fog = new THREE.FogExp2(0xddeef8, 0.010);
+
+    const camera = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.1, 200);
+    camera.position.set(11, 5, 13);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.enabled = false;
+
+    // ── Lights ──
+    scene.add(new THREE.AmbientLight(0xd0e4f8, 2.8));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
+    keyLight.position.set(4, 8, 6);
+    scene.add(keyLight);
+    const rimLight = new THREE.DirectionalLight(0xaaccff, 0.8);
+    rimLight.position.set(-8, 3, -5);
+    scene.add(rimLight);
+
+    // ── Floor grid ──
+    const grid = new THREE.GridHelper(32, 32, 0xb8cce0, 0xccdaec);
+    grid.position.y = -2.85;
+    scene.add(grid);
+
+    // ── Apparatus ──
+    const bodyMat   = new THREE.MeshStandardMaterial({ color:0x2a3a50, roughness:0.5,  metalness:0.70, emissive:0x0a1828, emissiveIntensity:0.3 });
+    const northMat  = new THREE.MeshStandardMaterial({ color:0x5a1825, roughness:0.35, metalness:0.55, emissive:0x8a0030, emissiveIntensity:0.35 });
+    const southMat  = new THREE.MeshStandardMaterial({ color:0x142550, roughness:0.35, metalness:0.55, emissive:0x0030a0, emissiveIntensity:0.28 });
+    const screenMat = new THREE.MeshStandardMaterial({ color:0x182535, roughness:0.25, metalness:0.80, emissive:0x003050, emissiveIntensity:0.4 });
+    const slitMat   = new THREE.MeshStandardMaterial({ color:0x8090b0, roughness:0.2,  metalness:0.85 });
+
+    // Furnace
+    const furnace = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, 1.2), bodyMat);
+    furnace.position.set(7.2, -0.1, 0);
+    scene.add(furnace);
+
+    // Furnace aperture glow
+    const aperture = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.13, 0.13, 0.12, 20),
+      new THREE.MeshBasicMaterial({ color: 0x0099ee })
+    );
+    aperture.rotation.z = Math.PI / 2;
+    aperture.position.set(6.46, -0.1, 0);
+    scene.add(aperture);
+
+    // Slit plates
+    [6.05, 5.55].forEach(x => {
+      [0.56, -0.56].forEach(y => {
+        const s = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.62, 0.92), slitMat);
+        s.position.set(x, y, 0);
+        scene.add(s);
+      });
+    });
+
+    // Magnet shape builder
+    function makeMagnet(isUpper, mat) {
+      const face = new THREE.Shape();
+      if (isUpper) {
+        face.moveTo(-0.92,  0.78); face.lineTo(0.92,  0.78);
+        face.lineTo(0.92, -0.14); face.lineTo(0,    -0.86);
+        face.lineTo(-0.92, -0.14);
+      } else {
+        face.moveTo(-0.92,  0.78); face.lineTo(0.92,  0.78);
+        face.lineTo(0.92, -0.78); face.lineTo(-0.92, -0.78);
+      }
+      face.closePath();
+      const geo = new THREE.ExtrudeGeometry(face, { depth: 7.0, bevelEnabled: false });
+      geo.rotateY(Math.PI / 2);
+      geo.center();
+      return new THREE.Mesh(geo, mat);
+    }
+
+    const upperMag = makeMagnet(true,  northMat);
+    upperMag.position.set(1.18, 1.78, 0);
+    scene.add(upperMag);
+
+    const lowerMag = makeMagnet(false, southMat);
+    lowerMag.position.set(1.18, -1.78, 0);
+    scene.add(lowerMag);
+
+    // Magnet face labels
+    function makeLabelMesh(text, bg, fg) {
+      const cvs = document.createElement('canvas');
+      cvs.width = 256; cvs.height = 96;
+      const c = cvs.getContext('2d');
+      c.fillStyle = bg;
+      c.beginPath(); c.rect(4, 4, 248, 88); c.fill();
+      c.fillStyle = fg;
+      c.font = 'bold 44px sans-serif';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(text, 128, 48);
+      return new THREE.Mesh(
+        new THREE.PlaneGeometry(1.0, 0.38),
+        new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cvs), transparent: true, side: THREE.DoubleSide })
+      );
+    }
+    const nLabel = makeLabelMesh('N극', 'rgba(100,15,40,0.92)', '#ffb0c0');
+    nLabel.position.set(0, 0.22, 3.6);
+    upperMag.add(nLabel);
+
+    const sLabel = makeLabelMesh('S극', 'rgba(15,40,100,0.92)', '#a0c0ff');
+    sLabel.position.set(0, 0.12, 3.6);
+    lowerMag.add(sLabel);
+
+    // Detector screen
+    const screen = new THREE.Mesh(new THREE.BoxGeometry(0.18, 5.5, 3.6), screenMat);
+    screen.position.set(-7.3, 0, 0);
+    scene.add(screen);
+
+    const screenFace = new THREE.Mesh(
+      new THREE.PlaneGeometry(3.6, 5.5),
+      new THREE.MeshBasicMaterial({ color: 0x002840, transparent: true, opacity: 0.55, side: THREE.DoubleSide })
+    );
+    screenFace.rotation.y = Math.PI / 2;
+    screenFace.position.set(-7.19, 0, 0);
+    scene.add(screenFace);
+
+    // ── Magnetic field lines ──
+    const fieldGroup = new THREE.Group();
+    scene.add(fieldGroup);
+
+    const fieldBaseOpacities = [];
+    (function buildFieldLines() {
+      const configs = [
+        [0,    0,    0.80], [0.42,  0,    0.62], [-0.42, 0,    0.62],
+        [0.9,  0,    0.42], [-0.9,  0,    0.42], [0,     0.55, 0.48],
+        [0.5,  0.55, 0.32], [-0.5,  0.55, 0.32], [0,    -0.55, 0.48],
+        [0.5, -0.55, 0.32], [-0.5, -0.55, 0.32],
+      ];
+      configs.forEach(([dx, dz, op]) => {
+        const cx = 1.18 + dx;
+        const pts = [
+          new THREE.Vector3(cx, 0.80, dz),
+          new THREE.Vector3(cx + dx * 0.08, 0, dz),
+          new THREE.Vector3(cx, -0.72, dz),
+        ];
+        const curve = new THREE.CatmullRomCurve3(pts);
+        const geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(26));
+        const mat = new THREE.LineBasicMaterial({ color: 0x2255cc, transparent: true, opacity: op });
+        fieldGroup.add(new THREE.Line(geo, mat));
+        fieldBaseOpacities.push(op);
+
+        if (Math.abs(dz) < 0.05) {
+          const pA = curve.getPointAt(0.46);
+          const pB = curve.getPointAt(0.54);
+          const dir = pB.clone().sub(pA).normalize();
+          const cone = new THREE.Mesh(
+            new THREE.ConeGeometry(0.038, 0.13, 8),
+            new THREE.MeshBasicMaterial({ color: 0x1144bb, transparent: true, opacity: op * 0.9 })
+          );
+          cone.position.copy(pA);
+          cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+          fieldGroup.add(cone);
+        }
+      });
+    })();
+
+    // ── Electron path builder ──
+    // Smooth parabolic arc — deflection spreads evenly across entire path
+    function buildPath(spin) {
+      const d = spin * 0.82;
+      return new THREE.CatmullRomCurve3([
+        new THREE.Vector3( 7.0,  0,            0),
+        new THREE.Vector3( 5.5,  0,            0),  // pre-field: flat
+        new THREE.Vector3( 3.8,  spin * 0.02,  0),  // field entry, barely bending
+        new THREE.Vector3( 2.0,  spin * 0.12,  0),
+        new THREE.Vector3( 0.2,  spin * 0.36,  0),  // centre of field
+        new THREE.Vector3(-1.8,  spin * 0.62,  0),
+        new THREE.Vector3(-3.8,  spin * 0.76,  0),  // field exit, curving flattens
+        new THREE.Vector3(-5.5,  spin * 0.80,  0),
+        new THREE.Vector3(-7.1,  d,            0),  // detector
+      ]);
+    }
+
+    // ── Electron system ──
+    let electrons = []; // [{mesh, trailLine, trailPos, arrow, hit, spin, path}]
+
+    function makeElectron(spin) {
+      const col  = spin > 0 ? 0x0099ee : 0xdd2255;
+      const emit = spin > 0 ? 0x005580 : 0x881030;
+
+      const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.13, 22, 22),
+        new THREE.MeshStandardMaterial({ color: col, emissive: emit, emissiveIntensity: 1.4, roughness: 0.1, metalness: 0.2 })
+      );
+      scene.add(mesh);
+
+      const TRAIL = 80;
+      const trailGeo = new THREE.BufferGeometry();
+      trailGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(TRAIL * 3), 3));
+      const trailLine = new THREE.Line(trailGeo,
+        new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.55 })
+      );
+      scene.add(trailLine);
+
+      // Spin direction arrow — same colour as electron, points up or down
+      const arrowDir = new THREE.Vector3(0, spin, 0);
+      const arrow = new THREE.ArrowHelper(arrowDir, new THREE.Vector3(), 1.30, col, 0.38, 0.22);
+      arrow.visible = false;
+      scene.add(arrow);
+
+      // ── Spin visualisation: horizontal orbit ring + orbiting arrow ──
+      const ORBIT = 0.30; // orbit radius
+
+      // Horizontal ring in xz-plane (rotation.x = π/2 converts from default xy-plane)
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(ORBIT, 0.018, 8, 56),
+        new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.55, depthWrite: false })
+      );
+      ring.rotation.x = Math.PI / 2;
+      scene.add(ring);
+
+      // Arrow (cone) that orbits the ring, pointing in the direction of travel
+      // ConeGeometry points along +Y by default; we rotate it each frame to face the tangent
+      const orbitArrow = new THREE.Mesh(
+        new THREE.ConeGeometry(0.065, 0.20, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      scene.add(orbitArrow);
+
+      return { mesh, trailLine, trailPos: [], arrow, hit: null, spin, path: buildPath(spin),
+               ring, orbitArrow, ORBIT, ringAngle: spin > 0 ? 0 : Math.PI };
+    }
+
+    function spawnBothElectrons() {
+      destroyElectrons();
+      electrons = [makeElectron(+1), makeElectron(-1)];
+    }
+
+    function destroyElectrons() {
+      electrons.forEach(e => {
+        [e.mesh, e.trailLine, e.arrow, e.hit, e.ring, e.orbitArrow].forEach(o => { if (o) scene.remove(o); });
+      });
+      electrons = [];
+    }
+
+    function updateTrail(e, pos) {
+      e.trailPos.unshift(pos.clone());
+      const MAX = 80;
+      if (e.trailPos.length > MAX) e.trailPos.length = MAX;
+      const arr = e.trailLine.geometry.attributes.position.array;
+      for (let i = 0; i < MAX; i++) {
+        const p = e.trailPos[i] || e.trailPos[e.trailPos.length - 1];
+        arr[i * 3] = p.x; arr[i * 3 + 1] = p.y; arr[i * 3 + 2] = p.z;
+      }
+      e.trailLine.geometry.attributes.position.needsUpdate = true;
+      e.trailLine.geometry.setDrawRange(0, e.trailPos.length);
+    }
+
+    // ── Simulation state ──
+    const sim = { camMode: 'follow', running: false, progress: 0, speed: 0.20 };
+    const camLookAt = new THREE.Vector3(0, 0, 0);
+    const OV_POS    = new THREE.Vector3(11, 5, 14);
+    const OV_LOOK   = new THREE.Vector3(0, 0, 0);
+    let   followMid = new THREE.Vector3(0, 0, 0);
+
+    // ── Phases ──
+    const PHASES = [
+      { label:'발사',  pct:[0.00, 0.18], cap:'원자로에서 스핀 위·아래 전자가 동시에 방출됩니다.' },
+      { label:'슬릿',  pct:[0.18, 0.38], cap:'슬릿을 통과해 빔이 정렬됩니다. 두 전자 모두 통과합니다.' },
+      { label:'자기장',pct:[0.38, 0.62], cap:'비균일 자기장 진입 — 스핀에 따라 위·아래 반대 방향으로 힘을 받습니다.' },
+      { label:'편향',  pct:[0.62, 0.86], cap:'스핀 위(↑) → N극 쪽, 스핀 아래(↓) → S극 쪽. 오직 두 갈래.' },
+      { label:'검출',  pct:[0.86, 1.00], cap:'편향된 두 전자가 검출기에 도달합니다!' },
+    ];
+
+    function phaseIdx(t) {
+      for (let i = 0; i < PHASES.length; i++) {
+        if (t >= PHASES[i].pct[0] && t < PHASES[i].pct[1]) return i;
+      }
+      return PHASES.length - 1;
+    }
+
+    function updateUI(t) {
+      const idx = phaseIdx(t);
+      ui.phs.forEach((el, i) => {
+        el.className = 'ph' + (i < idx ? ' done' : i === idx ? ' active' : '');
+      });
+      ui.stPhase.textContent = PHASES[idx].label;
+      ui.caption.textContent = PHASES[idx].cap;
+
+      const inField = t >= 0.38 && t < 0.85;
+      if (inField) {
+        ui.stForce.textContent = '↑ 위 / ↓ 아래 (반대 방향)';
+        ui.stForce.className   = 'st-val c-y';
+      } else {
+        ui.stForce.textContent = '—';
+        ui.stForce.className   = 'st-val c-y';
+      }
+
+      if (t > 0.12 && electrons.length === 2) {
+        const yUp = electrons[0].path.getPointAt(Math.min(1, t)).y;
+        const yDn = electrons[1].path.getPointAt(Math.min(1, t)).y;
+        ui.stDeflectUp.textContent = '+' + (yUp * 22).toFixed(1) + ' mm';
+        ui.stDeflectDn.textContent = (yDn * 22).toFixed(1) + ' mm';
+      } else {
+        ui.stDeflectUp.textContent = '—';
+        ui.stDeflectDn.textContent = '—';
+      }
+    }
+
+    function onArrived() {
+      sim.running = false;
+      electrons.forEach(e => {
+        const ep = e.path.getPointAt(1);
+        // Glowing dot on the detector screen
+        const hit = new THREE.Mesh(
+          new THREE.CircleGeometry(0.16, 24),
+          new THREE.MeshBasicMaterial({ color: e.spin > 0 ? 0x0099ee : 0xdd2255, transparent: true, opacity: 0.95, side: THREE.DoubleSide })
+        );
+        hit.rotation.y = Math.PI / 2;
+        hit.position.set(-7.18, ep.y, ep.z);
+        scene.add(hit);
+        e.hit = hit;
+      });
+
+      ui.resultBox.className     = 'result both';
+      ui.resultBox.style.display = 'block';
+      ui.resultBig.innerHTML     =
+        '<span style="color:#0088dd">↑ 스핀 위</span> &nbsp;·&nbsp; <span style="color:#cc2255">↓ 스핀 아래</span>';
+      ui.resultSub.textContent   = '양자 스핀은 오직 두 값으로만 측정됩니다 (ms = ±½)';
+      ui.caption.textContent     = '두 전자가 검출기의 위·아래에 각각 도달했습니다. 연속 분포가 아닌 딱 두 지점 — 양자 스핀의 이산성입니다.';
+      ui.stPhase.textContent     = '완료';
+      ui.phs.forEach(el => el.className = 'ph done');
+
+      // Autoplay loop: wait then replay
+      if (AUTOPLAY) {
+        setTimeout(() => {
+          destroyElectrons();
+          ui.resultBox.style.display = 'none';
+          ui.caption.textContent = '다시 발사합니다…';
+          setTimeout(() => {
+            sim.progress = 0;
+            sim.running  = true;
+            ui.phs.forEach(el => el.className = 'ph');
+            spawnBothElectrons();
+          }, 900);
+        }, 3200);
+      }
+    }
+
+    // ── Camera update ──
+    function updateCamera(dt) {
+      if (sim.camMode === 'overview') {
+        controls.enabled = true;
+        controls.update();
+        return;
+      }
+      controls.enabled = false;
+
+      if (!sim.running || electrons.length === 0) {
+        camera.position.lerp(OV_POS, dt * 1.8);
+        camLookAt.lerp(OV_LOOK, dt * 2.2);
+        camera.lookAt(camLookAt);
+        return;
+      }
+
+      // Follow midpoint between the two electrons
+      const mid = followMid;
+      const tPos  = new THREE.Vector3(mid.x + 5.0, mid.y + 2.8, mid.z + 3.5);
+      const tLook = new THREE.Vector3(mid.x - 2.0, mid.y,       mid.z);
+      camera.position.lerp(tPos,  Math.min(1, dt * 3.5));
+      camLookAt.lerp(tLook,       Math.min(1, dt * 4.0));
+      camera.lookAt(camLookAt);
+    }
+
+    // ── Animate ──
+    const clock = new THREE.Clock();
+    let t = 0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(0.05, clock.getDelta());
+      t += dt;
+
+      // Pulse field lines
+      fieldGroup.children.forEach((obj, i) => {
+        if (obj.material && obj.material.opacity !== undefined) {
+          const base = fieldBaseOpacities[Math.min(i, fieldBaseOpacities.length - 1)] || 0.5;
+          obj.material.opacity = base * (0.65 + 0.35 * Math.sin(t * 1.6 + i * 0.45));
+        }
+      });
+
+      // Electron animation
+      if (sim.running && electrons.length === 2) {
+        sim.progress = Math.min(1, sim.progress + dt * sim.speed);
+
+        followMid.set(0, 0, 0);
+        electrons.forEach(e => {
+          const pos = e.path.getPointAt(sim.progress);
+          e.mesh.position.copy(pos);
+          updateTrail(e, pos);
+
+          // Spin ring + arrow: horizontal rotation, direction = spin sign
+          // spin +1 → angle increases (counterclockwise from above)
+          // spin -1 → angle decreases (clockwise from above)
+          e.ringAngle += dt * e.spin * 6.0;
+          e.ring.position.copy(pos);
+
+          // Arrow position on horizontal circle
+          const ca = Math.cos(e.ringAngle), sa = Math.sin(e.ringAngle);
+          e.orbitArrow.position.set(
+            pos.x + e.ORBIT * ca,
+            pos.y,
+            pos.z + e.ORBIT * sa
+          );
+
+          // Orient cone to point along the tangent of the orbit.
+          // ConeGeometry tip points along +Y by default.
+          // We rotate Y → tangent so the tip faces the direction of travel.
+          const tx = -Math.sin(e.ringAngle) * e.spin;
+          const tz =  Math.cos(e.ringAngle) * e.spin;
+          e.orbitArrow.quaternion.setFromUnitVectors(
+            new THREE.Vector3(0, 1, 0),
+            new THREE.Vector3(tx, 0, tz)
+          );
+
+          followMid.add(pos);
+
+          const inField = sim.progress >= 0.38;
+          e.arrow.visible = inField;
+          if (inField) {
+            e.arrow.position.copy(pos);
+          }
+        });
+        followMid.multiplyScalar(0.5);
+
+        updateUI(sim.progress);
+        if (sim.progress >= 1) onArrived();
+      }
+
+      updateCamera(dt);
+      renderer.render(scene, camera);
+    }
+
+    // ── UI events ──
+    ui.camOverBtn.addEventListener('click', () => {
+      sim.camMode = 'overview';
+      ui.camOverBtn.className   = 'btn-toggle on-c';
+      ui.camFollowBtn.className = 'btn-toggle';
+    });
+    ui.camFollowBtn.addEventListener('click', () => {
+      sim.camMode = 'follow';
+      ui.camFollowBtn.className = 'btn-toggle on-c';
+      ui.camOverBtn.className   = 'btn-toggle';
+      controls.enabled = false;
+    });
+
+    ui.fireBtn.addEventListener('click', () => {
+      if (sim.running) return;
+      sim.progress = 0;
+      sim.running  = true;
+      ui.resultBox.style.display = 'none';
+      spawnBothElectrons();
+    });
+
+    ui.resetBtn.addEventListener('click', () => {
+      sim.running  = false;
+      sim.progress = 0;
+      destroyElectrons();
+      ui.resultBox.style.display = 'none';
+      ui.caption.textContent     = '원자로에서 전자가 방출될 준비가 되었습니다. 발사 버튼을 눌러 두 전자를 동시에 쏩니다.';
+      ui.stPhase.textContent     = '대기 중';
+      ui.stForce.textContent     = '—'; ui.stForce.className = 'st-val c-y';
+      ui.stDeflectUp.textContent = '—';
+      ui.stDeflectDn.textContent = '—';
+      ui.phs.forEach(el => el.className = 'ph');
+    });
+
+    window.addEventListener('resize', () => {
+      renderer.setSize(innerWidth, innerHeight);
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+    });
+
+    // ── Init ──
+    camera.position.copy(OV_POS);
+    animate();
+
+    if (AUTOPLAY) {
+      // Short delay so the scene renders before firing
+      setTimeout(() => {
+        sim.progress = 0;
+        sim.running  = true;
+        spawnBothElectrons();
+      }, 600);
+    }
+  </script>
+</body>
+</html>
