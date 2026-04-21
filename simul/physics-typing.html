@@ -346,48 +346,50 @@ body.prelaunch main{
 #resultOverlay{
   display:none;position:fixed;inset:0;
   background:#1e293bcc;backdrop-filter:blur(8px);
-  z-index:200;align-items:center;justify-content:center;
+  z-index:200;align-items:flex-start;justify-content:center;
+  overflow-y:auto;padding:16px 0 24px;
 }
 #resultOverlay.show{display:flex;}
 .result-card{
   background:var(--panel);border:2px solid var(--border2);
-  border-radius:24px;padding:44px 52px;
+  border-radius:20px;padding:22px 28px 20px;
   width:540px;max-width:94vw;text-align:center;
   box-shadow:0 20px 60px #2563eb22,0 0 0 1px #ffffff80;
   animation:cardIn 0.4s cubic-bezier(.34,1.56,.64,1);
   position:relative;overflow:hidden;
+  margin:auto;
 }
 .result-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:5px;
+  content:'';position:absolute;top:0;left:0;right:0;height:4px;
   background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));
 }
-@keyframes cardIn{0%{transform:scale(0.8);opacity:0}100%{transform:scale(1);opacity:1}}
-.result-grade{font-size:3.5rem;margin-bottom:6px;animation:gradeIn 0.6s 0.2s both;}
+@keyframes cardIn{0%{transform:scale(0.85);opacity:0}100%{transform:scale(1);opacity:1}}
+.result-grade{font-size:2.4rem;margin-bottom:2px;animation:gradeIn 0.6s 0.2s both;}
 @keyframes gradeIn{0%{transform:scale(0) rotate(-180deg)}100%{transform:scale(1) rotate(0)}}
 .result-title{
-  font-size:1.8rem;font-weight:800;margin-bottom:6px;
+  font-size:1.5rem;font-weight:800;margin-bottom:2px;
   background:linear-gradient(90deg,var(--accent),var(--accent2));
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
 }
-.result-subtitle{font-size:0.88rem;color:var(--muted);margin-bottom:30px;}
+.result-subtitle{font-size:0.82rem;color:var(--muted);margin-bottom:12px;}
 .result-grid{
   display:grid;grid-template-columns:1fr 1fr;
-  gap:14px;margin-bottom:24px;
+  gap:8px;margin-bottom:10px;
 }
 .result-item{
   background:#f8faff;border:1.5px solid var(--border2);
-  border-radius:14px;padding:18px;
+  border-radius:12px;padding:10px 10px 8px;
   transition:transform 0.2s;
 }
 .result-item:hover{transform:translateY(-2px);}
 .result-item .val{
-  font-size:2.2rem;font-weight:800;color:var(--accent);
+  font-size:1.6rem;font-weight:800;color:var(--accent);
   font-variant-numeric:tabular-nums;
 }
-.result-item .lbl{font-size:0.74rem;color:var(--muted);margin-top:4px;font-weight:600;}
+.result-item .lbl{font-size:0.7rem;color:var(--muted);margin-top:2px;font-weight:600;}
 .grade-text{
-  font-size:1rem;font-weight:700;color:var(--text2);
-  margin-bottom:26px;line-height:1.5;
+  font-size:0.88rem;font-weight:700;color:var(--text2);
+  margin-bottom:8px;line-height:1.5;
 }
 .result-btns{display:flex;gap:12px;justify-content:center;}
 
@@ -702,22 +704,22 @@ body.prelaunch main{
 /* ── 결과 점수 하이라이트 ── */
 .result-score-box{
   background:linear-gradient(135deg,#eef2ff,#ede9fe);
-  border:2px solid #c7d2fe;border-radius:16px;
-  padding:16px 24px;margin:4px 0;
-  display:flex;flex-direction:column;align-items:center;gap:4px;
+  border:2px solid #c7d2fe;border-radius:14px;
+  padding:10px 18px;margin:6px 0 4px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
 }
 .result-score-num{
-  font-size:2.6rem;font-weight:900;
+  font-size:2.2rem;font-weight:900;
   background:linear-gradient(135deg,#2563eb,#7c3aed);
   -webkit-background-clip:text;background-clip:text;
   -webkit-text-fill-color:transparent;
   line-height:1.1;
 }
 .result-score-formula{
-  font-size:0.75rem;color:#64748b;font-weight:500;
+  font-size:0.7rem;color:#64748b;font-weight:500;
 }
 .result-save-status{
-  font-size:0.82rem;font-weight:600;padding:6px 14px;
+  font-size:0.78rem;font-weight:600;padding:4px 12px;
   border-radius:8px;text-align:center;
 }
 .result-save-status.saved{background:#dcfce7;color:#166534;}
@@ -727,37 +729,39 @@ body.prelaunch main{
 
 /* ── 리더보드 ── */
 .leaderboard-wrap{
-  width:100%;margin-top:2px;
+  width:100%;margin-top:6px;
   border:2px solid var(--border2);
-  border-radius:14px;overflow:hidden;
+  border-radius:12px;overflow:hidden;
+  max-height:180px;overflow-y:auto;
 }
 .leaderboard-header{
   background:linear-gradient(135deg,#2563eb,#7c3aed);
-  color:#fff;font-weight:700;font-size:0.85rem;
-  padding:9px 16px;display:flex;align-items:center;gap:6px;
+  color:#fff;font-weight:700;font-size:0.8rem;
+  padding:7px 14px;display:flex;align-items:center;gap:6px;
+  position:sticky;top:0;
 }
 .lb-row{
   display:grid;grid-template-columns:28px 1fr auto;
   align-items:center;gap:8px;
-  padding:8px 16px;border-bottom:1px solid var(--border2);
-  font-size:0.82rem;transition:background 0.15s;
+  padding:6px 14px;border-bottom:1px solid var(--border2);
+  font-size:0.78rem;transition:background 0.15s;
 }
 .lb-row:last-child{border-bottom:none;}
 .lb-row:hover{background:#f8faff;}
 .lb-row.me{background:#eef2ff;font-weight:700;}
 .lb-rank{
   font-weight:800;color:var(--muted);text-align:center;
-  font-size:0.78rem;
+  font-size:0.75rem;
 }
 .lb-rank.top1{color:#f59e0b;}
 .lb-rank.top2{color:#94a3b8;}
 .lb-rank.top3{color:#cd7c3e;}
 .lb-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2);}
 .lb-score{font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;}
-.lb-loading{padding:16px;text-align:center;color:var(--muted);font-size:0.82rem;}
+.lb-loading{padding:12px;text-align:center;color:var(--muted);font-size:0.78rem;}
 
 /* result-card 너비 확장 */
-.result-card{width:560px;}
+.result-card{width:540px;}
 
 @media(max-width:640px){
   .stats-bar{grid-template-columns:repeat(2,1fr);}
@@ -765,7 +769,7 @@ body.prelaunch main{
   .typing-panel{padding:18px 16px 80px;}
   .input-wrap{left:16px;right:16px;}
   .line-highlight{left:12px;right:12px;}
-  .result-card{width:94vw;padding:28px 20px;}
+  .result-card{width:94vw;padding:18px 16px;}
 }
 
 /* ── 레벨 배지 (헤더) ── */
@@ -823,30 +827,30 @@ body.prelaunch main{
 
 /* ── 결과 화면: 레벨·뱃지 섹션 ── */
 .result-level-wrap{
-  margin:6px 0;border:1.5px solid var(--border2);
-  border-radius:14px;overflow:hidden;text-align:left;
+  margin:4px 0;border:1.5px solid var(--border2);
+  border-radius:12px;overflow:hidden;text-align:left;
 }
 .result-level-header{
   background:linear-gradient(135deg,#1e1b4b,#312e81);
-  padding:10px 16px;display:flex;align-items:center;gap:10px;
+  padding:8px 14px;display:flex;align-items:center;gap:8px;
 }
-.rl-icon{font-size:1.7rem;line-height:1;}
+.rl-icon{font-size:1.4rem;line-height:1;}
 .rl-info{flex:1;}
-.rl-lv{font-size:0.68rem;color:#a5b4fc;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;}
-.rl-name{font-size:1rem;font-weight:800;color:#fff;}
-.rl-session-gain{font-size:1rem;color:#fde68a;font-weight:900;line-height:1.2;}
-.rl-xp{font-size:0.72rem;color:#c7d2fe;font-weight:600;opacity:0.85;}
-.result-xp-wrap{padding:10px 16px 12px;}
-.xp-bar-label{display:flex;justify-content:space-between;font-size:0.7rem;color:var(--muted);margin-bottom:5px;font-weight:600;}
-.xp-bar-track{height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden;}
+.rl-lv{font-size:0.62rem;color:#a5b4fc;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;}
+.rl-name{font-size:0.9rem;font-weight:800;color:#fff;}
+.rl-session-gain{font-size:0.9rem;color:#fde68a;font-weight:900;line-height:1.2;}
+.rl-xp{font-size:0.66rem;color:#c7d2fe;font-weight:600;opacity:0.85;}
+.result-xp-wrap{padding:7px 14px 8px;}
+.xp-bar-label{display:flex;justify-content:space-between;font-size:0.66rem;color:var(--muted);margin-bottom:4px;font-weight:600;}
+.xp-bar-track{height:6px;background:#e2e8f0;border-radius:999px;overflow:hidden;}
 .xp-bar-fill{height:100%;background:linear-gradient(90deg,#6366f1,#a855f7);border-radius:999px;width:0%;transition:width 0.9s cubic-bezier(.34,1.56,.64,1);}
-.result-badges-section{padding:8px 16px 12px;border-top:1.5px solid var(--border2);}
-.result-badges-title{font-size:0.68rem;color:var(--muted);font-weight:800;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:7px;}
-.result-badges-row{display:flex;gap:6px;flex-wrap:wrap;}
+.result-badges-section{padding:6px 14px 8px;border-top:1.5px solid var(--border2);}
+.result-badges-title{font-size:0.62rem;color:var(--muted);font-weight:800;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:5px;}
+.result-badges-row{display:flex;gap:4px;flex-wrap:wrap;}
 .badge-chip{
-  display:inline-flex;align-items:center;gap:4px;
-  padding:4px 11px;border-radius:999px;
-  font-size:0.76rem;font-weight:700;
+  display:inline-flex;align-items:center;gap:3px;
+  padding:3px 9px;border-radius:999px;
+  font-size:0.7rem;font-weight:700;
   background:#f1f5f9;border:1.5px solid #e2e8f0;color:#64748b;
 }
 .badge-chip.new{
@@ -891,6 +895,32 @@ body.prelaunch main{
 .speedrun-stat{display:flex;flex-direction:column;align-items:center;gap:2px;}
 .speedrun-stat-val{font-size:1.4rem;font-weight:800;color:#1e293b;font-variant-numeric:tabular-nums;}
 .speedrun-stat-lbl{font-size:0.65rem;color:#94a3b8;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+
+/* ── 난이도 선택 버튼 ── */
+.s-diff-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:min(560px,92vw);}
+.s-diff-btn{
+  position:relative;border:none;border-radius:16px;padding:0;
+  cursor:pointer;font-family:inherit;overflow:hidden;
+  transition:transform 0.2s cubic-bezier(0.22,1,0.36,1),box-shadow 0.2s;
+  box-shadow:0 4px 16px rgba(0,0,0,.1);
+}
+.s-diff-btn:nth-child(1){background:linear-gradient(160deg,#d1fae5,#a7f3d0);}
+.s-diff-btn:nth-child(2){background:linear-gradient(160deg,#dbeafe,#bfdbfe);}
+.s-diff-btn:nth-child(3){background:linear-gradient(160deg,#fce7f3,#fbcfe8);}
+.s-diff-btn:hover{transform:translateY(-6px) scale(1.03);}
+.s-diff-btn:nth-child(1):hover{box-shadow:0 16px 36px rgba(52,211,153,.35);}
+.s-diff-btn:nth-child(2):hover{box-shadow:0 16px 36px rgba(37,99,235,.3);}
+.s-diff-btn:nth-child(3):hover{box-shadow:0 16px 36px rgba(236,72,153,.3);}
+.s-diff-body{padding:22px 14px 20px;text-align:center;}
+.s-diff-icon{font-size:40px;line-height:1;margin-bottom:10px;display:block;}
+.s-diff-name{font-size:18px;font-weight:900;margin-bottom:5px;}
+.s-diff-btn:nth-child(1) .s-diff-name{color:#064e3b;}
+.s-diff-btn:nth-child(2) .s-diff-name{color:#1e3a8a;}
+.s-diff-btn:nth-child(3) .s-diff-name{color:#831843;}
+.s-diff-info{font-size:12px;font-weight:700;opacity:.75;}
+.s-diff-btn:nth-child(1) .s-diff-info{color:#065f46;}
+.s-diff-btn:nth-child(2) .s-diff-info{color:#1e40af;}
+.s-diff-btn:nth-child(3) .s-diff-info{color:#9d174d;}
 </style>
 </head>
 <body class="prelaunch">
@@ -909,13 +939,35 @@ body.prelaunch main{
       <div class="s-sub">공식을 맞추고 콤보를 이어 가세요</div>
     </div>
     <div class="s-bottom">
-      <p class="s-desc">물리 개념을 리듬감 있게 타이핑 하면서 속도와 정확도를 끌어올리세요.<br>10 문장을 끝까지 완주해야 최종 점수가 집계됩니다!</p>
+      <p class="s-desc">물리 개념을 리듬감 있게 타이핑하면서 속도와 정확도를 끌어올리세요.<br>콤보를 이어갈수록 보너스 점수가 쌓입니다!</p>
       <div class="s-tags">
-        <span class="s-tag">콤보 점수</span>
+        <span class="s-tag">🔥 콤보 보너스</span>
         <span class="s-tag">물리 개념</span>
         <span class="s-tag">속도 + 정확도</span>
       </div>
-            <button class="s-btn" onclick="startGame()">시작하기</button>
+      <div class="s-diff-grid">
+        <button class="s-diff-btn" onclick="startGame(3)">
+          <div class="s-diff-body">
+            <span class="s-diff-icon">🌱</span>
+            <div class="s-diff-name">쉬움</div>
+            <div class="s-diff-info">3문장</div>
+          </div>
+        </button>
+        <button class="s-diff-btn" onclick="startGame(5)">
+          <div class="s-diff-body">
+            <span class="s-diff-icon">⚡</span>
+            <div class="s-diff-name">보통</div>
+            <div class="s-diff-info">5문장</div>
+          </div>
+        </button>
+        <button class="s-diff-btn" onclick="startGame(10)">
+          <div class="s-diff-body">
+            <span class="s-diff-icon">🔥</span>
+            <div class="s-diff-name">어려움</div>
+            <div class="s-diff-info">10문장</div>
+          </div>
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -1063,7 +1115,7 @@ body.prelaunch main{
     <!-- 점수 박스 -->
     <div class="result-score-box">
       <div class="result-score-num" id="rScore">0</div>
-      <div class="result-score-formula" id="rFormula">정확도×2 + 타수 = 0점</div>
+      <div class="result-score-formula" id="rFormula">정확도×2 + 타수 + 콤보 = 0점</div>
     </div>
 
     <!-- 레벨·뱃지 -->
@@ -1080,7 +1132,7 @@ body.prelaunch main{
       <div id="lbBody"><div class="lb-loading">불러오는 중...</div></div>
     </div>
 
-    <div class="result-btns" style="margin-top:16px;">
+    <div class="result-btns" style="margin-top:10px;">
       <button class="btn btn-secondary" onclick="closeResult()">계속하기</button>
       <button class="btn btn-primary" onclick="resetSession()">🔄 처음부터</button>
     </div>
@@ -1329,7 +1381,7 @@ const SENTENCES = [
   { badge:'🌈 광학', text:'홀로그래피는 레이저 빛의 간섭 무늬를 기록하여 3차원 입체 영상을 재현하는 기술로, 물체에서 반사된 빛과 기준 빛의 간섭 패턴을 필름에 기록하고 레이저를 비추면 입체 영상이 나타난다.' },
 ];
 
-const SESSION_SIZE = 10;
+let SESSION_SIZE = 3;
 
 // ══════════════════════════════════════════
 //  게임 상태
@@ -1346,7 +1398,8 @@ let state = {
 // ══════════════════════════════════════════
 //  초기화
 // ══════════════════════════════════════════
-function startGame(){
+function startGame(n=3){
+  SESSION_SIZE=n;
   const screen=document.getElementById('startScreen');
   window.phaserTypingFX?.startRun();
   document.body.classList.remove('prelaunch');
@@ -1610,7 +1663,12 @@ function formatTime(sec){
 }
 function updateStats(){
   const elapsed=getElapsed();
-  const cpm=elapsed>0?Math.round((state.totalTyped/elapsed)*60):0;
+  // 현재 문장에서 실시간으로 맞게 입력된 글자 수 포함
+  let curCorrect=0;
+  for(let i=0;i<state.typed.length;i++){
+    if(state.typed[i]===state.currentText[i])curCorrect++;
+  }
+  const cpm=elapsed>0?Math.round(((state.totalTyped+curCorrect)/elapsed)*60):0;
   const tot=state.totalTyped+state.totalErrors;
   const acc=tot>0?Math.round((state.totalTyped/tot)*100):100;
 
@@ -1888,7 +1946,8 @@ function showResult(){
   const tot=state.totalTyped+state.totalErrors;
   const acc=tot>0?Math.round((state.totalTyped/tot)*100):100;
   const isScoreEligible=state.completedCount>=SESSION_SIZE;
-  const rawScore=Math.round(acc*2+cpm);
+  const comboBonus=state.maxCombo*15;
+  const rawScore=Math.round(acc*2+cpm+comboBonus);
   const score=isScoreEligible?rawScore:0;
 
   document.getElementById('rCPM').textContent=cpm;
@@ -1898,8 +1957,8 @@ function showResult(){
 
   document.getElementById('rScore').textContent=score.toLocaleString()+'\uC810';
   document.getElementById('rFormula').textContent=isScoreEligible
-    ? `\uC815\uD655\uB3C4 ${acc}% x 2 + \uD0C0\uC218 ${cpm} = ${score.toLocaleString()}\uC810`
-    : '\uBB38\uC7A5 10\uAC1C\uB97C \uBAA8\uB450 \uC644\uB8CC\uD574\uC57C \uC810\uC218\uAC00 \uC9D1\uACC4\uB429\uB2C8\uB2E4';
+    ? `정확도 ${acc}%×2 + 타수 ${cpm} + 콤보 ${comboBonus} = ${score.toLocaleString()}점`
+    : `문장 ${SESSION_SIZE}개를 모두 완료해야 점수가 집계됩니다`;
 
   let grade='B',gradeText='';
   if(acc>=97&&cpm>=450){grade='S';gradeText='\uD6CC\uB96D\uD569\uB2C8\uB2E4! \uC0C1\uC704\uAD8C \uBB3C\uB9AC \uD0C0\uC790 \uAC10\uAC01\uC774\uC5D0\uC694!';}
@@ -1923,7 +1982,7 @@ function showResult(){
   if(!isScoreEligible){
     document.getElementById('resultLevelWrap').innerHTML='';
     saveStatus.className='result-save-status not-logged';
-    saveStatus.textContent='\uBB38\uC7A5 10\uAC1C\uB97C \uBAA8\uB450 \uC644\uB8CC\uD574\uC57C \uC810\uC218\uAC00 \uC9D1\uACC4\uB429\uB2C8\uB2E4';
+    saveStatus.textContent=`문장 ${SESSION_SIZE}개를 모두 완료해야 점수가 집계됩니다`;
     renderLeaderboard([]);
     return;
   }
