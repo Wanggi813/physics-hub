@@ -1133,8 +1133,8 @@ body.prelaunch main{
     </div>
 
     <div class="result-btns" style="margin-top:10px;">
-      <button class="btn btn-secondary" onclick="closeResult()">계속하기</button>
-      <button class="btn btn-primary" onclick="resetSession()">🔄 처음부터</button>
+      <button class="btn btn-secondary" onclick="resetSession()">계속하기</button>
+      <button class="btn btn-primary" onclick="goToStart()">🔄 처음부터</button>
     </div>
   </div>
 </div>
@@ -1577,6 +1577,9 @@ document.getElementById('typingInput').addEventListener('keydown',function(e){
 });
 
 function completeSentence(){
+  const inp=document.getElementById('typingInput');
+  inp.disabled=true;
+
   // 정확 타수 누적 + 마지막 글자 오류 집계 (input에서 미처리)
   let correct=0;
   for(let i=0;i<state.currentText.length;i++){
@@ -1594,7 +1597,6 @@ function completeSentence(){
   updateProgress();
 
   // 성공 이펙트
-  const inp=document.getElementById('typingInput');
   inp.classList.add('has-success');
   const panel=document.getElementById('typingPanel');
   panel.classList.add('panel-success');
@@ -1625,7 +1627,10 @@ function completeSentence(){
       buildDots();
     }
     loadSentence();
-    inp.focus();
+    if(!document.getElementById('resultOverlay').classList.contains('show')){
+      inp.disabled=false;
+      inp.focus();
+    }
   },350);
 }
 
@@ -1718,7 +1723,9 @@ function resetSession(rebuild=true){
   loadSentence();
   closeResult();
   window.phaserTypingFX?.resumeRun();
-  document.getElementById('typingInput').focus();
+  const inp=document.getElementById('typingInput');
+  inp.disabled=false;
+  inp.focus();
 }
 
 // ══════════════════════════════════════════
@@ -1975,6 +1982,7 @@ function showResult(){
       : `${state.completedCount}\uAC1C \uBB38\uC7A5 \uC644\uB8CC - \uC810\uC218 \uBBF8\uC9D1\uACC4`;
 
   document.getElementById('resultOverlay').classList.add('show');
+  document.getElementById('typingInput').disabled=true;
   window.phaserTypingFX?.showResult({acc,cpm,score});
   if(acc>=90)spawnConfetti();
 
@@ -2022,6 +2030,23 @@ window.renderLeaderboard=function renderLeaderboard(rows, myUid){
 
 function closeResult(){
   document.getElementById('resultOverlay').classList.remove('show');
+  window.phaserTypingFX?.resumeRun();
+}
+
+function goToStart(){
+  stopTimer();
+  stopSpeedrun();
+  state.startTime=null;state.typed='';
+  state.totalTyped=0;state.totalErrors=0;
+  state.completedCount=0;state.sessionActive=false;
+  state.combo=0;state.maxCombo=0;
+  updateCombo();
+  document.getElementById('resultOverlay').classList.remove('show');
+  document.getElementById('typingInput').disabled=false;
+  const screen=document.getElementById('startScreen');
+  screen.style.display='';
+  screen.classList.remove('fade-out');
+  document.body.classList.add('prelaunch');
   window.phaserTypingFX?.resumeRun();
 }
 
@@ -2124,6 +2149,8 @@ async function saveScore(score,acc,cpm){
     result.status=savedAny?'partial':'err';
   }else if(savedAny){
     result.status='best';
+  }else{
+    result.status='kept';
   }
 
   return result;
