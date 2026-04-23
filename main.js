@@ -376,7 +376,7 @@ function resetSeedState() {
 
   if (elSeed.prompt) elSeed.prompt.value = "";
   if (elSeed.output) {
-    const mascots = ['양자시물이', '역학시물이', '열시물이', '전기시물이'];
+    const mascots = ['양자시물이', '역학시물이', '열시물이', '전기시물이', '상대시물이'];
     const random = mascots[Math.floor(Math.random() * mascots.length)];
     elSeed.output.innerHTML = `
     <div class="seed-empty-state">
@@ -508,6 +508,7 @@ function getMascotByProject(project) {
   if (category.includes("전자") || category.includes("반도체") || category.includes("전자기")) {
     return "./image/전기시물이.png";
   }
+  if (category.includes("상대")) return "./image/상대시물이.png";
   return "./image/양자시물이.png";
 }
 
@@ -516,7 +517,8 @@ function getIdeaMascotByIndex(index) {
     "./image/역학시물이.png",
     "./image/전기시물이.png",
     "./image/양자시물이.png",
-    "./image/열시물이.png"
+    "./image/열시물이.png",
+    "./image/상대시물이.png"
   ];
   return mascots[index % mascots.length];
 }
@@ -1012,7 +1014,8 @@ function showSeedLoadingUI() {
     "./image/역학시물이.png",
     "./image/전기시물이.png",
     "./image/양자시물이.png",
-    "./image/열시물이.png"
+    "./image/열시물이.png",
+    "./image/상대시물이.png"
   ];
 
   const messages = [
@@ -1744,7 +1747,7 @@ function makeCard(p) {
     '전자기': './image/전기시물이.png',
     '양자': './image/양자시물이.png',
     '현대물리': './image/양자시물이.png',
-    '상대성': './image/양자시물이.png',
+    '상대성': './image/상대시물이.png',
     '광학': './image/양자시물이.png' // 광학은 빛의 성질이므로 양자와 매칭 (혹은 전기로 변경 가능)
   };
 
@@ -1752,7 +1755,8 @@ function makeCard(p) {
     "./image/역학시물이.png",
     "./image/열시물이.png",
     "./image/전기시물이.png",
-    "./image/양자시물이.png"
+    "./image/양자시물이.png",
+    "./image/상대시물이.png"
   ];
 
   if (p.thumb) {
@@ -2031,7 +2035,8 @@ render();
     "./image/역학시물이.png",
     "./image/열시물이.png",
     "./image/전기시물이.png",
-    "./image/양자시물이.png"
+    "./image/양자시물이.png",
+    "./image/상대시물이.png"
   ];
 
   const factEl = document.getElementById('fact-text');
