@@ -83,6 +83,7 @@ class MuligoHallwayAtmosphere {
     rail.lineStyle(1, 0xff6655, 0.24);
     rail.lineBetween(0, 151, this.worldWidth, 151);
 
+    this.ceilingLights = [];
     [360, 820, 1320, 1740, 2180].forEach((x, i) => {
       const lamp = scene.add.graphics().setDepth(4);
       lamp.fillStyle(0x251916, 0.95);
@@ -107,6 +108,8 @@ class MuligoHallwayAtmosphere {
         duration: 860 + i * 110,
         ease: "Sine.easeInOut"
       });
+
+      this.ceilingLights.push({ x, lamp, wash, cone });
     });
   }
 
@@ -266,6 +269,100 @@ class MuligoHallwayAtmosphere {
       alpha: "-=0.08",
       yoyo: true,
       duration: 58
+    });
+  }
+
+  triggerAllClear() {
+    const { scene } = this;
+
+    // 복구 파장: teal 빛이 복도 전체를 좌→우로 쓸고 지나감
+    const wave = scene.add.rectangle(-300, this.worldHeight / 2, 600, this.worldHeight, 0x4acba0, 0)
+      .setDepth(20)
+      .setBlendMode(Phaser.BlendModes.ADD);
+
+    scene.tweens.add({
+      targets: wave,
+      x: this.worldWidth + 300,
+      duration: 1100,
+      ease: 'Cubic.easeInOut',
+      onUpdate: () => {
+        const t = (wave.x + 300) / (this.worldWidth + 600);
+        wave.alpha = Math.sin(t * Math.PI) * 0.28;
+      },
+      onComplete: () => wave.destroy()
+    });
+
+    // 세 문 위치에서 반짝임 폭발
+    [520, 1200, 1880].forEach((dx, doorIdx) => {
+      for (let i = 0; i < 18; i++) {
+        const sparkle = scene.add.circle(
+          dx + Phaser.Math.Between(-100, 100),
+          Phaser.Math.Between(220, 640),
+          Phaser.Math.FloatBetween(1.5, 3.5),
+          Math.random() > 0.5 ? 0x4acba0 : 0x80f5d0,
+          1
+        ).setDepth(16).setBlendMode(Phaser.BlendModes.ADD);
+
+        scene.tweens.add({
+          targets: sparkle,
+          y: sparkle.y - Phaser.Math.Between(110, 370),
+          x: sparkle.x + Phaser.Math.Between(-55, 55),
+          alpha: 0,
+          delay: doorIdx * 140 + Phaser.Math.Between(0, 700),
+          duration: Phaser.Math.Between(900, 2000),
+          ease: 'Sine.easeOut',
+          onComplete: () => sparkle.destroy()
+        });
+      }
+    });
+
+    // 복구 후 전체 복도에 은은한 teal 잔광
+    const clearAmbient = scene.add.rectangle(
+      this.worldWidth / 2, this.worldHeight / 2,
+      this.worldWidth, this.worldHeight,
+      0x4acba0, 0
+    ).setDepth(1).setBlendMode(Phaser.BlendModes.ADD);
+
+    scene.tweens.add({
+      targets: clearAmbient,
+      alpha: 0.045,
+      duration: 1800,
+      delay: 400,
+      ease: 'Sine.easeInOut'
+    });
+
+    // 붉은 비상등 소등: 점멸 중단 후 wash·cone 페이드아웃, 하우징 어둡게
+    (this.ceilingLights || []).forEach(({ lamp, wash, cone }) => {
+      scene.tweens.killTweensOf([lamp, wash, cone]);
+      scene.tweens.add({
+        targets: [wash, cone],
+        alpha: 0,
+        duration: 1100,
+        delay: 200,
+        ease: 'Sine.easeOut'
+      });
+      scene.tweens.add({
+        targets: lamp,
+        alpha: 0.2,
+        duration: 900,
+        delay: 200,
+        ease: 'Sine.easeOut'
+      });
+    });
+
+    // 흰 환경광으로 교체
+    const ceilingRestore = scene.add.rectangle(
+      this.worldWidth / 2, 144,
+      this.worldWidth, 180,
+      0xd0ffe8, 0
+    ).setDepth(3).setBlendMode(Phaser.BlendModes.ADD);
+
+    scene.tweens.add({
+      targets: ceilingRestore,
+      alpha: 0.055,
+      duration: 1400,
+      delay: 700,
+      ease: 'Sine.easeInOut'
     });
   }
 

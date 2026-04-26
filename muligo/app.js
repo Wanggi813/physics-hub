@@ -13,13 +13,68 @@ const openStandalone = document.getElementById("openStandalone");
 const closeMissionButton = document.getElementById("closeMission");
 const statusText = document.getElementById("statusText");
 const statusPip = document.getElementById("statusPip");
+const landingScreen = document.getElementById("landingScreen");
+const enterSchoolButton = document.getElementById("enterSchool");
+const startInvestigationButton = document.getElementById("startInvestigation");
+const storyIntro = document.getElementById("storyIntro");
+const gameRoot = document.getElementById("gameRoot");
 
 const hubController = {
   scene: null,
+  enteredSchool: !landingScreen,
   activeMissionId: null,
   overlayOpen: false,
-  clearedMissions: new Set()
+  clearedMissions: new Set(),
+  allClearTriggered: false,
+  challengeActive: false,
+  missionLevels: {},
+  pendingLevelUp: null,
+  challengeScore: 0
 };
+
+function showStoryIntro() {
+  landingScreen?.classList.add("story-active");
+  storyIntro?.setAttribute("aria-hidden", "false");
+  enterSchoolButton?.setAttribute("aria-hidden", "true");
+  startInvestigationButton?.focus();
+}
+
+function enterSchool() {
+  if (hubController.enteredSchool) return;
+  hubController.enteredSchool = true;
+  document.body.classList.remove("landing-active");
+  gameRoot?.setAttribute("aria-hidden", "false");
+  landingScreen?.classList.add("is-entering");
+  landingScreen?.setAttribute("aria-hidden", "true");
+  hubController.scene?.unlockFromLanding();
+
+  window.setTimeout(() => {
+    landingScreen?.classList.add("hidden");
+  }, 560);
+}
+
+enterSchoolButton?.addEventListener("click", showStoryIntro);
+startInvestigationButton?.addEventListener("click", enterSchool);
+
+(function createLandingParticles() {
+  const container = document.getElementById("landingParticles");
+  if (!container) return;
+  for (let i = 0; i < 32; i++) {
+    const p = document.createElement("span");
+    p.className = "landing-particle";
+    const size = Math.random() * 3 + 1.5;
+    p.style.cssText = [
+      `width:${size}px`,
+      `height:${size}px`,
+      `left:${Math.random() * 100}%`,
+      `bottom:${Math.random() * 30}%`,
+      `--dur:${5 + Math.random() * 9}s`,
+      `--delay:${-Math.random() * 12}s`,
+      `--drift:${(Math.random() - 0.5) * 90}px`,
+    ].join(";");
+    container.appendChild(p);
+  }
+})();
 
 function updateAnomalyStatus() {
   const total = manifest.missions.length;
@@ -55,8 +110,11 @@ function openMission(mission) {
   overlayZone.textContent = mission.zone;
   overlayTitle.textContent = mission.title;
   overlayObjective.textContent = mission.objective;
-  openStandalone.href = mission.source;
-  missionFrame.src = mission.source;
+  const missionSrc = hubController.challengeActive
+    ? `${mission.source}?level=${hubController.missionLevels[mission.id] || 1}`
+    : mission.source;
+  openStandalone.href = missionSrc;
+  missionFrame.src = missionSrc;
   missionOverlay.classList.remove("hidden");
   missionOverlay.setAttribute("aria-hidden", "false");
   hubController.scene?.scene.pause();
@@ -82,11 +140,31 @@ document.addEventListener("keydown", (event) => {
 window.addEventListener("message", (e) => {
   if (e.data?.type === "muligo-mission-cleared") {
     const missionId = e.data.missionId;
-    hubController.clearedMissions.add(missionId);
-    hubController.scene?.markMissionCleared(missionId);
-    updateAnomalyStatus();
+    if (!hubController.challengeActive) {
+      hubController.clearedMissions.add(missionId);
+      hubController.scene?.markMissionCleared(missionId);
+      updateAnomalyStatus();
+    } else {
+      hubController.pendingLevelUp = missionId;
+    }
   }
-  if (e.data?.type === "muligo-close") closeMission();
+  if (e.data?.type === "muligo-challenge-score") {
+    hubController.challengeScore += e.data.score;
+    updateChallengeHUD();
+  }
+  if (e.data?.type === "muligo-close") {
+    closeMission();
+    if (!hubController.challengeActive) {
+      const total = manifest.missions.length;
+      if (hubController.clearedMissions.size >= total && !hubController.allClearTriggered) {
+        hubController.allClearTriggered = true;
+        triggerAllClearSequence();
+      }
+    } else if (hubController.pendingLevelUp) {
+      checkMissionLevelUp(hubController.pendingLevelUp);
+      hubController.pendingLevelUp = null;
+    }
+  }
 });
 
 class HubScene extends Phaser.Scene {
@@ -108,6 +186,7 @@ class HubScene extends Phaser.Scene {
     this.anomalyObjects = new Map();
     this.ledPanels = new Map();
     this.atmosphere = null;
+    this.playerLocked = false;
   }
 
   preload() {
@@ -166,6 +245,7 @@ class HubScene extends Phaser.Scene {
     this.createPlayer();
     this.createControls();
     this.startGlitchEffect();
+    this.playerLocked = !hubController.enteredSchool;
 
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
     this.cameras.main.setZoom(window.innerWidth < 960 ? 0.82 : 1);
@@ -684,7 +764,7 @@ class HubScene extends Phaser.Scene {
     const panel = {
       ...config,
       width: 188,
-      height: 92,
+      height: 100,
       cleared: false,
       graphics: this.add.graphics().setDepth(13),
       title: this.add.text(config.x + 44, config.y + 24, "", {
@@ -699,7 +779,7 @@ class HubScene extends Phaser.Scene {
         color: "#ffb6a0",
         fontStyle: "900"
       }).setOrigin(0, 0.5).setDepth(14),
-      detail: this.add.text(config.x + 18, config.y + 74, "", {
+      detail: this.add.text(config.x + 18, config.y + 82, "", {
         fontFamily: "Pretendard, Malgun Gothic, sans-serif",
         fontSize: "11px",
         color: "#9fd8ff",
@@ -748,7 +828,7 @@ class HubScene extends Phaser.Scene {
     panel.title.setColor(panel.cleared ? "#e8fff1" : "#f5fbff");
     panel.status.setText(panel.cleared ? "안정화 완료" : "⚠ 이상 현상 감지");
     panel.status.setColor(panel.cleared ? "#7cf0aa" : "#ffb6a0");
-    panel.detail.setText(panel.cleared ? "정상 출입 가능" : `${panel.room} · ${panel.field} 미션`);
+    panel.detail.setText(panel.cleared ? "정상 출입 가능" : `${panel.field} 미션`);
     panel.detail.setColor(panel.cleared ? "#a8d8bd" : "#9fd8ff");
   }
 
@@ -771,7 +851,7 @@ class HubScene extends Phaser.Scene {
         panel.graphics.setPosition(0, 0);
         panel.title.setPosition(panel.x + 44, panel.y + 24).clearTint().setAlpha(1);
         panel.status.setPosition(panel.x + 18, panel.y + 58).clearTint().setAlpha(1);
-        panel.detail.setPosition(panel.x + 18, panel.y + 74).clearTint().setAlpha(1);
+        panel.detail.setPosition(panel.x + 18, panel.y + 82).clearTint().setAlpha(1);
       }
     });
   }
@@ -803,6 +883,22 @@ class HubScene extends Phaser.Scene {
   createControls() {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys("W,A,S,D,SPACE,ENTER");
+  }
+
+  unlockFromLanding() {
+    this.playerLocked = false;
+    this.cameras.main.flash(420, 74, 203, 160);
+    if (this.playerGlow) {
+      this.tweens.add({
+        targets: this.playerGlow,
+        alpha: { from: 0.2, to: 0.65 },
+        scaleX: { from: 1, to: 1.7 },
+        scaleY: { from: 1, to: 1.7 },
+        yoyo: true,
+        duration: 360,
+        ease: "Sine.easeInOut"
+      });
+    }
   }
 
   createPortals() {
@@ -944,6 +1040,115 @@ class HubScene extends Phaser.Scene {
       repeat: 2,
       duration: 360
     });
+  }
+
+  enterChallengeMode(missionLevels) {
+    this.portalEntries.forEach(portal => {
+      const lv = missionLevels[portal.mission.id] || 1;
+      this.tweens.killTweensOf([portal.glow, portal.halo, portal.haloInner]);
+      portal.glow.setVisible(true);
+      portal.halo.setVisible(true);
+      portal.haloInner.setVisible(true);
+      this.tweens.add({
+        targets: [portal.halo, portal.haloInner, portal.glow],
+        alpha: { from: 0.35, to: 0.85 },
+        yoyo: true,
+        repeat: -1,
+        duration: 920
+      });
+      portal.pad.clear();
+      portal.pad.fillStyle(0x1a3d6a, 1);
+      portal.pad.fillRoundedRect(portal.x - 42, 238, 84, 26, 6);
+      portal.badgeText.setText(`LV.${lv}`);
+      portal.badgeText.setColor('#ffe080');
+      portal.badgeText.setPosition(portal.x, 251);
+    });
+  }
+
+  updateChallengePortalLevel(missionId, level) {
+    const portal = this.portalEntries.find(p => p.mission.id === missionId);
+    if (!portal) return;
+    if (level >= 5) {
+      portal.badgeText.setText('MAX');
+      portal.badgeText.setColor('#ffd040');
+      portal.pad.clear();
+      portal.pad.fillStyle(0x4a2e00, 1);
+      portal.pad.fillRoundedRect(portal.x - 42, 238, 84, 26, 6);
+      this.tweens.killTweensOf([portal.halo, portal.haloInner, portal.glow]);
+      portal.halo.setFillStyle(0xffd040);
+      portal.haloInner.setFillStyle(0xffd040);
+      portal.glow.setFillStyle(0xffd040);
+      this.tweens.add({
+        targets: [portal.halo, portal.haloInner, portal.glow],
+        alpha: { from: 0.45, to: 1.0 },
+        yoyo: true, repeat: -1, duration: 680
+      });
+    } else {
+      portal.badgeText.setText(`LV.${level}`);
+    }
+  }
+
+  triggerAllMaxEffect() {
+    this.cameras.main.flash(900, 255, 210, 60);
+
+    this.portalEntries.forEach(portal => {
+      for (let i = 0; i < 28; i++) {
+        const spark = this.add.circle(
+          portal.x + Phaser.Math.Between(-70, 70),
+          Phaser.Math.Between(200, 620),
+          Phaser.Math.FloatBetween(1.5, 4),
+          Math.random() > 0.5 ? 0xffd040 : 0xffe880,
+          1
+        ).setDepth(16).setBlendMode(Phaser.BlendModes.ADD);
+
+        this.tweens.add({
+          targets: spark,
+          y: spark.y - Phaser.Math.Between(140, 420),
+          x: spark.x + Phaser.Math.Between(-60, 60),
+          alpha: 0,
+          delay: Phaser.Math.Between(0, 900),
+          duration: Phaser.Math.Between(800, 2200),
+          ease: 'Sine.easeOut',
+          onComplete: () => spark.destroy()
+        });
+      }
+    });
+
+    if (this.playerGlow) {
+      this.tweens.add({
+        targets: this.playerGlow,
+        alpha: { from: 0.2, to: 0.9 },
+        scaleX: { from: 1, to: 3.5 },
+        scaleY: { from: 1, to: 3.5 },
+        yoyo: true, repeat: 4, duration: 280,
+        ease: 'Sine.easeInOut'
+      });
+    }
+  }
+
+  triggerAllClearEffect() {
+    if (this.idleTimer) { this.idleTimer.remove(false); this.idleTimer = null; }
+    this.isIdle = false;
+    this.playerTransforming = false;
+    this.playerLocked = true;
+    this.player.setVelocity(0, 0);
+    this.applyPlayerTexture('simul-present');
+    this.currentSimulTexture = 'simul-present';
+    this.cameras.main.flash(600, 180, 255, 215);
+    this.atmosphere?.triggerAllClear();
+
+    if (this.playerGlow) {
+      this.tweens.add({
+        targets: this.playerGlow,
+        alpha: { from: 0.2, to: 0.65 },
+        scaleX: { from: 1, to: 2.8 },
+        scaleY: { from: 1, to: 2.8 },
+        yoyo: true,
+        repeat: 3,
+        duration: 300,
+        ease: 'Sine.easeInOut'
+      });
+    }
   }
 
   addAnomalyEffects() {
@@ -1739,7 +1944,7 @@ class HubScene extends Phaser.Scene {
   }
 
   update() {
-    if (!this.player || hubController.overlayOpen) {
+    if (!this.player || hubController.overlayOpen || this.playerLocked) {
       if (this.player) this.player.setVelocity(0, 0);
       return;
     }
@@ -1749,7 +1954,7 @@ class HubScene extends Phaser.Scene {
     const up = this.cursors.up.isDown || this.keys.W.isDown;
     const down = this.cursors.down.isDown || this.keys.S.isDown;
 
-    const speed = 220;
+    const speed = 300;
     let vx = 0;
     let vy = 0;
 
@@ -1814,6 +2019,118 @@ class HubScene extends Phaser.Scene {
       openMission(this.activePortal.mission);
     }
   }
+}
+
+function triggerAllClearSequence() {
+  setTimeout(() => {
+    hubController.scene?.triggerAllClearEffect();
+  }, 600);
+
+  setTimeout(() => {
+    showEndingOverlay();
+  }, 3400);
+}
+
+function showEndingOverlay() {
+  const overlay = document.getElementById("endingOverlay");
+  const grid = document.getElementById("endingMissions");
+
+  const fieldColors = {
+    "역학":   { bg: "rgba(255,64,32,0.1)",   border: "rgba(255,64,32,0.38)",   text: "#ff6040" },
+    "파동":   { bg: "rgba(74,174,255,0.1)",  border: "rgba(74,174,255,0.38)",  text: "#4aaeff" },
+    "전자기": { bg: "rgba(48,238,120,0.1)",  border: "rgba(48,238,120,0.38)",  text: "#30ee78" }
+  };
+
+  grid.innerHTML = "";
+  manifest.missions.forEach((mission, i) => {
+    const col = fieldColors[mission.field] ?? {
+      bg: "rgba(80,160,220,0.1)", border: "rgba(80,160,220,0.35)", text: "#4aaddd"
+    };
+    const card = document.createElement("div");
+    card.className = "ending-mission-card";
+    card.style.animationDelay = `${0.5 + i * 0.13}s`;
+    card.innerHTML = `
+      <span class="ending-mission-field" style="background:${col.bg};border:1px solid ${col.border};color:${col.text}">${mission.field}</span>
+      <p class="ending-mission-title">${mission.title}</p>
+      <div class="ending-mission-resolved">해결됨</div>
+    `;
+    grid.appendChild(card);
+  });
+
+  overlay.classList.remove("hidden");
+  overlay.setAttribute("aria-hidden", "false");
+}
+
+document.getElementById("endingClose").addEventListener("click", () => {
+  document.getElementById("endingOverlay").classList.add("hidden");
+  document.getElementById("endingOverlay").setAttribute("aria-hidden", "true");
+  if (hubController.scene) hubController.scene.playerLocked = false;
+  startChallengeMode();
+});
+
+function startChallengeMode() {
+  hubController.challengeActive = true;
+  hubController.challengeScore = 0;
+  hubController.pendingLevelUp = null;
+  hubController.missionLevels = {};
+  manifest.missions.forEach(m => { hubController.missionLevels[m.id] = 1; });
+  document.getElementById("challengeHud").classList.remove("hidden");
+  updateChallengeHUD();
+  hubController.scene?.enterChallengeMode(hubController.missionLevels);
+}
+
+function checkMissionLevelUp(missionId) {
+  const mission = manifest.missions.find(m => m.id === missionId);
+  const currentLv = hubController.missionLevels[missionId] || 1;
+  if (currentLv < 5) {
+    const newLv = currentLv + 1;
+    hubController.missionLevels[missionId] = newLv;
+    hubController.scene?.updateChallengePortalLevel(missionId, newLv);
+    const isNowMax = newLv === 5;
+    showLevelUpToast(isNowMax
+      ? `${mission?.field ?? missionId} · MAX 달성!`
+      : `${mission?.field ?? missionId} · LV.${newLv} 해금`);
+    if (isNowMax) checkAllMax();
+  } else {
+    showLevelUpToast(`${mission?.field ?? missionId} · MAX · +500pts`);
+  }
+  updateChallengeHUD();
+}
+
+function checkAllMax() {
+  const allMax = manifest.missions.every(m => (hubController.missionLevels[m.id] || 1) >= 5);
+  if (!allMax) return;
+  setTimeout(() => {
+    showLevelUpToast('전 구역 MAX 달성!');
+    hubController.scene?.triggerAllMaxEffect();
+  }, 3500);
+}
+
+function updateChallengeHUD() {
+  const scEl = document.getElementById("challengeScoreText");
+  const lvRow = document.getElementById("challengeLevelsRow");
+  if (scEl) scEl.textContent = `${hubController.challengeScore.toLocaleString()} pts`;
+  if (lvRow) {
+    lvRow.innerHTML = manifest.missions.map(m => {
+      const lv = hubController.missionLevels[m.id] || 1;
+      const isMax = lv >= 5;
+      return `<span class="challenge-lv-pill${isMax ? ' is-max' : ''}">${m.field} <b>${isMax ? 'MAX' : `LV.${lv}`}</b></span>`;
+    }).join('');
+  }
+}
+
+function showLevelUpToast(msg) {
+  const toast = document.getElementById("levelUpToast");
+  const text = document.getElementById("levelUpText");
+  if (!toast || !text) return;
+  text.textContent = msg;
+  toast.classList.remove("hidden", "toast-out");
+  toast.classList.add("toast-in");
+  setTimeout(() => {
+    toast.classList.remove("toast-in");
+    toast.classList.add("toast-out");
+    setTimeout(() => toast.classList.add("hidden"), 600);
+  }, 2800);
 }
 
 setHint(null);

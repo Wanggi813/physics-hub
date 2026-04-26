@@ -6,7 +6,45 @@
   <title>물리고등학교 이상현상대응부</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
-<body>
+<body class="landing-active">
+  <section class="landing-screen" id="landingScreen" aria-labelledby="landingTitle">
+    <div class="landing-noise" aria-hidden="true"></div>
+    <div class="landing-scan" aria-hidden="true"></div>
+    <div class="landing-vignette" aria-hidden="true"></div>
+    <div id="landingParticles" aria-hidden="true"></div>
+
+    <div class="landing-layout">
+      <div class="landing-copy">
+        <div class="anomaly-title-wrap">
+          <span class="title-rift title-rift-a" aria-hidden="true"></span>
+          <span class="title-rift title-rift-b" aria-hidden="true"></span>
+          <span class="title-rift title-rift-c" aria-hidden="true"></span>
+          <h1 id="landingTitle" data-text="물리고등학교">물리고등학교</h1>
+        </div>
+      </div>
+
+      <div class="landing-actions">
+        <button class="primary-button landing-enter" id="enterSchool" type="button">입장하기</button>
+      </div>
+
+      <div class="story-intro" id="storyIntro" aria-hidden="true">
+        <span class="story-kicker">⚠ 긴급 기밀 · 이상현상대응부 출동 명령 001</span>
+        <h2>물리 법칙이<br>무너지고 있다</h2>
+        <p>
+          AM 00:12 — 물리고등학교 본관 2층, 세 교실의 물리 법칙이 동시에 붕괴됐다.
+          중력이 역전되고, 파동이 굴절을 멈추고, 전자기장이 방향을 잃었다.
+          원인 불명. 확산 중. 시간이 없다.
+        </p>
+        <p>
+          당신은 현장에 진입 가능한 유일한 요원이다.
+          시물이와 함께 각 교실의 이상현상을 분석하고 물리 법칙을 복원하라.
+          <em>실패하면 학교는 이 시간대에서 사라진다.</em>
+        </p>
+        <button class="primary-button landing-enter" id="startInvestigation" type="button">▶ 현장 투입</button>
+      </div>
+    </div>
+  </section>
+
   <div id="gameRoot" aria-hidden="true"></div>
 
   <div class="ui-layer">
@@ -34,8 +72,17 @@
             <kbd>WASD</kbd><kbd>방향키</kbd><kbd>SPACE</kbd>
           </div>
         </div>
+        <div class="hud-card challenge-hud hidden" id="challengeHud">
+          <span class="hud-label">챌린지</span>
+          <span class="challenge-score-text" id="challengeScoreText">0 pts</span>
+          <div class="challenge-levels-row" id="challengeLevelsRow"></div>
+        </div>
       </div>
     </header>
+
+    <div class="level-up-toast hidden" id="levelUpToast">
+      <span id="levelUpText">LEVEL UP · LV.2</span>
+    </div>
 
     <div class="interaction-hint hidden" id="interactionHint">
       <span class="hint-badge">SPACE</span>
@@ -45,6 +92,19 @@
       </div>
     </div>
   </div>
+
+  <section class="ending-overlay hidden" id="endingOverlay" aria-hidden="true">
+    <div class="ending-panel">
+      <div class="ending-scan"></div>
+      <span class="ending-badge">MISSION COMPLETE</span>
+      <h2 class="ending-title">모든 이상현상<br>안정화 완료</h2>
+      <p class="ending-sub">물리고등학교 이상현상대응부 · 긴급 임무 종료 · 3/3</p>
+      <div class="ending-missions" id="endingMissions"></div>
+      <div class="ending-footer">
+        <button class="primary-button" id="endingClose" type="button">복도로 돌아가기</button>
+      </div>
+    </div>
+  </section>
 
   <section class="mission-overlay hidden" id="missionOverlay" aria-hidden="true">
     <div class="mission-window">
