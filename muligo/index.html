@@ -1,0 +1,73 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>물리고등학교 이상현상대응부</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="gameRoot" aria-hidden="true"></div>
+
+  <div class="ui-layer">
+    <header class="topbar">
+      <div class="topbar-brand">
+        <div class="brand-eyebrow">
+          <span class="eyebrow-pip"></span>
+          <p class="eyebrow">물리고등학교 이상현상대응부</p>
+        </div>
+        <h1>물리고</h1>
+        <div class="brand-status">
+          <span class="status-pip" id="statusPip"></span>
+          <span class="status-text" id="statusText">ALERT &middot; 이상 현상 3개 활성 중</span>
+        </div>
+      </div>
+
+      <div class="topbar-hud">
+        <div class="hud-card">
+          <span class="hud-label">현재 구역</span>
+          <strong id="zoneLabel">물리고등학교 본관 복도</strong>
+        </div>
+        <div class="hud-card">
+          <span class="hud-label">조작</span>
+          <div class="hud-keys">
+            <kbd>WASD</kbd><kbd>방향키</kbd><kbd>SPACE</kbd>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="interaction-hint hidden" id="interactionHint">
+      <span class="hint-badge">SPACE</span>
+      <div>
+        <strong id="hintTitle">미션 입장</strong>
+        <p id="hintBody">가까운 미션 구역에 접속합니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <section class="mission-overlay hidden" id="missionOverlay" aria-hidden="true">
+    <div class="mission-window">
+      <div class="mission-window-head">
+        <div>
+          <p class="eyebrow" id="overlayZone">1구역 / 역학</p>
+          <h2 id="overlayTitle">미션</h2>
+          <p class="overlay-copy" id="overlayObjective"></p>
+        </div>
+        <div class="overlay-actions">
+          <a class="ghost-button" id="openStandalone" href="#" target="_blank" rel="noreferrer">새 창으로 열기</a>
+          <button class="primary-button" id="closeMission" type="button">교실로 돌아가기</button>
+        </div>
+      </div>
+      <div class="mission-frame-wrap">
+        <iframe id="missionFrame" title="물리고 미션 프레임"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+  <script src="./mission-manifest.js"></script>
+  <script src="./hallway-atmosphere.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
