@@ -355,6 +355,29 @@ body.landing-active .ui-layer {
   animation: landingTitleGlitch 5.6s steps(1, end) infinite;
 }
 
+.landing-subtitle {
+  margin: 14px 0 0;
+  font-size: clamp(1.1rem, 2.4vw, 1.7rem);
+  font-weight: 900;
+  letter-spacing: 0.55em;
+  text-indent: 0.55em;
+  color: #c8eeff;
+  text-shadow:
+    0 0 8px rgba(99, 220, 255, 0.9),
+    0 0 24px rgba(99, 220, 255, 0.45);
+  animation: subtitleFlicker 6s ease-in-out infinite;
+}
+
+@keyframes subtitleFlicker {
+  0%, 100% { opacity: 1; }
+  48%       { opacity: 1; }
+  50%       { opacity: 0.6; }
+  52%       { opacity: 1; }
+  78%       { opacity: 1; }
+  79%       { opacity: 0.4; }
+  80%       { opacity: 1; }
+}
+
 .landing-copy h1::before,
 .landing-copy h1::after {
   content: attr(data-text);
