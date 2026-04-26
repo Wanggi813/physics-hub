@@ -77,6 +77,7 @@
 // ===== 프로젝트 카드 렌더링 (기존 유지) =====
 const projects = [
   // ===== ALL =====
+  { title: "물리고 이상현상댕응부", category: "게임", desc: "제작 중", tags: ["물리 방탈출", "물리학"], emoji: "❤️", demo: "./muligo/index.html", curriculumId: "ALL", thumb: "./thumb_nail/물리고.png" },
   { title: "물리량 단위 짝맞추기", category: "게임", desc: "물리량 이름과 SI 단위 카드를 뒤집어 짝을 맞춰보세요!", tags: ["물리", "SI단위", "단위", "카드게임", "짝맞추기"], emoji: "🃏", demo: "./simul/물리량 단위 짝맞추기.html", curriculumId: "ALL", thumb: "./thumb_nail/물리량 단위 짝맞추기.png" },
   { title: "물리 공식 맞추기", category: "게임", desc: "떨어지는 물리 공식을 맞추자!", tags: ["물리", "공식"], emoji: "❤️", demo: "./simul/물리 공식 맞추기.html", curriculumId: "ALL", thumb: "./thumb_nail/물리 공식 맞추기.png" },
   { title: "물리 퀴즈 도전!", category: "게임", desc: "물리 퀴즈를 맞추자!", tags: ["물리", "문제", "시뮬레이션"], emoji: "❤️", demo: "./simul/물리 퀴즈.html", curriculumId: "ALL", thumb: "./thumb_nail/물리 퀴즈.png" },
