@@ -24,12 +24,27 @@ const hubController = {
   enteredSchool: !landingScreen,
   activeMissionId: null,
   overlayOpen: false,
-  clearedMissions: new Set(),
+  activeAnomalyScene: false,
+  clearedMissions: new Set(),   // 전자칠판 시뮬레이션 완료
+  anomalySolved: new Set(),     // 실제 이상현상 해결 완료
   allClearTriggered: false,
   challengeActive: false,
+  anomalyMode: true,            // 게임 시작부터 이상현상 모드
   missionLevels: {},
   pendingLevelUp: null,
   challengeScore: 0
+};
+
+// 이상현상 해결 시 호출 — 전자칠판 잠금 해제
+hubController.anomalyCleared = function(missionId) {
+  hubController.activeAnomalyScene = false;
+  interactionHint.classList.add("hidden");
+  hubController.anomalySolved.add(missionId);
+  hubController.scene?.markAnomalySolved(missionId);
+  updateAnomalyStatus();
+  if (hubController.anomalySolved.size >= manifest.missions.length) {
+    setTimeout(() => showLevelUpToast('모든 이상현상 해결! 전자칠판으로 연구를 시작해봐.'), 600);
+  }
 };
 
 function showStoryIntro() {
@@ -78,7 +93,7 @@ startInvestigationButton?.addEventListener("click", enterSchool);
 
 function updateAnomalyStatus() {
   const total = manifest.missions.length;
-  const remaining = Math.max(0, total - hubController.clearedMissions.size);
+  const remaining = Math.max(0, total - hubController.anomalySolved.size);
 
   if (remaining === 0) {
     statusText.textContent = "CLEAR · 모든 이상 현상 안정화 완료";
@@ -93,20 +108,36 @@ function updateAnomalyStatus() {
 }
 
 function setHint(mission) {
+  if (hubController.overlayOpen || hubController.activeAnomalyScene) {
+    interactionHint.classList.add("hidden");
+    return;
+  }
   if (!mission) {
     interactionHint.classList.add("hidden");
     zoneLabel.textContent = "물리고등학교 본관 복도";
     return;
   }
 
+  const solved  = hubController.anomalySolved.has(mission.id);
+  const cleared = hubController.clearedMissions.has(mission.id);
   interactionHint.classList.remove("hidden");
-  hintTitle.textContent = `${mission.title} 입장`;
-  hintBody.textContent = `${mission.zone} · Space를 눌러 미션에 진입하세요`;
+
+  if (cleared) {
+    hintTitle.textContent = `${mission.title} · 완료`;
+    hintBody.textContent  = `${mission.zone} · 시뮬레이션 완료`;
+  } else if (solved) {
+    hintTitle.textContent = `${mission.title} · 전자칠판`;
+    hintBody.textContent  = `${mission.zone} · 전자칠판 시뮬레이션을 시작합니다`;
+  } else {
+    hintTitle.textContent = `${mission.title} · 이상현상 진입`;
+    hintBody.textContent  = `${mission.zone} · 이상현상 현장에 진입합니다`;
+  }
   zoneLabel.textContent = mission.zone;
 }
 function openMission(mission) {
   hubController.scene?.setSimulPresenting(true);
   hubController.overlayOpen = true;
+  interactionHint.classList.add("hidden");
   overlayZone.textContent = mission.zone;
   overlayTitle.textContent = mission.title;
   overlayObjective.textContent = mission.objective;
@@ -127,6 +158,7 @@ function closeMission() {
   missionFrame.src = "about:blank";
   hubController.scene?.scene.resume();
   hubController.scene?.setSimulPresenting(false);
+  setHint(hubController.scene?.activePortal?.mission || null);
 }
 
 closeMissionButton.addEventListener("click", closeMission);
@@ -1002,6 +1034,47 @@ class HubScene extends Phaser.Scene {
     });
   }
 
+  // 이상현상 해결 → 전자칠판 잠금 해제 (포털을 황금색으로 변경)
+  markAnomalySolved(missionId) {
+    const portal = this.portalEntries.find(e => e.mission.id === missionId);
+    if (!portal || portal.anomalySolved) return;
+    portal.anomalySolved = true;
+
+    // 이상현상 이펙트 제거
+    const anomalyObjs = this.anomalyObjects.get(missionId) || [];
+    anomalyObjs.forEach(obj => obj?.destroy?.());
+    this.anomalyObjects.delete(missionId);
+    this.atmosphere?.markCleared(missionId);
+
+    // 포털 → 전자칠판 활성 상태 (황금색)
+    this.tweens.killTweensOf([portal.glow, portal.halo, portal.haloInner, portal.pad]);
+    portal.glow.setFillStyle(0xffd040, 1).setVisible(true);
+    portal.halo.setFillStyle(0xffd040, 0.1).setVisible(true);
+    portal.haloInner.setFillStyle(0xffd040, 0.18).setVisible(true);
+    this.tweens.add({
+      targets: [portal.glow, portal.halo, portal.haloInner],
+      alpha: { from: 0.3, to: 0.75 }, yoyo: true, repeat: -1, duration: 950
+    });
+    portal.pad.clear();
+    portal.pad.fillStyle(0x3a2e00, 1);
+    portal.pad.fillRoundedRect(portal.x - 52, 238, 104, 28, 6);
+    portal.badgeText.setText('전자칠판 활성');
+    portal.badgeText.setColor('#ffe060');
+    portal.badgeText.setPosition(portal.x, 251);
+
+    // LED 패널 업데이트
+    const led = this.ledPanels.get(missionId);
+    if (led) {
+      led.status.setText('이상현상 해결 · 전자칠판 활성화');
+      led.status.setColor('#ffd060');
+      led.detail.setText('시뮬레이션 시작 가능');
+      led.detail.setColor('#ffee90');
+    }
+
+    // 카메라 플래시
+    this.cameras.main.flash(500, 255, 210, 60);
+  }
+
   markMissionCleared(missionId) {
     const portal = this.portalEntries.find((entry) => entry.mission.id === missionId);
     if (!portal || portal.cleared) return;
@@ -1124,6 +1197,44 @@ class HubScene extends Phaser.Scene {
         ease: 'Sine.easeInOut'
       });
     }
+  }
+
+  launchAnomalyScene(mission) {
+    const sceneMap = {
+      'orbit-raise':                 'GravityScene',
+      'lens-refraction':             'LightScene',
+      'electromagnetic-induction':   'EMScene'
+    };
+    const sceneName = sceneMap[mission.id];
+    if (!sceneName) return;
+    hubController.activeAnomalyScene = true;
+    interactionHint.classList.add("hidden");
+    this.scene.launch(sceneName);
+    this.scene.pause();
+  }
+
+  triggerBarrierBreakEffect() {
+    hubController.anomalyMode = true;
+    document.getElementById('challengeHud')?.classList.add('hidden');
+    this.cameras.main.shake(900, 0.02);
+    this.cameras.main.flash(1400, 255, 60, 20);
+    setTimeout(() => showLevelUpToast('⚠ 격리막 붕괴 — 직접 진입하라'), 700);
+    this.portalEntries.forEach(portal => {
+      this.tweens.killTweensOf([portal.glow, portal.halo, portal.haloInner]);
+      portal.glow.setVisible(true).setFillStyle(0xff4020, 1);
+      portal.halo.setVisible(true);
+      portal.haloInner.setVisible(true);
+      this.tweens.add({
+        targets: [portal.halo, portal.haloInner, portal.glow],
+        alpha: { from: 0.5, to: 1.0 }, yoyo: true, repeat: -1, duration: 600
+      });
+      portal.pad.clear();
+      portal.pad.fillStyle(0x5a0000, 1);
+      portal.pad.fillRoundedRect(portal.x - 42, 238, 84, 26, 6);
+      portal.badgeText.setText('진입');
+      portal.badgeText.setColor('#ff6040');
+      portal.badgeText.setPosition(portal.x, 251);
+    });
   }
 
   triggerAllClearEffect() {
@@ -2016,7 +2127,12 @@ class HubScene extends Phaser.Scene {
     }
 
     if (this.activePortal && (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keys.ENTER))) {
-      openMission(this.activePortal.mission);
+      const id = this.activePortal.mission.id;
+      if (!hubController.anomalySolved.has(id)) {
+        this.launchAnomalyScene(this.activePortal.mission);
+      } else {
+        openMission(this.activePortal.mission);
+      }
     }
   }
 }
@@ -2152,5 +2268,5 @@ new Phaser.Game({
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
-  scene: [HubScene]
+  scene: [HubScene, GravityScene, LightScene, EMScene]
 });
