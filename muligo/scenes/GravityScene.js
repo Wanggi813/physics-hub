@@ -22,11 +22,19 @@ class GravityScene extends Phaser.Scene {
     this.jumpCooldown = 0;
     this.wasAgainstGravity = false;
     this.gravVel = { x: 0, y: 0 };
+    this.wellVel = { x: 0, y: 0 };
+    this.wellInfluence = 0;
+    this.wellPullStrength = 2800;
+    this.wellMaxSpeed = 520;
     this.gravTimer = 8000;
     this.warned = false;
     this.extracting = null;
     this.extractDuration = 900;
     this.lastCoreMotionStarted = false;
+    this.inputBuffer = 0;
+    this.camRot = 0;
+    this.shiftFxTime = 0;
+    this.shiftFxDir = 1;
 
     this.cameras.main.setBackgroundColor('#111820');
     this.cameras.main.fadeIn(600);
@@ -50,6 +58,7 @@ class GravityScene extends Phaser.Scene {
     this.startDebris();
     this.startEmergencyLights();
     this.startArcHazards();
+    this.updateCoreShields();
     this.startAmbientLabAnimations();
 
     this.time.delayedCall(700, () =>
@@ -239,6 +248,22 @@ class GravityScene extends Phaser.Scene {
       { kind: 'duct',  x: W * 0.32,      y: WALL + 22, w: 118, h: 44 },
       { kind: 'rail',  x: W * 0.72,      y: H - WALL - 22, w: 132, h: 44 }
     ];
+  }
+
+  wallObstacleHitbox(def) {
+    if (def.kind === 'shelf' || def.kind === 'panel') {
+      return { x: def.x + 4, y: def.y, w: def.w + 10, h: def.h + 2 };
+    }
+    if (def.kind === 'sink' || def.kind === 'rack') {
+      return { x: def.x - 4, y: def.y, w: def.w + 10, h: def.h + 2 };
+    }
+    if (def.kind === 'duct') {
+      return { x: def.x, y: def.y + 4, w: def.w + 2, h: def.h + 10 };
+    }
+    if (def.kind === 'rail') {
+      return { x: def.x, y: def.y - 4, w: def.w + 2, h: def.h + 10 };
+    }
+    return def;
   }
 
   drawWallObstacles() {
@@ -875,12 +900,13 @@ class GravityScene extends Phaser.Scene {
     });
 
     this.labObstacleDefs().forEach(({ x, y, w, h }) => {
-      const r = this.add.rectangle(x, y, w, h, 0, 0);
+      const r = this.add.rectangle(x, y, Math.max(24, w - 12), Math.max(24, h - 12), 0, 0);
       this.physics.add.existing(r, true);
       this.obstacles.add(r);
     });
 
-    this.wallObstacleDefs().forEach(({ x, y, w, h }) => {
+    this.wallObstacleDefs().forEach(def => {
+      const { x, y, w, h } = this.wallObstacleHitbox(def);
       const r = this.add.rectangle(x, y, w, h, 0, 0);
       this.physics.add.existing(r, true);
       this.obstacles.add(r);
@@ -910,16 +936,18 @@ class GravityScene extends Phaser.Scene {
       const tagH = 18;
       const tagX = def.x + def.labelDx;
       const tagY = def.y + def.labelDy;
-      const tagBg = this.add.rectangle(tagX, tagY, tagW, tagH, 0xf3f7d8, 0.92)
-        .setDepth(10).setStrokeStyle(1, visual.main, 0.78);
+      // 밝은 바닥에서도 잘 보이도록 어두운 배경 + 밝은 텍스트
+      const tagBg = this.add.rectangle(tagX, tagY, tagW, tagH, 0x071218, 0.88)
+        .setDepth(10).setStrokeStyle(1, visual.main, 0.8);
       const lbl = this.add.text(def.x + def.labelDx, def.y + def.labelDy, def.name, {
         fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
         fontSize: '11px',
-        color: visual.text,
+        color: '#e8f5ff',
         fontStyle: '700',
-        shadow: { color: '#ffffff', fill: true, offsetX: 0, offsetY: 1, blur: 0 }
+        shadow: { color: '#000000', fill: true, offsetX: 0, offsetY: 1, blur: 2 }
       }).setOrigin(0.5).setDepth(11);
-      return { ...def, baseX: def.x, baseY: def.y, movePhase: Math.random() * Math.PI * 2, ig, outerGlow, tagBg, lbl, done: false, moving: false };
+      const shieldG = this.add.graphics().setDepth(11);
+      return { ...def, baseX: def.x, baseY: def.y, movePhase: Math.random() * Math.PI * 2, ig, outerGlow, tagBg, lbl, shieldG, done: false, moving: false };
     });
     this.extractG = this.add.graphics().setDepth(19);
   }
@@ -1064,6 +1092,8 @@ class GravityScene extends Phaser.Scene {
   createControls() {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys('W,A,S,D,SPACE,ENTER');
+    this.input.keyboard.enabled = true;
+    this.input.keyboard.resetKeys();
   }
 
   createHUD() {
@@ -1095,7 +1125,7 @@ class GravityScene extends Phaser.Scene {
       fontStyle: '900'
     }).setOrigin(1, 0).setDepth(24);
 
-    this.nextText = this.add.text(W - 30, 99, '다음: 위', {
+    this.nextText = this.add.text(W - 30, 99, '다음: 불안정', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '11px',
       color: '#ffc857',
@@ -1240,17 +1270,57 @@ class GravityScene extends Phaser.Scene {
   }
 
   startArcHazards() {
-    const { W, H } = this;
     this.arcG = this.add.graphics().setDepth(15);
+    this.arcPreG = this.add.graphics().setDepth(14);
+    this.pullEffectG = this.add.graphics().setDepth(17);
     this.arcTimer = 0;
     this.arcHitCooldown = 0;
-    this.arcHazards = [
-      { x: W * 0.34, y: H * 0.43, r: 42, phase: 0, color: 0x5de6ff },
-      { x: W * 0.66, y: H * 0.43, r: 42, phase: 1, color: 0xffb000 },
-      { x: W * 0.34, y: H * 0.59, r: 42, phase: 2, color: 0xff2f86 },
-      { x: W * 0.66, y: H * 0.59, r: 42, phase: 3, color: 0x8dffbd }
-    ];
+    this.wellShiftTimer = 0;
+    this.gravityWells = [];
+    this.chooseGravityWells();
     this.drawArcHazards();
+  }
+
+  chooseGravityWells() {
+    const n = this.collected.size;
+    const count = n >= 2 ? 3 : n >= 1 ? 2 : 1;
+    // 코어 수에 따라 타입 풀 변화: 초반엔 zone 많이, 후반엔 pull 공격적으로
+    const typePool = n >= 2 ? ['pull', 'pull', 'zone', 'spin'] :
+                     n >= 1 ? ['pull', 'zone', 'spin'] :
+                              ['pull', 'zone', 'zone'];
+    const colorMap = { pull: 0xff4030, zone: 0x44ddaa, spin: 0xffaa00 };
+    const wells = [];
+    let guard = 0;
+
+    while (wells.length < count && guard < 80) {
+      guard++;
+      const x = Phaser.Math.Between(this.WALL + 150, this.W - this.WALL - 150);
+      const y = Phaser.Math.Between(this.WALL + 125, this.H - this.WALL - 135);
+      const tooCloseToPlayer = this.player && Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < 190;
+      const tooCloseToStation = Phaser.Math.Distance.Between(x, y, this.W / 2, this.H / 2) < 185;
+      const tooCloseToOtherWell = wells.some(w => Phaser.Math.Distance.Between(x, y, w.x, w.y) < 185);
+      if (tooCloseToPlayer || tooCloseToStation || tooCloseToOtherWell) continue;
+      const type = typePool[Phaser.Math.Between(0, typePool.length - 1)];
+      // zone은 넓게, pull/spin은 일반 크기
+      const baseR = type === 'zone' ? Phaser.Math.Between(54, 70) : Phaser.Math.Between(30, 42);
+      wells.push({
+        x, y,
+        baseX: x,
+        baseY: y,
+        r: baseR,
+        type,
+        color: colorMap[type],
+        drift: type === 'zone' ? Phaser.Math.Between(6, 10) : Phaser.Math.Between(10, 18),
+        phase: Math.random() * Math.PI * 2,
+        born: this.arcTimer,
+        spawnAt: this.arcTimer + Phaser.Math.Between(220, 360)
+      });
+    }
+
+    this.gravityWells = wells;
+    // 코어 많이 모을수록 더 빠르게 재배치
+    const shiftBase = n >= 2 ? 1000 : n >= 1 ? 1400 : 1800;
+    this.wellShiftTimer = Phaser.Math.Between(shiftBase, shiftBase + 700);
   }
 
   startAmbientLabAnimations() {
@@ -1295,64 +1365,197 @@ class GravityScene extends Phaser.Scene {
   drawArcHazards() {
     if (!this.arcG) return;
     const g = this.arcG;
+    const pg = this.arcPreG;
     g.clear();
-    const cycle = Math.floor(this.arcTimer / 1250) % 4;
+    if (pg) pg.clear();
 
-    this.arcHazards.forEach(arc => {
-      const active = arc.phase === cycle;
-      const color = active ? arc.color : 0x7a8790;
-      const alpha = active ? 0.24 : 0.08;
+    this.gravityWells.forEach(arc => {
+      // 0~300ms: 희미한 왜곡/빛 번짐만
+      const preProgress = Math.min(1, Math.max(0, (this.arcTimer - arc.born) / 300));
+      // 300ms 이후: 실제 중력장 페이드인 (200ms)
+      const fullAge = Math.min(1, Math.max(0, (this.arcTimer - arc.spawnAt) / 200));
+      const color = arc.color;
 
-      g.fillStyle(color, alpha);
-      g.fillCircle(arc.x, arc.y, arc.r);
-      g.lineStyle(active ? 3 : 1, color, active ? 0.8 : 0.22);
-      g.strokeCircle(arc.x, arc.y, arc.r);
-      g.lineStyle(1, color, active ? 0.35 : 0.14);
-      g.strokeCircle(arc.x, arc.y, arc.r + 10);
-      g.fillStyle(color, active ? 0.85 : 0.24);
-      g.fillCircle(arc.x, arc.y, active ? 5 : 3);
-      if (active) {
+      // 프리-스폰 왜곡 링 (아주 희미한 빛 번짐)
+      if (preProgress < 1 && pg) {
+        const pa = preProgress * 0.15;
+        pg.lineStyle(2, color, pa);
+        pg.strokeCircle(arc.x, arc.y, arc.r * (0.6 + preProgress * 0.6));
+        pg.lineStyle(1, 0xffffff, pa * 0.45);
+        pg.strokeCircle(arc.x, arc.y, arc.r * (1.15 + preProgress * 0.35));
+      }
+
+      if (fullAge <= 0) return;
+      const a = fullAge;
+
+      if (arc.type === 'pull') {
+        // 강한 흡입형: 붉은 계열, 내부로 향하는 스포크
+        g.fillStyle(color, 0.16 * a);
+        g.fillCircle(arc.x, arc.y, arc.r);
+        g.lineStyle(3, color, 0.9 * a);
+        g.strokeCircle(arc.x, arc.y, arc.r);
+        g.lineStyle(1, color, 0.28 * a);
+        g.strokeCircle(arc.x, arc.y, arc.r + 9);
+        g.fillStyle(color, 0.92 * a);
+        g.fillCircle(arc.x, arc.y, 6);
         for (let i = 0; i < 8; i++) {
-          const a = (Math.PI * 2 / 8) * i - this.arcTimer * 0.004;
-          g.lineStyle(2, 0xffffff, 0.38);
+          const ang = (Math.PI * 2 / 8) * i - this.arcTimer * 0.006;
+          g.lineStyle(2.5, 0xffffff, 0.48 * a);
           g.lineBetween(
-            arc.x + Math.cos(a) * (arc.r + 4),
-            arc.y + Math.sin(a) * (arc.r + 4),
-            arc.x + Math.cos(a) * (arc.r - 10),
-            arc.y + Math.sin(a) * (arc.r - 10)
+            arc.x + Math.cos(ang) * (arc.r + 4), arc.y + Math.sin(ang) * (arc.r + 4),
+            arc.x + Math.cos(ang) * (arc.r - 13), arc.y + Math.sin(ang) * (arc.r - 13)
           );
-          g.fillStyle(0xffffff, 0.45);
-          g.fillCircle(arc.x + Math.cos(a) * (arc.r - 12), arc.y + Math.sin(a) * (arc.r - 12), 2);
+          g.fillStyle(0xffffff, 0.5 * a);
+          g.fillCircle(arc.x + Math.cos(ang) * (arc.r - 15), arc.y + Math.sin(ang) * (arc.r - 15), 2);
+        }
+      } else if (arc.type === 'zone') {
+        // 느린 장판형: 초록/청록, 넓고 반투명, 헥사 패턴
+        g.fillStyle(color, 0.09 * a);
+        g.fillCircle(arc.x, arc.y, arc.r);
+        g.lineStyle(2, color, 0.45 * a);
+        g.strokeCircle(arc.x, arc.y, arc.r);
+        g.lineStyle(1.5, color, 0.22 * a);
+        g.strokeCircle(arc.x, arc.y, arc.r * 0.62);
+        g.fillStyle(color, 0.62 * a);
+        g.fillCircle(arc.x, arc.y, 5);
+        // 헥사 방사선 — 느리게 회전
+        const hexR = arc.r * 0.46;
+        g.lineStyle(1, color, 0.42 * a);
+        for (let i = 0; i < 6; i++) {
+          const ang = (Math.PI / 3) * i + this.arcTimer * 0.0008;
+          g.lineBetween(arc.x, arc.y, arc.x + Math.cos(ang) * hexR, arc.y + Math.sin(ang) * hexR);
+        }
+        // 외부 헥사
+        g.lineStyle(1, color, 0.2 * a);
+        g.beginPath();
+        for (let i = 0; i <= 6; i++) {
+          const ang = (Math.PI / 3) * i + this.arcTimer * 0.0008;
+          const hx = arc.x + Math.cos(ang) * arc.r * 0.78;
+          const hy = arc.y + Math.sin(ang) * arc.r * 0.78;
+          i === 0 ? g.moveTo(hx, hy) : g.lineTo(hx, hy);
+        }
+        g.strokePath();
+      } else {
+        // 회전형 (spin): 황금/주황, 회오리 아크
+        g.fillStyle(color, 0.11 * a);
+        g.fillCircle(arc.x, arc.y, arc.r);
+        g.lineStyle(2, color, 0.5 * a);
+        g.strokeCircle(arc.x, arc.y, arc.r);
+        g.fillStyle(color, 0.85 * a);
+        g.fillCircle(arc.x, arc.y, 5);
+        for (let i = 0; i < 3; i++) {
+          const baseAng = (Math.PI * 2 / 3) * i + this.arcTimer * 0.007;
+          g.lineStyle(3, color, 0.72 * a);
+          g.beginPath();
+          g.arc(arc.x, arc.y, arc.r * 0.7, baseAng, baseAng + 1.25, false);
+          g.strokePath();
+          // 아크 끝 화살표
+          const tipA = baseAng + 1.25;
+          const tx = arc.x + Math.cos(tipA) * arc.r * 0.7;
+          const ty = arc.y + Math.sin(tipA) * arc.r * 0.7;
+          g.lineStyle(2, 0xffffff, 0.38 * a);
+          g.lineBetween(tx, ty, tx + Math.cos(tipA + 0.7) * 8, ty + Math.sin(tipA + 0.7) * 8);
+          g.lineBetween(tx, ty, tx + Math.cos(tipA - 0.2) * 8, ty + Math.sin(tipA - 0.2) * 8);
         }
       }
     });
   }
 
   updateArcHazards(delta) {
-    if (!this.arcHazards) return;
+    if (!this.gravityWells) return;
+    const dt = delta / 1000;
     this.arcTimer += delta;
-    this.arcHitCooldown = Math.max(0, this.arcHitCooldown - delta);
+    this.wellShiftTimer -= delta;
+    if (this.wellShiftTimer <= 0) this.chooseGravityWells();
+
+    this.gravityWells.forEach(well => {
+      const t = this.arcTimer * 0.0012 + well.phase;
+      const driftX = Math.cos(t) * well.drift;
+      const driftY = Math.sin(t * 0.8) * well.drift * 0.72;
+      well.x = Phaser.Math.Clamp(well.baseX + driftX, this.WALL + 112, this.W - this.WALL - 112);
+      well.y = Phaser.Math.Clamp(well.baseY + driftY, this.WALL + 96, this.H - this.WALL - 96);
+    });
+
     this.drawArcHazards();
 
-    if (this.arcHitCooldown > 0) return;
-    const cycle = Math.floor(this.arcTimer / 1250) % 4;
-    const hitArc = this.arcHazards.find(arc =>
-      arc.phase === cycle && Phaser.Math.Distance.Between(this.player.x, this.player.y, arc.x, arc.y) < arc.r + 14
-    );
-    if (!hitArc) return;
+    this.arcHitCooldown = Math.max(0, this.arcHitCooldown - delta);
+    const damp = Math.pow(0.08, dt);
+    this.wellVel.x *= damp;
+    this.wellVel.y *= damp;
+    this.wellInfluence = 0;
 
-    const dx = hitArc.x - this.player.x;
-    const dy = hitArc.y - this.player.y;
-    const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    this.gravVel.x += (dx / len) * 90;
-    this.gravVel.y += (dy / len) * 90;
-    this.player.body.velocity.x += (dx / len) * 210;
-    this.player.body.velocity.y += (dy / len) * 210;
-    this.arcHitCooldown = 520;
+    let strongestWell = null;
+    let strongestPull = 0;
+    this.gravityWells.forEach(well => {
+      // 스폰 애니메이션 중에는 물리 비활성
+      if (this.arcTimer < well.spawnAt) return;
+      const dx = well.x - this.player.x;
+      const dy = well.y - this.player.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      // zone은 반경 내부만, pull/spin은 더 넓은 영향권
+      const reach = well.r + (well.type === 'zone' ? 18 : well.type === 'pull' ? 130 : 112);
+      if (dist > reach) return;
+
+      const t = 1 - dist / reach;
+      this.wellInfluence = Math.max(this.wellInfluence, t);
+
+      if (well.type === 'pull') {
+        // 강한 흡입: 중심 방향으로 당김
+        const strength = this.wellPullStrength * (0.62 + t * t * 1.65);
+        this.wellVel.x += (dx / dist) * strength * dt;
+        this.wellVel.y += (dy / dist) * strength * dt;
+        if (strength > strongestPull) { strongestPull = strength; strongestWell = well; }
+      } else if (well.type === 'zone') {
+        // 느린 장판: 속도를 줄이는 방식 (wellInfluence로 sideSpeed 감소)
+        this.wellInfluence = Math.max(this.wellInfluence, Math.min(1, t * 1.2));
+        const brake = Math.pow(0.025, dt * (0.45 + t));
+        this.gravVel.x *= brake;
+        this.gravVel.y *= brake;
+        this.wellVel.x *= brake;
+        this.wellVel.y *= brake;
+        const pseudo = t * 500;
+        if (pseudo > strongestPull) { strongestPull = pseudo; strongestWell = well; }
+      } else if (well.type === 'spin') {
+        // 회전형: 중심으로 끌면서 진행 방향을 수직으로 꺾는 힘
+        const perpX = -dy / dist;
+        const perpY = dx / dist;
+        const strength = this.wellPullStrength * 0.72 * (0.25 + t * 0.95);
+        this.wellVel.x += (perpX * strength + (dx / dist) * strength * 0.34) * dt;
+        this.wellVel.y += (perpY * strength + (dy / dist) * strength * 0.34) * dt;
+        if (strength > strongestPull) { strongestPull = strength; strongestWell = well; }
+      }
+    });
+
+    const len = Math.sqrt(this.wellVel.x * this.wellVel.x + this.wellVel.y * this.wellVel.y);
+    if (len > this.wellMaxSpeed) {
+      this.wellVel.x = (this.wellVel.x / len) * this.wellMaxSpeed;
+      this.wellVel.y = (this.wellVel.y / len) * this.wellMaxSpeed;
+    }
+
+    if (!strongestWell || this.arcHitCooldown > 0) return;
+    if (Phaser.Math.Distance.Between(this.player.x, this.player.y, strongestWell.x, strongestWell.y) > strongestWell.r + 18) return;
+
+    this.arcHitCooldown = 650;
     this.cancelCoreExtraction(false);
     this.cameras.main.shake(70, 0.003);
     this.cameras.main.flash(90, 90, 200, 255, true);
-    this.say('시물이', '국소 중력장에 끌려가고 있어. 중심에 빨려들기 전에 빠져나오자.', 1500);
+
+    const msgs = {
+      pull: '강한 흡입 중력장에 빨렸어! 중심에서 멀어지자.',
+      zone: '중력 억제 구역 — 이동이 크게 느려져. 빠져나와!',
+      spin: '회전 중력장에 휩쓸렸어! 꺾이는 방향을 파악하자.'
+    };
+    this.say('시물이', msgs[strongestWell.type] || '국소 중력장 충돌!', 1600);
+
+    // 피해 이유 플로팅 텍스트
+    const hx = this.player.x, hy = this.player.y;
+    const labels = { pull: '흡입 충돌', zone: '억제 구역', spin: '회전 충돌' };
+    const hitLbl = this.add.text(hx, hy - 44, labels[strongestWell.type] || '충돌', {
+      fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
+      fontSize: '13px', color: '#ff7755', fontStyle: '700',
+      backgroundColor: '#1a0806', padding: { x: 6, y: 3 }
+    }).setOrigin(0.5).setDepth(32);
+    this.tweens.add({ targets: hitLbl, y: hy - 88, alpha: 0, duration: 1400, onComplete: () => hitLbl.destroy() });
   }
 
   distanceToSegment(px, py, x1, y1, x2, y2) {
@@ -1404,8 +1607,83 @@ class GravityScene extends Phaser.Scene {
   syncCoreVisual(item) {
     this.drawCoreItem(item.ig, item.x, item.y, item.id, false);
     item.outerGlow.setPosition(item.x, item.y);
-    item.tagBg.setPosition(item.x + item.labelDx, item.y + item.labelDy);
-    item.lbl.setPosition(item.x + item.labelDx, item.y + item.labelDy);
+    if (!item.done) {
+      item.tagBg.setPosition(item.x + item.labelDx, item.y + item.labelDy);
+      item.lbl.setPosition(item.x + item.labelDx, item.y + item.labelDy);
+    }
+  }
+
+  // 모든 코어의 보호막 링을 현재 중력 방향에 맞춰 업데이트
+  updateCoreShields() {
+    if (!this.itemObjs) return;
+    this.itemObjs.forEach(item => {
+      if (item.done) { item.shieldG?.clear(); return; }
+      this.drawCoreShield(item.shieldG, item);
+    });
+  }
+
+  // 보호막 링: 중력 방향이 맞으면 열린 점선, 틀리면 회전하는 잠긴 링
+  drawCoreShield(g, item) {
+    if (!g) return;
+    g.clear();
+    const required = { A: 3, B: 1, C: 2 };
+    const req = required[item.id];
+    const unlocked = this.gravIdx === req;
+    const visual = this.coreVisual(item.id);
+    const x = item.x, y = item.y;
+    const r = 40;
+    const t = this.arcTimer * 0.003;
+
+    if (unlocked) {
+      // 열린 상태: 색상 일치, 느리게 회전하는 점선 링
+      g.lineStyle(2, visual.main, 0.5);
+      for (let seg = 0; seg < 8; seg++) {
+        const a0 = (Math.PI * 2 / 8) * seg + t * 0.4;
+        const a1 = a0 + Math.PI * 2 / 8 - 0.28;
+        g.beginPath();
+        g.arc(x, y, r, a0, a1, false);
+        g.strokePath();
+      }
+      g.lineStyle(1, visual.main, 0.22 + Math.sin(t * 3.5) * 0.1);
+      g.strokeCircle(x, y, r + 8);
+    } else {
+      // 잠긴 상태: 주황/빨간 회전 세그먼트
+      g.lineStyle(2.5, 0xff5522, 0.68);
+      for (let seg = 0; seg < 4; seg++) {
+        const a0 = (Math.PI * 2 / 4) * seg + t * 1.9;
+        const a1 = a0 + Math.PI * 2 / 4 - 0.38;
+        g.beginPath();
+        g.arc(x, y, r, a0, a1, false);
+        g.strokePath();
+      }
+      g.lineStyle(1, 0xffa040, 0.28);
+      g.strokeCircle(x, y, r + 7);
+      g.fillStyle(0xffc857, 0.58);
+      for (let i = 0; i < 3; i++) {
+        const a = t * 1.4 + i * Math.PI * 2 / 3;
+        g.fillCircle(x + Math.cos(a) * (r + 14), y + Math.sin(a) * (r + 14), 3);
+      }
+    }
+  }
+
+  // 중력장에 끌릴 때 플레이어 주변 압축 링 효과
+  drawPullEffect() {
+    if (!this.pullEffectG) return;
+    const g = this.pullEffectG;
+    g.clear();
+    const inf = this.wellInfluence || 0;
+    if (inf < 0.18) return;
+    const px = this.player.x, py = this.player.y;
+    const alpha = (inf - 0.18) / 0.82;
+    const pulse = (Math.sin(this.arcTimer * 0.009) + 1) / 2;
+    g.lineStyle(2, 0x5de6ff, alpha * 0.62);
+    g.strokeCircle(px, py, 28 + pulse * 14);
+    g.lineStyle(1, 0x5de6ff, alpha * 0.28);
+    g.strokeCircle(px, py, 46 + pulse * 11);
+    if (inf > 0.58) {
+      g.lineStyle(1.5, 0xffffff, (inf - 0.58) * 1.6);
+      g.strokeCircle(px, py, 19 + pulse * 7);
+    }
   }
 
   updateCoreExtraction(delta) {
@@ -1488,10 +1766,15 @@ class GravityScene extends Phaser.Scene {
     const withInput = Phaser.Math.Clamp(inputX * grav.x + inputY * grav.y, 0, 1);
 
     const grounded = this.isTouchingGravitySurface(grav);
-    if (grounded && againstInput > 0 && !this.wasAgainstGravity && this.jumpCooldown <= 0) {
+    // 점프 입력 버퍼: 공중에서 미리 누른 점프를 착지 직후에도 인식
+    const justPressedAgainst = againstInput > 0 && !this.wasAgainstGravity;
+    if (justPressedAgainst) this.inputBuffer = 170;
+    this.inputBuffer = Math.max(0, this.inputBuffer - delta);
+    if (grounded && (justPressedAgainst || this.inputBuffer > 0) && this.jumpCooldown <= 0) {
       this.gravVel.x = -grav.x * this.jumpImpulse;
       this.gravVel.y = -grav.y * this.jumpImpulse;
       this.jumpCooldown = 520;
+      this.inputBuffer = 0;
     }
     this.wasAgainstGravity = againstInput > 0;
 
@@ -1503,17 +1786,38 @@ class GravityScene extends Phaser.Scene {
     if ((this.player.body.blocked.up && this.gravVel.y < 0) || (this.player.body.blocked.down && this.gravVel.y > 0)) {
       this.gravVel.y = 0;
     }
+    // 벽 슬라이드 속도 제한: 중력 방향과 수직인 벽에 붙었을 때 낙하 속도 조절
+    const wallSlideMax = 165;
+    if (grav.y !== 0 && (this.player.body.blocked.left || this.player.body.blocked.right)) {
+      this.gravVel.y = Phaser.Math.Clamp(this.gravVel.y, -wallSlideMax, wallSlideMax);
+    }
+    if (grav.x !== 0 && (this.player.body.blocked.up || this.player.body.blocked.down)) {
+      this.gravVel.x = Phaser.Math.Clamp(this.gravVel.x, -wallSlideMax, wallSlideMax);
+    }
 
-    const SIDE_SPEED = 255;
-    const FALL_PUSH = 70;
-    const vx = sideX * sideInput * SIDE_SPEED + grav.x * withInput * FALL_PUSH + this.gravVel.x;
-    const vy = sideY * sideInput * SIDE_SPEED + grav.y * withInput * FALL_PUSH + this.gravVel.y;
-    this.player.setVelocity(Phaser.Math.Clamp(vx, -470, 470), Phaser.Math.Clamp(vy, -470, 470));
+    this.updateArcHazards(delta);
+
+    const wellSlow = Phaser.Math.Clamp(this.wellInfluence || 0, 0, 1);
+    const sideSpeed = Phaser.Math.Linear(255, 38, wellSlow);
+    const fallPush = Phaser.Math.Linear(70, 10, wellSlow);
+    const airCounterThrust = grounded ? 0 : Phaser.Math.Linear(84, 6, wellSlow);
+    const vx = sideX * sideInput * sideSpeed
+      + grav.x * withInput * fallPush
+      - grav.x * againstInput * airCounterThrust
+      + this.gravVel.x
+      + this.wellVel.x;
+    const vy = sideY * sideInput * sideSpeed
+      + grav.y * withInput * fallPush
+      - grav.y * againstInput * airCounterThrust
+      + this.gravVel.y
+      + this.wellVel.y;
+    this.player.setVelocity(Phaser.Math.Clamp(vx, -650, 650), Phaser.Math.Clamp(vy, -650, 650));
     if (vx > 6) this.player.setFlipX(true);
     else if (vx < -6) this.player.setFlipX(false);
 
     this.pglow.setPosition(this.player.x, this.player.y);
     this.pname.setPosition(this.player.x, this.player.y + 46);
+    this.drawPullEffect();
 
     if (this.stationRingG) {
       this.stationRingAngle = (this.stationRingAngle + delta * 0.04) % 360;
@@ -1529,26 +1833,28 @@ class GravityScene extends Phaser.Scene {
 
     this.updateDebris(delta);
     this.updateCoreMovement(delta);
+    this.updateCoreShields();
     this.updateCoreExtraction(delta);
-    this.updateArcHazards(delta);
 
     this.gravTimer -= delta;
     if (!this.warned && this.gravTimer <= 2000) {
       this.warned = true;
-      const next = (this.gravIdx + 1) % 4;
-      this.say('시물이', `중력 전환 2초 전! 다음 방향은 ${this.gravDirs[next].lbl}이야.`);
+      this.say('시물이', '중력 전환 2초 전! 다음 방향은 예측 불가야.');
       this.cameras.main.shake(80, 0.004);
       this.nextText.setStyle({ color: '#ff5c2a' });
     }
     if (this.gravTimer <= 0) {
-      this.gravIdx = (this.gravIdx + 1) % 4;
+      this.gravIdx = this.pickNextGravityIndex();
       this.gravTimer = 8000;
       this.warned = false;
       this.gravVel.x = 0;
       this.gravVel.y = 0;
+      this.wellVel.x = 0;
+      this.wellVel.y = 0;
+      this.wellInfluence = 0;
       this.wasAgainstGravity = false;
       this.jumpCooldown = 0;
-      this.cameras.main.flash(240, 80, 210, 255, true);
+      this.playGravityShiftFx(this.gravDirs[this.gravIdx]);
       this.nextText.setStyle({ color: '#ffc857' });
       this.updateGravMarkers();
       this.drawCompass();
@@ -1557,11 +1863,55 @@ class GravityScene extends Phaser.Scene {
 
     const secs = Math.max(0, this.gravTimer / 1000);
     this.cdText.setText(`${secs.toFixed(1)}s`);
-    this.nextText.setText(`다음: ${this.gravDirs[(this.gravIdx + 1) % 4].lbl}`);
+    this.nextText.setText(this.warned ? '다음: 무작위' : '다음: 불안정');
+    this.updateGravityShiftCamera(delta);
 
     if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keys.ENTER)) {
       this.tryInteract();
     }
+  }
+
+  playGravityShiftFx(grav) {
+    this.shiftFxTime = 360;
+    this.shiftFxDir = grav.x !== 0 ? grav.x : -grav.y || 1;
+    this.cameras.main.flash(240, 80, 210, 255, true);
+    this.cameras.main.shake(120, 0.004);
+
+    this.debrisParticles?.forEach(p => {
+      p.vx += grav.x * Phaser.Math.Between(45, 90) + (Math.random() - 0.5) * 24;
+      p.vy += grav.y * Phaser.Math.Between(45, 90) + (Math.random() - 0.5) * 24;
+    });
+
+    this.itemObjs?.forEach(item => {
+      if (item.done) return;
+      const visual = this.coreVisual(item.id);
+      const pulse = this.add.circle(item.x, item.y, 38, visual.main, 0.18)
+        .setDepth(9).setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({
+        targets: pulse,
+        scale: 1.75,
+        alpha: 0,
+        duration: 260,
+        ease: 'Back.easeOut',
+        onComplete: () => pulse.destroy()
+      });
+    });
+  }
+
+  updateGravityShiftCamera(delta) {
+    if (!this.cameras.main.setRotation) return;
+
+    if (this.shiftFxTime > 0) {
+      this.shiftFxTime = Math.max(0, this.shiftFxTime - delta);
+      const p = this.shiftFxTime / 360;
+      const wobble = Math.sin(p * Math.PI * 3) * 0.011 * p * this.shiftFxDir;
+      this.camRot = Phaser.Math.Linear(this.camRot, wobble, 0.35);
+    } else {
+      this.camRot = Phaser.Math.Linear(this.camRot, 0, 0.18);
+      if (Math.abs(this.camRot) < 0.0001) this.camRot = 0;
+    }
+
+    this.cameras.main.setRotation(this.camRot);
   }
 
   isTouchingGravitySurface(grav) {
@@ -1569,6 +1919,11 @@ class GravityScene extends Phaser.Scene {
     if (grav.x < 0) return this.player.body.blocked.left || this.player.body.touching.left;
     if (grav.y > 0) return this.player.body.blocked.down || this.player.body.touching.down;
     return this.player.body.blocked.up || this.player.body.touching.up;
+  }
+
+  pickNextGravityIndex() {
+    const options = [0, 1, 2, 3].filter(i => i !== this.gravIdx);
+    return options[Phaser.Math.Between(0, options.length - 1)];
   }
 
   tryInteract() {
@@ -1604,6 +1959,9 @@ class GravityScene extends Phaser.Scene {
     item.tagBg.destroy();
     item.lbl.destroy();
     item.outerGlow.destroy();
+    item.shieldG?.clear();
+    item.shieldG?.destroy();
+    item.shieldG = null;
     this.drawCoreItem(item.ig, item.x, item.y, item.id, true);
     this.collected.add(item.id);
     const n = this.collected.size;
@@ -1632,6 +1990,8 @@ class GravityScene extends Phaser.Scene {
   doClear() {
     this.cleared = true;
     this.player.setVelocity(0, 0);
+    this.pullEffectG?.clear();
+    this.cameras.main.setRotation(0);
 
     this.tweens.add({ targets: this.stationIcon, angle: 720, duration: 1400, ease: 'Power3.easeOut' });
     this.tweens.add({ targets: this.stationGlow, scale: 3, alpha: 0, duration: 1400 });
