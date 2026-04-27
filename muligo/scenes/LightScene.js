@@ -55,14 +55,18 @@ class LightScene extends Phaser.Scene {
   createLibraryLayout() {
     const { W, H, WALL } = this;
     return {
-      window: { x: W - 132, y: WALL - 14 },
+      // ❌ 수정 전: window: { x: W - 132, y: WALL - 14 },
+
+      // ✅ 수정 후: x좌표를 비율(W * 0.88)로 맞추고, y좌표 시작점을 벽 끝단(WALL)으로 고정
+      window: { x: W * 0.88, y: WALL },
+
       mirrors: [
         { x: W * 0.64, y: H * 0.26, name: '거울 A' },
         { x: W * 0.33, y: H * 0.52, name: '거울 B' },
-        { x: W * 0.60, y: H * 0.70, name: '거울 C' }
+        { x: W * 0.55, y: H * 0.70, name: '거울 C' }
       ],
       station: { x: W * 0.50, y: H - WALL - 30 },
-      goal:  { x: W * 0.22, y: H * 0.74 },
+      goal: { x: W * 0.22, y: H * 0.74 },
       decoy: { x: W * 0.22, y: H * 0.28 },
       darkZones: [
         { x: WALL + W * 0.10, y: WALL + H * 0.20, w: W * 0.20, h: H * 0.36 },
@@ -74,12 +78,12 @@ class LightScene extends Phaser.Scene {
   // ─── 배경 드로잉 ─────────────────────────────────────────
   drawLibrary() {
     // 공유 Graphics — ADD blend 없음, depth별 1개씩
-    const gBg   = this.add.graphics().setDepth(0);
-    const gAtm  = this.add.graphics().setDepth(1);
-    const gWin  = this.add.graphics().setDepth(2);
+    const gBg = this.add.graphics().setDepth(0);
+    const gAtm = this.add.graphics().setDepth(1);
+    const gWin = this.add.graphics().setDepth(2);
     const gCase = this.add.graphics().setDepth(3);
     const gFurn = this.add.graphics().setDepth(4);
-    const gDtl  = this.add.graphics().setDepth(5);
+    const gDtl = this.add.graphics().setDepth(5);
 
     this.drawBg(gBg);
     this.drawLibrarySign(gDtl);
@@ -115,12 +119,15 @@ class LightScene extends Phaser.Scene {
   }
 
   drawLibrarySign(g) {
-    const { WALL } = this;
+    const { WALL, H } = this;
+    const signY = H - WALL - 48; // 좌측 하단으로 Y 좌표 이동
+
     g.fillStyle(0x101a22, 0.96);
-    g.fillRoundedRect(WALL + 18, 12, 268, 38, 5);
+    g.fillRoundedRect(WALL + 18, signY, 268, 38, 5);
     g.lineStyle(2, 0x78dfff, 0.54);
-    g.strokeRoundedRect(WALL + 18, 12, 268, 38, 5);
-    this.add.text(WALL + 152, 31, '도서관 · 빛의 경로 복원', {
+    g.strokeRoundedRect(WALL + 18, signY, 268, 38, 5);
+
+    this.add.text(WALL + 152, signY + 19, '도서관 · 빛의 경로 복원', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '14px', color: '#c8f4ff', fontStyle: '800'
     }).setOrigin(0.5).setDepth(6);
@@ -335,7 +342,7 @@ class LightScene extends Phaser.Scene {
       });
     });
 
-    this.phaseText = this.add.text(WALL + 34, WALL + 18, 'REFLECTION ERROR', {
+    this.phaseText = this.add.text(WALL + 18, H - WALL - 74, 'REFLECTION ERROR', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '11px',
       color: '#ff8068',
@@ -719,7 +726,7 @@ class LightScene extends Phaser.Scene {
     const rad = Phaser.Math.DegToRad(mirrorAngleDeg);
     // 거울 법선 (표면 방향의 수직)
     const nx = -Math.sin(rad);
-    const ny =  Math.cos(rad);
+    const ny = Math.cos(rad);
     const dot = inDx * nx + inDy * ny;
     return { dx: inDx - 2 * dot * nx, dy: inDy - 2 * dot * ny };
   }
@@ -958,7 +965,7 @@ class LightScene extends Phaser.Scene {
   drawShard(g, x, y, seed) {
     g.clear();
     const rot = seed * 0.7;
-    const pts = [[-12,-8],[8,-13],[15,4],[-2,13],[-14,5]].map(([px, py]) => {
+    const pts = [[-12, -8], [8, -13], [15, 4], [-2, 13], [-14, 5]].map(([px, py]) => {
       const c = Math.cos(rot), s = Math.sin(rot);
       return [x + px * c - py * s, y + px * s + py * c];
     });
@@ -980,10 +987,10 @@ class LightScene extends Phaser.Scene {
     const { W, H, WALL } = this;
     this.walls = this.physics.add.staticGroup();
     [
-      { x: W / 2,       y: WALL / 2,      w: W,    h: WALL },
-      { x: W / 2,       y: H - WALL / 2,  w: W,    h: WALL },
-      { x: WALL / 2,    y: H / 2,         w: WALL, h: H    },
-      { x: W - WALL / 2, y: H / 2,        w: WALL, h: H    }
+      { x: W / 2, y: WALL / 2, w: W, h: WALL },
+      { x: W / 2, y: H - WALL / 2, w: W, h: WALL },
+      { x: WALL / 2, y: H / 2, w: WALL, h: H },
+      { x: W - WALL / 2, y: H / 2, w: WALL, h: H }
     ].forEach(({ x, y, w, h }) => {
       const r = this.add.rectangle(x, y, w, h, 0, 0);
       this.physics.add.existing(r, true);
@@ -1014,30 +1021,31 @@ class LightScene extends Phaser.Scene {
   // ─── HUD ──────────────────────────────────────────────────
   createHUD() {
     const { W, H } = this;
-    this.hudBg = this.add.rectangle(W - 8, 62, 204, 130, 0x071018, 0.94)
+
+    this.hudBg = this.add.rectangle(W - 8, 102, 204, 130, 0x071018, 0.94)
       .setOrigin(1, 0).setDepth(40).setStrokeStyle(1, 0x78dfff, 0.50);
 
-    this.itemsTxt = this.add.text(W - 24, 72, '조각 0 / 5', {
+    this.itemsTxt = this.add.text(W - 24, 112, '조각 0 / 5', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '15px', color: '#ffdc8a', fontStyle: '900'
     }).setOrigin(1, 0).setDepth(41);
 
-    this.mirrorTxt = this.add.text(W - 24, 98, '거울: 미완성', {
+    this.mirrorTxt = this.add.text(W - 24, 138, '거울: 미완성', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '12px', color: '#b8dfff', fontStyle: '800'
     }).setOrigin(1, 0).setDepth(41);
 
-    this.alignTxt = this.add.text(W - 24, 118, '반사 0/3 · 복원 전', {
+    this.alignTxt = this.add.text(W - 24, 158, '반사 0/3 · 복원 전', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '11px', color: '#8ba8c0', fontStyle: '800'
     }).setOrigin(1, 0).setDepth(41);
 
-    this.spaceTxt = this.add.text(W - 24, 138, '공간 안정도 --%', {
+    this.spaceTxt = this.add.text(W - 24, 178, '공간 안정도 --%', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '11px', color: '#ff9a76', fontStyle: '800'
     }).setOrigin(1, 0).setDepth(41);
 
-    this.sonarTxt = this.add.text(W - 24, 158, `탐지 ${this.sonarUses}회`, {
+    this.sonarTxt = this.add.text(W - 24, 198, `탐지 ${this.sonarUses}회`, {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '12px', color: '#8bdcff', fontStyle: '800'
     }).setOrigin(1, 0).setDepth(41);
@@ -1076,9 +1084,9 @@ class LightScene extends Phaser.Scene {
     const instability = this.mirrorBuilt ? 1 - this.getSpaceStability() : 1;
     const targetLevel = this.cleared ? 0
       : !this.mirrorBuilt ? 1.08
-      : this.beamAligned ? 0.18
-      : this.decoyActive ? 1.35
-      : Phaser.Math.Clamp(0.62 + instability * 0.62 - this.lastBeamHitCount * 0.16, 0.34, 1.24);
+        : this.beamAligned ? 0.18
+          : this.decoyActive ? 1.35
+            : Phaser.Math.Clamp(0.62 + instability * 0.62 - this.lastBeamHitCount * 0.16, 0.34, 1.24);
     this.anomalyLevel = Phaser.Math.Linear(this.anomalyLevel, targetLevel, 0.045);
 
     const level = this.anomalyLevel;
@@ -1154,10 +1162,10 @@ class LightScene extends Phaser.Scene {
     const anchors = this.spaceAnchors?.length
       ? this.spaceAnchors
       : [
-          { id: 'A', baseX: W * 0.52, baseY: H * 0.34, x: W * 0.57, y: H * 0.29, color: 0x78dfff, region: { x: W * 0.43, y: H * 0.19, w: W * 0.23, h: H * 0.25 } },
-          { id: 'B', baseX: W * 0.45, baseY: H * 0.58, x: W * 0.39, y: H * 0.63, color: 0xffd16d, region: { x: W * 0.31, y: H * 0.43, w: W * 0.28, h: H * 0.25 } },
-          { id: 'C', baseX: W * 0.36, baseY: H * 0.70, x: W * 0.42, y: H * 0.75, color: 0xff6b5a, region: { x: W * 0.23, y: H * 0.62, w: W * 0.27, h: H * 0.20 } }
-        ];
+        { id: 'A', baseX: W * 0.52, baseY: H * 0.34, x: W * 0.57, y: H * 0.29, color: 0x78dfff, region: { x: W * 0.43, y: H * 0.19, w: W * 0.23, h: H * 0.25 } },
+        { id: 'B', baseX: W * 0.45, baseY: H * 0.58, x: W * 0.39, y: H * 0.63, color: 0xffd16d, region: { x: W * 0.31, y: H * 0.43, w: W * 0.28, h: H * 0.25 } },
+        { id: 'C', baseX: W * 0.36, baseY: H * 0.70, x: W * 0.42, y: H * 0.75, color: 0xff6b5a, region: { x: W * 0.23, y: H * 0.62, w: W * 0.27, h: H * 0.20 } }
+      ];
 
     anchors.forEach((anchor, i) => {
       const r = anchor.region;
@@ -1251,10 +1259,10 @@ class LightScene extends Phaser.Scene {
     const anchors = this.spaceAnchors?.length
       ? this.spaceAnchors
       : [
-          { baseX: W * 0.52, baseY: H * 0.34, x: W * 0.57, y: H * 0.29, color: 0x78dfff },
-          { baseX: W * 0.45, baseY: H * 0.58, x: W * 0.39, y: H * 0.63, color: 0xffd16d },
-          { baseX: W * 0.36, baseY: H * 0.70, x: W * 0.42, y: H * 0.75, color: 0xff6b5a }
-        ];
+        { baseX: W * 0.52, baseY: H * 0.34, x: W * 0.57, y: H * 0.29, color: 0x78dfff },
+        { baseX: W * 0.45, baseY: H * 0.58, x: W * 0.39, y: H * 0.63, color: 0xffd16d },
+        { baseX: W * 0.36, baseY: H * 0.70, x: W * 0.42, y: H * 0.75, color: 0xff6b5a }
+      ];
 
     anchors.forEach((anchor, i) => {
       const dx = anchor.x - anchor.baseX;
@@ -1383,8 +1391,8 @@ class LightScene extends Phaser.Scene {
     const color = kind === 'clear' || kind === 'restore' ? 0xffe68a : kind === 'decoy' ? 0xff5f58 : 0x78dfff;
     const point = kind === 'clear' ? this.layout.goal
       : kind === 'decoy' ? this.layout.decoy
-      : kind === 'restore' ? { x: this.W / 2, y: this.H / 2 }
-      : this.layout.window;
+        : kind === 'restore' ? { x: this.W / 2, y: this.H / 2 }
+          : this.layout.window;
     this.anomalyJolt = kind === 'clear' || kind === 'restore' ? 220 : 420;
     this.cameras.main.shake(kind === 'clear' || kind === 'restore' ? 90 : 140, kind === 'clear' || kind === 'restore' ? 0.0025 : 0.0045);
     this.cameras.main.flash(kind === 'clear' || kind === 'restore' ? 120 : 180, kind === 'decoy' ? 255 : 120, kind === 'clear' || kind === 'restore' ? 235 : 80, kind === 'decoy' ? 80 : 255, true);
@@ -1406,13 +1414,13 @@ class LightScene extends Phaser.Scene {
   update(_, delta) {
     if (this.cleared) return;
 
-    const left  = this.cursors.left.isDown  || this.keys.A.isDown;
+    const left = this.cursors.left.isDown || this.keys.A.isDown;
     const right = this.cursors.right.isDown || this.keys.D.isDown;
-    const up    = this.cursors.up.isDown    || this.keys.W.isDown;
-    const down  = this.cursors.down.isDown  || this.keys.S.isDown;
+    const up = this.cursors.up.isDown || this.keys.W.isDown;
+    const down = this.cursors.down.isDown || this.keys.S.isDown;
     const SPEED = 275;
     let vx = left ? -SPEED : right ? SPEED : 0;
-    let vy = up   ? -SPEED : down  ? SPEED : 0;
+    let vy = up ? -SPEED : down ? SPEED : 0;
     if (vx && vy) { vx *= 0.707; vy *= 0.707; }
     this.player.setVelocity(vx, vy);
     if (vx > 5) this.player.setFlipX(true);
