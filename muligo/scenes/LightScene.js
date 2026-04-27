@@ -63,7 +63,7 @@ class LightScene extends Phaser.Scene {
 
       mirrors: [
         { x: W * 0.64, y: H * 0.26, name: '거울 A' },
-        { x: W * 0.33, y: H * 0.52, name: '거울 B' },
+        { x: W * 0.33, y: H * 0.42, name: '거울 B' },
         { x: W * 0.55, y: H * 0.70, name: '거울 C' }
       ],
       station: { x: W * 0.50, y: H - WALL - 30 },
