@@ -13,7 +13,7 @@
       field: "파동",
       simuli: "리플",
       missionId: "lens-refraction",
-      missionTitle: "렌즈의 굴절",
+      missionTitle: "빛의 반사",
       source: "./missions/렌즈의 굴절.html"
     },
     {
@@ -36,10 +36,10 @@
     },
     {
       id: "lens-refraction",
-      zone: "도서관 / 빛의 굴절 이상현상",
+      zone: "도서관 / 빛의 반사 이상현상",
       field: "파동",
-      title: "렌즈의 굴절",
-      objective: "도서관 책장 사이로 휘어진 빛의 경로를 관찰하고 렌즈를 조정해 광선을 목표 지점으로 보내세요.",
+      title: "빛의 반사",
+      objective: "도서관 창문으로 들어온 빛을 복원한 거울에 반사시켜 목표 프리즘까지 정확히 보내세요.",
       source: "./missions/렌즈의 굴절.html"
     },
     {
