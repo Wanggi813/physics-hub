@@ -42,6 +42,7 @@ class LightScene extends Phaser.Scene {
     this.createSpaceAnchors();
     this.createItems();
     this.createPlayer();
+    this.createFloatingBooks();
     this.createControls();
     this.createHUD();
     this.updateBeams();
@@ -1012,6 +1013,57 @@ class LightScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(37);
   }
 
+  // ─── 공중 부양 책들 ─────────────────────────────────────────
+  createFloatingBooks() {
+    const { W, H, WALL } = this;
+
+    // 1. 책 이미지(텍스처)를 즉석에서 4가지 색상으로 그립니다
+    const g = this.make.graphics({ x: 0, y: 0, add: false });
+    const colors = [0x386ba8, 0xb94432, 0x4f8b58, 0xd7a83d]; // 파, 빨, 초, 노
+    colors.forEach((color, i) => {
+      g.clear();
+      g.fillStyle(color, 1);
+      g.fillRoundedRect(0, 0, 18, 24, 2); // 표지
+      g.fillStyle(0xffffff, 0.8);
+      g.fillRect(15, 2, 3, 20); // 책장 부분
+      g.generateTexture(`float-book-${i}`, 18, 24);
+    });
+    g.destroy();
+
+    // 2. 물리 엔진이 적용된 그룹 생성
+    this.floatingBooks = this.physics.add.group();
+
+    // 책 20권을 도서관 여기저기에 랜덤 배치
+    for (let i = 0; i < 20; i++) {
+      const x = Phaser.Math.Between(WALL + 50, W - WALL - 50);
+      const y = Phaser.Math.Between(WALL + 50, H - WALL - 50);
+      const tex = `float-book-${Phaser.Math.Between(0, 3)}`;
+
+      const book = this.floatingBooks.create(x, y, tex);
+      book.setDepth(35); // 시물이(36) 바로 아래 레이어
+
+      // 둥둥 떠다니기 위한 속성 부여
+      book.startY = y;
+      book.phase = Math.random() * Math.PI * 2;
+      book.floatSpeed = Phaser.Math.FloatBetween(0.002, 0.004);
+      book.setRotation(Phaser.Math.FloatBetween(-0.4, 0.4));
+
+      book.body.setSize(14, 20); // 스치기만 해도 닿지 않도록 판정을 약간 줄임
+    }
+
+    // 3. 둔화 타이머 변수와 충돌(overlap) 이벤트 등록
+    this.slowEffectTime = 0;
+    this.physics.add.overlap(this.player, this.floatingBooks, this.hitFloatingBook, null, this);
+  }
+
+  // 책에 부딪혔을 때 실행되는 함수
+  hitFloatingBook(player, book) {
+    // 부딪힌 책이 치여서 팽그르르 도는 효과
+    book.rotation += 0.15;
+    // 시물이 둔화 1.5초 적용 (1500ms)
+    this.slowEffectTime = 1500;
+  }
+
   // ─── 조작 ────────────────────────────────────────────────
   createControls() {
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -1414,13 +1466,57 @@ class LightScene extends Phaser.Scene {
   update(_, delta) {
     if (this.cleared) return;
 
+    // ✅ 1. 떠다니는 책 애니메이션 및 제거 로직
+    if (this.floatingBooks) {
+      const stability = this.getSpaceStability(); //
+
+      if (stability >= 1.0) {
+        // 100%가 되면 모든 책을 서서히 사라지게 합니다
+        this.floatingBooks.getChildren().forEach(book => {
+          if (!book.isfading) {
+            book.isfading = true; // 중복 트윈 방지
+            this.tweens.add({
+              targets: book,
+              alpha: 0,
+              scale: 0,
+              duration: 800,
+              ease: 'Power2.easeIn',
+              onComplete: () => book.destroy()
+            });
+          }
+        });
+
+        // 책들이 모두 사라질 것이므로 물리 그룹 참조를 제거하여 
+        // 더 이상 update 로직이 타지 않게 합니다
+        this.floatingBooks = null;
+
+      } else {
+        // 100% 미만일 때는 기존처럼 둥둥 떠다니게 합니다
+        this.floatingBooks.getChildren().forEach(book => {
+          if (!book.isfading) {
+            book.phase += delta * book.floatSpeed;
+            book.y = book.startY + Math.sin(book.phase) * 12;
+          }
+        });
+      }
+    }
+
+    // ✅ 2. 둔화 효과 적용 (기존 코드와 동일)
+    let currentSpeed = 275;
+    if (this.slowEffectTime > 0) {
+      this.slowEffectTime -= delta;
+      currentSpeed = 100;
+      this.pglow.setFillStyle(0xff6058, 0.3);
+    } else if (this.pglow) {
+      this.pglow.setFillStyle(0x78dfff, 0.10);
+    }
+
     const left = this.cursors.left.isDown || this.keys.A.isDown;
     const right = this.cursors.right.isDown || this.keys.D.isDown;
     const up = this.cursors.up.isDown || this.keys.W.isDown;
     const down = this.cursors.down.isDown || this.keys.S.isDown;
-    const SPEED = 275;
-    let vx = left ? -SPEED : right ? SPEED : 0;
-    let vy = up ? -SPEED : down ? SPEED : 0;
+    let vx = left ? -currentSpeed : right ? currentSpeed : 0;
+    let vy = up ? -currentSpeed : down ? currentSpeed : 0;
     if (vx && vy) { vx *= 0.707; vy *= 0.707; }
     this.player.setVelocity(vx, vy);
     if (vx > 5) this.player.setFlipX(true);
