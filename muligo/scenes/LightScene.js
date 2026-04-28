@@ -1,4 +1,4 @@
-class LightScene extends Phaser.Scene {
+﻿class LightScene extends Phaser.Scene {
   constructor() {
     super('LightScene');
   }
@@ -45,20 +45,19 @@ class LightScene extends Phaser.Scene {
     this.createFloatingBooks();
     this.createControls();
     this.createHUD();
+    this.showIntroCard();
     this.updateBeams();
 
-    this.time.delayedCall(700, () => {
-      this.say('리플', '도서관이 조각처럼 끊어져 있어. 거울을 복원한 뒤 벌어진 공간 조각을 원래 자리에 맞춰야 해!');
+    this.time.delayedCall(6200, () => {
+      this.say('시물이', '도서관이 조각처럼 끊어져 있어. 거울을 복원한 뒤 벌어진 공간 조각을 원래 자리에 맞춰야 해!');
     });
   }
 
-  // ─── 레이아웃 ─────────────────────────────────────────────
+  // Layout
   createLibraryLayout() {
     const { W, H, WALL } = this;
     return {
-      // ❌ 수정 전: window: { x: W - 132, y: WALL - 14 },
-
-      // ✅ 수정 후: x좌표를 비율(W * 0.88)로 맞추고, y좌표 시작점을 벽 끝단(WALL)으로 고정
+      // Position the window near the top-right wall.
       window: { x: W * 0.88, y: WALL },
 
       mirrors: [
@@ -76,9 +75,9 @@ class LightScene extends Phaser.Scene {
     };
   }
 
-  // ─── 배경 드로잉 ─────────────────────────────────────────
+  // Background
   drawLibrary() {
-    // 공유 Graphics — ADD blend 없음, depth별 1개씩
+    // Split graphics by depth so blend modes and layering stay predictable.
     const gBg = this.add.graphics().setDepth(0);
     const gAtm = this.add.graphics().setDepth(1);
     const gWin = this.add.graphics().setDepth(2);
@@ -121,7 +120,7 @@ class LightScene extends Phaser.Scene {
 
   drawLibrarySign(g) {
     const { WALL, H } = this;
-    const signY = H - WALL - 48; // 좌측 하단으로 Y 좌표 이동
+    const signY = H - WALL - 48;
 
     g.fillStyle(0x101a22, 0.96);
     g.fillRoundedRect(WALL + 18, signY, 268, 38, 5);
@@ -150,7 +149,6 @@ class LightScene extends Phaser.Scene {
     g.lineStyle(1, 0xcff7ff, 0.32);
     g.lineBetween(x + 8, y + 24, x + 152, y + 24);
 
-    // ADD blend 제거 — 일반 alpha로 대체
     gAtm.fillStyle(0xffe3a0, 0.07);
     gAtm.beginPath();
     gAtm.moveTo(window.x - 58, WALL);
@@ -164,7 +162,7 @@ class LightScene extends Phaser.Scene {
     gAtm.lineBetween(window.x + 24, WALL, W * 0.44, this.H * 0.74);
   }
 
-  // ─── 책장 ────────────────────────────────────────────────
+  // Bookshelves
   shelfRects() {
     const { W, H, WALL } = this;
     return [
@@ -210,7 +208,7 @@ class LightScene extends Phaser.Scene {
     g.fillRect(x + 6, y + 6, w - 12, 4);
   }
 
-  // ─── 가구 ────────────────────────────────────────────────
+  // Furniture
   drawReadingFurniture(g) {
     const { W, H } = this;
     [
@@ -279,7 +277,7 @@ class LightScene extends Phaser.Scene {
     g.fillRoundedRect(W * 0.50 - 92, WALL + 20, 184, 28, 4);
     g.lineStyle(1, 0x78dfff, 0.42);
     g.strokeRoundedRect(W * 0.50 - 92, WALL + 20, 184, 28, 4);
-    this.add.text(W * 0.50, WALL + 34, '빛 경로 판독기', {
+    this.add.text(W * 0.50, WALL + 34, '빛 경로 자동기록', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '12px', color: '#c9f3ff', fontStyle: '800'
     }).setOrigin(0.5).setDepth(6);
@@ -289,7 +287,7 @@ class LightScene extends Phaser.Scene {
     g.lineStyle(1, 0x9c7648, 0.55);
     g.strokeRoundedRect(WALL + 18, H * 0.55, 122, 96, 3);
     this.add.text(WALL + 30, H * 0.55 + 10,
-      '복원 메모\n1. 조각 5개 수집\n2. 공간 조각 결합\n3. 세 거울을 모두 통과\n※ 모조 프리즘 주의!', {
+      '복원 메모\n1. 조각 5개 수집\n2. 공간 조각 결합\n3. 세 거울 모두 통과\n※ 모조 프리즘 주의!', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '10px', color: '#4a2c12', lineSpacing: 5
     }).setDepth(6);
@@ -384,7 +382,7 @@ class LightScene extends Phaser.Scene {
     }));
   }
 
-  // ─── 구역 + 소나 ─────────────────────────────────────────
+  // Zones and sonar
   createZoneOverlays() {
     this.darkOverlays = this.layout.darkZones.map((z, i) => {
       const rect = this.add.rectangle(z.x, z.y, z.w, z.h, 0x020204, 0.72).setDepth(31);
@@ -396,13 +394,13 @@ class LightScene extends Phaser.Scene {
       return { rect, label };
     });
 
-    // sonarRing만 ADD blend 유지 (시각적 필요성 있음)
+    // Keep only the sonar ring in ADD blend mode.
     this.sonarRing = this.add.circle(0, 0, 80, 0x8bdcff, 0)
       .setDepth(42).setStrokeStyle(2, 0x8bdcff, 0.8)
       .setBlendMode(Phaser.BlendModes.ADD);
   }
 
-  // ─── 복원대 + 목표 ───────────────────────────────────────
+  // Restore station and goal
   createStation() {
     const { station, goal, decoy } = this.layout;
     const g = this.add.graphics().setDepth(7);
@@ -430,7 +428,6 @@ class LightScene extends Phaser.Scene {
       backgroundColor: '#071018', padding: { x: 6, y: 2 }
     }).setOrigin(0.5).setDepth(12);
 
-    // 목표 프리즘
     this.goalBase = this.add.graphics().setDepth(8);
     this.goalGlow = this.add.circle(goal.x, goal.y, 42, 0xffdf7d, 0.07).setDepth(7);
     this.goalText = this.add.text(goal.x, goal.y + 48, '목표 프리즘', {
@@ -440,10 +437,10 @@ class LightScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(12);
     this.drawGoal(false);
 
-    // 모조 프리즘 — 의도적으로 목표와 비슷한 모양
+    // The decoy prism deliberately looks slightly unstable.
     this.decoyBase = this.add.graphics().setDepth(8);
     this.decoyGlow = this.add.circle(decoy.x, decoy.y, 38, 0xff8060, 0.05).setDepth(7);
-    this.decoyText = this.add.text(decoy.x, decoy.y + 44, '???', {
+    this.decoyText = this.add.text(decoy.x, decoy.y + 44, '모조 프리즘', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '12px', color: '#c8a090', fontStyle: '800',
       backgroundColor: '#140707', padding: { x: 6, y: 2 }
@@ -489,7 +486,7 @@ class LightScene extends Phaser.Scene {
     g.lineBetween(decoy.x, decoy.y - 14, decoy.x, decoy.y + 12);
   }
 
-  // ─── 거울 + 빔 ───────────────────────────────────────────
+  // Mirrors and beams
   createMirrors() {
     this.mirrors = this.layout.mirrors.map((def, i) => {
       const g = this.add.graphics().setDepth(11);
@@ -502,7 +499,7 @@ class LightScene extends Phaser.Scene {
       this.drawMirror(g, def.x, def.y, 0, false);
       return mirror;
     });
-    // beamG만 ADD blend 유지 (빛 줄기 효과)
+    // Keep the beam graphics in ADD blend mode for light streaks.
     this.beamG = this.add.graphics().setDepth(10).setBlendMode(Phaser.BlendModes.ADD);
     this.opticalG = this.add.graphics().setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
   }
@@ -573,7 +570,7 @@ class LightScene extends Phaser.Scene {
     const anchor = obj?.getData('spaceAnchor');
     if (!anchor) return;
     if (!this.mirrorBuilt) {
-      this.say('리플', '공간 조각이 아직 잠겨 있어. 먼저 거울 조각을 복원대에서 합쳐야 해.', 2200);
+    this.say('시물이', '빛의 경로와 공간 조각을 다시 확인해보자.');
       return;
     }
     anchor.dragging = true;
@@ -649,7 +646,7 @@ class LightScene extends Phaser.Scene {
       anchor.label.setColor('#ffe98a');
       this.drawSpaceAnchor(anchor);
     });
-    this.say('리플', '끊어진 도서관 조각들이 맞물렸어! 바닥과 서가가 원래 자리로 돌아오고 있어. 이제 빛의 경로를 확인해보자.', 4200);
+    this.say('시물이', '빛의 경로와 공간 조각을 다시 확인해보자.');
   }
 
   updateBeams() {
@@ -717,7 +714,7 @@ class LightScene extends Phaser.Scene {
     g.lineBetween(x1, y1, x2, y2);
   }
 
-  // 입사각 기반 물리 반사 벡터 계산 (입사각 = 반사각)
+  // Calculate the reflection vector from the incoming ray and mirror angle.
   physicalReflect(fromX, fromY, toX, toY, mirrorAngleDeg) {
     const dx = toX - fromX;
     const dy = toY - fromY;
@@ -725,7 +722,7 @@ class LightScene extends Phaser.Scene {
     const inDx = dx / len;
     const inDy = dy / len;
     const rad = Phaser.Math.DegToRad(mirrorAngleDeg);
-    // 거울 법선 (표면 방향의 수직)
+    // Mirror normal, perpendicular to the surface direction.
     const nx = -Math.sin(rad);
     const ny = Math.cos(rad);
     const dot = inDx * nx + inDy * ny;
@@ -932,7 +929,7 @@ class LightScene extends Phaser.Scene {
     zone.label.setAlpha(lit ? 0.28 : 0.72);
   }
 
-  // ─── 아이템 ──────────────────────────────────────────────
+  // Items
   createItems() {
     const { W, H } = this;
     const shards = [
@@ -946,7 +943,6 @@ class LightScene extends Phaser.Scene {
     this.itemObjs = shards.map((def, i) => {
       const g = this.add.graphics().setDepth(34);
       this.drawShard(g, def.x, def.y, i);
-      // 트윈으로 alpha/scale만 갱신 — Graphics 재드로우보다 훨씬 저렴
       const glow = this.add.circle(def.x, def.y, 16, 0x9fe8ff, 0.28).setDepth(33);
       this.tweens.add({
         targets: glow,
@@ -983,7 +979,7 @@ class LightScene extends Phaser.Scene {
     g.lineBetween(x - 4, y - 6, x + 7, y + 3);
   }
 
-  // ─── 플레이어 ────────────────────────────────────────────
+  // Player
   createPlayer() {
     const { W, H, WALL } = this;
     this.walls = this.physics.add.staticGroup();
@@ -1013,64 +1009,59 @@ class LightScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(37);
   }
 
-  // ─── 공중 부양 책들 ─────────────────────────────────────────
+  // Floating books
   createFloatingBooks() {
     const { W, H, WALL } = this;
 
-    // 1. 책 이미지(텍스처)를 즉석에서 4가지 색상으로 그립니다
+    // Create four simple book textures.
     const g = this.make.graphics({ x: 0, y: 0, add: false });
-    const colors = [0x386ba8, 0xb94432, 0x4f8b58, 0xd7a83d]; // 파, 빨, 초, 노
+    const colors = [0x386ba8, 0xb94432, 0x4f8b58, 0xd7a83d];
     colors.forEach((color, i) => {
-      g.clear();
       g.fillStyle(color, 1);
-      g.fillRoundedRect(0, 0, 18, 24, 2); // 표지
+      g.fillRoundedRect(0, 0, 18, 24, 2);
       g.fillStyle(0xffffff, 0.8);
-      g.fillRect(15, 2, 3, 20); // 책장 부분
+      g.fillRect(15, 2, 3, 20);
       g.generateTexture(`float-book-${i}`, 18, 24);
     });
     g.destroy();
 
-    // 2. 물리 엔진이 적용된 그룹 생성
+    // Group affected by physics.
     this.floatingBooks = this.physics.add.group();
 
-    // 책 20권을 도서관 여기저기에 랜덤 배치
+    // Scatter floating books around the library.
     for (let i = 0; i < 20; i++) {
       const x = Phaser.Math.Between(WALL + 50, W - WALL - 50);
       const y = Phaser.Math.Between(WALL + 50, H - WALL - 50);
       const tex = `float-book-${Phaser.Math.Between(0, 3)}`;
 
       const book = this.floatingBooks.create(x, y, tex);
-      book.setDepth(35); // 시물이(36) 바로 아래 레이어
-
-      // 둥둥 떠다니기 위한 속성 부여
+      book.setDepth(35);
       book.startY = y;
       book.phase = Math.random() * Math.PI * 2;
       book.floatSpeed = Phaser.Math.FloatBetween(0.002, 0.004);
       book.setRotation(Phaser.Math.FloatBetween(-0.4, 0.4));
 
-      book.body.setSize(14, 20); // 스치기만 해도 닿지 않도록 판정을 약간 줄임
+      book.body.setSize(14, 20);
     }
 
-    // 3. 둔화 타이머 변수와 충돌(overlap) 이벤트 등록
+    // Register overlap with the player.
     this.slowEffectTime = 0;
     this.physics.add.overlap(this.player, this.floatingBooks, this.hitFloatingBook, null, this);
   }
 
-  // 책에 부딪혔을 때 실행되는 함수
+  // Slow the player when touched by a floating book.
   hitFloatingBook(player, book) {
-    // 부딪힌 책이 치여서 팽그르르 도는 효과
     book.rotation += 0.15;
-    // 시물이 둔화 1.5초 적용 (1500ms)
     this.slowEffectTime = 1500;
   }
 
-  // ─── 조작 ────────────────────────────────────────────────
+  // Controls
   createControls() {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys('W,A,S,D,SPACE,ENTER,F');
   }
 
-  // ─── HUD ──────────────────────────────────────────────────
+  // HUD
   createHUD() {
     const { W, H } = this;
 
@@ -1087,7 +1078,7 @@ class LightScene extends Phaser.Scene {
       fontSize: '12px', color: '#b8dfff', fontStyle: '800'
     }).setOrigin(1, 0).setDepth(41);
 
-    this.alignTxt = this.add.text(W - 24, 158, '반사 0/3 · 복원 전', {
+    this.alignTxt = this.add.text(W - 24, 158, '반사 0/3 · 복원 대기', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '11px', color: '#8ba8c0', fontStyle: '800'
     }).setOrigin(1, 0).setDepth(41);
@@ -1104,28 +1095,90 @@ class LightScene extends Phaser.Scene {
 
     this.dlgBg = this.add.rectangle(W / 2, H - 8, W - 92, 76, 0x071018, 0.94)
       .setOrigin(0.5, 1).setDepth(40).setStrokeStyle(1, 0x78dfff, 0.42).setVisible(false);
-    this.dlgSpk = this.add.text(68, H - 72, '', {
+    const portraitSrc = this.textures.get('simul-zone2').getSourceImage();
+    const portraitScale = Math.min(148 / portraitSrc.width, 156 / portraitSrc.height);
+    this.dlgPortrait = this.add.image(112, H - 68, 'simul-zone2')
+      .setScale(portraitScale).setDepth(41).setVisible(false);
+    this.dlgSpk = this.add.text(190, H - 72, '', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '11px', color: '#8bdcff', fontStyle: '900'
     }).setDepth(41).setVisible(false);
-    this.dlgTxt = this.add.text(68, H - 56, '', {
+    this.dlgTxt = this.add.text(190, H - 56, '', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
-      fontSize: '13px', color: '#e8f5ff', wordWrap: { width: W - 150 }
+      fontSize: '13px', color: '#e8f5ff', wordWrap: { width: W - 280 }
     }).setDepth(41).setVisible(false);
+    this.dlgObjs = [this.dlgBg, this.dlgPortrait, this.dlgSpk, this.dlgTxt];
   }
 
   say(speaker, text, dur = 4000) {
     this.dlgSpk.setText(`[ ${speaker} ]`);
     this.dlgTxt.setText(text);
-    [this.dlgBg, this.dlgSpk, this.dlgTxt].forEach(o => o.setVisible(true).setAlpha(0));
-    this.tweens.add({ targets: [this.dlgBg, this.dlgSpk, this.dlgTxt], alpha: 1, duration: 200 });
+    this.dlgObjs.forEach(o => o.setVisible(true).setAlpha(0));
+    this.tweens.add({ targets: this.dlgObjs, alpha: 1, duration: 200 });
     if (this._dlgTm) this._dlgTm.remove();
     this._dlgTm = this.time.delayedCall(dur, () =>
       this.tweens.add({
-        targets: [this.dlgBg, this.dlgSpk, this.dlgTxt], alpha: 0, duration: 300,
-        onComplete: () => [this.dlgBg, this.dlgSpk, this.dlgTxt].forEach(o => o.setVisible(false))
+        targets: this.dlgObjs, alpha: 0, duration: 300,
+        onComplete: () => this.dlgObjs.forEach(o => o.setVisible(false))
       })
     );
+  }
+
+  showIntroCard() {
+    const { W, H } = this;
+    const overlay = this.add.container(0, 0).setDepth(60);
+    const shade = this.add.rectangle(W / 2, H / 2, W, H, 0x080504, 0.72);
+    const g = this.add.graphics();
+    const cw = Math.min(560, W - 80);
+    const ch = 320;
+    const x = W / 2 - cw / 2;
+    const y = H / 2 - ch / 2;
+
+    g.fillStyle(0x120c08, 0.98);
+    g.fillRoundedRect(x, y, cw, ch, 10);
+    g.lineStyle(2, 0xffd889, 0.78);
+    g.strokeRoundedRect(x, y, cw, ch, 10);
+    g.lineStyle(1, 0x78dfff, 0.26);
+    g.strokeRoundedRect(x + 10, y + 10, cw - 20, ch - 20, 6);
+    g.fillStyle(0x24170e, 1);
+    g.fillRoundedRect(x + 36, y + 82, 116, 136, 8);
+    g.lineStyle(2, 0xffd889, 0.6);
+    g.strokeRoundedRect(x + 36, y + 82, 116, 136, 8);
+    g.fillStyle(0x78dfff, 0.18);
+    g.fillTriangle(x + 62, y + 186, x + 126, y + 112, x + 138, y + 198);
+    g.lineStyle(4, 0xfff1a8, 0.9);
+    g.lineBetween(x + 52, y + 118, x + 104, y + 150);
+    g.lineBetween(x + 104, y + 150, x + 142, y + 120);
+    g.lineBetween(x + 104, y + 150, x + 140, y + 196);
+    g.fillStyle(0xfff1a8, 0.95);
+    g.fillCircle(x + 104, y + 150, 7);
+
+    const title = this.add.text(x + 28, y + 24, '이상현상: 빛 경로 단절', {
+      fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
+      fontSize: '22px', color: '#ffe6a8', fontStyle: '900'
+    });
+    const body = this.add.text(x + 184, y + 78,
+      '도서관 공간이 빛의 경로를 따라 조각나 있어.\n거울이 복원되기 전까지는 목표 프리즘에 안정화 광선을 보낼 수 없어.',
+      { fontFamily: 'Pretendard, Malgun Gothic, sans-serif', fontSize: '14px', color: '#e8f5ff', lineSpacing: 7, wordWrap: { width: cw - 220 } }
+    );
+    const tasks = this.add.text(x + 184, y + 166,
+      '해야 할 일\n1. 거울 조각 5개를 모아 복원대에서 거울을 완성한다.\n2. 마우스로 공간 조각을 원래 위치에 맞춘다.\n3. 거울 각도를 조정해 빛이 목표 프리즘에 닿게 한다.',
+      { fontFamily: 'Pretendard, Malgun Gothic, sans-serif', fontSize: '14px', color: '#ffdc8a', lineSpacing: 7, wordWrap: { width: cw - 220 } }
+    );
+    const hint = this.add.text(W / 2, y + ch - 28, 'SPACE로 시작하기', {
+      fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
+      fontSize: '12px', color: '#ffd889', fontStyle: '700'
+    }).setOrigin(0.5);
+
+    overlay.add([shade, g, title, body, tasks, hint]);
+    overlay.setAlpha(0);
+    this.tweens.add({ targets: overlay, alpha: 1, duration: 220 });
+
+    const close = () => {
+      if (!overlay.active) return;
+      this.tweens.add({ targets: overlay, alpha: 0, duration: 180, onComplete: () => overlay.destroy() });
+    };
+    this.input.keyboard.once('keydown-SPACE', close);
   }
 
   updateLightAnomaly(delta) {
@@ -1462,19 +1515,18 @@ class LightScene extends Phaser.Scene {
     });
   }
 
-  // ─── 업데이트 ─────────────────────────────────────────────
+  // Update
   update(_, delta) {
     if (this.cleared) return;
 
-    // ✅ 1. 떠다니는 책 애니메이션 및 제거 로직
+    // Fade out floating books after the space is fully restored.
     if (this.floatingBooks) {
-      const stability = this.getSpaceStability(); //
+      const stability = this.getSpaceStability();
 
       if (stability >= 1.0) {
-        // 100%가 되면 모든 책을 서서히 사라지게 합니다
         this.floatingBooks.getChildren().forEach(book => {
           if (!book.isfading) {
-            book.isfading = true; // 중복 트윈 방지
+            book.isfading = true;
             this.tweens.add({
               targets: book,
               alpha: 0,
@@ -1486,12 +1538,9 @@ class LightScene extends Phaser.Scene {
           }
         });
 
-        // 책들이 모두 사라질 것이므로 물리 그룹 참조를 제거하여 
-        // 더 이상 update 로직이 타지 않게 합니다
         this.floatingBooks = null;
 
       } else {
-        // 100% 미만일 때는 기존처럼 둥둥 떠다니게 합니다
         this.floatingBooks.getChildren().forEach(book => {
           if (!book.isfading) {
             book.phase += delta * book.floatSpeed;
@@ -1501,7 +1550,7 @@ class LightScene extends Phaser.Scene {
       }
     }
 
-    // ✅ 2. 둔화 효과 적용 (기존 코드와 동일)
+    // Apply the floating-book slow effect.
     let currentSpeed = 275;
     if (this.slowEffectTime > 0) {
       this.slowEffectTime -= delta;
@@ -1535,7 +1584,7 @@ class LightScene extends Phaser.Scene {
 
   useSonar() {
     if (this.sonarUses <= 0 || this.sonarCd > 0) {
-      this.say('리플', this.sonarUses <= 0 ? '탐지 횟수를 모두 썼어. 빛을 직접 열어야 해.' : '탐지 장치가 식는 중이야. 잠깐만 기다려.');
+    this.say('시물이', '빛의 경로와 공간 조각을 다시 확인해보자.');
       return;
     }
     this.sonarUses--;
@@ -1551,7 +1600,7 @@ class LightScene extends Phaser.Scene {
       this.sonarActive = false;
       this.updateBeams();
     });
-    this.say('리플', '탐지 파동을 보냈어. 그림자 서가가 잠깐 드러날 거야.', 2200);
+    this.say('시물이', '빛의 경로와 공간 조각을 다시 확인해보자.');
   }
 
   tryInteract() {
@@ -1569,21 +1618,20 @@ class LightScene extends Phaser.Scene {
 
     if (Phaser.Math.Distance.Between(px, py, station.x, station.y) < 70) {
       if (this.collected.size < 5) {
-        this.say('리플', `거울을 복원하려면 조각이 ${5 - this.collected.size}개 더 필요해.`);
+    this.say('시물이', '빛의 경로와 공간 조각을 다시 확인해보자.');
       } else if (!this.mirrorBuilt) {
         this.buildMirror();
       } else {
-        this.say('리플', '거울은 고정 기준점이야. 마우스로 끊어진 공간 조각을 움직여 도서관을 맞추고, 거울 옆에서는 SPACE로 각도만 조정해.');
+    this.say('시물이', '빛의 경로와 공간 조각을 다시 확인해보자.');
       }
       return;
     }
 
-    // 모조 프리즘 — 함정 피드백
     if (Phaser.Math.Distance.Between(px, py, decoy.x, decoy.y) < 60) {
       if (this.decoyActive) {
-        this.say('리플', '이건 모조 프리즘이야! 여기선 클리어가 안 돼. 마지막 반사 방향을 목표 프리즘 쪽으로 틀어봐.', 4500);
+    this.say('시물이', '빛의 경로와 공간 조각을 다시 확인해보자.');
       } else {
-        this.say('리플', '...수상한 느낌. 빛이 닿지 않으면 반응이 없어.', 2200);
+    this.say('시물이', '빛의 경로와 공간 조각을 다시 확인해보자.');
       }
       return;
     }
@@ -1596,17 +1644,17 @@ class LightScene extends Phaser.Scene {
         }
       }
     } else if (this.mirrors?.some(m => Phaser.Math.Distance.Between(px, py, m.x, m.y) < 66)) {
-      this.say('리플', '받침대는 준비됐지만 거울이 아직 없어. 조각을 모아 복원대에서 완성하자.');
+    this.say('시물이', '빛의 경로와 공간 조각을 다시 확인해보자.');
       return;
     }
 
     if (Phaser.Math.Distance.Between(px, py, goal.x, goal.y) < 68) {
       if (this.beamAligned) this.doClear();
-      else this.say('리플', '아직 안정화 조건이 부족해. 공간 좌표를 맞춘 뒤 빛이 세 거울에 모두 반사되어 목표 프리즘에 닿아야 해.');
+    this.say('시물이', '빛의 경로와 공간 조각을 다시 확인해보자.');
     }
   }
 
-  // ─── 수집 + 조작 ─────────────────────────────────────────
+  // Collection and interaction
   collectShard(item) {
     item.done = true;
     item.g.destroy();
@@ -1622,9 +1670,9 @@ class LightScene extends Phaser.Scene {
 
     if (n === 5) {
       this.stationGlow.setFillStyle(0x78dfff, 0.28);
-      this.say('리플', '조각 모두 확보! 하단 복원대에서 SPACE를 눌러 거울을 완성하자.', 4200);
+    this.say('시물이', '빛의 경로와 공간 조각을 다시 확인해보자.');
     } else {
-      this.say('리플', `${item.name} 확보! ${5 - n}개 더 찾으면 거울을 복원할 수 있어.`, 2200);
+    this.say('시물이', '빛의 경로와 공간 조각을 다시 확인해보자.');
     }
   }
 
@@ -1638,7 +1686,7 @@ class LightScene extends Phaser.Scene {
     this.mirrors.forEach((m, i) => {
       this.mirrorAngles[i] = this.solutionAngles[i];
       this.drawMirror(m.g, m.x, m.y, this.mirrorAngles[i], true);
-      m.label.setText(`${m.name} · ${this.mirrorAngles[i]}°`);
+      m.label.setText(`${m.name} · ${this.mirrorAngles[i]}도`);
       m.label.setColor('#dff8ff');
     });
     this.spaceAnchors?.forEach(anchor => {
@@ -1651,7 +1699,7 @@ class LightScene extends Phaser.Scene {
 
     this.cameras.main.flash(360, 150, 230, 255, true);
     this.playLightSurge('build');
-    this.say('리플', '거울 복원 완료! 거울 각도는 기준값으로 맞춰뒀어. 마우스로 끊어진 공간 조각을 기준 고리에 맞추면 도서관이 다시 이어질 거야.', 5600);
+    this.say('시물이', '빛의 경로와 공간 조각을 다시 확인해보자.');
     this.updateBeams();
   }
 
@@ -1659,23 +1707,23 @@ class LightScene extends Phaser.Scene {
     this.mirrorAngles[mirror.idx] = (this.mirrorAngles[mirror.idx] + this.mirrorStep) % 180;
     const ang = this.mirrorAngles[mirror.idx];
     this.drawMirror(mirror.g, mirror.x, mirror.y, ang, true);
-    mirror.label.setText(`${mirror.name} · ${ang}°`);
+    mirror.label.setText(`${mirror.name} · ${ang}도`);
     this._updateAlignHUD();
     this.updateBeams();
 
     if (this.beamAligned) {
-      this.say('리플', '세 거울이 모두 맞았어! 목표 프리즘 옆에서 SPACE를 눌러 안정화하자.', 3600);
+    this.say('시물이', '빛의 경로와 공간 조각을 다시 확인해보자.');
     } else if (this.decoyActive) {
-      this.say('리플', '모조 프리즘에 빛이 닿았어! 마지막 반사 방향을 다시 잡아보자.', 2200);
+    this.say('시물이', '빛의 경로와 공간 조각을 다시 확인해보자.');
     } else {
-      this.say('리플', `${mirror.name} → ${ang}°. 반사 경로가 바뀌었어.`, 1600);
+    this.say('시물이', '빛의 경로와 공간 조각을 다시 확인해보자.');
     }
   }
 
   _updateAlignHUD() {
     if (!this.alignTxt) return;
     if (!this.mirrorBuilt) {
-      this.alignTxt.setText('반사 0/3 · 복원 전');
+      this.alignTxt.setText('반사 0/3 · 복원 대기');
       this.alignTxt.setColor('#8ba8c0');
       this.spaceTxt?.setText('공간 안정도 --%');
       this.spaceTxt?.setColor('#ff9a76');
@@ -1693,12 +1741,12 @@ class LightScene extends Phaser.Scene {
     if (!this.mirrorBuilt) return;
     this.mirrors.forEach((mirror) => {
       const hit = hitMirrorIds.has(mirror.idx);
-      mirror.label.setText(`${mirror.name} · ${this.mirrorAngles[mirror.idx]}°${hit ? ' · 반사' : ''}`);
+      mirror.label.setText(`${mirror.name} · ${this.mirrorAngles[mirror.idx]}도${hit ? ' · 반사' : ''}`);
       mirror.label.setColor(hit ? '#ffe6a8' : '#dff8ff');
     });
   }
 
-  // ─── 클리어 ──────────────────────────────────────────────
+  // Clear
   doClear() {
     this.cleared = true;
     this.player.setVelocity(0, 0);
@@ -1716,7 +1764,7 @@ class LightScene extends Phaser.Scene {
     this.tweens.add({ targets: this.goalGlow, scale: 2.6, alpha: 0, duration: 900 });
     this.cameras.main.flash(900, 255, 235, 160);
 
-    this.say('리플', '빛의 경로가 맞았어. 세 거울을 통해 흩어진 파동이 하나로 정렬됐네.', 4500);
+    this.say('시물이', '빛의 경로와 공간 조각을 다시 확인해보자.');
     this.time.delayedCall(5200, () => {
       this.cameras.main.fadeOut(650);
       this.time.delayedCall(680, () => {

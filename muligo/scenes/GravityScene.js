@@ -1,4 +1,4 @@
-class GravityScene extends Phaser.Scene {
+﻿class GravityScene extends Phaser.Scene {
   constructor() {
     super('GravityScene');
   }
@@ -11,7 +11,7 @@ class GravityScene extends Phaser.Scene {
     this.cleared = false;
     this.gravDirs = [
       { x: 0,  y: 1,  lbl: '아래', deg: 90  },
-      { x: 0,  y: -1, lbl: '위',   deg: 270 },
+      { x: 0,  y: -1, lbl: '위', deg: 270 },
       { x: 1,  y: 0,  lbl: '오른쪽', deg: 0   },
       { x: -1, y: 0,  lbl: '왼쪽', deg: 180 }
     ];
@@ -55,13 +55,14 @@ class GravityScene extends Phaser.Scene {
     this.createPlayer();
     this.createControls();
     this.createHUD();
+    this.showIntroCard();
     this.startDebris();
     this.startEmergencyLights();
     this.startArcHazards();
     this.updateCoreShields();
     this.startAmbientLabAnimations();
 
-    this.time.delayedCall(700, () =>
+    this.time.delayedCall(6200, () =>
       this.say('시물이', '코어가 쉽게 분리되지 않아. 벽의 중력 변화와 장비 펄스 타이밍을 같이 관찰해봐.')
     );
   }
@@ -208,7 +209,7 @@ class GravityScene extends Phaser.Scene {
     g.fillRoundedRect(x + 94, y + 90, 36, 6, 2);
     g.lineStyle(1, 0xff6d4a, 0.55);
     g.lineBetween(x + 70, y + 70, x + 120, y + 38);
-    this.add.text(x + 12, y + 10, 'FIELD NOTE\nF = ma\ng = 9.8 m/s²\nvector: watch walls', {
+    this.add.text(x + 12, y + 10, 'FIELD NOTE\nF = ma\ng = 9.8 m/s^2\nvector: watch walls', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '10px',
       color: '#244044',
@@ -918,7 +919,7 @@ class GravityScene extends Phaser.Scene {
     this.itemObjs = [
       { id: 'A', x: WALL + 35, y: H * 0.51, name: '자이로 코어 A', labelDx: 56, labelDy: -18 },
       { id: 'B', x: W * 0.56, y: WALL + 35, name: '벡터 칩 B', labelDx: 0, labelDy: 34 },
-      { id: 'C', x: W - WALL - 35, y: H * 0.40, name: '센서 모듈 C', labelDx: -58, labelDy: -18 }
+      { id: 'C', x: W - WALL - 35, y: H * 0.40, name: '펄서 모듈 C', labelDx: -58, labelDy: -18 }
     ].map(def => {
       const visual = this.coreVisual(def.id);
       const ig = this.add.graphics().setDepth(10);
@@ -936,7 +937,6 @@ class GravityScene extends Phaser.Scene {
       const tagH = 18;
       const tagX = def.x + def.labelDx;
       const tagY = def.y + def.labelDy;
-      // 밝은 바닥에서도 잘 보이도록 어두운 배경 + 밝은 텍스트
       const tagBg = this.add.rectangle(tagX, tagY, tagW, tagH, 0x071218, 0.88)
         .setDepth(10).setStrokeStyle(1, visual.main, 0.8);
       const lbl = this.add.text(def.x + def.labelDx, def.y + def.labelDy, def.name, {
@@ -1151,18 +1151,23 @@ class GravityScene extends Phaser.Scene {
 
     this.dlgBg = this.add.rectangle(W / 2, H - 6, W - 100, 76, 0x071218, 0.94)
       .setOrigin(0.5, 1).setDepth(20).setStrokeStyle(1, 0x52dfff, 0.45).setVisible(false);
-    this.dlgSpk = this.add.text(70, H - 70, '', {
+    const portraitSrc = this.textures.get('simul-zone1').getSourceImage();
+    const portraitScale = Math.min(148 / portraitSrc.width, 156 / portraitSrc.height);
+    this.dlgPortrait = this.add.image(112, H - 68, 'simul-zone1')
+      .setScale(portraitScale).setDepth(21).setVisible(false);
+    this.dlgSpk = this.add.text(190, H - 70, '', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '11px',
       color: '#80eeff',
       fontStyle: '900'
     }).setDepth(21).setVisible(false);
-    this.dlgTxt = this.add.text(70, H - 54, '', {
+    this.dlgTxt = this.add.text(190, H - 54, '', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '13px',
       color: '#d7eef3',
-      wordWrap: { width: W - 150 }
+      wordWrap: { width: W - 280 }
     }).setDepth(21).setVisible(false);
+    this.dlgObjs = [this.dlgBg, this.dlgPortrait, this.dlgSpk, this.dlgTxt];
   }
 
   drawCompass() {
@@ -1193,17 +1198,73 @@ class GravityScene extends Phaser.Scene {
   say(speaker, text, dur = 4500) {
     this.dlgSpk.setText(`[ ${speaker} ]`);
     this.dlgTxt.setText(text);
-    [this.dlgBg, this.dlgSpk, this.dlgTxt].forEach(o => o.setVisible(true).setAlpha(0));
-    this.tweens.add({ targets: [this.dlgBg, this.dlgSpk, this.dlgTxt], alpha: 1, duration: 200 });
+    this.dlgObjs.forEach(o => o.setVisible(true).setAlpha(0));
+    this.tweens.add({ targets: this.dlgObjs, alpha: 1, duration: 200 });
     if (this._dlgTm) this._dlgTm.remove();
     this._dlgTm = this.time.delayedCall(dur, () =>
       this.tweens.add({
-        targets: [this.dlgBg, this.dlgSpk, this.dlgTxt],
+        targets: this.dlgObjs,
         alpha: 0,
         duration: 300,
-        onComplete: () => [this.dlgBg, this.dlgSpk, this.dlgTxt].forEach(o => o.setVisible(false))
+        onComplete: () => this.dlgObjs.forEach(o => o.setVisible(false))
       })
     );
+  }
+
+  showIntroCard() {
+    const { W, H } = this;
+    const overlay = this.add.container(0, 0).setDepth(60);
+    const shade = this.add.rectangle(W / 2, H / 2, W, H, 0x03080c, 0.72);
+    const g = this.add.graphics();
+    const cw = Math.min(560, W - 80);
+    const ch = 320;
+    const x = W / 2 - cw / 2;
+    const y = H / 2 - ch / 2;
+
+    g.fillStyle(0x071218, 0.98);
+    g.fillRoundedRect(x, y, cw, ch, 10);
+    g.lineStyle(2, 0x52dfff, 0.82);
+    g.strokeRoundedRect(x, y, cw, ch, 10);
+    g.lineStyle(1, 0xffc857, 0.28);
+    g.strokeRoundedRect(x + 10, y + 10, cw - 20, ch - 20, 6);
+    g.fillStyle(0x0b2028, 1);
+    g.fillCircle(x + 94, y + 150, 66);
+    g.lineStyle(2, 0x52dfff, 0.65);
+    g.strokeCircle(x + 94, y + 150, 66);
+    g.strokeCircle(x + 94, y + 150, 42);
+    [0, 90, 180, 270].forEach(deg => {
+      const r = Phaser.Math.DegToRad(deg);
+      g.lineStyle(4, 0xffc857, 0.8);
+      g.lineBetween(x + 94, y + 150, x + 94 + Math.cos(r) * 46, y + 150 + Math.sin(r) * 46);
+      g.fillCircle(x + 94 + Math.cos(r) * 52, y + 150 + Math.sin(r) * 52, 5);
+    });
+
+    const title = this.add.text(x + 28, y + 24, '이상현상: 중력 벡터 붕괴', {
+      fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
+      fontSize: '22px', color: '#a8f3ff', fontStyle: '900'
+    });
+    const body = this.add.text(x + 184, y + 78,
+      '실험실의 중력 방향이 주기적으로 뒤집히고 있어.\n벽 표식과 장비 펄스를 읽지 못하면 코어가 계속 보호막에 묶여 있을 거야.',
+      { fontFamily: 'Pretendard, Malgun Gothic, sans-serif', fontSize: '14px', color: '#d7eef3', lineSpacing: 7, wordWrap: { width: cw - 220 } }
+    );
+    const tasks = this.add.text(x + 184, y + 166,
+      '해야 할 일\n1. 중력 방향 변화를 관찰하며 3개 코어 부품을 분리한다.\n2. 보호막이 약해지는 방향과 타이밍에 맞춰 접근한다.\n3. 중앙 중력장 발생기에서 SPACE로 벡터를 정상화한다.',
+      { fontFamily: 'Pretendard, Malgun Gothic, sans-serif', fontSize: '14px', color: '#ffdc7c', lineSpacing: 7, wordWrap: { width: cw - 220 } }
+    );
+    const hint = this.add.text(W / 2, y + ch - 28, 'SPACE로 시작하기', {
+      fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
+      fontSize: '12px', color: '#80eeff', fontStyle: '700'
+    }).setOrigin(0.5);
+
+    overlay.add([shade, g, title, body, tasks, hint]);
+    overlay.setAlpha(0);
+    this.tweens.add({ targets: overlay, alpha: 1, duration: 220 });
+
+    const close = () => {
+      if (!overlay.active) return;
+      this.tweens.add({ targets: overlay, alpha: 0, duration: 180, onComplete: () => overlay.destroy() });
+    };
+    this.input.keyboard.once('keydown-SPACE', close);
   }
 
   startDebris() {
@@ -1284,7 +1345,6 @@ class GravityScene extends Phaser.Scene {
   chooseGravityWells() {
     const n = this.collected.size;
     const count = n >= 2 ? 3 : n >= 1 ? 2 : 1;
-    // 코어 수에 따라 타입 풀 변화: 초반엔 zone 많이, 후반엔 pull 공격적으로
     const typePool = n >= 2 ? ['pull', 'pull', 'zone', 'spin'] :
                      n >= 1 ? ['pull', 'zone', 'spin'] :
                               ['pull', 'zone', 'zone'];
@@ -1301,7 +1361,7 @@ class GravityScene extends Phaser.Scene {
       const tooCloseToOtherWell = wells.some(w => Phaser.Math.Distance.Between(x, y, w.x, w.y) < 185);
       if (tooCloseToPlayer || tooCloseToStation || tooCloseToOtherWell) continue;
       const type = typePool[Phaser.Math.Between(0, typePool.length - 1)];
-      // zone은 넓게, pull/spin은 일반 크기
+      // Zone fields are wider; pull and spin fields stay compact.
       const baseR = type === 'zone' ? Phaser.Math.Between(54, 70) : Phaser.Math.Between(30, 42);
       wells.push({
         x, y,
@@ -1318,7 +1378,6 @@ class GravityScene extends Phaser.Scene {
     }
 
     this.gravityWells = wells;
-    // 코어 많이 모을수록 더 빠르게 재배치
     const shiftBase = n >= 2 ? 1000 : n >= 1 ? 1400 : 1800;
     this.wellShiftTimer = Phaser.Math.Between(shiftBase, shiftBase + 700);
   }
@@ -1370,13 +1429,12 @@ class GravityScene extends Phaser.Scene {
     if (pg) pg.clear();
 
     this.gravityWells.forEach(arc => {
-      // 0~300ms: 희미한 왜곡/빛 번짐만
       const preProgress = Math.min(1, Math.max(0, (this.arcTimer - arc.born) / 300));
-      // 300ms 이후: 실제 중력장 페이드인 (200ms)
+      // After the warning phase, fade in the active gravity well.
       const fullAge = Math.min(1, Math.max(0, (this.arcTimer - arc.spawnAt) / 200));
       const color = arc.color;
 
-      // 프리-스폰 왜곡 링 (아주 희미한 빛 번짐)
+      // Pre-spawn warning ring.
       if (preProgress < 1 && pg) {
         const pa = preProgress * 0.15;
         pg.lineStyle(2, color, pa);
@@ -1389,7 +1447,6 @@ class GravityScene extends Phaser.Scene {
       const a = fullAge;
 
       if (arc.type === 'pull') {
-        // 강한 흡입형: 붉은 계열, 내부로 향하는 스포크
         g.fillStyle(color, 0.16 * a);
         g.fillCircle(arc.x, arc.y, arc.r);
         g.lineStyle(3, color, 0.9 * a);
@@ -1409,7 +1466,7 @@ class GravityScene extends Phaser.Scene {
           g.fillCircle(arc.x + Math.cos(ang) * (arc.r - 15), arc.y + Math.sin(ang) * (arc.r - 15), 2);
         }
       } else if (arc.type === 'zone') {
-        // 느린 장판형: 초록/청록, 넓고 반투명, 헥사 패턴
+        // Slow field: green/teal concentric rings.
         g.fillStyle(color, 0.09 * a);
         g.fillCircle(arc.x, arc.y, arc.r);
         g.lineStyle(2, color, 0.45 * a);
@@ -1418,14 +1475,14 @@ class GravityScene extends Phaser.Scene {
         g.strokeCircle(arc.x, arc.y, arc.r * 0.62);
         g.fillStyle(color, 0.62 * a);
         g.fillCircle(arc.x, arc.y, 5);
-        // 헥사 방사선 — 느리게 회전
+        // Slowly rotating radial lines.
         const hexR = arc.r * 0.46;
         g.lineStyle(1, color, 0.42 * a);
         for (let i = 0; i < 6; i++) {
           const ang = (Math.PI / 3) * i + this.arcTimer * 0.0008;
           g.lineBetween(arc.x, arc.y, arc.x + Math.cos(ang) * hexR, arc.y + Math.sin(ang) * hexR);
         }
-        // 외부 헥사
+        // Outer hex outline.
         g.lineStyle(1, color, 0.2 * a);
         g.beginPath();
         for (let i = 0; i <= 6; i++) {
@@ -1436,7 +1493,7 @@ class GravityScene extends Phaser.Scene {
         }
         g.strokePath();
       } else {
-        // 회전형 (spin): 황금/주황, 회오리 아크
+        // Spin field: amber arcs.
         g.fillStyle(color, 0.11 * a);
         g.fillCircle(arc.x, arc.y, arc.r);
         g.lineStyle(2, color, 0.5 * a);
@@ -1449,7 +1506,6 @@ class GravityScene extends Phaser.Scene {
           g.beginPath();
           g.arc(arc.x, arc.y, arc.r * 0.7, baseAng, baseAng + 1.25, false);
           g.strokePath();
-          // 아크 끝 화살표
           const tipA = baseAng + 1.25;
           const tx = arc.x + Math.cos(tipA) * arc.r * 0.7;
           const ty = arc.y + Math.sin(tipA) * arc.r * 0.7;
@@ -1487,12 +1543,10 @@ class GravityScene extends Phaser.Scene {
     let strongestWell = null;
     let strongestPull = 0;
     this.gravityWells.forEach(well => {
-      // 스폰 애니메이션 중에는 물리 비활성
       if (this.arcTimer < well.spawnAt) return;
       const dx = well.x - this.player.x;
       const dy = well.y - this.player.y;
       const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      // zone은 반경 내부만, pull/spin은 더 넓은 영향권
       const reach = well.r + (well.type === 'zone' ? 18 : well.type === 'pull' ? 130 : 112);
       if (dist > reach) return;
 
@@ -1500,13 +1554,13 @@ class GravityScene extends Phaser.Scene {
       this.wellInfluence = Math.max(this.wellInfluence, t);
 
       if (well.type === 'pull') {
-        // 강한 흡입: 중심 방향으로 당김
+        // Pull field: accelerate toward the center.
         const strength = this.wellPullStrength * (0.62 + t * t * 1.65);
         this.wellVel.x += (dx / dist) * strength * dt;
         this.wellVel.y += (dy / dist) * strength * dt;
         if (strength > strongestPull) { strongestPull = strength; strongestWell = well; }
       } else if (well.type === 'zone') {
-        // 느린 장판: 속도를 줄이는 방식 (wellInfluence로 sideSpeed 감소)
+        // Slow field: dampen existing velocity.
         this.wellInfluence = Math.max(this.wellInfluence, Math.min(1, t * 1.2));
         const brake = Math.pow(0.025, dt * (0.45 + t));
         this.gravVel.x *= brake;
@@ -1516,7 +1570,6 @@ class GravityScene extends Phaser.Scene {
         const pseudo = t * 500;
         if (pseudo > strongestPull) { strongestPull = pseudo; strongestWell = well; }
       } else if (well.type === 'spin') {
-        // 회전형: 중심으로 끌면서 진행 방향을 수직으로 꺾는 힘
         const perpX = -dy / dist;
         const perpY = dx / dist;
         const strength = this.wellPullStrength * 0.72 * (0.25 + t * 0.95);
@@ -1541,15 +1594,14 @@ class GravityScene extends Phaser.Scene {
     this.cameras.main.flash(90, 90, 200, 255, true);
 
     const msgs = {
-      pull: '강한 흡입 중력장에 빨렸어! 중심에서 멀어지자.',
-      zone: '중력 억제 구역 — 이동이 크게 느려져. 빠져나와!',
-      spin: '회전 중력장에 휩쓸렸어! 꺾이는 방향을 파악하자.'
+      pull: '강한 끌림 중력장에 휘말렸어. 중심에서 벗어나!',
+      zone: '중력 통제 구역 안이야. 이동이 느려져, 빠져나와!',
+      spin: '회전 중력장에 휘말렸어. 밀리는 방향을 읽어!'
     };
-    this.say('시물이', msgs[strongestWell.type] || '국소 중력장 충돌!', 1600);
+    this.say('시물이', '중력장 상태를 다시 확인해보자.');
 
-    // 피해 이유 플로팅 텍스트
     const hx = this.player.x, hy = this.player.y;
-    const labels = { pull: '흡입 충돌', zone: '억제 구역', spin: '회전 충돌' };
+    const labels = { pull: '끌림 충돌', zone: '통제 구역', spin: '회전 충돌' };
     const hitLbl = this.add.text(hx, hy - 44, labels[strongestWell.type] || '충돌', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '13px', color: '#ff7755', fontStyle: '700',
@@ -1578,7 +1630,7 @@ class GravityScene extends Phaser.Scene {
           item.moving = true;
           const visual = this.coreVisual(item.id);
           item.outerGlow.setFillStyle(visual.main, Math.min(0.42, visual.glowAlpha + 0.12));
-          this.say('시물이', '마지막 코어가 중력장에 반응해서 움직이기 시작했어.', 2200);
+    this.say('시물이', '중력장 상태를 다시 확인해보자.');
         }
       });
     }
@@ -1613,7 +1665,7 @@ class GravityScene extends Phaser.Scene {
     }
   }
 
-  // 모든 코어의 보호막 링을 현재 중력 방향에 맞춰 업데이트
+  // Update core shield rings against the current gravity direction.
   updateCoreShields() {
     if (!this.itemObjs) return;
     this.itemObjs.forEach(item => {
@@ -1622,7 +1674,6 @@ class GravityScene extends Phaser.Scene {
     });
   }
 
-  // 보호막 링: 중력 방향이 맞으면 열린 점선, 틀리면 회전하는 잠긴 링
   drawCoreShield(g, item) {
     if (!g) return;
     g.clear();
@@ -1635,7 +1686,6 @@ class GravityScene extends Phaser.Scene {
     const t = this.arcTimer * 0.003;
 
     if (unlocked) {
-      // 열린 상태: 색상 일치, 느리게 회전하는 점선 링
       g.lineStyle(2, visual.main, 0.5);
       for (let seg = 0; seg < 8; seg++) {
         const a0 = (Math.PI * 2 / 8) * seg + t * 0.4;
@@ -1647,7 +1697,7 @@ class GravityScene extends Phaser.Scene {
       g.lineStyle(1, visual.main, 0.22 + Math.sin(t * 3.5) * 0.1);
       g.strokeCircle(x, y, r + 8);
     } else {
-      // 잠긴 상태: 주황/빨간 회전 세그먼트
+      // Locked state: red/orange rotating segments.
       g.lineStyle(2.5, 0xff5522, 0.68);
       for (let seg = 0; seg < 4; seg++) {
         const a0 = (Math.PI * 2 / 4) * seg + t * 1.9;
@@ -1666,7 +1716,7 @@ class GravityScene extends Phaser.Scene {
     }
   }
 
-  // 중력장에 끌릴 때 플레이어 주변 압축 링 효과
+  // Draw the pull effect around the player.
   drawPullEffect() {
     if (!this.pullEffectG) return;
     const g = this.pullEffectG;
@@ -1726,7 +1776,7 @@ class GravityScene extends Phaser.Scene {
     if (this.extracting?.item === item) return;
     this.extracting = { item, elapsed: 0 };
     this.cameras.main.shake(60, 0.002);
-    this.say('시물이', `${item.name} 분리 중... 가까이 붙어서 버텨!`, 1600);
+    this.say('시물이', '중력장 상태를 다시 확인해보자.');
   }
 
   cancelCoreExtraction(showFeedback = false) {
@@ -1735,7 +1785,7 @@ class GravityScene extends Phaser.Scene {
     this.extracting = null;
     if (showFeedback) {
       this.cameras.main.shake(80, 0.003);
-      this.say('시물이', '분리가 끊겼어. 거리와 중력 방향을 다시 맞춰보자.', 1700);
+    this.say('시물이', '중력장 상태를 다시 확인해보자.');
     }
   }
 
@@ -1766,7 +1816,7 @@ class GravityScene extends Phaser.Scene {
     const withInput = Phaser.Math.Clamp(inputX * grav.x + inputY * grav.y, 0, 1);
 
     const grounded = this.isTouchingGravitySurface(grav);
-    // 점프 입력 버퍼: 공중에서 미리 누른 점프를 착지 직후에도 인식
+    // Jump input buffer: accept a jump pressed shortly before landing.
     const justPressedAgainst = againstInput > 0 && !this.wasAgainstGravity;
     if (justPressedAgainst) this.inputBuffer = 170;
     this.inputBuffer = Math.max(0, this.inputBuffer - delta);
@@ -1786,7 +1836,7 @@ class GravityScene extends Phaser.Scene {
     if ((this.player.body.blocked.up && this.gravVel.y < 0) || (this.player.body.blocked.down && this.gravVel.y > 0)) {
       this.gravVel.y = 0;
     }
-    // 벽 슬라이드 속도 제한: 중력 방향과 수직인 벽에 붙었을 때 낙하 속도 조절
+    // Limit wall-slide speed along the wall.
     const wallSlideMax = 165;
     if (grav.y !== 0 && (this.player.body.blocked.left || this.player.body.blocked.right)) {
       this.gravVel.y = Phaser.Math.Clamp(this.gravVel.y, -wallSlideMax, wallSlideMax);
@@ -1839,7 +1889,7 @@ class GravityScene extends Phaser.Scene {
     this.gravTimer -= delta;
     if (!this.warned && this.gravTimer <= 2000) {
       this.warned = true;
-      this.say('시물이', '중력 전환 2초 전! 다음 방향은 예측 불가야.');
+    this.say('시물이', '중력장 상태를 다시 확인해보자.');
       this.cameras.main.shake(80, 0.004);
       this.nextText.setStyle({ color: '#ff5c2a' });
     }
@@ -1931,7 +1981,7 @@ class GravityScene extends Phaser.Scene {
       if (item.done) return;
       if (Phaser.Math.Distance.Between(this.player.x, this.player.y, item.x, item.y) < 56) {
         if (!this.canCollectCore(item)) {
-          this.say('시물이', `${item.name}이 아직 고정돼 있어. 중력 방향을 바꿔서 다시 시도해보자.`, 2200);
+    this.say('시물이', '중력장 상태를 다시 확인해보자.');
           this.cameras.main.shake(80, 0.003);
           return;
         }
@@ -1979,11 +2029,11 @@ class GravityScene extends Phaser.Scene {
     this.itemsText.setText(`부품 ${n} / 3`);
     this.stationLbl.setText(`[${n}/3] 발생기 안정화`);
     if (n === 3) {
-      this.say('시물이', '부품을 모두 확보했어! 중앙 중력장 발생기에서 SPACE를 눌러 안정화하자.', 5000);
+    this.say('시물이', '중력장 상태를 다시 확인해보자.');
       this.stationIcon.setAlpha(1);
       this.stationGlow.setFillStyle(0x80fff0, 0.3);
     } else {
-      this.say('시물이', `${item.name} 확보! ${3 - n}개 더 필요해.`);
+    this.say('시물이', '중력장 상태를 다시 확인해보자.');
     }
   }
 
@@ -1998,7 +2048,7 @@ class GravityScene extends Phaser.Scene {
     this.cameras.main.flash(800, 190, 255, 255);
     this.debrisParticles.forEach(p => { p.vx = 0; p.vy = 0; });
 
-    this.say('시물이', '중력 벡터 정상화 완료! 실험실이 다시 안정됐어. 오늘의 물리 실험은 꽤 실전적이었네.', 4500);
+    this.say('시물이', '중력장 상태를 다시 확인해보자.');
     this.time.delayedCall(5200, () => {
       this.cameras.main.fadeOut(700);
       this.time.delayedCall(720, () => {
