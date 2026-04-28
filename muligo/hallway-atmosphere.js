@@ -52,7 +52,7 @@ class MuligoHallwayAtmosphere {
 
   createAmbientDust() {
     const { scene } = this;
-    for (let i = 0; i < 38; i++) {
+    for (let i = 0; i < 20; i++) {
       const mote = scene.add.circle(
         Phaser.Math.Between(40, this.worldWidth - 40),
         Phaser.Math.Between(170, 720),

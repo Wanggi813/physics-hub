@@ -36,7 +36,7 @@ const hubController = {
 };
 
 // 이상현상 해결 시 호출 — 전자칠판 잠금 해제
-hubController.anomalyCleared = function(missionId) {
+hubController.anomalyCleared = function (missionId) {
   hubController.activeAnomalyScene = false;
   interactionHint.classList.add("hidden");
   hubController.anomalySolved.add(missionId);
@@ -118,19 +118,19 @@ function setHint(mission) {
     return;
   }
 
-  const solved  = hubController.anomalySolved.has(mission.id);
+  const solved = hubController.anomalySolved.has(mission.id);
   const cleared = hubController.clearedMissions.has(mission.id);
   interactionHint.classList.remove("hidden");
 
   if (cleared) {
     hintTitle.textContent = `${mission.title} · 완료`;
-    hintBody.textContent  = `${mission.zone} · 시뮬레이션 완료`;
+    hintBody.textContent = `${mission.zone} · 시뮬레이션 완료`;
   } else if (solved) {
     hintTitle.textContent = `${mission.title} · 전자칠판`;
-    hintBody.textContent  = `${mission.zone} · 전자칠판 시뮬레이션을 시작합니다`;
+    hintBody.textContent = `${mission.zone} · 전자칠판 시뮬레이션을 시작합니다`;
   } else {
     hintTitle.textContent = `${mission.title} · 이상현상 진입`;
-    hintBody.textContent  = `${mission.zone} · 이상현상 현장에 진입합니다`;
+    hintBody.textContent = `${mission.zone} · 이상현상 현장에 진입합니다`;
   }
   zoneLabel.textContent = mission.zone;
 }
@@ -222,12 +222,12 @@ class HubScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('simul-base', 'assets/궁금한 시물이.png');
-    this.load.image('simul-zone1', 'assets/역학 시물이.png');
+    this.load.image('simul-base', 'assets/궁금한시물이.png');
+    this.load.image('simul-zone1', 'assets/역학시물이.png');
     this.load.image('simul-zone2', 'assets/양자시물이.png');
-    this.load.image('simul-zone3', 'assets/전자기 시물이.png');
-    this.load.image('simul-idle', 'assets/책읽는 시물이.png');
-    this.load.image('simul-present', 'assets/발표 시물이.png');
+    this.load.image('simul-zone3', 'assets/전자기시물이.png');
+    this.load.image('simul-idle', 'assets/책읽는시물이.png');
+    this.load.image('simul-present', 'assets/발표시물이.png');
 
     const g = this.make.graphics({ x: 0, y: 0, add: false });
 
@@ -1201,9 +1201,9 @@ class HubScene extends Phaser.Scene {
 
   launchAnomalyScene(mission) {
     const sceneMap = {
-      'orbit-raise':                 'GravityScene',
-      'lens-refraction':             'LightScene',
-      'electromagnetic-induction':   'EMScene'
+      'orbit-raise': 'GravityScene',
+      'lens-refraction': 'LightScene',
+      'electromagnetic-induction': 'EMScene'
     };
     const sceneName = sceneMap[mission.id];
     if (!sceneName) return;
@@ -1404,18 +1404,18 @@ class HubScene extends Phaser.Scene {
       g.clear();
 
       g.fillStyle(0x8ce8ff, 0.055);
-      for (let i = 0; i < 12; i++) {
-        const y = 312 + i * 25;
+      for (let i = 0; i < 8; i++) {
+        const y = 312 + i * 37;
         const offset = Math.sin(phase + i * 0.72) * 16;
         g.fillRoundedRect(x - 72 + offset, y, 144, 12, 6);
       }
 
-      for (let i = 0; i < 11; i++) {
-        const y = 322 + i * 27;
+      for (let i = 0; i < 7; i++) {
+        const y = 322 + i * 42;
         g.lineStyle(i % 2 ? 3 : 2, i % 2 ? 0xcff8ff : color, i % 2 ? 0.5 : 0.34);
         g.beginPath();
         g.moveTo(x - 70 + Math.sin(phase + i) * 10, y);
-        for (let px = -56; px <= 70; px += 14) {
+        for (let px = -56; px <= 70; px += 20) {
           const wave = Math.sin(phase * 1.4 + px / 16 + i * 0.6) * (11 + i * 0.55);
           g.lineTo(x + px + wave, y + Math.cos(phase + px / 18) * 5);
         }
@@ -1433,7 +1433,7 @@ class HubScene extends Phaser.Scene {
     };
 
     redrawWarp();
-    this.time.addEvent({ delay: 70, loop: true, callback: redrawWarp });
+    this.time.addEvent({ delay: 110, loop: true, callback: redrawWarp });
 
     for (let i = 0; i < 5; i++) {
       const strip = this.add.rectangle(x, 340 + i * 54, 148, 20, i % 2 ? 0x73ddff : 0xffffff, 0.12)
@@ -1506,7 +1506,7 @@ class HubScene extends Phaser.Scene {
     }).setDepth(12);
 
     this.time.addEvent({
-      delay: 260,
+      delay: 400,
       loop: true,
       callback: () => {
         if (!this.isAnomalyActiveAt(x) || Math.random() > 0.42) return;
@@ -1816,7 +1816,7 @@ class HubScene extends Phaser.Scene {
   addDataGrid() {
     const W = 2400;
 
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 22; i++) {
       const mote = this.add.circle(
         Phaser.Math.Between(80, W - 80),
         Phaser.Math.Between(190, 830),
@@ -2152,9 +2152,9 @@ function showEndingOverlay() {
   const grid = document.getElementById("endingMissions");
 
   const fieldColors = {
-    "역학":   { bg: "rgba(255,64,32,0.1)",   border: "rgba(255,64,32,0.38)",   text: "#ff6040" },
-    "파동":   { bg: "rgba(74,174,255,0.1)",  border: "rgba(74,174,255,0.38)",  text: "#4aaeff" },
-    "전자기": { bg: "rgba(48,238,120,0.1)",  border: "rgba(48,238,120,0.38)",  text: "#30ee78" }
+    "역학": { bg: "rgba(255,64,32,0.1)", border: "rgba(255,64,32,0.38)", text: "#ff6040" },
+    "파동": { bg: "rgba(74,174,255,0.1)", border: "rgba(74,174,255,0.38)", text: "#4aaeff" },
+    "전자기": { bg: "rgba(48,238,120,0.1)", border: "rgba(48,238,120,0.38)", text: "#30ee78" }
   };
 
   grid.innerHTML = "";
@@ -2258,6 +2258,11 @@ new Phaser.Game({
   width: window.innerWidth,
   height: window.innerHeight,
   backgroundColor: "#f3ead9",
+  roundPixels: true,
+  render: {
+    powerPreference: 'high-performance',
+    antialias: true
+  },
   physics: {
     default: "arcade",
     arcade: {
