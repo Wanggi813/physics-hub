@@ -377,7 +377,7 @@ function resetSeedState() {
 
   if (elSeed.prompt) elSeed.prompt.value = "";
   if (elSeed.output) {
-    const mascots = ['양자시물이', '역학시물이', '열시물이', '전기시물이', '상대시물이'];
+    const mascots = ['양자시물이', '역학시물이', '열시물이', '전자기시물이', '특수상대시물이', '일반상대시물이'];
     const random = mascots[Math.floor(Math.random() * mascots.length)];
     elSeed.output.innerHTML = `
     <div class="seed-empty-state">
@@ -507,19 +507,26 @@ function getMascotByProject(project) {
   if (category.includes("역학")) return "./image/역학시물이.png";
   if (category.includes("열")) return "./image/열시물이.png";
   if (category.includes("전자") || category.includes("반도체") || category.includes("전자기")) {
-    return "./image/전기시물이.png";
+    return "./image/전자기시물이.png";
   }
-  if (category.includes("상대")) return "./image/상대시물이.png";
+  if (category.includes("상대")) {
+    const tags = project?.tags || [];
+    return tags.some(t => t.includes("일반상대"))
+      ? "./image/일반상대시물이.png"
+      : "./image/특수상대시물이.png";
+  }
   return "./image/양자시물이.png";
 }
 
 function getIdeaMascotByIndex(index) {
   const mascots = [
     "./image/역학시물이.png",
-    "./image/전기시물이.png",
+    "./image/전자기시물이.png",
     "./image/양자시물이.png",
     "./image/열시물이.png",
-    "./image/상대시물이.png"
+    "./image/일반상대시물이.png",
+    "./image/특수상대시물이.png"
+
   ];
   return mascots[index % mascots.length];
 }
@@ -1013,10 +1020,11 @@ let seedLoadingTimer = null;
 function showSeedLoadingUI() {
   const mascots = [
     "./image/역학시물이.png",
-    "./image/전기시물이.png",
+    "./image/전자기시물이.png",
     "./image/양자시물이.png",
     "./image/열시물이.png",
-    "./image/상대시물이.png"
+    "./image/일반상대시물이.png",
+    "./image/특수상대시물이.png"
   ];
 
   const messages = [
@@ -1744,20 +1752,21 @@ function makeCard(p) {
   const simulMap = {
     '역학': './image/역학시물이.png',
     '열': './image/열시물이.png',
-    '전자/반도체': './image/전기시물이.png',
-    '전자기': './image/전기시물이.png',
+    '전자/반도체': './image/전자기시물이.png',
+    '전자기': './image/전자기시물이.png',
     '양자': './image/양자시물이.png',
     '현대물리': './image/양자시물이.png',
-    '상대성': './image/상대시물이.png',
+    '상대성': './image/일반상대시물이.png',
     '광학': './image/양자시물이.png' // 광학은 빛의 성질이므로 양자와 매칭 (혹은 전기로 변경 가능)
   };
 
   const FALLBACK_MASCOTS = [
     "./image/역학시물이.png",
     "./image/열시물이.png",
-    "./image/전기시물이.png",
+    "./image/전자기시물이.png",
     "./image/양자시물이.png",
-    "./image/상대시물이.png"
+    "./image/일반상대시물이.png",
+    "./image/특수상대시물이.png"
   ];
 
   if (p.thumb) {
@@ -1786,7 +1795,14 @@ function makeCard(p) {
   } else {
     // 썸네일 없음 → 카테고리 시물이 또는 랜덤 시물이
     const img = document.createElement('img');
-    img.src = simulMap[p.category] || FALLBACK_MASCOTS[Math.floor(Math.random() * FALLBACK_MASCOTS.length)];
+    let mascotSrc;
+    if (p.category === '상대성') {
+      const isGeneral = (p.tags || []).some(t => t.includes('일반상대'));
+      mascotSrc = isGeneral ? './image/일반상대시물이.png' : './image/특수상대시물이.png';
+    } else {
+      mascotSrc = simulMap[p.category] || FALLBACK_MASCOTS[Math.floor(Math.random() * FALLBACK_MASCOTS.length)];
+    }
+    img.src = mascotSrc;
     img.alt = p.category + ' 캐릭터';
     img.className = 'thumb-img';
     img.style.objectFit = 'contain';
@@ -2035,9 +2051,10 @@ render();
   const MASCOTS = [
     "./image/역학시물이.png",
     "./image/열시물이.png",
-    "./image/전기시물이.png",
+    "./image/전자기시물이.png",
     "./image/양자시물이.png",
-    "./image/상대시물이.png"
+    "./image/일반상대시물이.png",
+    "./image/특수상대시물이.png"
   ];
 
   const factEl = document.getElementById('fact-text');
