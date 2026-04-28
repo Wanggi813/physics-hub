@@ -10,10 +10,10 @@
     this.collected = new Set();
     this.cleared = false;
     this.gravDirs = [
-      { x: 0,  y: 1,  lbl: '아래', deg: 90  },
-      { x: 0,  y: -1, lbl: '위', deg: 270 },
-      { x: 1,  y: 0,  lbl: '오른쪽', deg: 0   },
-      { x: -1, y: 0,  lbl: '왼쪽', deg: 180 }
+      { x: 0, y: 1, lbl: '아래', deg: 90 },
+      { x: 0, y: -1, lbl: '위', deg: 270 },
+      { x: 1, y: 0, lbl: '오른쪽', deg: 0 },
+      { x: -1, y: 0, lbl: '왼쪽', deg: 180 }
     ];
     this.gravIdx = 0;
     this.gravSpeed = 620;
@@ -242,12 +242,12 @@
   wallObstacleDefs() {
     const { W, H, WALL } = this;
     return [
-      { kind: 'shelf', x: WALL + 23,     y: H * 0.34, w: 46,  h: 86 },
-      { kind: 'panel', x: WALL + 24,     y: H * 0.74, w: 48,  h: 112 },
-      { kind: 'sink',  x: W - WALL - 24, y: H * 0.26, w: 48,  h: 100 },
-      { kind: 'rack',  x: W - WALL - 24, y: H * 0.76, w: 48,  h: 108 },
-      { kind: 'duct',  x: W * 0.32,      y: WALL + 22, w: 118, h: 44 },
-      { kind: 'rail',  x: W * 0.72,      y: H - WALL - 22, w: 132, h: 44 }
+      { kind: 'shelf', x: WALL + 23, y: H * 0.34, w: 46, h: 86 },
+      { kind: 'panel', x: WALL + 24, y: H * 0.74, w: 48, h: 112 },
+      { kind: 'sink', x: W - WALL - 24, y: H * 0.26, w: 48, h: 100 },
+      { kind: 'rack', x: W - WALL - 24, y: H * 0.76, w: 48, h: 108 },
+      { kind: 'duct', x: W * 0.32, y: WALL + 22, w: 118, h: 44 },
+      { kind: 'rail', x: W * 0.72, y: H - WALL - 22, w: 132, h: 44 }
     ];
   }
 
@@ -427,12 +427,12 @@
   labObstacleDefs() {
     const { W, H } = this;
     return [
-      { kind: 'cart',  x: W * 0.50, y: H * 0.29, w: 132, h: 34 },
-      { kind: 'coil',  x: W * 0.50, y: H * 0.72, w: 112, h: 42 },
-      { kind: 'crate', x: W * 0.42, y: H * 0.50, w: 54,  h: 96 },
-      { kind: 'tank',  x: W * 0.58, y: H * 0.50, w: 54,  h: 96 },
-      { kind: 'case',  x: W * 0.18, y: H * 0.50, w: 52,  h: 120 },
-      { kind: 'case',  x: W * 0.82, y: H * 0.52, w: 52,  h: 112 }
+      { kind: 'cart', x: W * 0.50, y: H * 0.29, w: 132, h: 34 },
+      { kind: 'coil', x: W * 0.50, y: H * 0.72, w: 112, h: 42 },
+      { kind: 'crate', x: W * 0.42, y: H * 0.50, w: 54, h: 96 },
+      { kind: 'tank', x: W * 0.58, y: H * 0.50, w: 54, h: 96 },
+      { kind: 'case', x: W * 0.18, y: H * 0.50, w: 52, h: 120 },
+      { kind: 'case', x: W * 0.82, y: H * 0.52, w: 52, h: 112 }
     ];
   }
 
@@ -825,9 +825,9 @@
     const { W, H, WALL } = this;
     const markerDefs = [
       { x: W / 2, y: H - WALL / 2, angle: 270, dirIdx: 0 },
-      { x: W / 2, y: WALL / 2,     angle: 90,  dirIdx: 1 },
+      { x: W / 2, y: WALL / 2, angle: 90, dirIdx: 1 },
       { x: W - WALL / 2, y: H / 2, angle: 180, dirIdx: 2 },
-      { x: WALL / 2,     y: H / 2, angle: 0,   dirIdx: 3 }
+      { x: WALL / 2, y: H / 2, angle: 0, dirIdx: 3 }
     ];
 
     this.gravMarkers = markerDefs.map(def => {
@@ -1118,21 +1118,21 @@
     this.compassG = this.add.graphics().setDepth(23);
     this.drawCompass();
 
-    this.cdText = this.add.text(W - 30, 72, '8.0s', {
+    this.cdText = this.add.text(W - 30, 81, '8.0s', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '20px',
       color: '#98f7ff',
       fontStyle: '900'
     }).setOrigin(1, 0).setDepth(24);
 
-    this.nextText = this.add.text(W - 30, 99, '다음: 불안정', {
+    this.nextText = this.add.text(W - 30, 108, '다음: 불안정', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '11px',
       color: '#ffc857',
       fontStyle: '700'
     }).setOrigin(1, 0).setDepth(24);
 
-    const itemPanelX = this.WALL + 8;
+    const itemPanelX = W - 172;
     const itemPanelY = H - this.WALL - 58;
     const ig = this.add.graphics().setDepth(22);
     ig.fillStyle(0x071218, 0.94);
@@ -1149,19 +1149,19 @@
       fontStyle: '700'
     }).setDepth(23);
 
-    this.dlgBg = this.add.rectangle(W / 2, H - 6, W - 100, 76, 0x071218, 0.94)
+    this.dlgBg = this.add.rectangle(W / 2, H - 6, W - 100, 96, 0x071218, 0.94)
       .setOrigin(0.5, 1).setDepth(20).setStrokeStyle(1, 0x52dfff, 0.45).setVisible(false);
     const portraitSrc = this.textures.get('simul-zone1').getSourceImage();
     const portraitScale = Math.min(148 / portraitSrc.width, 156 / portraitSrc.height);
     this.dlgPortrait = this.add.image(112, H - 68, 'simul-zone1')
       .setScale(portraitScale).setDepth(21).setVisible(false);
-    this.dlgSpk = this.add.text(190, H - 70, '', {
+    this.dlgSpk = this.add.text(190, H - 90, '', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '11px',
       color: '#80eeff',
       fontStyle: '900'
     }).setDepth(21).setVisible(false);
-    this.dlgTxt = this.add.text(190, H - 54, '', {
+    this.dlgTxt = this.add.text(190, H - 72, '', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '13px',
       color: '#d7eef3',
@@ -1217,7 +1217,7 @@
     const shade = this.add.rectangle(W / 2, H / 2, W, H, 0x03080c, 0.72);
     const g = this.add.graphics();
     const cw = Math.min(560, W - 80);
-    const ch = 320;
+    const ch = 370;
     const x = W / 2 - cw / 2;
     const y = H / 2 - ch / 2;
 
@@ -1284,8 +1284,6 @@
     const { W, H, WALL } = this;
     const dt = delta / 1000;
     const grav = this.gravDirs[this.gravIdx];
-    const dg = this.debrisG;
-    dg.clear();
     this.debrisParticles.forEach(p => {
       p.vx += grav.x * 28 * dt;
       p.vy += grav.y * 28 * dt;
@@ -1297,6 +1295,12 @@
       if (p.y > H - WALL - 4) { p.y = H - WALL - 4; p.vy *= -0.5; }
       p.vx *= 0.995;
       p.vy *= 0.995;
+    });
+    this._debrisDrawTick = (this._debrisDrawTick + 1) % 2;
+    if (this._debrisDrawTick !== 0) return;
+    const dg = this.debrisG;
+    dg.clear();
+    this.debrisParticles.forEach(p => {
       dg.fillStyle(0x85eaff, p.a * 0.55);
       dg.fillCircle(p.x, p.y, p.r);
       dg.lineStyle(1, 0xffc857, p.a * 0.32);
@@ -1338,6 +1342,8 @@
     this.arcHitCooldown = 0;
     this.wellShiftTimer = 0;
     this.gravityWells = [];
+    this._arcDrawTick = 0;
+    this._debrisDrawTick = 0;
     this.chooseGravityWells();
     this.drawArcHazards();
   }
@@ -1346,8 +1352,8 @@
     const n = this.collected.size;
     const count = n >= 2 ? 3 : n >= 1 ? 2 : 1;
     const typePool = n >= 2 ? ['pull', 'pull', 'zone', 'spin'] :
-                     n >= 1 ? ['pull', 'zone', 'spin'] :
-                              ['pull', 'zone', 'zone'];
+      n >= 1 ? ['pull', 'zone', 'spin'] :
+        ['pull', 'zone', 'zone'];
     const colorMap = { pull: 0xff4030, zone: 0x44ddaa, spin: 0xffaa00 };
     const wells = [];
     let guard = 0;
@@ -1532,7 +1538,8 @@
       well.y = Phaser.Math.Clamp(well.baseY + driftY, this.WALL + 96, this.H - this.WALL - 96);
     });
 
-    this.drawArcHazards();
+    this._arcDrawTick = (this._arcDrawTick + 1) % 2;
+    if (this._arcDrawTick === 0) this.drawArcHazards();
 
     this.arcHitCooldown = Math.max(0, this.arcHitCooldown - delta);
     const damp = Math.pow(0.08, dt);
@@ -1630,7 +1637,7 @@
           item.moving = true;
           const visual = this.coreVisual(item.id);
           item.outerGlow.setFillStyle(visual.main, Math.min(0.42, visual.glowAlpha + 0.12));
-    this.say('시물이', '중력장 상태를 다시 확인해보자.');
+          this.say('시물이', '중력장 상태를 다시 확인해보자.');
         }
       });
     }
@@ -1785,7 +1792,7 @@
     this.extracting = null;
     if (showFeedback) {
       this.cameras.main.shake(80, 0.003);
-    this.say('시물이', '중력장 상태를 다시 확인해보자.');
+      this.say('시물이', '중력장 상태를 다시 확인해보자.');
     }
   }
 
@@ -1871,13 +1878,16 @@
 
     if (this.stationRingG) {
       this.stationRingAngle = (this.stationRingAngle + delta * 0.04) % 360;
-      const { W, H } = this;
-      const cx = W / 2, cy = H / 2;
-      this.stationRingG.clear();
-      this.stationRingG.lineStyle(1, 0x55e6ff, 0.35);
-      for (let i = 0; i < 6; i++) {
-        const a = Phaser.Math.DegToRad(this.stationRingAngle + i * 60);
-        this.stationRingG.lineBetween(cx + Math.cos(a) * 38, cy + Math.sin(a) * 38, cx + Math.cos(a) * 50, cy + Math.sin(a) * 50);
+      this._ringDrawTick = ((this._ringDrawTick || 0) + 1) % 2;
+      if (this._ringDrawTick === 0) {
+        const { W, H } = this;
+        const cx = W / 2, cy = H / 2;
+        this.stationRingG.clear();
+        this.stationRingG.lineStyle(1, 0x55e6ff, 0.35);
+        for (let i = 0; i < 6; i++) {
+          const a = Phaser.Math.DegToRad(this.stationRingAngle + i * 60);
+          this.stationRingG.lineBetween(cx + Math.cos(a) * 38, cy + Math.sin(a) * 38, cx + Math.cos(a) * 50, cy + Math.sin(a) * 50);
+        }
       }
     }
 
@@ -1889,7 +1899,7 @@
     this.gravTimer -= delta;
     if (!this.warned && this.gravTimer <= 2000) {
       this.warned = true;
-    this.say('시물이', '중력장 상태를 다시 확인해보자.');
+      this.say('시물이', '중력장 상태를 다시 확인해보자.');
       this.cameras.main.shake(80, 0.004);
       this.nextText.setStyle({ color: '#ff5c2a' });
     }
@@ -1981,7 +1991,7 @@
       if (item.done) return;
       if (Phaser.Math.Distance.Between(this.player.x, this.player.y, item.x, item.y) < 56) {
         if (!this.canCollectCore(item)) {
-    this.say('시물이', '중력장 상태를 다시 확인해보자.');
+          this.say('시물이', '중력장 상태를 다시 확인해보자.');
           this.cameras.main.shake(80, 0.003);
           return;
         }
@@ -2029,11 +2039,11 @@
     this.itemsText.setText(`부품 ${n} / 3`);
     this.stationLbl.setText(`[${n}/3] 발생기 안정화`);
     if (n === 3) {
-    this.say('시물이', '중력장 상태를 다시 확인해보자.');
+      this.say('시물이', '중력장 상태를 다시 확인해보자.');
       this.stationIcon.setAlpha(1);
       this.stationGlow.setFillStyle(0x80fff0, 0.3);
     } else {
-    this.say('시물이', '중력장 상태를 다시 확인해보자.');
+      this.say('시물이', '중력장 상태를 다시 확인해보자.');
     }
   }
 

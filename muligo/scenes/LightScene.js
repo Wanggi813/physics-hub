@@ -950,7 +950,7 @@
         alpha: { from: 0.28, to: 0.05 },
         yoyo: true, repeat: -1, duration: 920 + i * 70
       });
-      const label = this.add.text(def.x, def.y - 26, def.name, {
+      const label = this.add.text(def.x, def.y - 38, def.name, {
         fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
         fontSize: '11px', color: '#e5f9ff', fontStyle: '800',
         backgroundColor: '#071018', padding: { x: 5, y: 2 }
@@ -1093,17 +1093,17 @@
       fontSize: '12px', color: '#8bdcff', fontStyle: '800'
     }).setOrigin(1, 0).setDepth(41);
 
-    this.dlgBg = this.add.rectangle(W / 2, H - 8, W - 92, 76, 0x071018, 0.94)
+    this.dlgBg = this.add.rectangle(W / 2, H - 8, W - 92, 96, 0x071018, 0.94)
       .setOrigin(0.5, 1).setDepth(40).setStrokeStyle(1, 0x78dfff, 0.42).setVisible(false);
     const portraitSrc = this.textures.get('simul-zone2').getSourceImage();
     const portraitScale = Math.min(148 / portraitSrc.width, 156 / portraitSrc.height);
     this.dlgPortrait = this.add.image(112, H - 68, 'simul-zone2')
       .setScale(portraitScale).setDepth(41).setVisible(false);
-    this.dlgSpk = this.add.text(190, H - 72, '', {
+    this.dlgSpk = this.add.text(190, H - 90, '', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '11px', color: '#8bdcff', fontStyle: '900'
     }).setDepth(41).setVisible(false);
-    this.dlgTxt = this.add.text(190, H - 56, '', {
+    this.dlgTxt = this.add.text(190, H - 72, '', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '13px', color: '#e8f5ff', wordWrap: { width: W - 280 }
     }).setDepth(41).setVisible(false);
@@ -1194,11 +1194,23 @@
             : Phaser.Math.Clamp(0.62 + instability * 0.62 - this.lastBeamHitCount * 0.16, 0.34, 1.24);
     this.anomalyLevel = Phaser.Math.Linear(this.anomalyLevel, targetLevel, 0.045);
 
+    this._anomalyDrawTick = ((this._anomalyDrawTick || 0) + 1) % 2;
+    if (this._anomalyDrawTick !== 0) {
+      if (this.anomalyJolt > 0 && this.cameras.main.setRotation) {
+        this.anomalyJolt = Math.max(0, this.anomalyJolt - delta);
+        const p = this.anomalyJolt / 420;
+        this.cameras.main.setRotation(Math.sin(t * 0.055) * 0.008 * p);
+      } else if (this.cameras.main.setRotation) {
+        this.cameras.main.setRotation(Math.sin(t * 0.0017) * 0.0016 * this.anomalyLevel);
+      }
+      return;
+    }
+
     const level = this.anomalyLevel;
     this.drawFractureField(t, level);
     this.drawDisconnectedMap(t, level, instability);
     this.drawSpaceTears(t, level, instability);
-    this.drawSpectralNoise(t, level, delta);
+    this.drawSpectralNoise(t, level, delta * 2);
     this.drawSpaceAnchorField(t, level);
     this.spaceAnchors?.forEach(anchor => this.drawSpaceAnchor(anchor));
 

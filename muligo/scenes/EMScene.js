@@ -154,36 +154,168 @@
   drawCenterPanel(g) {
     const { W, H } = this;
     const cx = W / 2, cy = H / 2;
+    const PW = 310, PH = 210;
+    const px = cx - PW / 2, py = cy - PH / 2;
 
+    // Ground circle guides
+    g.lineStyle(1, 0x30d060, 0.07);
+    g.strokeCircle(cx, cy, 118);
+    g.lineStyle(1, 0x30d060, 0.04);
+    g.strokeCircle(cx, cy, 136);
 
-    g.lineStyle(1, 0x30d060, 0.10);
-    g.strokeCircle(cx, cy, 98);
-    g.lineStyle(1, 0x30d060, 0.06);
-    g.strokeCircle(cx, cy, 112);
-    g.lineStyle(2, 0x1c3c1c, 0.4);
-    g.lineBetween(cx - 92, cy, cx + 92, cy);
-    g.lineBetween(cx, cy - 92, cx, cy + 92);
+    // Drop shadow
+    g.fillStyle(0x000000, 0.5);
+    g.fillRoundedRect(px + 7, py + 7, PW, PH, 10);
 
+    // Main housing body
+    g.fillStyle(0x141f14, 1);
+    g.fillRoundedRect(px, py, PW, PH, 10);
+
+    // Outer frame stroke
+    g.lineStyle(3, 0x2e4a2e, 1);
+    g.strokeRoundedRect(px, py, PW, PH, 10);
+
+    // Inner highlight inset
+    g.lineStyle(1, 0x50ff80, 0.22);
+    g.strokeRoundedRect(px + 5, py + 5, PW - 10, PH - 10, 7);
+
+    // Header bar
+    g.fillStyle(0x0c170c, 1);
+    g.fillRoundedRect(px + 8, py + 8, PW - 16, 36, 5);
+    g.lineStyle(1, 0x40b060, 0.5);
+    g.strokeRoundedRect(px + 8, py + 8, PW - 16, 36, 5);
+
+    // Header caution stripes
+    for (let i = 0; i < 10; i++) {
+      const sw = (PW - 16) / 10;
+      g.fillStyle(i % 2 === 0 ? 0x1e3a1e : 0x111c11, 0.5);
+      g.fillRect(px + 8 + i * sw, py + 8, sw, 36);
+    }
+    // Header re-clip (restore rounded corners by drawing solid background on sides)
+    g.fillStyle(0x0c170c, 1);
+    g.fillRect(px + 8, py + 8, 5, 36);
+    g.fillRect(px + PW - 13, py + 8, 5, 36);
+
+    // Interior grid texture
+    g.lineStyle(1, 0x1a2e1a, 0.4);
+    for (let gy = py + 52; gy < py + PH - 10; gy += 12) {
+      g.lineBetween(px + 12, gy, px + PW - 12, gy);
+    }
+    for (let gx = px + 12; gx < px + PW - 12; gx += 16) {
+      g.lineBetween(gx, py + 52, gx, py + PH - 10);
+    }
+
+    // Status LED row (below header)
+    const ledColors = [0x20ff50, 0x20ff50, 0xffc020, 0xffc020, 0xff4040, 0xff4040];
+    ledColors.forEach((col, i) => {
+      const lx = cx - 60 + i * 24;
+      const ly = py + 56;
+      g.fillStyle(col, 0.85);
+      g.fillCircle(lx, ly, 3.5);
+      g.lineStyle(1, col, 0.35);
+      g.strokeCircle(lx, ly, 6);
+    });
+
+    // Copper bus bars
+    [0.44, 0.68].forEach(frac => {
+      const by = py + PH * frac;
+      g.fillStyle(0x7a5a10, 0.65);
+      g.fillRect(px + 16, by, PW - 32, 5);
+      g.lineStyle(1, 0xb88820, 0.45);
+      g.lineBetween(px + 16, by + 1, px + PW - 16, by + 1);
+      g.lineStyle(1, 0x3a2a08, 0.4);
+      g.lineBetween(px + 16, by + 4, px + PW - 16, by + 4);
+    });
+
+    // Left & right cable entry channels
+    [px + 2, px + PW - 12].forEach(lx => {
+      g.fillStyle(0x1e2e1e, 1);
+      g.fillRoundedRect(lx, py + PH * 0.38, 10, PH * 0.46, 3);
+      g.lineStyle(1, 0x304530, 0.6);
+      g.strokeRoundedRect(lx, py + PH * 0.38, 10, PH * 0.46, 3);
+      for (let j = 0; j < 5; j++) {
+        const ky = py + PH * 0.38 + 8 + j * (PH * 0.46 - 14) / 4;
+        g.fillStyle(0x0a120a, 1);
+        g.fillCircle(lx + 5, ky, 2.5);
+        g.lineStyle(1, 0x3a5a3a, 0.5);
+        g.strokeCircle(lx + 5, ky, 2.5);
+      }
+    });
+
+    // Slot bay inset panel
+    g.fillStyle(0x0a150a, 0.95);
+    g.fillRoundedRect(cx - 122, cy - 18, 244, 68, 5);
+    g.lineStyle(1.5, 0x2a4a2a, 0.7);
+    g.strokeRoundedRect(cx - 122, cy - 18, 244, 68, 5);
+    g.lineStyle(1, 0x60ff90, 0.12);
+    g.strokeRoundedRect(cx - 119, cy - 15, 238, 62, 4);
+
+    // Slot bay circuit traces connecting slots
+    g.lineStyle(1, 0x20a040, 0.3);
+    g.lineBetween(cx - 108, cy + 34, cx + 108, cy + 34);
+    for (let i = 0; i < 4; i++) {
+      const sx = cx - 78 + i * 52;
+      g.lineBetween(sx, cy + 34, sx, cy + 38);
+      g.fillStyle(0x20a040, 0.5);
+      g.fillCircle(sx, cy + 38, 2);
+    }
+
+    // Warning indicators on left edge
+    [0.52, 0.66, 0.80].forEach((frac, i) => {
+      const wy = py + PH * frac;
+      g.fillStyle(i === 0 ? 0xb03010 : 0x143014, 0.8);
+      g.fillRoundedRect(px + 14, wy - 4, 8, 8, 2);
+      g.lineStyle(1, i === 0 ? 0xff5030 : 0x305030, 0.5);
+      g.strokeRoundedRect(px + 14, wy - 4, 8, 8, 2);
+    });
+
+    // Bottom terminal block
+    for (let i = 0; i < 6; i++) {
+      const tx = cx - 70 + i * 28;
+      const ty = py + PH - 18;
+      g.fillStyle(0x1e2e1e, 1);
+      g.fillRoundedRect(tx - 7, ty - 3, 14, 13, 2);
+      g.lineStyle(1, i % 2 === 0 ? 0x40b050 : 0x286030, 0.6);
+      g.strokeRoundedRect(tx - 7, ty - 3, 14, 13, 2);
+      g.fillStyle(i % 3 === 0 ? 0x40b060 : 0x1a3a1a, 0.9);
+      g.fillCircle(tx, ty + 4, 2);
+    }
+
+    // Corner bolts / rivets
+    [[px + 14, py + 14], [px + PW - 14, py + 14],
+     [px + 14, py + PH - 14], [px + PW - 14, py + PH - 14]].forEach(([rx, ry]) => {
+      g.fillStyle(0x243824, 1);
+      g.fillCircle(rx, ry, 5);
+      g.lineStyle(1.5, 0x4a6e4a, 0.8);
+      g.strokeCircle(rx, ry, 5);
+      g.lineStyle(1, 0x70ff90, 0.14);
+      g.strokeCircle(rx, ry, 7.5);
+      // Cross slot on bolt
+      g.lineStyle(1, 0x3a583a, 0.6);
+      g.lineBetween(rx - 3, ry, rx + 3, ry);
+      g.lineBetween(rx, ry - 3, rx, ry + 3);
+    });
+
+    // Alert indicators (flashing circles) each side of panel
     const cg = this.add.graphics().setDepth(6);
-    cg.fillStyle(0x182818, 1);
-    cg.fillRoundedRect(cx - 94, cy - 52, 188, 104, 8);
-    cg.lineStyle(2, 0x50ff80, 0.75);
-    cg.strokeRoundedRect(cx - 94, cy - 52, 188, 104, 8);
-    cg.fillStyle(0x0d1d0d, 1);
-    cg.fillRoundedRect(cx - 68, cy - 48, 136, 20, 3);
-    [cx - 84, cx + 84].forEach(lx => {
-      cg.fillStyle(0xff2020, 0.9);
-      cg.fillCircle(lx, cy, 5);
-      cg.lineStyle(1, 0xff6060, 0.35);
-      cg.strokeCircle(lx, cy, 8);
-    });
-    [[cx - 90, cy - 48], [cx + 90, cy - 48],
-     [cx - 90, cy + 48], [cx + 90, cy + 48]].forEach(([bx, by]) => {
-      cg.fillStyle(0x4a5e4a, 1);
-      cg.fillCircle(bx, by, 3);
+    [cx - PW / 2 + 28, cx + PW / 2 - 28].forEach(ax => {
+      cg.fillStyle(0xff2020, 0.85);
+      cg.fillCircle(ax, cy, 6);
+      cg.lineStyle(2, 0xff6060, 0.4);
+      cg.strokeCircle(ax, cy, 10);
     });
 
-    this.add.text(cx, cy - 38, '중앙 배전반 MAIN PANEL', {
+    // Label area above slots
+    cg.fillStyle(0x0c1c0c, 1);
+    cg.fillRoundedRect(cx - 82, cy - 16, 164, 14, 3);
+    cg.lineStyle(1, 0x30a050, 0.4);
+    cg.strokeRoundedRect(cx - 82, cy - 16, 164, 14, 3);
+
+    this.add.text(cx, cy - 9, 'CARD SLOTS  ·  카드 슬롯', {
+      fontFamily: 'monospace', fontSize: '9px', color: '#40c060'
+    }).setOrigin(0.5).setDepth(7);
+
+    this.add.text(cx, py + 26, '중앙 배전반  ·  MAIN DISTRIBUTION PANEL', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '11px', color: '#70ff90', fontStyle: '700'
     }).setOrigin(0.5).setDepth(7);
@@ -723,7 +855,7 @@
       const amp  = 0.07 + i * 0.04;
       let t = Math.random() * Math.PI * 2;
       this.time.addEvent({
-        delay: 110, loop: true,
+        delay: 180, loop: true,
         callback: () => {
           if (this.cleared) return;
           t += 0.06 + Math.random() * 0.05;
@@ -771,9 +903,9 @@
 
   createItems() {
 
-    // A: (row1, col0)  B: (row0, col3)  C: (row2, col5)  D: (row3, col1)
+    // A: (row3, col5)  B: (row0, col3)  C: (row2, col5)  D: (row3, col1)
     const cellIndices = [
-      { id: 'A', idx: 1 * this.COLS + 0, name: '회로카드 A' },
+      { id: 'A', idx: 3 * this.COLS + 5, name: '회로카드 A' },
       { id: 'B', idx: 0 * this.COLS + 3, name: '회로카드 B' },
       { id: 'C', idx: 2 * this.COLS + 5, name: '회로카드 C' },
       { id: 'D', idx: 3 * this.COLS + 1, name: '회로카드 D' },
@@ -798,22 +930,27 @@
 
   createPanel() {
     const { W, H } = this;
-    const SLOT_Y  = H / 2 + 14;
-    const SLOT_X0 = W / 2 - 54;
+    const SLOT_Y  = H / 2 + 10;
+    const SLOT_X0 = W / 2 - 78;
+    const SLOT_STEP = 52;
     this.slotGraphics = [];
     this.slotTexts    = [];
+    this.slotLabels   = [];
     for (let i = 0; i < 4; i++) {
-      const sx = SLOT_X0 + i * 36;
+      const sx = SLOT_X0 + i * SLOT_STEP;
       const sg = this.add.graphics().setDepth(10);
-      const st = this.add.text(sx, SLOT_Y, 'N', {
-        fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
-        fontSize: '13px', color: '#60ff90', fontStyle: '900'
+      const st = this.add.text(sx, SLOT_Y - 4, '!', {
+        fontFamily: 'monospace', fontSize: '14px', color: '#c05050', fontStyle: '900'
+      }).setOrigin(0.5).setDepth(11);
+      const sl = this.add.text(sx, SLOT_Y + 20, String.fromCharCode(65 + i), {
+        fontFamily: 'monospace', fontSize: '9px', color: '#406040'
       }).setOrigin(0.5).setDepth(11);
       this.slotGraphics.push(sg);
       this.slotTexts.push(st);
+      this.slotLabels.push(sl);
       this.redrawSlot(i);
     }
-    this.panelLbl = this.add.text(W / 2, H / 2 + 46, '카드 0/4 · 배전반 근처에서 SPACE', {
+    this.panelLbl = this.add.text(W / 2, H / 2 + 54, '카드 0/4 · 배전반 근처에서 SPACE', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '10px', color: '#50c070', fontStyle: '700'
     }).setOrigin(0.5).setDepth(11);
@@ -821,22 +958,106 @@
 
   redrawSlot(i) {
     const { W, H } = this;
-    const sx  = W / 2 - 54 + i * 36;
-    const sy  = H / 2 + 14;
+    const sx = W / 2 - 78 + i * 52;
+    const sy = H / 2 + 10;
+    const hw = 21, hh = 27;
     const state = this.panelSlots[i];
-    const sg  = this.slotGraphics[i];
-    const style = {
-      unstable: { fill: 0x2a2020, stroke: 0x8a3030, color: '#b86060', text: '!' },
-      waiting:  { fill: 0x203040, stroke: 0x70d0ff, color: '#90e8ff', text: `${i + 1}` },
-      locked:   { fill: 0x124020, stroke: 0x70ff90, color: '#a0ffb8', text: 'OK' },
-    }[state] || { fill: 0x2a2020, stroke: 0x8a3030, color: '#b86060', text: '!' };
+    const sg = this.slotGraphics[i];
+    const st = this.slotTexts[i];
+    const sl = this.slotLabels?.[i];
     sg.clear();
-    sg.fillStyle(style.fill, 0.86);
-    sg.fillRoundedRect(sx - 14, sy - 14, 28, 28, 4);
-    sg.lineStyle(1, style.stroke, 0.8);
-    sg.strokeRoundedRect(sx - 14, sy - 14, 28, 28, 4);
-    this.slotTexts[i].setText(style.text);
-    this.slotTexts[i].setColor(style.color);
+
+    if (state === 'unstable') {
+      // Dark red — empty slot with hazard pattern
+      sg.fillStyle(0x1e0e0e, 1);
+      sg.fillRoundedRect(sx - hw, sy - hh, hw * 2, hh * 2, 5);
+      sg.lineStyle(2, 0x8a2020, 0.9);
+      sg.strokeRoundedRect(sx - hw, sy - hh, hw * 2, hh * 2, 5);
+      sg.lineStyle(1, 0x5a1010, 0.5);
+      sg.strokeRoundedRect(sx - hw + 3, sy - hh + 3, hw * 2 - 6, hh * 2 - 6, 3);
+      // Hazard diagonal stripes
+      sg.lineStyle(1, 0x6a1818, 0.35);
+      for (let d = -hh * 2; d < hw * 2; d += 8) {
+        const x1 = sx - hw + Math.max(0, d);
+        const y1 = sy - hh + Math.max(0, -d);
+        const x2 = sx - hw + Math.min(hw * 2, d + hh * 2);
+        const y2 = sy - hh + Math.min(hh * 2, hh * 2 - d);
+        if (x1 < sx + hw && y1 < sy + hh) sg.lineBetween(x1, y1, x2, y2);
+      }
+      // Corner marks
+      [[sx - hw + 4, sy - hh + 4], [sx + hw - 4, sy - hh + 4]].forEach(([cx, cy]) => {
+        sg.lineStyle(1.5, 0xff3030, 0.6);
+        sg.lineBetween(cx - 3, cy, cx + 3, cy);
+        sg.lineBetween(cx, cy - 3, cx, cy + 3);
+      });
+      st.setText('!').setColor('#c04040').setFontFamily('monospace').setFontSize('15px');
+      sl?.setColor('#5a2020');
+
+    } else if (state === 'waiting') {
+      // Blue — card inserted, awaiting lock
+      sg.fillStyle(0x0e1e30, 1);
+      sg.fillRoundedRect(sx - hw, sy - hh, hw * 2, hh * 2, 5);
+      sg.lineStyle(2, 0x50c0ff, 0.95);
+      sg.strokeRoundedRect(sx - hw, sy - hh, hw * 2, hh * 2, 5);
+      sg.lineStyle(1, 0x2080c0, 0.5);
+      sg.strokeRoundedRect(sx - hw + 3, sy - hh + 3, hw * 2 - 6, hh * 2 - 6, 3);
+      // Card inserted indicator lines
+      sg.lineStyle(1, 0x3090d0, 0.45);
+      for (let r = 0; r < 3; r++) {
+        const ry = sy - hh + 10 + r * 8;
+        sg.lineBetween(sx - hw + 5, ry, sx + hw - 5, ry);
+      }
+      // Ready corner indicators
+      [[sx - hw + 5, sy - hh + 5], [sx + hw - 5, sy - hh + 5],
+       [sx - hw + 5, sy + hh - 5], [sx + hw - 5, sy + hh - 5]].forEach(([cx, cy]) => {
+        sg.fillStyle(0x50c0ff, 0.7);
+        sg.fillCircle(cx, cy, 2.5);
+      });
+      // Central glow
+      sg.fillStyle(0x1060a0, 0.3);
+      sg.fillCircle(sx, sy - 2, 10);
+      st.setText(`${i + 1}`).setColor('#80e8ff').setFontFamily('monospace').setFontSize('15px');
+      sl?.setColor('#3080a0');
+
+    } else if (state === 'locked') {
+      // Bright green — locked in
+      sg.fillStyle(0x0a1e10, 1);
+      sg.fillRoundedRect(sx - hw, sy - hh, hw * 2, hh * 2, 5);
+      sg.lineStyle(2.5, 0x40ff80, 1);
+      sg.strokeRoundedRect(sx - hw, sy - hh, hw * 2, hh * 2, 5);
+      sg.lineStyle(1, 0x20b050, 0.45);
+      sg.strokeRoundedRect(sx - hw + 3, sy - hh + 3, hw * 2 - 6, hh * 2 - 6, 3);
+      // Circuit trace pattern
+      sg.lineStyle(1, 0x20a050, 0.4);
+      sg.lineBetween(sx - hw + 5, sy, sx - 8, sy);
+      sg.lineBetween(sx - 8, sy, sx - 8, sy - hh + 8);
+      sg.lineBetween(sx + hw - 5, sy, sx + 8, sy);
+      sg.lineBetween(sx + 8, sy, sx + 8, sy + hh - 8);
+      // Nodes on trace
+      [[-8, -hh + 8], [8, hh - 8]].forEach(([ox, oy]) => {
+        sg.fillStyle(0x30ff70, 0.7);
+        sg.fillCircle(sx + ox, sy + oy, 2.5);
+      });
+      // Full glow
+      sg.fillStyle(0x20ff60, 0.15);
+      sg.fillRoundedRect(sx - hw + 1, sy - hh + 1, hw * 2 - 2, hh * 2 - 2, 5);
+      // Checkmark
+      sg.lineStyle(2.5, 0x40ff80, 1);
+      sg.beginPath();
+      sg.moveTo(sx - 7, sy - 4);
+      sg.lineTo(sx - 2, sy + 4);
+      sg.lineTo(sx + 8, sy - 8);
+      sg.strokePath();
+      st.setText('').setColor('#40ff80');
+      sl?.setColor('#30b060');
+
+    } else {
+      sg.fillStyle(0x1e0e0e, 1);
+      sg.fillRoundedRect(sx - hw, sy - hh, hw * 2, hh * 2, 5);
+      sg.lineStyle(1, 0x502020, 0.6);
+      sg.strokeRoundedRect(sx - hw, sy - hh, hw * 2, hh * 2, 5);
+      st.setText('?').setColor('#604040').setFontFamily('monospace').setFontSize('14px');
+    }
   }
 
 
@@ -877,17 +1098,17 @@
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '11px', color: '#60c080', fontStyle: '700'
     }).setOrigin(1, 0).setDepth(21);
-    this.dlgBg  = this.add.rectangle(W / 2, H - 8, W - 80, 74, 0x080e08, 0.92)
+    this.dlgBg  = this.add.rectangle(W / 2, H - 8, W - 80, 96, 0x080e08, 0.92)
       .setOrigin(0.5, 1).setDepth(20).setStrokeStyle(1, 0x40e060, 0.4).setVisible(false);
     const portraitSrc = this.textures.get('simul-zone3').getSourceImage();
     const portraitScale = Math.min(148 / portraitSrc.width, 156 / portraitSrc.height);
     this.dlgPortrait = this.add.image(112, H - 68, 'simul-zone3')
       .setScale(portraitScale).setDepth(21).setVisible(false);
-    this.dlgSpk = this.add.text(190, H - 72, '', {
+    this.dlgSpk = this.add.text(190, H - 90, '', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '11px', color: '#60e080', fontStyle: '900'
     }).setDepth(21).setVisible(false);
-    this.dlgTxt = this.add.text(190, H - 56, '', {
+    this.dlgTxt = this.add.text(190, H - 72, '', {
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif',
       fontSize: '13px', color: '#c8e8d0', wordWrap: { width: W - 260 }
     }).setDepth(21).setVisible(false);
@@ -1149,10 +1370,10 @@
     if (m.event) m.event.remove();
     if (m.timeout) m.timeout.remove();
     m.event = this.time.addEvent({
-      delay: 16,
+      delay: 50,
       loop: true,
       callback: () => {
-        const dt = Math.max(0.001, (this.game.loop.delta || 16) / 1000);
+        const dt = Math.max(0.001, (this.game.loop.delta || 50) / 1000);
         m.pos += m.dir * m.speeds[m.slotIndex] * dt;
         if (m.pos >= 1) { m.pos = 1; m.dir = -1; }
         if (m.pos <= 0) { m.pos = 0; m.dir = 1; }
