@@ -58,6 +58,18 @@
     <priority>0.8</priority>
   </url>
 
+  <url>
+    <loc>https://www.phy-simul.com/simul/일과%20에너지.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.phy-simul.com/simul/탈출%20속도.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
   <!-- 전자기 -->
   <url>
     <loc>https://www.phy-simul.com/simul/전자기유도.html</loc>
@@ -71,11 +83,35 @@
     <priority>0.8</priority>
   </url>
 
+  <url>
+    <loc>https://www.phy-simul.com/simul/축전기.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
   <!-- 양자 -->
   <url>
     <loc>https://www.phy-simul.com/simul/양자%20터널링.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.phy-simul.com/simul/양자%20편광.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.phy-simul.com/simul/양자거품.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.phy-simul.com/simul/슈테른-게를라흐%20전자시점.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
 
 </urlset>

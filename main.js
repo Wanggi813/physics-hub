@@ -1748,7 +1748,7 @@ function makeCard(p) {
     });
   }
 
-  // [수정됨] 카테고리별 시물이 매핑
+  // 카테고리별 시물이 매핑
   const simulMap = {
     '역학': './image/역학시물이.png',
     '열': './image/열시물이.png',
@@ -1992,7 +1992,7 @@ document.querySelector('.b-sidebar').addEventListener('click', e => {
 sortSel.addEventListener('change', render);
 render();
 
-// ===== [수정됨] 오늘의 물리 (타자기 효과 + 랜덤 시물이) =====
+// ===== 오늘의 물리 (타자기 효과 + 랜덤 시물이) =====
 (function () {
   const FACTS = [
     "헬륨 풍선을 든 차가 급출발하면, 풍선은 뒤가 아니라 앞으로 쏠립니다(공기 밀도 차이).",
@@ -2299,7 +2299,7 @@ render();
         attractors.splice(i, 1);
         if (sunState === 'normal') {
           consumedCount++;
-          console.log(`Mass: ${consumedCount}/${TARGET_COUNT}`);
+
           if (consumedCount >= TARGET_COUNT) triggerSupernova();
         }
         continue;
