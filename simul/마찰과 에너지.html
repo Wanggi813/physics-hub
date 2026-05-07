@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>일과 에너지</title>
+    <meta name="description" content="힘과 변위가 만드는 일, 위치에너지와 운동에너지의 변화를 함께 확인하는 역학 시뮬레이션입니다.">
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Pretendard', sans-serif;
+            touch-action: none;
+            /* 모바일에서 화면 스크롤 방지 */
+        }
+
+        /* PC 창모드에서도 구동되도록 모바일 너비(768px 이하)일 때만 세로 모드 경고 */
+        #portrait-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) and (orientation: portrait) {
+            #portrait-warning {
+                display: flex;
+            }
+        }
+
+        .panel {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            padding: 20px;
+            color: #333;
+            border-left: 5px solid #005eb8;
+        }
+
+        #controls-panel {
+            bottom: 30px;
+            left: 30px;
+            width: 300px;
+        }
+
+        #controls-panel h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.2rem;
+            color: #005eb8;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .btn-reset {
+            width: 100%;
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-reset:hover {
+            background-color: #111;
+        }
+
+        .btn-reset:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        #stats-panel {
+            top: 30px;
+            right: 30px;
+            width: 350px;
+        }
+
+        #progress-panel {
+            top: 30px;
+            left: calc((100vw - 380px) / 2);
+            transform: translateX(-50%);
+            width: min(560px, calc(100vw - 440px));
+            min-width: 320px;
+            border-left-color: #ff9900;
+            padding: 14px 18px 16px;
+            z-index: 5;
+        }
+
+        .progress-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 800;
+        }
+
+        .progress-head {
+            margin-bottom: 12px;
+            color: #1f2937;
+        }
+
+        .progress-meta {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            color: #5f6f7f;
+            font-size: 0.78rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .progress-meta::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #005eb8;
+            opacity: 0.7;
+        }
+
+        #progress-percent {
+            color: #005eb8;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .distance-track {
+            position: relative;
+            height: 58px;
+            border-radius: 18px;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0) 22%, rgba(255,255,255,0) 78%, rgba(255,255,255,0.85)),
+                repeating-linear-gradient(90deg, rgba(255,255,255,0.28) 0 14px, rgba(180,205,225,0.12) 14px 28px),
+                linear-gradient(90deg, #e4f1f8, #f8fcff);
+            border: 2px solid rgba(74, 111, 138, 0.22);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.72), inset 0 8px 22px rgba(255,255,255,0.58);
+            overflow: hidden;
+        }
+
+        .distance-track::before {
+            content: "";
+            position: absolute;
+            left: 12px;
+            right: 12px;
+            top: 50%;
+            height: 2px;
+            background: rgba(31, 41, 55, 0.18);
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+
+        #progress-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, rgba(0, 94, 184, 0.22), rgba(0, 163, 255, 0.08));
+            border-right: 2px solid rgba(0, 94, 184, 0.45);
+            transition: width 0.12s linear;
+            z-index: 0;
+        }
+
+        .progress-house {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            transform: translateY(-50%);
+            background:
+                radial-gradient(circle, #ffffff 0 12%, #d72d2d 13% 31%, #ffffff 32% 52%, #1e5db8 53% 100%);
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.78), 0 4px 12px rgba(0,0,0,0.16);
+            z-index: 1;
+        }
+
+        #progress-stone {
+            position: absolute;
+            top: 50%;
+            left: 0%;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle, #6b6f72 0 42%, #8a8d8f 43% 68%, #b6babd 69% 100%);
+            border: 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.22);
+            transform: translate(-50%, -50%);
+            transition: left 0.12s linear;
+            z-index: 3;
+        }
+
+        #progress-stone::before {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 23px;
+            height: 23px;
+            border-radius: 50%;
+            background: #ffdf1b;
+            transform: translate(-50%, -50%);
+        }
+
+        #progress-stone::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 5px;
+            height: 23px;
+            border-radius: 3px;
+            background: #c7a900;
+            transform: translate(-50%, -50%);
+        }
+
+        .progress-marker {
+            position: absolute;
+            bottom: 4px;
+            transform: translateX(-50%);
+            font-size: 0.68rem;
+            font-weight: 900;
+            color: #52616f;
+            white-space: nowrap;
+            z-index: 2;
+        }
+
+        .progress-marker.start {
+            left: 24px;
+        }
+
+        .progress-marker.target {
+            left: auto;
+            right: 38px;
+            transform: translateX(50%);
+            color: #e32636;
+        }
+
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .score-card {
+            background: #f5f8fb;
+            border: 1px solid #e1e8f0;
+            border-radius: 10px;
+            padding: 8px 6px;
+            text-align: center;
+        }
+
+        .score-card b {
+            display: block;
+            color: #52616f;
+            font-size: 0.72rem;
+            margin-bottom: 4px;
+        }
+
+        .score-card span {
+            color: #111827;
+            font-weight: 900;
+            font-variant-numeric: tabular-nums;
+        }
+
+        #stats-panel h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #stats-panel h2 span {
+            color: #e32636;
+            font-size: 0.9rem;
+            font-weight: normal;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .chart-container {
+            margin-top: 20px;
+        }
+
+        .bar-wrap {
+            background: #e0e0e0;
+            height: 16px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.1s linear;
+        }
+
+        #bar-k {
+            background: linear-gradient(90deg, #005eb8, #0081f2);
+            width: 100%;
+        }
+
+        #bar-q {
+            background: linear-gradient(90deg, #ff9900, #ff5500);
+            width: 0%;
+        }
+
+        .bar-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 3px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .toggle-wrap {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .toggle-wrap input {
+            margin-right: 8px;
+            width: 18px;
+            height: 18px;
+        }
+
+        #flash-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+            transition: opacity 0.5s ease-out;
+        }
+
+        #result-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), 0 0 20px #e32636;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 101;
+            transition: opacity 0.5s, transform 0.5s;
+        }
+
+        .show-msg {
+            opacity: 1 !important;
+            transform: translate(-50%, -50%) scale(1.1) !important;
+        }
+
+        #sweep-hint {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(51, 51, 51, 0.6);
+            font-size: 1.2rem;
+            font-weight: bold;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* ===== 모바일 가로 모드 ===== */
+        @media (max-height: 500px) {
+            .panel { padding: 8px 12px; }
+
+            #controls-panel {
+                top: auto; bottom: 8px; left: 8px; width: 175px;
+            }
+            #controls-panel h2 { font-size: 0.85rem; margin-bottom: 6px; }
+            .control-group { margin-bottom: 6px; }
+            .control-group label { font-size: 0.75rem; }
+            .btn-reset { padding: 7px; font-size: 0.85rem; }
+            .toggle-wrap, #controls-panel p { display: none; }
+
+            #stats-panel {
+                top: auto; bottom: 8px; right: 8px; width: 190px;
+            }
+            #stats-panel h2 { font-size: 0.85rem; margin-bottom: 6px; }
+            .score-grid { gap: 4px; margin-bottom: 6px; }
+            .score-card { padding: 3px 2px; }
+            .score-card b { font-size: 0.6rem; margin-bottom: 2px; }
+            .stat-row { font-size: 0.75rem; margin-bottom: 3px; }
+            .chart-container { margin-top: 6px; }
+            .bar-label { font-size: 0.68rem; margin-bottom: 2px; }
+            .bar-wrap { height: 9px; margin-bottom: 5px; }
+
+            #progress-panel {
+                top: 8px; left: 8px;
+                transform: none;
+                width: calc(100vw - 16px);
+                min-width: unset;
+                padding: 7px 12px 9px;
+            }
+            .progress-head { margin-bottom: 5px; font-size: 0.8rem; }
+            .distance-track { height: 38px; border-radius: 12px; }
+            #progress-stone { width: 30px; height: 30px; }
+            #progress-stone::before { width: 15px; height: 15px; }
+            #progress-stone::after { width: 3px; height: 15px; }
+            .progress-house { width: 32px; height: 32px; }
+
+            #result-message { font-size: 2.5rem; }
+            #sweep-hint { font-size: 0.9rem; top: 18%; }
+        }
+
+    </style>
+</head>
+
+<body>
+    <div id="portrait-warning">
+        <div style="font-size: 4rem; margin-bottom: 20px;">📱 🔄</div>
+        원활한 시뮬레이션을 위해<br>기기를 <b>가로 모드</b>로 회전해주세요.
+    </div>
+
+    <div id="progress-panel" class="panel">
+        <div class="progress-head">
+            <span>&#53944;&#47001; &#51652;&#54665;&#46020;</span>
+            <div class="progress-meta">
+                <span id="progress-current">2.00 m</span>
+                <span>/</span>
+                <span id="progress-total">32.00 m</span>
+            </div>
+            <strong id="progress-percent">0%</strong>
+        </div>
+        <div class="distance-track">
+            <div id="progress-fill"></div>
+            <div class="progress-house"></div>
+            <div id="progress-stone"></div>
+            <div class="progress-marker start">&#52636;&#48156;</div>
+            <div class="progress-marker target">&#47785;&#54364;</div>
+        </div>
+    </div>
+
+    <div id="controls-panel" class="panel">
+        <h2>🥌 투구 컨트롤 (F·Δt)</h2>
+        <div class="control-group">
+            <label for="f-slider">미는 힘 (F): <span id="f-display">60</span> N</label>
+            <input type="range" id="f-slider" min="10" max="150" step="5" value="60">
+        </div>
+        <p style="font-size:0.95rem; color:#e32636; font-weight:bold; margin-bottom:15px; text-align:center;">
+            👇 화면을 꾹 누르고 있으면 출발합니다!
+        </p>
+        <button id="btn-reset" class="btn-reset">다시 준비 (Reset)</button>
+        <div class="toggle-wrap">
+            <input type="checkbox" id="toggle-vector" checked>
+            <label for="toggle-vector">물리 벡터 (힘/마찰력) 표시</label>
+        </div>
+    </div>
+
+    <div id="stats-panel" class="panel">
+        <div class="score-grid">
+            <div class="score-card"><b>ROUND</b><span id="game-round">1/5</span></div>
+            <div class="score-card"><b>SCORE</b><span id="game-score">0</span></div>
+            <div class="score-card"><b>SHOT</b><span id="shot-score">0</span></div>
+            <div class="score-card"><b>BEST</b><span id="best-score">0</span></div>
+        </div>
+        <h2>Live Telemetry <span id="status-indicator">● READY</span></h2>
+        <div class="stat-row"><span>현재 속도 (v)</span><span class="stat-value"><span id="stat-v">0.00</span> m/s</span>
+        </div>
+        <div class="stat-row"><span>마찰 계수 (μ)</span><span class="stat-value" id="stat-mu">0.020</span></div>
+        <div class="stat-row"><span>타겟까지 거리</span><span class="stat-value"><span id="stat-dist">30.00</span> m</span>
+        </div>
+
+        <div class="chart-container">
+            <div class="bar-label"><span>운동 에너지 (K)</span><span id="val-k">0 J</span></div>
+            <div class="bar-wrap">
+                <div id="bar-k" class="bar-fill"></div>
+            </div>
+            <div class="bar-label"><span>마찰 손실 에너지 (Q)</span><span id="val-q">0 J</span></div>
+            <div class="bar-wrap">
+                <div id="bar-q" class="bar-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sweep-hint"></div>
+    <div id="flash-overlay"></div>
+    <div id="result-message">NICE SHOT!</div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const fSlider = document.getElementById('f-slider');
+        const fDisplay = document.getElementById('f-display');
+        const btnReset = document.getElementById('btn-reset');
+        const statV = document.getElementById('stat-v');
+        const statMu = document.getElementById('stat-mu');
+        const statDist = document.getElementById('stat-dist');
+        const barK = document.getElementById('bar-k');
+        const barQ = document.getElementById('bar-q');
+        const valK = document.getElementById('val-k');
+        const valQ = document.getElementById('val-q');
+        const statusInd = document.getElementById('status-indicator');
+        const toggleVector = document.getElementById('toggle-vector');
+        const flashOverlay = document.getElementById('flash-overlay');
+        const resultMsg = document.getElementById('result-message');
+        const sweepHint = document.getElementById('sweep-hint');
+        const gameRound = document.getElementById('game-round');
+        const gameScore = document.getElementById('game-score');
+        const shotScore = document.getElementById('shot-score');
+        const bestScore = document.getElementById('best-score');
+        const progressTrack = document.querySelector('.distance-track');
+        const progressFill = document.getElementById('progress-fill');
+        const progressStone = document.getElementById('progress-stone');
+        const progressPercent = document.getElementById('progress-percent');
+        const progressCurrent = document.getElementById('progress-current');
+        const progressTotal = document.getElementById('progress-total');
+
+        const PHYSICS = {
+            g: 9.81,
+            m: 20.0,
+            mu_base: 0.020,
+            mu_sweep_min: 0.002,
+            overshootLimit: 3.2,
+            scale: 120 // 2배 확대
+        };
+
+        const GAME = {
+            totalRounds: 5,
+            round: 1,
+            score: 0,
+            lastShotScore: 0,
+            finished: false,
+            best: Number(localStorage.getItem('curlingWorkEnergyBest') || 0) || 0
+        };
+
+        let state = {
+            phase: 'ready',
+            stone: { x: 2, v: 0, radius: 0.15 }, // 시작 위치를 2m 지점으로 설정
+            house: { x: 32, y: 0 },
+            energy: { initialK: 0, currentK: 0, lossQ: 0 },
+            isSweeping: false,
+            cameraX: 0,
+            sweepSpeed: 0,
+            lastPointer: { x: 0, y: 0, time: 0 },
+            lastTime: 0,
+            currentMu: PHYSICS.mu_base
+        };
+
+        let particles = [];
+        let iceScars = [];
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            state.house.y = canvas.height / 2;
+
+            const isMobileLandscape = window.innerHeight <= 500;
+            const scale = isMobileLandscape
+                ? 1
+                : Math.max(0.6, Math.min(1, window.innerWidth / 1280, window.innerHeight / 720));
+            document.querySelectorAll('.panel').forEach(el => el.style.zoom = scale.toFixed(3));
+        }
+        window.addEventListener('resize', resize);
+
+        fSlider.addEventListener('input', (e) => {
+            fDisplay.innerText = e.target.value;
+        });
+
+        btnReset.addEventListener('click', handleResetClick);
+
+        function handleResetClick() {
+            if (GAME.finished) {
+                startNewGame();
+                return;
+            }
+
+            if (state.phase === 'finished') {
+                GAME.round += 1;
+                GAME.lastShotScore = 0;
+            }
+
+            resetGame();
+        }
+
+        function startNewGame() {
+            GAME.round = 1;
+            GAME.score = 0;
+            GAME.lastShotScore = 0;
+            GAME.finished = false;
+            resetGame();
+        }
+
+        function updateGameUI() {
+            gameRound.innerText = `${Math.min(GAME.round, GAME.totalRounds)}/${GAME.totalRounds}`;
+            gameScore.innerText = GAME.score;
+            shotScore.innerText = GAME.lastShotScore;
+            bestScore.innerText = GAME.best;
+        }
+
+        function updateProgressUI() {
+            const startX = 2;
+            const total = state.house.x - startX;
+            const current = Math.max(0, state.stone.x - startX);
+            const progress = Math.max(0, Math.min(1, current / total));
+            const trackWidth = progressTrack.clientWidth || 1;
+            const startCenter = 24;
+            const targetCenter = Math.max(startCenter, trackWidth - 38);
+            const stoneLeft = startCenter + (targetCenter - startCenter) * progress;
+
+            progressFill.style.width = `${stoneLeft}px`;
+            progressStone.style.left = `${stoneLeft}px`;
+            progressPercent.innerText = `${Math.round(progress * 100)}%`;
+            progressCurrent.innerText = `${Math.min(state.stone.x, state.house.x).toFixed(2)} m`;
+            progressTotal.innerText = `${state.house.x.toFixed(2)} m`;
+        }
+
+        function calculateShotScore(dist) {
+            if (dist < 0.3) return 100;
+            if (dist < 0.61) return 80;
+            if (dist < 1.22) return 60;
+            if (dist < 1.83) return 40;
+            if (dist < 3.0) return 15;
+            return 0;
+        }
+
+        function resetGame() {
+            state.phase = 'ready';
+            state.stone.x = 2; // 시작선 조금 앞으로 리셋
+            state.stone.v = 0;
+            state.energy.initialK = 0;
+            state.energy.currentK = 0;
+            state.energy.lossQ = 0;
+            state.cameraX = 0;
+            state.currentMu = PHYSICS.mu_base;
+            particles = [];
+            iceScars = [];
+
+            fSlider.disabled = false;
+            btnReset.innerText = 'Reset Shot';
+            statusInd.innerText = '● READY';
+            statusInd.style.color = '#e32636';
+            resultMsg.classList.remove('show-msg');
+            sweepHint.style.opacity = '0';
+            sweepHint.innerText = '스톤 앞쪽 빙판을 문질러 스위핑하세요!';
+
+            updateGameUI();
+            updateUI();
+            draw();
+        }
+
+        // 마우스를 누르면 무조건 투구 시작 (Pushing)
+        function handlePointerDown(e) {
+            if (state.phase === 'ready') {
+                state.phase = 'pushing';
+                state.lastTime = performance.now();
+
+                statusInd.innerText = '● PUSHING...';
+                statusInd.style.color = '#ff9900';
+                fSlider.disabled = true;
+
+                requestAnimationFrame(gameLoop);
+            }
+            // 이미 움직이는 중이면 스위핑으로 넘김
+            else if (state.phase === 'moving') {
+                handlePointerMove(e);
+            }
+        }
+
+        function handlePointerMove(e) {
+            if (state.phase !== 'moving') return;
+
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            let currentTime = performance.now();
+
+            const stoneScreenX = state.stone.x * PHYSICS.scale - state.cameraX;
+
+            if (clientX > stoneScreenX + 5 && clientX < stoneScreenX + 180 && Math.abs(clientY - state.house.y) < 130) {
+                state.isSweeping = true;
+                sweepHint.style.opacity = '0';
+
+                if (state.lastPointer.time > 0) {
+                    let dx = clientX - state.lastPointer.x;
+                    let dy = clientY - state.lastPointer.y;
+                    let dt = currentTime - state.lastPointer.time;
+                    if (dt > 0) {
+                        state.sweepSpeed = Math.sqrt(dx * dx + dy * dy) / dt;
+                    }
+                }
+
+                state.lastPointer = { x: clientX, y: clientY, time: currentTime };
+                generateParticles(clientX, clientY);
+            } else {
+                state.isSweeping = false;
+                state.sweepSpeed = 0;
+            }
+        }
+
+        function handlePointerUp() {
+            if (state.phase === 'pushing') {
+                state.phase = 'moving';
+
+                // 손을 뗀 순간 축적된 에너지를 초기 역학적 에너지로 세팅
+                state.energy.initialK = 0.5 * PHYSICS.m * state.stone.v * state.stone.v;
+
+                statusInd.innerText = '● IN PLAY';
+                statusInd.style.color = '#005eb8';
+                sweepHint.style.opacity = '1';
+            }
+
+            state.isSweeping = false;
+            state.sweepSpeed = 0;
+            state.lastPointer.time = 0;
+        }
+
+        canvas.addEventListener('mousedown', handlePointerDown);
+        canvas.addEventListener('touchstart', handlePointerDown, { passive: true });
+        canvas.addEventListener('mousemove', handlePointerMove);
+        canvas.addEventListener('touchmove', handlePointerMove, { passive: true });
+        window.addEventListener('mouseup', handlePointerUp);
+        window.addEventListener('touchend', handlePointerUp);
+
+        function generateParticles(x, y) {
+            const count = state.isSweeping ? 8 : 3;
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x + state.cameraX + (Math.random() - 0.5) * 95,
+                    y: y + (Math.random() - 0.5) * 70,
+                    vx: (Math.random() - 0.5) * 70 - state.stone.v * 8,
+                    vy: (Math.random() - 0.5) * 40 - 18,
+                    size: 1.5 + Math.random() * 3.5,
+                    life: 1.0
+                });
+            }
+        }
+
+        function gameLoop(timestamp) {
+            const dt = (timestamp - state.lastTime) / 1000;
+            state.lastTime = timestamp;
+
+            updatePhysics(dt);
+            updateUI();
+            draw();
+
+            if (state.phase === 'pushing' || state.phase === 'moving') {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function updatePhysics(dt) {
+            if (dt > 0.1) return;
+            if (state.phase !== 'pushing' && state.phase !== 'moving') return;
+
+            state.sweepSpeed = Math.max(0, state.sweepSpeed - 15 * dt);
+
+            let targetMu = PHYSICS.mu_base;
+            if (state.isSweeping && state.phase === 'moving') {
+                let sweepFactor = Math.min(state.sweepSpeed / 1.0, 1) ** 1.5;
+                targetMu = PHYSICS.mu_base - (PHYSICS.mu_base - PHYSICS.mu_sweep_min) * sweepFactor;
+            }
+            state.currentMu += (targetMu - state.currentMu) * (8 * dt);
+
+            const frictionA = -state.currentMu * PHYSICS.g;
+            let a = frictionA;
+
+            if (state.phase === 'pushing') {
+                const pushForce = parseFloat(fSlider.value);
+                const pushA = pushForce / PHYSICS.m;
+
+                a = pushA + frictionA;
+
+                if (state.stone.v === 0 && a < 0) {
+                    a = 0;
+                }
+            }
+
+            state.stone.v += a * dt;
+
+            if (state.stone.v <= 0 && state.phase === 'moving') {
+                state.stone.v = 0;
+                finishShot();
+            } else if (state.stone.v < 0 && state.phase === 'pushing') {
+                state.stone.v = 0;
+            } else {
+                state.stone.x += state.stone.v * dt;
+            }
+
+            if (state.phase === 'moving' && state.stone.v > 0.12) {
+                iceScars.push({
+                    x: state.stone.x * PHYSICS.scale,
+                    y: state.house.y + (Math.random() - 0.5) * 34,
+                    len: 22 + Math.min(90, state.stone.v * 18),
+                    wobble: (Math.random() - 0.5) * 1.2,
+                    life: 1
+                });
+                if (iceScars.length > 130) iceScars.shift();
+            }
+
+            if (state.phase === 'moving' && state.stone.x > state.house.x + PHYSICS.overshootLimit) {
+                state.stone.v = 0;
+                finishShot({ forcedMiss: true, reason: 'TOO FAR' });
+                return;
+            }
+
+            state.energy.currentK = 0.5 * PHYSICS.m * state.stone.v * state.stone.v;
+
+            if (state.phase === 'moving') {
+                state.energy.lossQ = Math.max(0, state.energy.initialK - state.energy.currentK);
+            } else {
+                state.energy.lossQ = 0;
+            }
+
+            const targetCameraX = (state.stone.x * PHYSICS.scale) - (canvas.width / 3);
+            state.cameraX = Math.max(0, targetCameraX);
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.life -= dt * 2;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            for (let i = iceScars.length - 1; i >= 0; i--) {
+                iceScars[i].life -= dt * 0.45;
+                if (iceScars[i].life <= 0) iceScars.splice(i, 1);
+            }
+        }
+
+        function updateUI() {
+            statV.innerText = state.stone.v.toFixed(2);
+            statMu.innerText = state.currentMu.toFixed(3);
+            statMu.style.color = state.isSweeping ? '#e32636' : '#333';
+
+            const distToTarget = state.house.x - state.stone.x;
+            statDist.innerText = Math.max(0, distToTarget).toFixed(2);
+            updateProgressUI();
+            updateGameUI();
+
+            const maxK = state.phase === 'pushing' ? state.energy.currentK : state.energy.initialK;
+
+            if (maxK > 0) {
+                const kPercent = (state.energy.currentK / maxK) * 100;
+                const qPercent = (state.energy.lossQ / maxK) * 100;
+
+                barK.style.width = `${kPercent}%`;
+                barQ.style.width = `${qPercent}%`;
+
+                valK.innerText = `${state.energy.currentK.toFixed(1)} J`;
+                valQ.innerText = `${state.energy.lossQ.toFixed(1)} J`;
+            } else {
+                barK.style.width = `0%`;
+                barQ.style.width = `0%`;
+                valK.innerText = `0 J`;
+                valQ.innerText = `0 J`;
+            }
+        }
+
+
+        function drawSheetBoards(worldEnd, hy, sheetHalfWidth) {
+            const topY = hy - sheetHalfWidth - 58;
+            const bottomY = hy + sheetHalfWidth + 12;
+            const boardGrad = ctx.createLinearGradient(0, topY, 0, topY + 46);
+            boardGrad.addColorStop(0, '#ffffff');
+            boardGrad.addColorStop(1, '#dce9f4');
+
+            ctx.fillStyle = boardGrad;
+            ctx.fillRect(-200, topY, worldEnd + 400, 44);
+            ctx.fillRect(-200, bottomY, worldEnd + 400, 44);
+
+            const stripeColors = ['#1d4ed8', '#dc2626', '#eab308', '#059669'];
+            for (let x = -120; x < worldEnd + 200; x += 170) {
+                ctx.fillStyle = stripeColors[Math.abs(Math.floor(x / 170)) % stripeColors.length];
+                ctx.fillRect(x, topY + 14, 98, 7);
+                ctx.fillRect(x + 42, bottomY + 15, 98, 7);
+            }
+
+            ctx.strokeStyle = 'rgba(15, 23, 42, 0.14)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-200, topY + 44);
+            ctx.lineTo(worldEnd + 200, topY + 44);
+            ctx.moveTo(-200, bottomY);
+            ctx.lineTo(worldEnd + 200, bottomY);
+            ctx.stroke();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.translate(-state.cameraX, 0);
+
+            const hx = state.house.x * PHYSICS.scale;
+            const hy = state.house.y;
+            // 컬링장 폭(15ft = 약 4.57m)의 절반 = 2.285m
+            const sheetHalfWidth = 2.285 * PHYSICS.scale;
+            const worldEnd = state.cameraX + canvas.width + 1000;
+
+            drawSheetBoards(worldEnd, hy, sheetHalfWidth);
+
+            // 1. 빙판 바탕색
+            ctx.fillStyle = '#d6ecf8';
+            ctx.fillRect(0, hy - sheetHalfWidth, worldEnd, sheetHalfWidth * 2);
+
+            // 2. 얼음 가장자리 서리 효과 (CSS linear-gradient 대체)
+            const edgeGrad = ctx.createLinearGradient(0, hy - sheetHalfWidth, 0, hy + sheetHalfWidth);
+            edgeGrad.addColorStop(0, 'rgba(255,255,255,0.8)');
+            edgeGrad.addColorStop(0.15, 'transparent');
+            edgeGrad.addColorStop(0.85, 'transparent');
+            edgeGrad.addColorStop(1, 'rgba(255,255,255,0.8)');
+            ctx.fillStyle = edgeGrad;
+            ctx.fillRect(0, hy - sheetHalfWidth, state.cameraX + canvas.width + 1000, sheetHalfWidth * 2);
+
+            // 3. 빙판 테두리선 (CSS #b0c4de)
+            ctx.strokeStyle = '#b0c4de';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, hy - sheetHalfWidth); ctx.lineTo(state.cameraX + canvas.width + 1000, hy - sheetHalfWidth);
+            ctx.moveTo(0, hy + sheetHalfWidth); ctx.lineTo(state.cameraX + canvas.width + 1000, hy + sheetHalfWidth);
+            ctx.stroke();
+
+            // 4. 센터 라인 (CSS rgba(0,0,0,0.35))
+            ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, hy); ctx.lineTo(state.cameraX + canvas.width + 1000, hy);
+            ctx.stroke();
+
+            // 5. 하우스 (과녁) - 작성하신 색상과 투명도 완벽 적용
+            const drawHouse = (x, y) => {
+                // 12ft (블루)
+                ctx.fillStyle = 'rgba(15, 60, 180, 0.85)';
+                ctx.beginPath(); ctx.arc(x, y, 1.83 * PHYSICS.scale, 0, Math.PI * 2); ctx.fill();
+                // 8ft (화이트)
+                ctx.fillStyle = 'rgba(245, 245, 245, 0.85)';
+                ctx.beginPath(); ctx.arc(x, y, 1.22 * PHYSICS.scale, 0, Math.PI * 2); ctx.fill();
+                // 4ft (레드)
+                ctx.fillStyle = 'rgba(210, 30, 30, 0.85)';
+                ctx.beginPath(); ctx.arc(x, y, 0.61 * PHYSICS.scale, 0, Math.PI * 2); ctx.fill();
+                // 1ft (버튼)
+                ctx.fillStyle = 'rgba(245, 245, 245, 0.85)';
+                ctx.beginPath(); ctx.arc(x, y, 0.15 * PHYSICS.scale, 0, Math.PI * 2); ctx.fill();
+            };
+
+            drawHouse(hx, hy); // 타겟 하우스
+            // 출발 지점 하우스 (114ft 앞)
+            drawHouse(hx - (34.75 * PHYSICS.scale), hy);
+
+            // 6. 수직 라인들
+            // Tee Line
+            ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(hx, hy - sheetHalfWidth); ctx.lineTo(hx, hy + sheetHalfWidth);
+            ctx.stroke();
+
+            // Back Line
+            const backLineX = hx + (1.83 * PHYSICS.scale);
+            ctx.beginPath();
+            ctx.moveTo(backLineX, hy - sheetHalfWidth); ctx.lineTo(backLineX, hy + sheetHalfWidth);
+            ctx.stroke();
+
+            // Target Hog Line (붉은 선)
+            const hogLineX = hx - (6.4 * PHYSICS.scale);
+            ctx.strokeStyle = 'rgba(200, 30, 30, 0.5)';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(hogLineX, hy - sheetHalfWidth); ctx.lineTo(hogLineX, hy + sheetHalfWidth);
+            ctx.stroke();
+
+            // Start Hog Line
+            const startHogLineX = hogLineX - (21.94 * PHYSICS.scale);
+            ctx.beginPath();
+            ctx.moveTo(startHogLineX, hy - sheetHalfWidth); ctx.lineTo(startHogLineX, hy + sheetHalfWidth);
+            ctx.stroke();
+
+            // 핵 (발판) - CSS .hack 대체
+            const hackX = hx - (38 * PHYSICS.scale);
+            ctx.fillStyle = 'rgba(30, 30, 30, 0.8)';
+            ctx.fillRect(hackX, hy - (0.2 * PHYSICS.scale), 0.3 * PHYSICS.scale, 0.4 * PHYSICS.scale);
+
+            // 거리 마커
+            ctx.fillStyle = 'rgba(37, 52, 66, 0.62)';
+            ctx.font = 'bold 16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const markerY = hy + sheetHalfWidth - 24;
+            for (let i = 5; i <= state.house.x + 2; i += 5) {
+                ctx.fillText(`${i}m`, i * PHYSICS.scale, markerY);
+            }
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'alphabetic';
+
+            // 7. Ice Shine (가장 윗 레이어 빛 반사/서리 효과)
+            const shineGrad = ctx.createLinearGradient(state.cameraX, 0, state.cameraX + canvas.width, 0);
+            shineGrad.addColorStop(0, 'rgba(255,255,255,0)');
+            shineGrad.addColorStop(0.3, 'rgba(255,255,255,0)');
+            shineGrad.addColorStop(0.5, 'rgba(255,255,255,0.4)'); // 가운데 빛 반사
+            shineGrad.addColorStop(0.7, 'rgba(255,255,255,0)');
+            shineGrad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = shineGrad;
+            ctx.fillRect(state.cameraX, hy - sheetHalfWidth, canvas.width, sheetHalfWidth * 2);
+
+            iceScars.forEach(s => {
+                ctx.strokeStyle = `rgba(255,255,255,${0.34 * s.life})`;
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.moveTo(s.x - s.len, s.y);
+                ctx.lineTo(s.x, s.y + s.wobble);
+                ctx.stroke();
+            });
+
+            // =========================================================
+            // 아래부터는 기존의 파티클, 스톤, 벡터 화살표 렌더링입니다.
+            // =========================================================
+            particles.forEach(p => {
+                ctx.fillStyle = `rgba(255, 255, 255, ${p.life})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size || 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            const sx = state.stone.x * PHYSICS.scale;
+            const sy = hy;
+            const sRad = state.stone.radius * PHYSICS.scale * 2.5;
+
+            drawCurlingStone(sx, sy, sRad);
+
+            if (toggleVector.checked) {
+                if ((state.phase === 'moving' || state.phase === 'pushing') && state.stone.v > 0) {
+                    const fricVectorLen = state.currentMu * 6000;
+                    ctx.strokeStyle = '#e32636';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(sx, sy);
+                    ctx.lineTo(sx - fricVectorLen, sy);
+                    ctx.lineTo(sx - fricVectorLen + 10, sy - 5);
+                    ctx.moveTo(sx - fricVectorLen, sy);
+                    ctx.lineTo(sx - fricVectorLen + 10, sy + 5);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#e32636';
+                    ctx.font = 'bold 16px sans-serif';
+                    ctx.fillText(`f_k`, sx - fricVectorLen - 25, sy - 10);
+                }
+
+                if (state.phase === 'pushing') {
+                    const pushForce = parseFloat(fSlider.value);
+                    const pushVectorLen = (pushForce / PHYSICS.m) * 50;
+                    ctx.strokeStyle = '#005eb8';
+                    ctx.lineWidth = 5;
+                    ctx.beginPath();
+                    ctx.moveTo(sx, sy);
+                    ctx.lineTo(sx + pushVectorLen, sy);
+                    ctx.lineTo(sx + pushVectorLen - 12, sy - 6);
+                    ctx.moveTo(sx + pushVectorLen, sy);
+                    ctx.lineTo(sx + pushVectorLen - 12, sy + 6);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#005eb8';
+                    ctx.font = 'bold 18px sans-serif';
+                    ctx.fillText(`F`, sx + pushVectorLen + 10, sy - 10);
+                }
+            }
+            ctx.restore();
+        }
+
+        function drawCircle(x, y, radius, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function roundedRectPath(x, y, w, h, r) {
+            const radius = Math.min(r, w / 2, h / 2);
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + w - radius, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+            ctx.lineTo(x + w, y + h - radius);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+            ctx.lineTo(x + radius, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+        }
+
+        function drawCurlingStone(x, y, r) {
+            ctx.save();
+
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.22)';
+            ctx.beginPath();
+            ctx.ellipse(x + r * 0.12, y + r * 0.14, r * 1.02, r * 0.9, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#9b9d9f';
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#66696b';
+            ctx.beginPath();
+            ctx.arc(x, y, r * 0.68, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffdf1b';
+            ctx.beginPath();
+            ctx.arc(x, y, r * 0.38, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#c7a900';
+            ctx.beginPath();
+            roundedRectPath(x - r * 0.08, y - r * 0.32, r * 0.16, r * 0.64, r * 0.04);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function finishShot(options = {}) {
+            state.phase = 'finished';
+            sweepHint.style.opacity = '0';
+
+            const dist = Math.abs(state.stone.x - state.house.x);
+            const earned = options.forcedMiss ? 0 : calculateShotScore(dist);
+            GAME.lastShotScore = earned;
+            GAME.score += earned;
+
+            if (GAME.score > GAME.best) {
+                GAME.best = GAME.score;
+                localStorage.setItem('curlingWorkEnergyBest', String(GAME.best));
+            }
+
+            updateGameUI();
+
+            if (options.forcedMiss) {
+                statusInd.innerText = 'TOO FAR';
+                statusInd.style.color = '#7f1d1d';
+                resultMsg.innerText = `${options.reason || 'TOO FAR'} +0`;
+                resultMsg.style.color = "#fecaca";
+                resultMsg.classList.add('show-msg');
+            } else if (dist < 0.3) {
+                statusInd.innerText = '● EXCELLENT';
+                statusInd.style.color = '#e32636';
+                flashOverlay.style.opacity = '1';
+                setTimeout(() => { flashOverlay.style.opacity = '0'; }, 100);
+                resultMsg.innerText = `PERFECT +${earned}`;
+                resultMsg.style.color = "#ffd700";
+                resultMsg.classList.add('show-msg');
+            } else if (dist < 1.83) {
+                statusInd.innerText = '● IN HOUSE';
+                statusInd.style.color = '#005eb8';
+                resultMsg.innerText = `GOOD +${earned}`;
+                resultMsg.style.color = "#fff";
+                resultMsg.classList.add('show-msg');
+            } else {
+                statusInd.innerText = '● MISSED';
+                statusInd.style.color = '#666';
+                resultMsg.innerText = `MISS +${earned}`;
+                resultMsg.style.color = "#d1d5db";
+                resultMsg.classList.add('show-msg');
+            }
+
+            if (GAME.round >= GAME.totalRounds) {
+                GAME.finished = true;
+                btnReset.innerText = 'New Game';
+                statusInd.innerText = `FINAL ${GAME.score}`;
+            } else {
+                btnReset.innerText = 'Next Shot';
+            }
+        }
+
+        // --- 여기서부터가 화면을 정상적으로 맞춰주는 가장 중요한 부분입니다! ---
+        resize(); // 처음 시작할 때 화면 크기를 계산해서 스톤을 정중앙에 배치합니다.
+        resetGame(); // 게임 수치를 초기화합니다.
+    </script>
+</body>
+
+</html>
