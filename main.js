@@ -123,6 +123,7 @@ const projects = [
   { title: "원자모형", category: "시뮬레이션", desc: "보어/오비탈/전자구름 개념 확인하기", tags: ["원자", "준위"], emoji: "🧬", demo: "./simul/원자모형.html", curriculumId: "[12전자03-04]", thumb: "./thumb_nail/원자모형.png" },
   { title: "나만의 별 키우기", category: "현대물리", desc: "가스를 모아 별을 점화하라! 중력과 압력의 균형(정역학 평형) 게임", tags: ["핵융합", "별의진화", "흑체복사"], emoji: "🌟", demo: "./simul/별의 탄생.html", curriculumId: "[12전자03-05]", thumb: "./thumb_nail/별의 탄생.png" },
   { title: "슈테른-게를라흐 실험", category: "현대물리", desc: "고전 예측과 실제 관측 비교! 자기장 속 은 원자의 스핀 양자화", tags: ["스핀", "양자화", "자기모멘트"], emoji: "🧲", demo: "./simul/슈테른-게를라흐 실험.html", curriculumId: "[12전자03-02]", thumb: "./thumb_nail/슈테른-게를라흐 실험.png" },
+  { title: "양자 편광", category: "현대물리", desc: "스핀이 측정되는 순간 상태가 결정된다! 3D로 보는 양자 스핀 측정", tags: ["스핀", "양자측정", "중첩", "슈테른-게를라흐",], emoji: "🔮", demo: "./simul/양자 편광.html", curriculumId: "[12전자03-02]", thumb: "./thumb_nail/양자 편광.png" },
 
   // ===== 기타 =====
   { title: "베타붕괴", category: "현대물리", desc: "베타붕괴 현상 알아보기", tags: ["베타붕괴", "입자물리"], emoji: "☢️", demo: "./simul/베타붕괴.html", curriculumId: " ", thumb: "./thumb_nail/베타붕괴.png" },
