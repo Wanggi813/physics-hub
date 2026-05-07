@@ -1,0 +1,2580 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>양자 편광 3D</title>
+  <meta name="description" content="슈테른-게를라흐 실험을 3D로 시각화한 양자 편광 시뮬레이션입니다." />
+  <script type="importmap">
+  {"imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+  }}</script>
+  <style>
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+
+    :root {
+      --plus:   #d9485f;
+      --minus:  #3c82f6;
+      --lost:   #d97706;
+      --text:   #0f1f33;
+      --muted:  #5d7087;
+      --border: rgba(15,23,42,0.09);
+      --panel: rgba(255,255,255,0.92);
+      --panel-strong: rgba(255,255,255,0.97);
+      --shadow: 0 22px 52px rgba(15,23,42,0.12);
+      --soft-shadow: 0 12px 32px rgba(15,23,42,0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: #07111f;
+      color: var(--text);
+      font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .app {
+      display: flex;
+      height: 100dvh;
+      padding: 0;
+      gap: 0;
+      background: #07111f;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 330px; flex-shrink: 0;
+      position: fixed;
+      left: 18px;
+      top: 18px;
+      bottom: 18px;
+      z-index: 30;
+      height: auto;
+      max-height: calc(100dvh - 36px);
+      overflow-y: auto;
+      background: linear-gradient(180deg, var(--panel-strong) 0%, rgba(247,250,255,0.95) 100%);
+      border: 1px solid rgba(148,163,184,0.22);
+      border-radius: 22px;
+      padding: 18px 18px 16px;
+      display: flex; flex-direction: column; gap: 10px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+
+    .sb-title { font-size: 21px; font-weight: 900; letter-spacing: -0.04em; color: var(--text); line-height: 1.05; }
+    .sb-sub   { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+
+    .sec-label {
+      font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #8ea1b7; margin-bottom: 6px;
+    }
+
+    /* Compact select row */
+    .ctrl-block {
+      border: 1px solid rgba(148,163,184,0.16); border-radius: 18px;
+      padding: 11px 12px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.88) 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
+    }
+    .ctrl-head {
+      font-size: 12px; font-weight: 800; color: var(--text);
+      margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .ctrl-head span { font-size: 10px; color: var(--muted); font-weight: 500; }
+    .ctrl-row {
+      display: grid; grid-template-columns: 60px 1fr; gap: 6px;
+      align-items: center; margin-bottom: 5px;
+    }
+    .ctrl-row:last-child { margin-bottom: 0; }
+    .ctrl-row label { font-size: 11px; color: var(--muted); font-weight: 600; }
+    select {
+      width: 100%; border: 1px solid #d8e1ec; border-radius: 11px;
+      padding: 8px 10px; font-size: 12px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      color: var(--text); outline: none; font-family: inherit;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+    }
+    select:focus { border-color: rgba(21,101,192,0.4); }
+
+    /* Buttons */
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    button {
+      border: 1px solid transparent; border-radius: 12px; padding: 10px 9px;
+      font-weight: 700; font-size: 12px; cursor: pointer;
+      font-family: inherit; transition: filter 0.15s, transform 0.15s, box-shadow 0.15s;
+      white-space: nowrap;
+    }
+    button:hover { filter: brightness(0.98); transform: translateY(-1px); }
+    .btn-main {
+      background: linear-gradient(135deg, #2157d5 0%, #1d79d9 100%);
+      color: #fff;
+      box-shadow: 0 10px 18px rgba(29,121,217,0.24);
+    }
+    .btn-sub  {
+      background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+      color: var(--text);
+      border-color: rgba(148,163,184,0.18);
+    }
+    button:disabled { opacity: 0.55; cursor: not-allowed; filter: none; }
+
+    /* Stats */
+    .stats-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+    }
+    .stat-item {
+      border: 1px solid rgba(148,163,184,0.16); border-radius: 14px;
+      padding: 10px 11px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(243,247,252,0.9) 100%);
+    }
+    .stat-item .s-label { font-size: 10px; color: var(--muted); font-weight: 600; }
+    .stat-item .s-num   { font-size: 21px; font-weight: 900; letter-spacing: -0.03em; }
+    .stat-item .s-sub   { font-size: 10px; color: var(--muted); }
+
+    /* Legend */
+    .legend {
+      display: flex; gap: 10px; flex-wrap: wrap;
+      border: 1px solid rgba(148,163,184,0.16);
+      border-radius: 15px;
+      padding: 10px 12px;
+      background: rgba(248,250,252,0.72);
+    }
+    .legend span {
+      font-size: 11px; color: var(--muted);
+      display: flex; align-items: center; gap: 5px;
+    }
+    .leg-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+    /* Mission mode */
+    .game-panel {
+      border-color: rgba(21,101,192,0.18);
+      background:
+        radial-gradient(circle at top right, rgba(59,130,246,0.14), transparent 40%),
+        radial-gradient(circle at bottom left, rgba(34,197,94,0.08), transparent 38%),
+        linear-gradient(180deg, #ffffff 0%, #f4f8ff 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 16px 28px rgba(59,130,246,0.08);
+    }
+    .mission-meta {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 8px; margin-bottom: 8px;
+    }
+    .mission-meta-left {
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .mode-pill, .mini-chip {
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      padding: 4px 8px;
+    }
+    .mode-pill {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+    .mode-pill.ghost {
+      background: #eef2ff;
+      color: #4f46e5;
+    }
+    .mini-chip {
+      background: #eff6ff;
+      color: #33547d;
+      border: 1px solid rgba(51,84,125,0.1);
+    }
+    .mini-chip strong { color: var(--text); margin-left: 3px; }
+    .mission-title {
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+    .mission-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 8px;
+    }
+    .mission-item {
+      display: flex;
+      gap: 7px;
+      align-items: flex-start;
+      font-size: 11px;
+      line-height: 1.45;
+      color: #516274;
+    }
+    .mission-item .bullet {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 900;
+      background: #e2e8f0;
+      color: #64748b;
+    }
+    .mission-item.ok { color: #14532d; }
+    .mission-item.ok .bullet {
+      background: #dcfce7;
+      color: #15803d;
+    }
+    .mission-item.fail { color: #7f1d1d; }
+    .mission-item.fail .bullet {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    .report-box {
+      margin-top: 9px;
+      border-radius: 14px;
+      padding: 10px 11px;
+      border: 1px solid rgba(148,163,184,0.18);
+      background: rgba(248,250,252,0.9);
+    }
+    .report-box.waiting {
+      background: #f8fafc;
+      border-color: rgba(148,163,184,0.22);
+    }
+    .report-box.running {
+      background: #eff6ff;
+      border-color: rgba(37,99,235,0.25);
+    }
+    .report-box.success {
+      background: #ecfdf5;
+      border-color: rgba(22,163,74,0.24);
+    }
+    .report-box.fail {
+      background: #fef2f2;
+      border-color: rgba(220,38,38,0.18);
+    }
+    .report-status {
+      font-size: 11.5px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+    .report-detail {
+      font-size: 10.5px;
+      line-height: 1.5;
+      color: #4b5563;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .mission-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    /* ── Stage (Three.js area) ── */
+    .stage {
+      flex: 1;
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100dvh;
+      z-index: 0;
+      overflow: hidden;
+    }
+    #threeCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Stage HUD */
+    .stage-hud {
+      position: fixed;
+      top: 18px;
+      left: 376px;
+      right: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      z-index: 12;
+      pointer-events: none;
+    }
+    .hud-card, .hud-mini {
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.36);
+      background: rgba(10,20,35,0.48);
+      color: #eff6ff;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 10px 26px rgba(15,23,42,0.12);
+    }
+    .hud-card {
+      padding: 12px 14px;
+      min-width: 220px;
+      max-width: min(400px, 50%);
+    }
+    .hud-eyebrow {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(224,238,255,0.62);
+      margin-bottom: 4px;
+      font-weight: 800;
+    }
+    .hud-title {
+      font-size: 18px;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      font-weight: 900;
+      margin-bottom: 4px;
+    }
+    .hud-sub {
+      font-size: 12px;
+      line-height: 1.5;
+      color: rgba(239,246,255,0.82);
+    }
+    .bloch-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    #blochCanvas {
+      display: block;
+      width: 210px;
+      height: 210px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.36);
+      background: rgba(10,20,35,0.52);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 10px 26px rgba(15,23,42,0.14);
+    }
+    .bloch-mission {
+      font-size: 12px;
+      line-height: 1.45;
+      color: rgba(239,246,255,0.85);
+      background: rgba(10,20,35,0.46);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.30);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      padding: 8px 12px;
+      max-width: 210px;
+    }
+    .hud-stack {
+      display: grid;
+      gap: 10px;
+      width: 200px;
+    }
+    .hud-mini {
+      padding: 11px 12px;
+    }
+    .hud-mini .label {
+      display: block;
+      font-size: 10px;
+      color: rgba(224,238,255,0.62);
+      margin-bottom: 4px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .hud-mini .value {
+      display: block;
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: #fff;
+    }
+
+    /* Caption area */
+    .caption {
+      position: fixed;
+      left: 376px;
+      right: 18px;
+      bottom: 18px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .cap-box, .status-box {
+      border-radius: 18px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(10,20,35,0.56);
+      color: #eef5ff;
+      box-shadow: 0 14px 30px rgba(15,23,42,0.14);
+    }
+    .cap-box { padding: 12px 14px; font-size: 12.5px; line-height: 1.65; }
+    .status-box { padding: 12px 14px; min-width: 182px; text-align: right; }
+    .status-box .top { display: block; font-size: 10px; color: rgba(238,245,255,0.65); margin-bottom: 2px; }
+    .status-box .big { font-size: 20px; font-weight: 900; letter-spacing: -0.03em; }
+
+    /* 3D overlay controls */
+    .overlay-controls {
+      position: fixed;
+      right: 18px;
+      bottom: 84px;
+      z-index: 16;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: auto;
+    }
+    .overlay-btn {
+      padding: 10px 13px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.28);
+      color: #eff6ff;
+      background: rgba(10,20,35,0.52);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 12px 28px rgba(15,23,42,0.18);
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .overlay-btn:hover { background: rgba(20,40,65,0.70); }
+
+    .view-hint {
+      position: fixed;
+      right: 18px;
+      top: 18px;
+      z-index: 16;
+      padding: 8px 13px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.18);
+      color: rgba(200,220,255,0.75);
+      background: rgba(10,20,35,0.40);
+      backdrop-filter: blur(10px);
+      font-size: 11px;
+      font-weight: 600;
+      pointer-events: none;
+    }
+
+    /* ── Modals ── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(7,17,31,0.68);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      animation: mFadeIn 0.2s ease;
+    }
+    .modal-overlay.hidden { display: none; }
+    @keyframes mFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(244,249,255,0.96) 100%);
+      border: 1px solid rgba(148,163,184,0.22);
+      border-radius: 24px;
+      box-shadow: 0 32px 64px rgba(15,23,42,0.24);
+      max-width: 500px; width: 100%;
+      max-height: 88vh; overflow-y: auto;
+      padding: 26px 24px 22px;
+      position: relative;
+      animation: mSlideUp 0.22s ease;
+    }
+    @keyframes mSlideUp { from { transform: translateY(14px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-card::-webkit-scrollbar { width: 4px; }
+    .modal-card::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+    .modal-title { font-size: 20px; font-weight: 900; letter-spacing: -0.04em; color: #0f172a; margin-bottom: 3px; }
+    .modal-sub { font-size: 12px; color: #64748b; margin-bottom: 20px; line-height: 1.5; }
+    .modal-close {
+      position: absolute; right: 16px; top: 16px;
+      width: 30px; height: 30px; border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.24);
+      background: rgba(241,245,249,0.9); color: #64748b;
+      font-size: 14px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-family: inherit; font-weight: 700;
+      transition: background 0.12s;
+    }
+    .modal-close:hover { background: #e2e8f0; }
+    .modal-footer { margin-top: 20px; display: flex; justify-content: flex-end; gap: 8px; }
+    .btn-modal-primary {
+      padding: 10px 22px; border-radius: 12px; border: none;
+      background: linear-gradient(135deg, #2157d5 0%, #1d79d9 100%);
+      color: #fff; font-weight: 800; font-size: 13px; cursor: pointer;
+      font-family: inherit; box-shadow: 0 8px 18px rgba(29,121,217,0.22);
+      transition: filter 0.12s, transform 0.12s;
+    }
+    .btn-modal-primary:hover { filter: brightness(1.06); transform: translateY(-1px); }
+    .btn-modal-sub {
+      padding: 10px 18px; border-radius: 12px;
+      border: 1px solid rgba(148,163,184,0.22);
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      color: #334155; font-weight: 700; font-size: 13px;
+      cursor: pointer; font-family: inherit;
+      transition: filter 0.12s, transform 0.12s;
+    }
+    .btn-modal-sub:hover { filter: brightness(0.97); transform: translateY(-1px); }
+
+    /* Principle modal */
+    .principle-card {
+      background: #f8faff;
+      border: 1px solid rgba(148,163,184,0.18);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.65;
+      color: #334155;
+    }
+    .principle-card p { margin: 0 0 8px; }
+    .principle-card p:last-child { margin-bottom: 0; }
+    .prob-table { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+    .prob-row {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #fff; border: 1px solid rgba(148,163,184,0.15);
+      border-radius: 9px; padding: 6px 10px; font-size: 12px;
+    }
+    .prob-case { color: #475569; }
+    .prob-val { font-weight: 800; color: #1d4ed8; }
+
+    /* Help modal */
+    .help-sec { margin-bottom: 18px; }
+    .help-sec-label {
+      font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #8ea1b7; margin-bottom: 9px;
+    }
+    .help-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 9px; }
+    .help-row:last-child { margin-bottom: 0; }
+    .help-icon {
+      width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
+      background: linear-gradient(180deg, #f0f6ff 0%, #e2eeff 100%);
+      border: 1px solid rgba(59,130,246,0.13);
+    }
+    .help-text { font-size: 12px; line-height: 1.6; color: #334155; padding-top: 6px; }
+    .help-text strong { color: #0f172a; font-weight: 800; }
+
+    /* Experiment cards */
+    .exp-card {
+      border: 1px solid rgba(148,163,184,0.18); border-radius: 16px;
+      padding: 13px 14px; margin-bottom: 8px; cursor: pointer;
+      background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.9) 100%);
+      transition: border-color 0.14s, box-shadow 0.14s, transform 0.14s;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .exp-card:hover { border-color: rgba(37,99,235,0.3); box-shadow: 0 8px 22px rgba(59,130,246,0.10); transform: translateY(-1px); }
+    .exp-card:last-child { margin-bottom: 0; }
+    .exp-num {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 900; color: #1d4ed8; background: #dbeafe;
+      margin-top: 1px;
+    }
+    .exp-body { flex: 1; }
+    .exp-title { font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 3px; }
+    .exp-desc { font-size: 11px; color: #64748b; line-height: 1.5; }
+    .exp-setup {
+      display: inline-flex; margin-top: 6px; gap: 4px; flex-wrap: wrap;
+    }
+    .exp-tag {
+      font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px;
+      background: #eff6ff; color: #2563eb; border: 1px solid rgba(37,99,235,0.12);
+    }
+
+    /* Mission intro modal */
+    .mission-intro-card { max-width: 420px; text-align: center; }
+    .intro-mission-badge {
+      display: inline-block; font-size: 11px; font-weight: 800;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #2563eb; background: #dbeafe; border-radius: 999px;
+      padding: 4px 14px; margin-bottom: 16px;
+    }
+    .intro-mission-title {
+      font-size: 28px; font-weight: 900; letter-spacing: -0.04em;
+      color: #0f172a; line-height: 1.15; margin-bottom: 14px;
+    }
+    .intro-dots {
+      display: flex; gap: 7px; justify-content: center; margin-bottom: 18px;
+    }
+    .intro-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #cbd5e1; transition: background 0.2s;
+    }
+    .intro-dot.active { background: #2563eb; }
+    .intro-mission-brief {
+      font-size: 15px; line-height: 1.8; color: #334155; margin-bottom: 18px;
+    }
+    .intro-mission-hint {
+      background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.15);
+      border-radius: 14px; padding: 12px 16px; text-align: left; margin-bottom: 4px;
+    }
+    .intro-hint-label {
+      font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #3b82f6; margin-bottom: 5px;
+    }
+    .intro-hint-text { font-size: 13px; color: #1e40af; line-height: 1.6; }
+
+    @media (max-width: 980px) {
+      .sidebar {
+        left: 12px;
+        right: 12px;
+        top: auto;
+        bottom: 12px;
+        width: auto;
+        height: 45vh;
+        max-height: 45vh;
+        border-radius: 24px;
+      }
+      .stage-hud {
+        flex-direction: column;
+        left: 12px;
+        right: 12px;
+      }
+      .caption {
+        grid-template-columns: 1fr;
+        left: 12px;
+        right: 12px;
+        bottom: calc(45vh + 24px);
+      }
+      .status-box {
+        min-width: 0;
+        text-align: left;
+      }
+      .hud-stack {
+        width: 100%;
+        grid-template-columns: 1fr 1fr;
+        display: grid;
+      }
+      .overlay-controls {
+        bottom: calc(45vh + 60px);
+      }
+    }
+
+    @media (max-width: 720px) {
+      .sidebar {
+        left: 0; right: 0; bottom: 0;
+        height: 48vh; max-height: 48vh;
+        border-radius: 22px 22px 0 0;
+        border-left: 0; border-right: 0; border-bottom: 0;
+        box-shadow: 0 -12px 36px rgba(15,23,42,0.12);
+      }
+      .caption {
+        left: 12px; right: 12px;
+        bottom: calc(48vh + 12px);
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div>
+      <div class="sb-title">양자 편광 3D</div>
+    </div>
+
+    <div class="ctrl-block game-panel">
+      <div class="ctrl-head">오늘의 도전 <span id="missionProgress">1 / 5</span></div>
+      <div class="mission-meta">
+        <div class="mission-meta-left">
+          <div class="mode-pill" id="missionRank">견습 연구원</div>
+          <div class="mini-chip">클리어<strong id="missionClearCount">0</strong></div>
+          <div class="mini-chip">별<strong id="missionStarTotal">0</strong></div>
+        </div>
+        <div class="mode-pill ghost" id="missionBestStars">☆☆☆</div>
+      </div>
+      <div class="mission-title" id="missionTitle">미션 준비 중</div>
+      <div class="mission-list" id="missionChecklist"></div>
+      <div class="report-box waiting" id="reportBox">
+        <div class="report-status" id="reportStatus">결과 대기 중</div>
+        <div class="report-detail" id="reportDetail">세팅을 확인하고 ▶ 실행을 눌러봐!</div>
+      </div>
+      <div class="mission-actions">
+        <button class="btn-sub" id="loadMissionBtn">미션 세팅</button>
+        <button class="btn-main" id="nextMissionBtn">다음 미션</button>
+      </div>
+    </div>
+
+    <!-- Hidden selects for state management -->
+    <select id="sourcePreset" style="display:none">
+      <option value="mixed">무편광</option>
+      <option value="z+">z+ 편광</option>
+      <option value="z-">z- 편광</option>
+      <option value="x+">x+ 편광</option>
+      <option value="x-">x- 편광</option>
+    </select>
+    <select id="axisA" style="display:none"><option value="z">z</option><option value="x">x</option></select>
+    <select id="filterA" style="display:none"><option value="both">both</option><option value="plus">plus</option><option value="minus">minus</option></select>
+    <select id="axisB" style="display:none"><option value="none">none</option><option value="z">z</option><option value="x">x</option></select>
+    <select id="filterB" style="display:none"><option value="both">both</option><option value="plus">plus</option><option value="minus">minus</option></select>
+    <select id="axisC" style="display:none"><option value="none">none</option><option value="z">z</option><option value="x">x</option></select>
+    <select id="filterC" style="display:none"><option value="both">both</option><option value="plus">plus</option><option value="minus">minus</option></select>
+
+    <div class="btn-row">
+      <button class="btn-sub" id="helpBtn">조작법</button>
+      <button class="btn-sub" id="experimentsBtn">실험 제안</button>
+      <button class="btn-sub" id="principleBtn">원리</button>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-main" id="runBtn">▶ 실행</button>
+      <button class="btn-sub"  id="pauseBtn">⏸ 일시정지</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn-sub"  id="resetBtn">초기화</button>
+      <button class="btn-sub"  id="replayBtn">다시</button>
+    </div>
+
+    <div>
+      <div class="sec-label">실시간 집계</div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="s-label">발사됨</div>
+          <div class="s-num" id="emittedCount">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="s-label">검출됨</div>
+          <div class="s-num" id="detectedCount">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="s-label">최종 +</div>
+          <div class="s-num" style="color:var(--plus)" id="plusCount">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="s-label">최종 −</div>
+          <div class="s-num" style="color:var(--minus)" id="minusCount">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="s-label">차단됨</div>
+          <div class="s-num" style="color:var(--lost)" id="lostCount">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="s-label">검출 효율</div>
+          <div class="s-num" id="efficiencyRate">0%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span><div class="leg-dot" style="background:#d9485f"></div>Z+</span>
+      <span><div class="leg-dot" style="background:#3c82f6"></div>Z−</span>
+      <span><div class="leg-dot" style="background:#22c55e"></div>X+</span>
+      <span><div class="leg-dot" style="background:#a855f7"></div>X−</span>
+      <span><div class="leg-dot" style="background:#d97706"></div>차단됨</span>
+    </div>
+  </aside>
+
+  <!-- ── 3D Stage ── -->
+  <main class="stage">
+    <canvas id="threeCanvas"></canvas>
+  </main>
+
+  <!-- Stage HUD -->
+  <div class="stage-hud">
+    <span id="hudMissionText" style="display:none"></span>
+    <div class="hud-stack">
+      <div class="hud-mini">
+        <span class="label">보고 상태</span>
+        <span class="value" id="hudReportStatus">대기 중</span>
+      </div>
+      <div class="hud-mini">
+        <span class="label">검출 효율</span>
+        <span class="value" id="hudEfficiency">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- View hint -->
+  <div class="view-hint">드래그: 회전 | 스크롤: 줌</div>
+
+  <!-- Overlay controls -->
+  <div class="overlay-controls">
+    <button class="overlay-btn" id="resetViewBtn">시점 초기화</button>
+    <button class="overlay-btn" id="fullscreenBtn">전체화면</button>
+  </div>
+
+  <!-- Caption -->
+  <div class="caption">
+    <div class="cap-box" id="captionBox">3D 장면에서 슈테른-게를라흐 분석기가 입자를 편향시키는 과정을 관찰하세요.</div>
+    <div class="status-box">
+      <span class="top">예상 최종 비율</span>
+      <div class="big" id="statusSummary">+ 50% / − 50%</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Help Modal ── -->
+<div class="modal-overlay" id="helpModal">
+  <div class="modal-card">
+    <button class="modal-close" id="helpClose">✕</button>
+    <div class="modal-title">조작 방법</div>
+    <div class="modal-sub">3D 슈테른-게를라흐 시뮬레이션입니다. 분석기 세팅은 사이드바로 제어합니다.</div>
+
+    <div class="help-sec">
+      <div class="help-sec-label">3D 시점 조작</div>
+      <div class="help-row">
+        <div class="help-icon">🖱️</div>
+        <div class="help-text"><strong>마우스 드래그</strong> — 카메라를 회전합니다. 장면을 자유롭게 돌려서 관찰하세요.</div>
+      </div>
+      <div class="help-row">
+        <div class="help-icon">🔍</div>
+        <div class="help-text"><strong>마우스 휠 / 핀치</strong> — 확대·축소합니다. 입자 경로를 가까이 살펴보세요.</div>
+      </div>
+      <div class="help-row">
+        <div class="help-icon">🔄</div>
+        <div class="help-text"><strong>시점 초기화 버튼</strong> — 카메라를 기본 위치로 되돌립니다.</div>
+      </div>
+    </div>
+
+    <div class="help-sec">
+      <div class="help-sec-label">실험 구성</div>
+      <div class="help-row">
+        <div class="help-icon">⚗️</div>
+        <div class="help-text"><strong>미션 세팅</strong> — 현재 미션에 맞는 분석기 구성을 자동으로 불러옵니다.</div>
+      </div>
+      <div class="help-row">
+        <div class="help-icon">▶</div>
+        <div class="help-text"><strong>실행</strong> — 무편광 입자 120개를 발사합니다. 3D 경로로 편향 과정을 관찰할 수 있습니다.</div>
+      </div>
+      <div class="help-row">
+        <div class="help-icon">⏸</div>
+        <div class="help-text"><strong>일시정지</strong> — 발사를 일시 중단합니다.</div>
+      </div>
+      <div class="help-row">
+        <div class="help-icon">🔄</div>
+        <div class="help-text"><strong>초기화 / 다시</strong> — 카운터를 리셋하거나, 리셋 후 즉시 재실행합니다.</div>
+      </div>
+    </div>
+
+    <div class="help-sec">
+      <div class="help-sec-label">3D 색상 의미</div>
+      <div class="help-row">
+        <div class="help-icon" style="color:#d9485f;font-size:18px;font-weight:900;">●</div>
+        <div class="help-text"><strong>빨간 경로</strong> — Z축 기저에서 + 방향으로 측정된 입자입니다. (위쪽으로 편향)</div>
+      </div>
+      <div class="help-row">
+        <div class="help-icon" style="color:#3c82f6;font-size:18px;font-weight:900;">●</div>
+        <div class="help-text"><strong>파란 경로</strong> — Z축 기저에서 − 방향으로 측정된 입자입니다. (아래쪽으로 편향)</div>
+      </div>
+      <div class="help-row">
+        <div class="help-icon" style="color:#22c55e;font-size:18px;font-weight:900;">●</div>
+        <div class="help-text"><strong>초록 경로</strong> — X축 기저에서 + 방향으로 측정된 입자입니다. (오른쪽으로 편향)</div>
+      </div>
+      <div class="help-row">
+        <div class="help-icon" style="color:#a855f7;font-size:18px;font-weight:900;">●</div>
+        <div class="help-text"><strong>보라 경로</strong> — X축 기저에서 − 방향으로 측정된 입자입니다. (왼쪽으로 편향)</div>
+      </div>
+      <div class="help-row">
+        <div class="help-icon" style="color:#d97706;font-size:16px;">✕</div>
+        <div class="help-text"><strong>주황 경로</strong> — 필터에 걸려 차단된 입자입니다.</div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-modal-primary" id="helpStart">시작하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Experiments Modal ── -->
+<div class="modal-overlay hidden" id="expModal">
+  <div class="modal-card">
+    <button class="modal-close" id="expClose">✕</button>
+    <div class="modal-title">실험 제안</div>
+    <div class="modal-sub">카드를 클릭하면 분석기 세팅이 자동으로 적용됩니다.</div>
+    <div id="expList"></div>
+    <div class="modal-footer">
+      <button class="btn-modal-sub" id="expCancel">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Principle Modal ── -->
+<div class="modal-overlay hidden" id="principleModal">
+  <div class="modal-card">
+    <button class="modal-close" id="principleClose">✕</button>
+    <div class="modal-title">작동 원리</div>
+    <div class="modal-sub">그림으로 보는 양자 스핀 측정 — 슈테른-게를라흐 실험</div>
+
+    <!-- 1. 빔 분리 -->
+    <div class="help-sec">
+      <div class="help-sec-label">① 자기장이 입자를 갈라놓아요</div>
+      <div class="principle-card">
+        <svg viewBox="0 0 320 110" width="100%" style="display:block;margin-bottom:10px">
+          <!-- 광원 -->
+          <rect x="6" y="44" width="46" height="22" rx="8" fill="#0ea5e9"/>
+          <text x="29" y="59" font-size="9" fill="white" text-anchor="middle" font-weight="700">광원</text>
+          <!-- 입자 빔 -->
+          <circle cx="68" cy="55" r="5" fill="#94a3b8"/>
+          <circle cx="82" cy="55" r="5" fill="#94a3b8"/>
+          <circle cx="96" cy="55" r="5" fill="#94a3b8"/>
+          <!-- 분석기 상단 (N극) -->
+          <rect x="114" y="18" width="38" height="28" rx="7" fill="#3b82f6"/>
+          <text x="133" y="36" font-size="11" fill="white" text-anchor="middle" font-weight="900">N</text>
+          <!-- 분석기 하단 (S극) -->
+          <rect x="114" y="64" width="38" height="28" rx="7" fill="#d9485f"/>
+          <text x="133" y="82" font-size="11" fill="white" text-anchor="middle" font-weight="900">S</text>
+          <!-- 라벨 -->
+          <text x="133" y="12" font-size="8.5" fill="#64748b" text-anchor="middle" font-weight="700">Z축 분석기</text>
+          <!-- 위쪽 경로 Z+ -->
+          <path d="M152 55 C175 55 185 28 210 28" fill="none" stroke="#d9485f" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="220" cy="28" r="8" fill="#d9485f"/>
+          <text x="233" y="32" font-size="10" fill="#d9485f" font-weight="800">Z+</text>
+          <text x="233" y="44" font-size="8" fill="#94a3b8">위로 편향</text>
+          <!-- 아래쪽 경로 Z- -->
+          <path d="M152 55 C175 55 185 82 210 82" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="220" cy="82" r="8" fill="#3b82f6"/>
+          <text x="233" y="86" font-size="10" fill="#3b82f6" font-weight="800">Z−</text>
+          <text x="233" y="98" font-size="8" fill="#94a3b8">아래로 편향</text>
+          <!-- 화살표 표시 (자기장) -->
+          <text x="133" y="57" font-size="8" fill="#e2e8f0" text-anchor="middle">↕ 자기장</text>
+        </svg>
+        <p>분석기 안의 자기장이 입자를 위(Z+) 또는 아래(Z−) 두 방향으로 갈라냅니다. X축 분석기는 같은 원리로 왼쪽·오른쪽으로 분리해요.</p>
+      </div>
+    </div>
+
+    <!-- 2. 중첩 상태 -->
+    <div class="help-sec">
+      <div class="help-sec-label">② 측정 전엔 방향이 정해져 있지 않아요</div>
+      <div class="principle-card">
+        <svg viewBox="0 0 320 90" width="100%" style="display:block;margin-bottom:10px">
+          <!-- 왼쪽: 불확정 입자 -->
+          <circle cx="60" cy="45" r="22" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+          <text x="60" y="38" font-size="18" text-anchor="middle">❓</text>
+          <text x="60" y="56" font-size="8" fill="#64748b" text-anchor="middle" font-weight="700">불확정 상태</text>
+          <!-- 불확정 화살표들 -->
+          <line x1="60" y1="17" x2="60" y2="7" stroke="#d9485f" stroke-width="2" stroke-dasharray="3" opacity="0.5"/>
+          <line x1="60" y1="73" x2="60" y2="83" stroke="#3b82f6" stroke-width="2" stroke-dasharray="3" opacity="0.5"/>
+          <line x1="33" y1="45" x2="23" y2="45" stroke="#94a3b8" stroke-width="2" stroke-dasharray="3" opacity="0.5"/>
+          <line x1="87" y1="45" x2="97" y2="45" stroke="#94a3b8" stroke-width="2" stroke-dasharray="3" opacity="0.5"/>
+          <!-- 화살표 -->
+          <text x="140" y="50" font-size="22" text-anchor="middle" fill="#cbd5e1">→</text>
+          <text x="140" y="65" font-size="8" fill="#94a3b8" text-anchor="middle">측정!</text>
+          <!-- 오른쪽: 두 결과 -->
+          <circle cx="220" cy="25" r="16" fill="#fef2f2" stroke="#d9485f" stroke-width="2"/>
+          <text x="220" y="30" font-size="10" fill="#d9485f" text-anchor="middle" font-weight="800">Z+</text>
+          <text x="220" y="10" font-size="8" fill="#64748b" text-anchor="middle">50%</text>
+          <circle cx="220" cy="68" r="16" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+          <text x="220" y="73" font-size="10" fill="#3b82f6" text-anchor="middle" font-weight="800">Z−</text>
+          <text x="220" y="90" font-size="8" fill="#64748b" text-anchor="middle">50%</text>
+          <!-- 분기선 -->
+          <line x1="168" y1="45" x2="200" y2="25" stroke="#d9485f" stroke-width="1.5" opacity="0.5"/>
+          <line x1="168" y1="45" x2="200" y2="68" stroke="#3b82f6" stroke-width="1.5" opacity="0.5"/>
+          <!-- 주사위 -->
+          <text x="258" y="50" font-size="22" text-anchor="middle">🎲</text>
+          <text x="258" y="65" font-size="8" fill="#94a3b8" text-anchor="middle">무작위!</text>
+        </svg>
+        <p>측정 전까지 입자는 Z+도 Z−도 아닌 <strong>"두 상태가 동시에 섞인" 중첩 상태</strong>예요. 주사위를 던지듯 분석기를 통과하는 순간 한쪽으로 확 결정됩니다.</p>
+      </div>
+    </div>
+
+    <!-- 3. 상태 붕괴 -->
+    <div class="help-sec">
+      <div class="help-sec-label">③ 한번 측정되면 새로운 상태가 돼요</div>
+      <div class="principle-card">
+        <svg viewBox="0 0 320 80" width="100%" style="display:block;margin-bottom:10px">
+          <!-- 1단계 -->
+          <rect x="4" y="24" width="68" height="32" rx="10" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1.5"/>
+          <text x="38" y="38" font-size="8" fill="#64748b" text-anchor="middle" font-weight="700">입자</text>
+          <text x="38" y="50" font-size="8" fill="#94a3b8" text-anchor="middle">(불확정)</text>
+          <!-- 화살표 -->
+          <text x="96" y="45" font-size="16" text-anchor="middle" fill="#cbd5e1">→</text>
+          <!-- 2단계: 분석기 -->
+          <rect x="112" y="18" width="68" height="44" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+          <text x="146" y="36" font-size="8" fill="#1d4ed8" text-anchor="middle" font-weight="700">Z축 분석기</text>
+          <text x="146" y="50" font-size="10" fill="#1d4ed8" text-anchor="middle">⚡ 측정!</text>
+          <!-- 화살표 -->
+          <text x="206" y="45" font-size="16" text-anchor="middle" fill="#cbd5e1">→</text>
+          <!-- 3단계: Z+ 확정 -->
+          <rect x="220" y="18" width="96" height="44" rx="10" fill="#fef2f2" stroke="#d9485f" stroke-width="2"/>
+          <text x="268" y="36" font-size="8" fill="#d9485f" text-anchor="middle" font-weight="700">Z+ 상태 확정!</text>
+          <text x="268" y="52" font-size="8" fill="#94a3b8" text-anchor="middle">다음 Z측정 → 무조건 Z+</text>
+          <!-- 번쩍 효과 -->
+          <text x="268" y="16" font-size="10" text-anchor="middle">✨</text>
+        </svg>
+        <p>한 번 Z+ 로 측정된 입자는 이제 확실한 <strong>Z+ 상태</strong>가 돼요. 다시 Z축 분석기를 만나면 100% Z+만 나옵니다. 측정이 상태를 만들어버리는 거예요!</p>
+      </div>
+    </div>
+
+    <!-- 4. 확률 -->
+    <div class="help-sec">
+      <div class="help-sec-label">④ 축이 달라지면 다시 반반이에요</div>
+      <div class="principle-card">
+        <svg viewBox="0 0 320 100" width="100%" style="display:block;margin-bottom:10px">
+          <!-- 케이스 1: 같은 축 -->
+          <text x="10" y="14" font-size="9" fill="#475569" font-weight="700">같은 축 (Z+ → Z축)</text>
+          <rect x="10" y="18" width="136" height="14" rx="5" fill="#fee2e2"/>
+          <rect x="10" y="18" width="136" height="14" rx="5" fill="#d9485f"/>
+          <text x="78" y="29" font-size="8" fill="white" text-anchor="middle" font-weight="800">Z+ 100%</text>
+          <text x="10" y="42" font-size="8" fill="#94a3b8">Z− 0%</text>
+
+          <!-- 케이스 2: 다른 축 -->
+          <text x="170" y="14" font-size="9" fill="#475569" font-weight="700">다른 축 (Z+ → X축)</text>
+          <rect x="170" y="18" width="140" height="14" rx="5" fill="#dcfce7"/>
+          <rect x="170" y="18" width="70" height="14" rx="5 0 0 5" fill="#22c55e"/>
+          <text x="205" y="29" font-size="8" fill="white" text-anchor="middle" font-weight="800">X+ 50%</text>
+          <rect x="240" y="18" width="70" height="14" rx="0 5 5 0" fill="#a855f7"/>
+          <text x="275" y="29" font-size="8" fill="white" text-anchor="middle" font-weight="800">X− 50%</text>
+
+          <!-- 케이스 3: 무편광 -->
+          <text x="10" y="62" font-size="9" fill="#475569" font-weight="700">무편광 입자 → 어느 축이든</text>
+          <rect x="10" y="66" width="140" height="14" rx="5 0 0 5" fill="#d9485f" opacity="0.75"/>
+          <text x="50" y="77" font-size="8" fill="white" text-anchor="middle" font-weight="800">+ 50%</text>
+          <rect x="150" y="66" width="140" height="14" rx="0 5 5 0" fill="#3b82f6" opacity="0.75"/>
+          <text x="190" y="77" font-size="8" fill="white" text-anchor="middle" font-weight="800">− 50%</text>
+          <text x="160" y="96" font-size="8" fill="#64748b" text-anchor="middle">축이 달라지면 기존 정보가 사라지고 다시 반반이 돼요</text>
+        </svg>
+        <p>같은 축으로 다시 재면 이전 결과가 그대로 나와요. 하지만 <strong>다른 축으로 재면</strong> 이전 정보가 사라지고 다시 50:50이 됩니다.</p>
+      </div>
+    </div>
+
+    <!-- 5. 양자 지우개 -->
+    <div class="help-sec">
+      <div class="help-sec-label">⑤ 측정이 기억을 지워버려요 (양자 지우개)</div>
+      <div class="principle-card">
+        <svg viewBox="0 0 320 95" width="100%" style="display:block;margin-bottom:10px">
+          <!-- Z축 필터 -->
+          <rect x="4" y="32" width="44" height="30" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="26" y="47" font-size="7.5" fill="#1d4ed8" text-anchor="middle" font-weight="700">Z축</text>
+          <text x="26" y="57" font-size="7.5" fill="#1d4ed8" text-anchor="middle">+만 통과</text>
+          <!-- 결과1 -->
+          <circle cx="66" cy="47" r="7" fill="#d9485f"/>
+          <text x="66" y="51" font-size="7" fill="white" text-anchor="middle" font-weight="800">Z+</text>
+          <text x="66" y="20" font-size="7.5" fill="#d9485f" text-anchor="middle" font-weight="700">100%</text>
+          <line x1="66" y1="25" x2="66" y2="38" stroke="#d9485f" stroke-width="1.5"/>
+          <!-- 화살표 -->
+          <line x1="75" y1="47" x2="95" y2="47" stroke="#cbd5e1" stroke-width="1.5"/>
+          <polygon points="95,43 103,47 95,51" fill="#cbd5e1"/>
+          <!-- X축 분석기 -->
+          <rect x="106" y="32" width="44" height="30" rx="8" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="128" y="47" font-size="7.5" fill="#15803d" text-anchor="middle" font-weight="700">X축</text>
+          <text x="128" y="57" font-size="7.5" fill="#15803d" text-anchor="middle">전체 통과</text>
+          <!-- 결과2 -->
+          <circle cx="168" cy="35" r="7" fill="#22c55e"/>
+          <text x="168" y="39" font-size="7" fill="white" text-anchor="middle" font-weight="800">X+</text>
+          <text x="168" y="22" font-size="7.5" fill="#22c55e" text-anchor="middle" font-weight="700">50%</text>
+          <line x1="168" y1="26" x2="168" y2="27" stroke="#22c55e" stroke-width="1.5"/>
+          <circle cx="168" cy="60" r="7" fill="#a855f7"/>
+          <text x="168" y="64" font-size="7" fill="white" text-anchor="middle" font-weight="800">X−</text>
+          <text x="168" y="78" font-size="7.5" fill="#a855f7" text-anchor="middle" font-weight="700">50%</text>
+          <!-- 화살표 -->
+          <line x1="177" y1="47" x2="197" y2="47" stroke="#cbd5e1" stroke-width="1.5"/>
+          <polygon points="197,43 205,47 197,51" fill="#cbd5e1"/>
+          <!-- Z축 분석기 2 -->
+          <rect x="208" y="32" width="44" height="30" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="230" y="47" font-size="7.5" fill="#1d4ed8" text-anchor="middle" font-weight="700">Z축</text>
+          <text x="230" y="57" font-size="7.5" fill="#1d4ed8" text-anchor="middle">전체 통과</text>
+          <!-- 결과3 -->
+          <circle cx="270" cy="35" r="7" fill="#d9485f"/>
+          <text x="270" y="39" font-size="7" fill="white" text-anchor="middle" font-weight="800">Z+</text>
+          <text x="270" y="22" font-size="7.5" fill="#d9485f" text-anchor="middle" font-weight="700">50%</text>
+          <line x1="270" y1="26" x2="270" y2="27" stroke="#d9485f" stroke-width="1.5"/>
+          <circle cx="270" cy="60" r="7" fill="#3b82f6"/>
+          <text x="270" y="64" font-size="7" fill="white" text-anchor="middle" font-weight="800">Z−</text>
+          <text x="270" y="78" font-size="7.5" fill="#3b82f6" text-anchor="middle" font-weight="700">50%</text>
+          <!-- 놀람 표시 -->
+          <text x="300" y="50" font-size="16" text-anchor="middle">😲</text>
+          <!-- Z+였는데 왜? -->
+          <text x="230" y="90" font-size="7.5" fill="#f97316" text-anchor="middle" font-weight="700">X축 측정이 Z 정보를 지워버렸어요!</text>
+        </svg>
+        <p>Z+ 입자가 X축 분석기를 통과하면 X 방향으로 상태가 바뀝니다. 그 다음 Z를 재면 Z+ 정보가 사라져서 다시 50:50이 나와요. <strong>측정이 기억을 지우는 양자 지우개</strong> 현상이에요!</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-modal-sub" id="principleCancel">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Mission Intro Modal ── -->
+<div class="modal-overlay hidden" id="missionIntroModal">
+  <div class="modal-card mission-intro-card">
+    <div class="intro-mission-badge" id="introMissionBadge">미션 1</div>
+    <div class="intro-mission-title" id="introMissionTitle"></div>
+    <div class="intro-dots" id="introDots"></div>
+    <div class="intro-mission-brief" id="introMissionBrief"></div>
+    <div class="intro-mission-hint">
+      <div class="intro-hint-label">힌트</div>
+      <div class="intro-hint-text" id="introMissionHint"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:center; margin-top:22px;">
+      <button class="btn-modal-primary" id="introStartBtn">실험 시작!</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ── UI References ──
+const ui = {
+  sourcePreset: document.getElementById("sourcePreset"),
+  axisA:        document.getElementById("axisA"),
+  axisB:        document.getElementById("axisB"),
+  axisC:        document.getElementById("axisC"),
+  filterA:      document.getElementById("filterA"),
+  filterB:      document.getElementById("filterB"),
+  filterC:      document.getElementById("filterC"),
+  runBtn:       document.getElementById("runBtn"),
+  pauseBtn:     document.getElementById("pauseBtn"),
+  resetBtn:     document.getElementById("resetBtn"),
+  replayBtn:    document.getElementById("replayBtn"),
+  emittedCount: document.getElementById("emittedCount"),
+  detectedCount:document.getElementById("detectedCount"),
+  plusCount:    document.getElementById("plusCount"),
+  minusCount:   document.getElementById("minusCount"),
+  lostCount:    document.getElementById("lostCount"),
+  efficiencyRate: document.getElementById("efficiencyRate"),
+  captionBox:   document.getElementById("captionBox"),
+  statusSummary:document.getElementById("statusSummary"),
+  missionProgress: document.getElementById("missionProgress"),
+  missionRank:     document.getElementById("missionRank"),
+  missionClearCount: document.getElementById("missionClearCount"),
+  missionStarTotal: document.getElementById("missionStarTotal"),
+  missionBestStars: document.getElementById("missionBestStars"),
+  missionTitle:    document.getElementById("missionTitle"),
+  missionChecklist:document.getElementById("missionChecklist"),
+  reportBox:       document.getElementById("reportBox"),
+  reportStatus:    document.getElementById("reportStatus"),
+  reportDetail:    document.getElementById("reportDetail"),
+  loadMissionBtn:  document.getElementById("loadMissionBtn"),
+  nextMissionBtn:  document.getElementById("nextMissionBtn"),
+  hudMissionText:  document.getElementById("hudMissionText"),
+  hudReportStatus: document.getElementById("hudReportStatus"),
+  hudEfficiency:   document.getElementById("hudEfficiency"),
+  fullscreenBtn:   document.getElementById("fullscreenBtn"),
+  resetViewBtn:    document.getElementById("resetViewBtn"),
+};
+
+// ── Constants ──
+const axisLabels   = { none: "없음", z: "z축", x: "x축" };
+const filterLabels = { both: "전체 통과", plus: "+ 경로만", minus: "− 경로만" };
+const SPIN_COLORS = {
+  z: {
+    plus:  { hex: 0xd9485f, cssHex: "#d9485f" },
+    minus: { hex: 0x3c82f6, cssHex: "#3c82f6" },
+  },
+  x: {
+    plus:  { hex: 0x22c55e, cssHex: "#22c55e" },
+    minus: { hex: 0xa855f7, cssHex: "#a855f7" },
+  },
+};
+const LOST_COLOR   = { hex: 0xd97706, cssHex: "#d97706" };
+const GRAY_COLOR   = { hex: 0x909090, cssHex: "#909090" };
+
+const starText = stars => "★".repeat(stars) + "☆".repeat(3 - stars);
+
+// Scene layout constants
+const GEO = {
+  sourceZ:      -8,
+  detectorZ:     8,
+  analyzerZs:   [-4, 0, 4],
+  ySpread:       1.4,
+  xSpread:       1.4,
+  approachDist:  1.0,
+};
+
+// Default camera settings
+const CAM_DEFAULT = { x: 9, y: 7, z: 12 };
+
+// ── Game State ──
+const state = {
+  running: false,
+  emitted: 0,
+  detectedPlus: 0,
+  detectedMinus: 0,
+  lost: 0,
+  activeParticles: [],
+  puffs3D: [],
+  emissionAccumulator: 0,
+  lastTime: 0,
+  runSettled: true,
+  theory: { plus: 0.5, minus: 0.5, lost: 0 },
+  analyzerHitBoxes: {},
+  game: {
+    missionIndex: 0,
+    cleared: {},
+    bestStars: {},
+    lastReport: null,
+  }
+};
+
+// ── Quantum Physics Helpers ──
+function angleForSource(source) {
+  return source === "z+" ? 0 : source === "x+" ? 90 : source === "z-" ? 180 : source === "x-" ? 270 : null;
+}
+function angleForAxis(axis) { return axis === "x" ? 90 : 0; }
+function normalizeAngle(a) { let o = a % 360; return o < 0 ? o + 360 : o; }
+function cosSqHalfDiff(a, b) {
+  const diff = ((normalizeAngle(a) - normalizeAngle(b) + 540) % 360) - 180;
+  const c = Math.cos(diff * Math.PI / 360);
+  return c * c;
+}
+function passesFilter(filter, sign) { return filter === "both" || filter === sign; }
+function pctText(v) { return `${Math.round(v * 100)}%`; }
+function inRange(value, min, max) { return value >= min && value <= max; }
+function rateDistance(value, target, tolerance) {
+  return Math.min(1, Math.abs(value - target) / tolerance);
+}
+
+function measurementStep(angle, axis) {
+  const axA  = angleForAxis(axis);
+  const pP   = angle === null ? 0.5 : cosSqHalfDiff(angle, axA);
+  const sign = Math.random() < pP ? "plus" : "minus";
+  return { sign, nextStateAngle: normalizeAngle(sign === "plus" ? axA : axA + 180) };
+}
+
+function theoreticalOutcome(settings) {
+  let branches = [{ probability: 1, stateAngle: angleForSource(settings.source) }];
+  settings.analyzers.forEach(({ axis, filter }) => {
+    if (axis === "none") return;
+    const next = [];
+    branches.forEach(br => {
+      const axA = angleForAxis(axis);
+      const pP  = br.stateAngle === null ? 0.5 : cosSqHalfDiff(br.stateAngle, axA);
+      [{ sign: "plus", p: pP, angle: axA }, { sign: "minus", p: 1 - pP, angle: axA + 180 }].forEach(o => {
+        if (o.p <= 1e-6) return;
+        next.push({ probability: br.probability * o.p, stateAngle: normalizeAngle(o.angle),
+                    lastSign: o.sign, lost: !passesFilter(filter, o.sign) });
+      });
+    });
+    branches = next;
+  });
+  let plus = 0, minus = 0, lost = 0;
+  branches.forEach(br => {
+    if (br.lost)                     lost  += br.probability;
+    else if (br.lastSign === "plus") plus  += br.probability;
+    else if (br.lastSign === "minus")minus += br.probability;
+    else { plus += br.probability * 0.5; minus += br.probability * 0.5; }
+  });
+  const t = plus + minus + lost || 1;
+  return { plus: plus / t, minus: minus / t, lost: lost / t };
+}
+
+// ── Game Logic ──
+function buildMissionResult({ passed, precision, checks, successText, failText, stats }) {
+  const grade = Math.max(0, Math.min(1, precision));
+  const stars = passed ? (grade >= 0.9 ? 3 : grade >= 0.72 ? 2 : 1) : 0;
+  const reportLine = `실측 + ${pctText(stats.plusRate)}, − ${pctText(stats.minusRate)}, 차단 ${pctText(stats.lostRate)}, 검출 ${pctText(stats.detectedRate)}`;
+  return {
+    missionId: getCurrentMission().id,
+    passed,
+    stars,
+    checks,
+    tone: passed ? "success" : "fail",
+    title: passed ? `미션 완료 · ${starText(stars)}` : "다시 도전!",
+    detail: `${reportLine}. ${passed ? successText : failText}`,
+  };
+}
+
+const labMissions = [
+  {
+    id: "split",
+    title: "반반 나누기",
+    mentor: "윤 선임",
+    brief: "방향이 없는 빛을 필터에 넣으면 신기하게도 딱 반반으로 나뉘어. 진짜인지 확인해봐!",
+    hint: "분석기 A만 z축으로 켜두고, 필터는 전체 통과로 두면 돼. B, C는 끄기!",
+    setup: { src:"mixed", shots:"120", speed:"14", aA:"z", fA:"both", aB:"none", fB:"both", aC:"none", fC:"both" },
+    objectives: [
+      "분석기 A만 z축으로 켜기 (B, C 끄기)",
+      "+ 와 − 결과가 각각 40~60%로 나오는지 확인",
+      "차단되는 빛 5% 이하로 유지",
+    ],
+    judge({ settings, stats }) {
+      const configOk = settings.source === "mixed"
+        && settings.analyzers[0].axis === "z" && settings.analyzers[0].filter === "both"
+        && settings.analyzers[1].axis === "none" && settings.analyzers[2].axis === "none";
+      const splitOk = inRange(stats.plusRate, 0.4, 0.6) && inRange(stats.minusRate, 0.4, 0.6);
+      const lostOk = stats.lostRate <= 0.05;
+      const precision = 1 - (rateDistance(stats.plusRate, 0.5, 0.12) + rateDistance(stats.minusRate, 0.5, 0.12) + rateDistance(stats.lostRate, 0, 0.06)) / 3;
+      return buildMissionResult({
+        passed: configOk && splitOk && lostOk,
+        precision,
+        stats,
+        successText: "빛은 측정 전까지 방향이 정해져 있지 않아. 그래서 50:50이 나오는 거야 — 고전 물리학이랑 전혀 달라!",
+        failText: "분석기 A를 z축으로, 필터는 전체 통과로 설정해봐. + 와 − 숫자가 비슷하게 나와야 해!",
+        checks: [
+          { label: this.objectives[0], passed: configOk },
+          { label: this.objectives[1], passed: splitOk },
+          { label: this.objectives[2], passed: lostOk },
+        ],
+      });
+    }
+  },
+  {
+    id: "repeat",
+    title: "한 번 결정되면 바뀌지 않아",
+    mentor: "서 박사",
+    brief: "편광되지 않은 빛을 z필터로 걸러낸 다음, 같은 z방향으로 다시 보면 어떻게 될까? 결과가 절대 바뀌지 않아. 측정이 상태를 굳혀버리는 거야!",
+    hint: "A: z축/+만 통과, B: z축/전체 통과로 설정하고 C는 끄기. B에서 − 가 거의 안 나와야 해!",
+    setup: { src:"mixed", shots:"120", speed:"14", aA:"z", fA:"plus", aB:"z", fB:"both", aC:"none", fC:"both" },
+    objectives: [
+      "A: z축/+만, B: z축/전체로 맞추기 (C 끄기)",
+      "검출된 빛 중 + 비율이 90% 이상인지 확인",
+      "차단 40~60%, − 결과 5% 이하 유지",
+    ],
+    judge({ settings, stats }) {
+      const configOk = settings.source === "mixed"
+        && settings.analyzers[0].axis === "z" && settings.analyzers[0].filter === "plus"
+        && settings.analyzers[1].axis === "z" && settings.analyzers[1].filter === "both"
+        && settings.analyzers[2].axis === "none";
+      const detPlusRatio = stats.detectedRate > 0 ? stats.plusRate / stats.detectedRate : 0;
+      const plusOk = detPlusRatio >= 0.9;
+      const lostOk = inRange(stats.lostRate, 0.4, 0.6);
+      const cleanOk = stats.minusRate <= 0.05;
+      const precision = 1 - (rateDistance(detPlusRatio, 1, 0.1) + rateDistance(stats.lostRate, 0.5, 0.08) + rateDistance(stats.minusRate, 0, 0.05)) / 3;
+      return buildMissionResult({
+        passed: configOk && plusOk && lostOk && cleanOk,
+        precision,
+        stats,
+        successText: "맞아! A에서 z+로 걸러낸 빛은 B에서 z로 다시 봐도 항상 z+야. 측정이 상태를 '굳혀버리는' 거야.",
+        failText: "A: z/+만, B: z/전체로 설정해봐. 검출된 빛의 대부분이 + 여야 하고 차단은 50% 정도 나와야 해!",
+        checks: [
+          { label: this.objectives[0], passed: configOk },
+          { label: this.objectives[1], passed: plusOk },
+          { label: this.objectives[2], passed: lostOk && cleanOk },
+        ],
+      });
+    }
+  },
+  {
+    id: "basis",
+    title: "다른 방향으로 보면 초기화된다?",
+    mentor: "민 연구원",
+    brief: "편광되지 않은 빛을 z필터로 고른 다음, x방향으로 보면 다시 반반이 돼. 마치 기억을 잃어버리는 것처럼!",
+    hint: "A: z축/+만, B: x축/전체 통과, C 끄기. B에서 + 와 − 가 비슷하게 나와야 해.",
+    setup: { src:"mixed", shots:"120", speed:"14", aA:"z", fA:"plus", aB:"x", fB:"both", aC:"none", fC:"both" },
+    objectives: [
+      "A: z축/+만, B: x축/전체 통과로 맞추기 (C 끄기)",
+      "+ 와 − 결과가 각각 20~30%인지 확인",
+      "차단 40~60% 범위 유지",
+    ],
+    judge({ settings, stats }) {
+      const configOk = settings.source === "mixed"
+        && settings.analyzers[0].axis === "z" && settings.analyzers[0].filter === "plus"
+        && settings.analyzers[1].axis === "x" && settings.analyzers[1].filter === "both"
+        && settings.analyzers[2].axis === "none";
+      const splitOk = inRange(stats.plusRate, 0.2, 0.3) && inRange(stats.minusRate, 0.2, 0.3);
+      const lostOk = inRange(stats.lostRate, 0.4, 0.6);
+      const precision = 1 - (rateDistance(stats.plusRate, 0.25, 0.08) + rateDistance(stats.minusRate, 0.25, 0.08) + rateDistance(stats.lostRate, 0.5, 0.08)) / 3;
+      return buildMissionResult({
+        passed: configOk && splitOk && lostOk,
+        precision,
+        stats,
+        successText: "신기하지? A에서 z+로 걸러낸 빛도 x로 보면 다시 반반이 돼. 측정 방향이 바뀌면 정보가 '지워지는' 거야!",
+        failText: "A: z/+만, B: x/전체로 설정하면 돼. + 와 − 가 각각 25% 정도, 차단이 50% 정도 나와야 정답!",
+        checks: [
+          { label: this.objectives[0], passed: configOk },
+          { label: this.objectives[1], passed: splitOk },
+          { label: this.objectives[2], passed: lostOk },
+        ],
+      });
+    }
+  },
+  {
+    id: "collapse",
+    title: "중간에 보면 다 망가진다!",
+    mentor: "윤 선임",
+    brief: "z필터로 고른 빛을 중간에 x로 측정하고 다시 z로 보면 어떻게 될까? A에서 z+로 골랐는데도 결과가 반반이야. 충격적이지!",
+    hint: "A: z축/+만 → B: x축/전체 → C: z축/전체. 세 개 다 켜야 해!",
+    setup: { src:"mixed", shots:"120", speed:"14", aA:"z", fA:"plus", aB:"x", fB:"both", aC:"z", fC:"both" },
+    objectives: [
+      "A: z축/+만, B: x축/전체, C: z축/전체로 맞추기",
+      "+ 와 − 결과가 각각 20~30%로 나뉘는지 확인",
+      "차단 40~60% 범위 유지",
+    ],
+    judge({ settings, stats }) {
+      const configOk = settings.source === "mixed"
+        && settings.analyzers[0].axis === "z" && settings.analyzers[0].filter === "plus"
+        && settings.analyzers[1].axis === "x" && settings.analyzers[1].filter === "both"
+        && settings.analyzers[2].axis === "z" && settings.analyzers[2].filter === "both";
+      const splitOk = inRange(stats.plusRate, 0.2, 0.3) && inRange(stats.minusRate, 0.2, 0.3);
+      const lostOk = inRange(stats.lostRate, 0.4, 0.6);
+      const precision = 1 - (rateDistance(stats.plusRate, 0.25, 0.08) + rateDistance(stats.minusRate, 0.25, 0.08) + rateDistance(stats.lostRate, 0.5, 0.08)) / 3;
+      return buildMissionResult({
+        passed: configOk && splitOk && lostOk,
+        precision,
+        stats,
+        successText: "충격이지?! A에서 z+로 골랐지만, 중간에 x로 '봤다'는 사실만으로 z 정보가 사라져. 양자 세계에서 '측정'은 상태를 바꿔버려!",
+        failText: "A: z/+만, B: x/전체, C: z/전체 순서로 설정해봐. + 와 − 가 각각 25%, 차단이 50%쯤 나와야 정답!",
+        checks: [
+          { label: this.objectives[0], passed: configOk },
+          { label: this.objectives[1], passed: splitOk },
+          { label: this.objectives[2], passed: lostOk },
+        ],
+      });
+    }
+  },
+  {
+    id: "purify",
+    title: "빛을 완벽하게 골라내기",
+    mentor: "서 박사",
+    brief: "필터 3개를 모두 써서 + 방향 빛만 골라내봐. 대부분은 잃게 되지만, 남은 빛은 완전히 정렬돼 있어!",
+    hint: "A: z/+만, B: x/전체, C: z/+만으로 설정해봐. 3단계 정제야!",
+    setup: { src:"mixed", shots:"120", speed:"14", aA:"z", fA:"plus", aB:"x", fB:"both", aC:"z", fC:"plus" },
+    objectives: [
+      "A, B, C 분석기를 모두 사용하기",
+      "− 결과 5% 이하, + 결과 20~30% 맞추기",
+      "차단률 70% 이상 달성하기 (정제의 대가!)",
+    ],
+    judge({ settings, stats }) {
+      const configOk = settings.source === "mixed"
+        && settings.analyzers[0].axis === "z" && settings.analyzers[0].filter === "plus"
+        && settings.analyzers[1].axis === "x" && settings.analyzers[1].filter === "both"
+        && settings.analyzers[2].axis === "z" && settings.analyzers[2].filter === "plus";
+      const purityOk = stats.minusRate <= 0.05 && inRange(stats.plusRate, 0.2, 0.3);
+      const tradeoffOk = stats.lostRate >= 0.7;
+      const precision = 1 - (rateDistance(stats.plusRate, 0.25, 0.08) + rateDistance(stats.minusRate, 0, 0.05) + rateDistance(stats.lostRate, 0.75, 0.08)) / 3;
+      return buildMissionResult({
+        passed: configOk && purityOk && tradeoffOk,
+        precision,
+        stats,
+        successText: "최고야! 빛 대부분을 버렸지만 남은 건 완전히 + 방향으로 정렬됐어. 이게 바로 양자 필터링이야!",
+        failText: "A와 C에 '+만 통과' 필터를 걸어봐. 차단이 70% 넘게 나와야 정답이야!",
+        checks: [
+          { label: this.objectives[0], passed: configOk },
+          { label: this.objectives[1], passed: purityOk },
+          { label: this.objectives[2], passed: tradeoffOk },
+        ],
+      });
+    }
+  },
+];
+
+// ── Settings Helpers ──
+function getSettings() {
+  return {
+    source: ui.sourcePreset.value,
+    shots:  120,
+    speed:  14,
+    analyzers: [
+      { key: "A", axis: ui.axisA.value, filter: ui.filterA.value },
+      { key: "B", axis: ui.axisB.value, filter: ui.filterB.value },
+      { key: "C", axis: ui.axisC.value, filter: ui.filterC.value },
+    ]
+  };
+}
+
+function getRunStats() {
+  const emitted  = Math.max(1, state.emitted);
+  const detected = state.detectedPlus + state.detectedMinus;
+  return {
+    emitted: state.emitted,
+    detected,
+    plus: state.detectedPlus,
+    minus: state.detectedMinus,
+    lost: state.lost,
+    plusRate:     state.detectedPlus / emitted,
+    minusRate:    state.detectedMinus / emitted,
+    lostRate:     state.lost / emitted,
+    detectedRate: detected / emitted,
+  };
+}
+
+function getCurrentMission() {
+  return labMissions[state.game.missionIndex];
+}
+
+function getResearchRank() {
+  const totalStars = Object.values(state.game.bestStars).reduce((sum, v) => sum + v, 0);
+  if (totalStars >= 13) return "빛 마스터";
+  if (totalStars >= 9)  return "양자 해커";
+  if (totalStars >= 5)  return "빛 탐험가";
+  return "빛 입문자";
+}
+
+// ── Mission Panel ──
+function setMissionReport(report) {
+  state.game.lastReport = { missionId: getCurrentMission().id, ...report };
+  renderMissionPanel();
+}
+
+function renderMissionChecklist(mission, report) {
+  ui.missionChecklist.replaceChildren();
+  const checks = report && report.missionId === mission.id ? report.checks : null;
+  mission.objectives.forEach((objective, index) => {
+    const item = document.createElement("div");
+    const result = checks ? checks[index] : null;
+    item.className = `mission-item${result ? (result.passed ? " ok" : " fail") : ""}`;
+    const bullet = document.createElement("span");
+    bullet.className = "bullet";
+    bullet.textContent = result ? (result.passed ? "✓" : "!") : `${index + 1}`;
+    const text = document.createElement("span");
+    text.textContent = result ? result.label : objective;
+    item.append(bullet, text);
+    ui.missionChecklist.append(item);
+  });
+}
+
+function renderMissionPanel() {
+  const mission = getCurrentMission();
+  const report = state.game.lastReport && state.game.lastReport.missionId === mission.id
+    ? state.game.lastReport : null;
+  const clearedCount = Object.keys(state.game.cleared).length;
+  const totalStars   = Object.values(state.game.bestStars).reduce((sum, v) => sum + v, 0);
+  const bestStars    = state.game.bestStars[mission.id] || 0;
+  const isLastMission = state.game.missionIndex === labMissions.length - 1;
+
+  ui.missionProgress.textContent = `${state.game.missionIndex + 1} / ${labMissions.length}`;
+  ui.missionRank.textContent = getResearchRank();
+  ui.missionClearCount.textContent = String(clearedCount);
+  ui.missionStarTotal.textContent  = String(totalStars);
+  ui.missionBestStars.textContent  = bestStars ? starText(bestStars) : "☆☆☆";
+  ui.missionTitle.textContent = mission.title;
+  ui.hudMissionText.textContent = mission.title;
+
+  ui.reportBox.className = `report-box ${report ? report.tone : "waiting"}`;
+  ui.reportStatus.textContent = report ? report.title : "결과 대기 중";
+  ui.reportDetail.textContent = report ? report.detail : "▶ 실행을 눌러서 입자를 날려봐!";
+  ui.hudReportStatus.textContent = report ? report.title.replace("보고서 ", "") : "대기 중";
+  renderMissionChecklist(mission, report);
+
+  ui.nextMissionBtn.disabled = isLastMission || !state.game.cleared[mission.id];
+  ui.nextMissionBtn.textContent = isLastMission ? "최종 미션" : "다음 미션";
+}
+
+function applyConfiguration(config) {
+  ui.sourcePreset.value = config.src;
+  ui.axisA.value = config.aA; ui.filterA.value = config.fA;
+  ui.axisB.value = config.aB; ui.filterB.value = config.fB;
+  ui.axisC.value = config.aC; ui.filterC.value = config.fC;
+  state.running = false;
+  syncLabels();
+  recomputeTheory();
+  clearRunState();
+  rebuildScene3D();
+}
+
+function showMissionIntro(mission) {
+  const idx = labMissions.findIndex(m => m.id === mission.id);
+  document.getElementById("introMissionBadge").textContent = `미션 ${idx + 1} / ${labMissions.length}`;
+  document.getElementById("introMissionTitle").textContent = mission.title;
+  document.getElementById("introMissionBrief").textContent = mission.brief;
+  document.getElementById("introMissionHint").textContent = mission.hint;
+  document.getElementById("introDots").innerHTML = labMissions
+    .map((_, i) => `<div class="intro-dot${i === idx ? " active" : ""}"></div>`).join("");
+  openModal("missionIntroModal");
+}
+
+function loadMission(index, { applySetup = true, showIntro = true } = {}) {
+  state.game.missionIndex = Math.max(0, Math.min(labMissions.length - 1, index));
+  const mission = getCurrentMission();
+  if (applySetup) applyConfiguration(mission.setup);
+  setMissionReport({
+    tone: "waiting",
+    title: "결과 대기 중",
+    detail: `세팅을 확인하고 ▶ 실행을 눌러봐!`,
+    checks: null,
+  });
+  if (showIntro) showMissionIntro(mission);
+}
+
+function finalizeMissionRun() {
+  const mission = getCurrentMission();
+  const report  = mission.judge({ settings: getSettings(), stats: getRunStats() });
+  const previousBest = state.game.bestStars[mission.id] || 0;
+  if (report.passed) {
+    state.game.cleared[mission.id] = true;
+    state.game.bestStars[mission.id] = Math.max(previousBest, report.stars);
+    if (report.stars > previousBest) {
+      report.detail += ` 최고 기록이 ${starText(report.stars)}로 갱신됐습니다.`;
+    }
+  }
+  setMissionReport(report);
+}
+
+// ── UI Sync ──
+function syncLabels() {
+  ui.filterB.disabled = ui.axisB.value === "none";
+  ui.filterC.disabled = ui.axisC.value === "none";
+}
+
+function syncAfterSettingsChange() {
+  syncLabels();
+  recomputeTheory();
+  rebuildScene3D();
+  if (!state.running && state.emitted > 0) {
+    setMissionReport({
+      tone: "waiting",
+      title: "세팅 바뀜 — 다시 실행해봐",
+      detail: "분석기 세팅이 바뀌었어. 다시 실행해봐!",
+      checks: null,
+    });
+  }
+}
+
+function updateReadouts() {
+  const det = state.detectedPlus + state.detectedMinus;
+  ui.emittedCount.textContent   = state.emitted;
+  ui.detectedCount.textContent  = det;
+  ui.plusCount.textContent      = state.detectedPlus;
+  ui.minusCount.textContent     = state.detectedMinus;
+  ui.lostCount.textContent      = state.lost;
+  ui.efficiencyRate.textContent = state.emitted ? pctText(det / state.emitted) : "0%";
+  ui.hudEfficiency.textContent  = state.emitted ? pctText(det / state.emitted) : "0%";
+  ui.statusSummary.textContent  = `+ ${pctText(state.theory.plus)} / − ${pctText(state.theory.minus)}`;
+
+  const s = getSettings();
+  const active = s.analyzers.filter(a => a.axis !== "none")
+    .map(a => `${axisLabels[a.axis]} (${filterLabels[a.filter]})`).join(" → ");
+  const mission = getCurrentMission();
+  ui.captionBox.textContent = `${mission.title} — ${active || "분석기 없음"} · 예상 + ${pctText(state.theory.plus)}, − ${pctText(state.theory.minus)}, 차단 ${pctText(state.theory.lost)}`;
+}
+
+function recomputeTheory() {
+  state.theory = theoreticalOutcome(getSettings());
+  updateReadouts();
+}
+
+function clearRunState() {
+  // Remove all active particle objects from scene
+  for (const p of state.activeParticles) removeParticle3D(p);
+  state.activeParticles = [];
+  for (const puff of state.puffs3D) { scene.remove(puff.mesh); }
+  state.puffs3D = [];
+
+  state.emitted = 0;
+  state.detectedPlus = 0;
+  state.detectedMinus = 0;
+  state.lost = 0;
+  state.emissionAccumulator = 0;
+  state.runSettled = true;
+  updateReadouts();
+}
+
+function startRun() {
+  if (state.emitted >= 120) clearRunState();
+  state.running = true;
+  state.runSettled = false;
+  setMissionReport({
+    tone: "running",
+    title: "실험 진행 중",
+    detail: "입자를 날리는 중... 결과를 기다려봐!",
+    checks: null,
+  });
+}
+
+function applyPreset(name) {
+  const p = {
+    unpolarized: { src:"mixed", aA:"z", fA:"both", aB:"none", fB:"both", aC:"none", fC:"both" },
+    sameAxis:    { src:"mixed", aA:"z", fA:"plus", aB:"z",    fB:"both", aC:"none", fC:"both" },
+    basisChange: { src:"mixed", aA:"z", fA:"plus", aB:"x",    fB:"both", aC:"none", fC:"both" },
+    collapse:    { src:"mixed", aA:"z", fA:"plus", aB:"x",    fB:"both", aC:"z",    fC:"both" },
+  }[name];
+  if (!p) return;
+  applyConfiguration({ ...p, shots:"120", speed:"14" });
+  const mission = getCurrentMission();
+  setMissionReport({
+    tone: "waiting",
+    title: "자유 실험 준비",
+    detail: `프리셋을 불러왔습니다. 현재 미션은 ${mission.title}입니다.`,
+    checks: null,
+  });
+}
+
+// ── Three.js Scene Setup ──
+const canvas3D = document.getElementById("threeCanvas");
+const renderer = new THREE.WebGLRenderer({ canvas: canvas3D, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+renderer.setClearColor(0xffffff);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xffffff);
+scene.fog = new THREE.Fog(0xffffff, 35, 90);
+
+const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
+camera.position.set(CAM_DEFAULT.x, CAM_DEFAULT.y, CAM_DEFAULT.z);
+camera.lookAt(0, 0, 0);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 4;
+controls.maxDistance = 40;
+
+// Resize handler
+function resizeRenderer() {
+  const w = canvas3D.clientWidth;
+  const h = canvas3D.clientHeight;
+  if (renderer.domElement.width !== w * devicePixelRatio ||
+      renderer.domElement.height !== h * devicePixelRatio) {
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+}
+
+// ── Lighting ──
+scene.add(new THREE.AmbientLight(0xffffff, 2.0));
+
+const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.8);
+dirLight1.position.set(5, 8, 5);
+dirLight1.castShadow = true;
+scene.add(dirLight1);
+
+const dirLight2 = new THREE.DirectionalLight(0xe8eeff, 0.8);
+dirLight2.position.set(-8, 3, -5);
+scene.add(dirLight2);
+
+// ── Static Scene Objects ──
+// Floor grid
+const floorMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(30, 30),
+  new THREE.MeshStandardMaterial({ color: 0xeef2f7, roughness: 0.85, metalness: 0.0 })
+);
+floorMesh.rotation.x = -Math.PI / 2;
+floorMesh.position.y = -2.5;
+floorMesh.receiveShadow = true;
+scene.add(floorMesh);
+
+// Source sphere
+const sourceMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(0.5, 16, 16),
+  new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x00e5ff, emissiveIntensity: 0.8, roughness: 0.2, metalness: 0.3 })
+);
+sourceMesh.position.set(0, 0, GEO.sourceZ);
+scene.add(sourceMesh);
+
+const sourceLight = new THREE.PointLight(0x00e5ff, 1.5, 4);
+sourceLight.position.set(0, 0, GEO.sourceZ);
+scene.add(sourceLight);
+
+// Source label sprite
+function makeTextSprite(text, color = 0x111111, size = 0.5) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256; canvas.height = 96;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, 256, 96);
+  ctx.font = "bold 54px 'Pretendard', Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  // White halo for readability on any background
+  ctx.strokeStyle = "rgba(255,255,255,0.95)";
+  ctx.lineWidth = 8;
+  ctx.lineJoin = "round";
+  ctx.strokeText(text, 128, 48);
+  ctx.fillStyle = `#${color.toString(16).padStart(6, "0")}`;
+  ctx.fillText(text, 128, 48);
+  const tex = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(size * 3, size * 1.2, 1);
+  return sprite;
+}
+
+const sourceLbl = makeTextSprite("광원", 0x0369a1, 0.8);
+sourceLbl.position.set(0, 1.3, GEO.sourceZ);
+scene.add(sourceLbl);
+
+// Beam rail
+const railGeo = new THREE.BufferGeometry().setFromPoints([
+  new THREE.Vector3(0, 0, GEO.sourceZ + 0.5),
+  new THREE.Vector3(0, 0, GEO.detectorZ - 0.5)
+]);
+const railMat = new THREE.LineBasicMaterial({ color: 0x334466, transparent: true, opacity: 0.3 });
+scene.add(new THREE.Line(railGeo, railMat));
+
+// Detector panel
+const detGeo  = new THREE.PlaneGeometry(5, 5);
+const detMat  = new THREE.MeshStandardMaterial({
+  color: 0x0a1a2e, transparent: true, opacity: 0.7,
+  emissive: 0x0a1528, emissiveIntensity: 0.5, side: THREE.DoubleSide
+});
+const detMesh = new THREE.Mesh(detGeo, detMat);
+detMesh.position.set(0, 0, GEO.detectorZ);
+detMesh.rotation.y = Math.PI;
+scene.add(detMesh);
+
+const detLbl = makeTextSprite("검출기", 0x1d4ed8, 0.8);
+detLbl.position.set(0, 2.8, GEO.detectorZ);
+scene.add(detLbl);
+
+// Detector pads
+const padPositions = [
+  { x:  1.2, y:  1.2, color: 0xd9485f, label: "Z+" },
+  { x:  1.2, y: -1.2, color: 0x3c82f6, label: "Z−" },
+  { x: -1.2, y:  1.2, color: 0x22c55e, label: "X+" },
+  { x: -1.2, y: -1.2, color: 0xa855f7, label: "X−" },
+];
+padPositions.forEach(p => {
+  const padMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.8, 0.8),
+    new THREE.MeshStandardMaterial({ color: p.color, transparent: true, opacity: 0.35, side: THREE.DoubleSide, emissive: p.color, emissiveIntensity: 0.2 })
+  );
+  padMesh.position.set(p.x, p.y, GEO.detectorZ + 0.01);
+  padMesh.rotation.y = Math.PI;
+  scene.add(padMesh);
+  const padLight = new THREE.PointLight(p.color, 0.3, 1.5);
+  padLight.position.set(p.x, p.y, GEO.detectorZ - 0.5);
+  scene.add(padLight);
+});
+
+// ── Bloch Sphere ──
+let blochScene, blochCamera, blochStateArrow;
+let blochTrackedParticle = null;
+
+let blochRenderer;
+
+function buildBlochSphere() {
+  blochScene = new THREE.Scene();
+  // 배경 없음 — CSS backdrop-filter가 배경을 담당
+  blochCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  blochCamera.position.set(2.2, 1.8, 2.8);
+  blochCamera.lookAt(0, 0, 0);
+  blochScene.add(new THREE.AmbientLight(0xffffff, 2.2));
+  const bl = new THREE.DirectionalLight(0xffffff, 0.9);
+  bl.position.set(3, 4, 3);
+  blochScene.add(bl);
+
+  // 반투명 구
+  blochScene.add(new THREE.Mesh(
+    new THREE.SphereGeometry(1, 32, 32),
+    new THREE.MeshStandardMaterial({ color: 0xbdd6f0, transparent: true, opacity: 0.10, side: THREE.DoubleSide })
+  ));
+  blochScene.add(new THREE.Mesh(
+    new THREE.SphereGeometry(1, 16, 10),
+    new THREE.MeshBasicMaterial({ color: 0x93c5fd, wireframe: true, transparent: true, opacity: 0.14 })
+  ));
+
+  // 대원(great circle) 그리기 헬퍼
+  function addCircle(t1, t2, color, opacity) {
+    const pts = [];
+    for (let i = 0; i <= 72; i++) {
+      const a = (i / 72) * Math.PI * 2;
+      pts.push(new THREE.Vector3(
+        Math.cos(a) * t1.x + Math.sin(a) * t2.x,
+        Math.cos(a) * t1.y + Math.sin(a) * t2.y,
+        Math.cos(a) * t1.z + Math.sin(a) * t2.z
+      ));
+    }
+    blochScene.add(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({ color, transparent: true, opacity })
+    ));
+  }
+  addCircle(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,1), 0x60a5fa, 0.35); // 적도
+  addCircle(new THREE.Vector3(1,0,0), new THREE.Vector3(0,1,0), 0x818cf8, 0.50); // XY 자오선 (상태 평면)
+
+  // 축 화살표
+  const axLen = 1.35;
+  function addAxis(dir, color) {
+    blochScene.add(new THREE.ArrowHelper(dir, dir.clone().negate().multiplyScalar(axLen), axLen*2, color, 0.10, 0.06));
+  }
+  addAxis(new THREE.Vector3(0,1,0), 0x2563eb); // Z-스핀 축 (위/아래)
+  addAxis(new THREE.Vector3(1,0,0), 0x16a34a); // X-스핀 축 (좌/우)
+
+  // 극 레이블
+  const poles = [
+    { t:"|+Z⟩", p:new THREE.Vector3( 0,  1.60,  0), c:0x93c5fd },
+    { t:"|−Z⟩", p:new THREE.Vector3( 0, -1.60,  0), c:0x93c5fd },
+    { t:"|+X⟩", p:new THREE.Vector3( 1.60, 0,   0), c:0x86efac },
+    { t:"|−X⟩", p:new THREE.Vector3(-1.60, 0,   0), c:0x86efac },
+  ];
+  for (const p of poles) {
+    const sp = makeTextSprite(p.t, p.c, 0.28);
+    sp.position.copy(p.p);
+    blochScene.add(sp);
+  }
+
+  // 상태 벡터 (주황색 화살표)
+  blochStateArrow = new THREE.ArrowHelper(
+    new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 0.92, 0xf97316, 0.16, 0.10
+  );
+  blochScene.add(blochStateArrow);
+}
+buildBlochSphere();
+
+
+function updateBlochSphere(now) {
+  let angle = null;
+  if (blochTrackedParticle && blochTrackedParticle.birth) {
+    const p = blochTrackedParticle;
+    const cl = Math.min(1, (now - p.birth) / p.duration);
+    for (const step of p.normalizedStateSeq) {
+      if (cl >= step.frac) angle = step.angle;
+      else break;
+    }
+  }
+
+  if (angle === null) {
+    // 혼합 상태: 불확정 회전
+    const a = now * 0.00075;
+    blochStateArrow.setDirection(new THREE.Vector3(Math.sin(a), Math.cos(a * 0.8), Math.sin(a * 0.5) * 0.3).normalize());
+    blochStateArrow.setColor(0xb0bec5);
+  } else {
+    const rad = angle * Math.PI / 180;
+    blochStateArrow.setDirection(new THREE.Vector3(Math.sin(rad), Math.cos(rad), 0).normalize());
+    const a = ((angle % 360) + 360) % 360;
+    const col = (a < 45 || a > 315) ? 0xd9485f :
+                (a > 135 && a < 225) ? 0x3c82f6 :
+                (a >= 45 && a <= 135) ? 0x22c55e : 0xa855f7;
+    blochStateArrow.setColor(col);
+  }
+}
+
+// ── Analyzer 3D Builder ──
+// Store analyzer groups so we can rebuild
+let analyzerGroups = [];
+
+function buildAnalyzer3D(axis, filterSetting, posZ, label) {
+  const group = new THREE.Group();
+  group.position.set(0, 0, posZ);
+
+  const isZ = axis !== "x";
+  // Pole colors: Z = blue/red, X = green/purple
+  const northColor = isZ ? 0x1e40af : 0x14532d;
+  const southColor = isZ ? 0x9f1239 : 0x581c87;
+  const northEmissive = isZ ? 0x1e3a8a : 0x14532d;
+  const southEmissive = isZ ? 0x7f1238 : 0x4a1066;
+
+  // N-pole (top for Z, right for X)
+  const northGeo = new THREE.BoxGeometry(2.6, 0.65, 1.6);
+  const northMat = new THREE.MeshStandardMaterial({
+    color: northColor, emissive: northEmissive, emissiveIntensity: 0.3, roughness: 0.4, metalness: 0.6
+  });
+  const northMesh = new THREE.Mesh(northGeo, northMat);
+  northMesh.position.set(0, 1.9, 0);
+  northMesh.castShadow = true;
+  group.add(northMesh);
+
+  // Wedge on inner face of N-pole
+  const wedgeGeo = new THREE.BoxGeometry(2.6, 0.3, 0.3);
+  const wedgeMat = new THREE.MeshStandardMaterial({ color: northEmissive, roughness: 0.3, metalness: 0.7 });
+  const wedgeMesh = new THREE.Mesh(wedgeGeo, wedgeMat);
+  wedgeMesh.position.set(0, 1.45, 0);
+  group.add(wedgeMesh);
+
+  // S-pole (bottom for Z, left for X)
+  const southGeo = new THREE.BoxGeometry(2.6, 0.65, 1.6);
+  const southMat = new THREE.MeshStandardMaterial({
+    color: southColor, emissive: southEmissive, emissiveIntensity: 0.3, roughness: 0.4, metalness: 0.6
+  });
+  const southMesh = new THREE.Mesh(southGeo, southMat);
+  southMesh.position.set(0, -1.9, 0);
+  southMesh.castShadow = true;
+  group.add(southMesh);
+
+  // Vertical field lines (6 cylinders between poles)
+  const fieldLineMat = new THREE.MeshBasicMaterial({ color: 0x6496ff, transparent: true, opacity: 0.22 });
+  for (let i = 0; i < 6; i++) {
+    const fGeo = new THREE.CylinderGeometry(0.015, 0.015, 3.2, 4);
+    const fMesh = new THREE.Mesh(fGeo, fieldLineMat);
+    fMesh.position.set(-1.0 + i * 0.4, 0, 0);
+    group.add(fMesh);
+  }
+
+  // Label sprite
+  const lbl = makeTextSprite(axis.toUpperCase() + "축", isZ ? 0x1d4ed8 : 0x15803d, 0.55);
+  lbl.position.set(0, 3.0, 0);
+  group.add(lbl);
+
+  // Analyzer label (A, B, C)
+  const analyzerLbl = makeTextSprite("분석기 " + label, 0x1e293b, 0.55);
+  analyzerLbl.position.set(0, 3.7, 0);
+  group.add(analyzerLbl);
+
+
+  // Filter blocker
+  if (filterSetting === "plus" || filterSetting === "minus") {
+    // For Z-axis: block minus = block -Y, block plus = block +Y
+    // For X-axis: block minus = block -X, block plus = block +X
+    // The blocked channel is the opposite of the filter
+    const blockedSign = filterSetting === "plus" ? "minus" : "plus";
+    let blockX = 0, blockY = 0;
+
+    if (axis === "z") {
+      blockY = blockedSign === "plus" ? GEO.ySpread : -GEO.ySpread;
+    } else {
+      blockX = blockedSign === "plus" ? GEO.xSpread : -GEO.xSpread;
+    }
+
+    // Main blocker plate — thin face perpendicular to beam travel (Z)
+    const blocker = new THREE.Mesh(
+      new THREE.BoxGeometry(1.6, 1.6, 0.14),
+      new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0xf97316, emissiveIntensity: 0.55, roughness: 0.4, metalness: 0.15 })
+    );
+    blocker.position.set(blockX, blockY, GEO.approachDist + 0.4);
+    group.add(blocker);
+
+    // Cross mark on blocker face (two thin bars forming an X)
+    const barMat = new THREE.MeshStandardMaterial({ color: 0x1a0a00, emissive: 0x000000, roughness: 0.8 });
+    const bar1 = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.14, 0.16), barMat);
+    bar1.rotation.z = Math.PI / 4;
+    bar1.position.set(blockX, blockY, GEO.approachDist + 0.47);
+    group.add(bar1);
+    const bar2 = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.14, 0.16), barMat);
+    bar2.rotation.z = -Math.PI / 4;
+    bar2.position.set(blockX, blockY, GEO.approachDist + 0.47);
+    group.add(bar2);
+
+  }
+
+  // If X-axis: rotate entire group 90° around Z
+  if (axis === "x") {
+    group.rotation.z = Math.PI / 2;
+  }
+
+  return group;
+}
+
+// Rebuild analyzers whenever settings change
+function rebuildScene3D() {
+  // Remove old analyzer groups
+  for (const g of analyzerGroups) scene.remove(g);
+  analyzerGroups = [];
+
+  const s = getSettings();
+  const labels = ["A", "B", "C"];
+  s.analyzers.forEach((a, idx) => {
+    if (a.axis === "none") return;
+    const grp = buildAnalyzer3D(a.axis, a.filter, GEO.analyzerZs[idx], labels[idx]);
+    scene.add(grp);
+    analyzerGroups.push(grp);
+  });
+}
+
+// ── Particle 3D Path Building ──
+function createParticle3D() {
+  const settings = getSettings();
+  let stateAngle = angleForSource(settings.source);
+  let curX = 0, curY = 0;
+  const points = [];
+  const colorStops  = [];  // {frac, hexColor, threeColor}
+  const spinStops   = [];  // {frac, direction: THREE.Vector3}
+
+  // Start point
+  points.push(new THREE.Vector3(0, 0, GEO.sourceZ + 1));
+
+  // Total path length accumulated step by step
+  let cumLen = 0;
+  const rawPoints = [new THREE.Vector3(0, 0, GEO.sourceZ + 1)];
+
+  function pushPt(x, y, z) {
+    const prev = rawPoints[rawPoints.length - 1];
+    const np = new THREE.Vector3(x, y, z);
+    cumLen += prev.distanceTo(np);
+    rawPoints.push(np);
+  }
+
+  // Initial gray color (uncertain spin)
+  colorStops.push({ lenAtStop: 0, hexColor: "#909090", threeColor: GRAY_COLOR.hex });
+  spinStops.push({ lenAtStop: 0, direction: new THREE.Vector3(0, 0, 1) });
+
+  let ended = false;
+  let result = "lost";
+  let puffPos = null;
+  let puffColor = LOST_COLOR.hex;
+  let lastSign = null;
+  const ghostRaw = [];
+  const stateSeqRaw = [{ lenAtStop: 0, angle: stateAngle }];
+
+  settings.analyzers.forEach(({ axis, filter }, idx) => {
+    if (ended || axis === "none") return;
+    const az = GEO.analyzerZs[idx];
+
+    // Approach
+    pushPt(curX, curY, az - GEO.approachDist);
+    const entryX = curX, entryY = curY;
+    pushPt(curX, curY, az);
+    const lenAtAnalyzer = cumLen;
+
+    // Quantum measurement
+    const meas = measurementStep(stateAngle, axis);
+    lastSign   = meas.sign;
+    stateAngle = meas.nextStateAngle;
+
+    // Deflection
+    let dX = 0, dY = 0;
+    if (axis === "z") {
+      dY = meas.sign === "plus" ? GEO.ySpread : -GEO.ySpread;
+    } else {
+      dX = meas.sign === "plus" ? GEO.xSpread : -GEO.xSpread;
+    }
+    curX += dX;
+    curY += dY;
+
+    pushPt(curX, curY, az + GEO.approachDist);
+
+    // Color change after measurement
+    const spinCol = SPIN_COLORS[axis]?.[meas.sign] ?? GRAY_COLOR;
+    colorStops.push({ lenAtStop: cumLen, hexColor: spinCol.cssHex, threeColor: spinCol.hex });
+
+    // Spin direction
+    const spinDir = axis === "z"
+      ? new THREE.Vector3(0, meas.sign === "plus" ? 1 : -1, 0)
+      : new THREE.Vector3(meas.sign === "plus" ? 1 : -1, 0, 0);
+    spinStops.push({ lenAtStop: cumLen, direction: spinDir });
+    stateSeqRaw.push({ lenAtStop: cumLen, angle: meas.nextStateAngle });
+
+    if (!passesFilter(filter, meas.sign)) {
+      pushPt(curX, curY, az + GEO.approachDist * 1.8);
+      ended = true;
+      result = "lost";
+      puffPos   = new THREE.Vector3(curX, curY, az + GEO.approachDist * 1.8);
+      puffColor = LOST_COLOR.hex;
+    } else {
+      // Ghost: 차단된 채널 경로 표시
+      if (filter === "plus" || filter === "minus") {
+        const blockedSign = filter === "plus" ? "minus" : "plus";
+        let gX = entryX, gY = entryY;
+        if (axis === "z") {
+          gY += blockedSign === "plus" ? GEO.ySpread : -GEO.ySpread;
+        } else {
+          gX += blockedSign === "plus" ? GEO.xSpread : -GEO.xSpread;
+        }
+        const ghostCol = SPIN_COLORS[axis]?.[blockedSign] ?? GRAY_COLOR;
+        ghostRaw.push({
+          lenAtStart: lenAtAnalyzer,
+          pts: [
+            new THREE.Vector3(entryX, entryY, az),
+            new THREE.Vector3(gX, gY, az + GEO.approachDist),
+            new THREE.Vector3(gX, gY, az + GEO.approachDist * 1.8),
+          ],
+          colorHex: ghostCol.hex,
+        });
+      }
+      const hasNext = settings.analyzers.slice(idx + 1).some(a => a.axis !== "none");
+      if (hasNext) {
+        const nextIdx = settings.analyzers.findIndex((a, i) => i > idx && a.axis !== "none");
+        const nextAz = GEO.analyzerZs[nextIdx];
+        pushPt(0, 0, az + (nextAz - az) * 0.45);
+        curX = 0;
+        curY = 0;
+      }
+    }
+  });
+
+  if (!ended) {
+    pushPt(curX, curY, GEO.detectorZ);
+    if (lastSign === "plus")  {
+      result = "plus";
+      puffPos   = new THREE.Vector3(curX, curY, GEO.detectorZ);
+      puffColor = axis_color_for_result(settings, "plus");
+    } else if (lastSign === "minus") {
+      result = "minus";
+      puffPos   = new THREE.Vector3(curX, curY, GEO.detectorZ);
+      puffColor = axis_color_for_result(settings, "minus");
+    } else {
+      result    = Math.random() < 0.5 ? "plus" : "minus";
+      puffPos   = new THREE.Vector3(curX, curY, GEO.detectorZ);
+      puffColor = result === "plus" ? SPIN_COLORS.z.plus.hex : SPIN_COLORS.z.minus.hex;
+    }
+  }
+
+  // Normalize color stop fractions
+  const totalLen = cumLen || 1;
+  const normalizedColorStops = colorStops.map(cs => ({ frac: cs.lenAtStop / totalLen, threeColor: cs.threeColor, hexColor: cs.hexColor }));
+  const normalizedSpinStops  = spinStops.map(ss  => ({ frac: ss.lenAtStop / totalLen, direction: ss.direction }));
+  const ghostInfos = ghostRaw.map(g => {
+    const gc = new THREE.CatmullRomCurve3(g.pts, false, "catmullrom", 0.2);
+    return { startFrac: g.lenAtStart / totalLen, curve: gc, curveLen: gc.getLength(), colorHex: g.colorHex };
+  });
+  const normalizedStateSeq = stateSeqRaw.map(s => ({ frac: s.lenAtStop / totalLen, angle: s.angle }));
+
+  // Build curve
+  const curve = new THREE.CatmullRomCurve3(rawPoints, false, "catmullrom", 0.2);
+
+  // Duration based on path length
+  const pathLen = curve.getLength();
+  const duration = Math.max(0.8, pathLen / 2.8) * 1000; // milliseconds
+
+  return {
+    curve,
+    rawPoints,
+    normalizedColorStops,
+    normalizedSpinStops,
+    ghostInfos,
+    normalizedStateSeq,
+    result,
+    puffPos,
+    puffColor,
+    duration,
+    birth: null,
+    counted: false,
+    t: 0,
+    sphere: null,
+    glow: null,
+    spinArrow: null,
+    trailLine: null,
+    trailGeo: null,
+    spinPhase: Math.random() * Math.PI * 2,
+  };
+}
+
+function axis_color_for_result(settings, sign) {
+  // Find the last active analyzer axis to determine final color
+  const active = settings.analyzers.filter(a => a.axis !== "none");
+  if (active.length === 0) return sign === "plus" ? SPIN_COLORS.z.plus.hex : SPIN_COLORS.z.minus.hex;
+  const lastAxis = active[active.length - 1].axis;
+  return sign === "plus" ? SPIN_COLORS[lastAxis].plus.hex : SPIN_COLORS[lastAxis].minus.hex;
+}
+
+function getColorAtFrac(colorStops, frac) {
+  let current = colorStops[0];
+  for (const stop of colorStops) {
+    if (frac >= stop.frac) current = stop;
+    else break;
+  }
+  return current.threeColor;
+}
+
+function getSpinDirAtFrac(spinStops, frac, phase, now) {
+  let current = spinStops[0];
+  for (const stop of spinStops) {
+    if (frac >= stop.frac) current = stop;
+    else break;
+  }
+  // Before first measurement: rotate around Z
+  if (current === spinStops[0] && spinStops.length > 0) {
+    const angle = (now * 0.002) + phase;
+    return new THREE.Vector3(Math.cos(angle), Math.sin(angle), 0).normalize();
+  }
+  return current.direction.clone();
+}
+
+function spawnParticle3D() {
+  const pData = createParticle3D();
+  pData.birth = performance.now();
+  blochTrackedParticle = pData;
+
+  // Sphere
+  const initColor = pData.normalizedColorStops[0].threeColor;
+  pData.sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.14, 12, 12),
+    new THREE.MeshStandardMaterial({ color: initColor, emissive: initColor, emissiveIntensity: 0.6, roughness: 0.3, metalness: 0.1 })
+  );
+  scene.add(pData.sphere);
+
+  // Spin arrow
+  const initDir = new THREE.Vector3(0, 0, 1);
+  pData.spinArrow = new THREE.ArrowHelper(initDir, new THREE.Vector3(0, 0, 0), 0.55, initColor, 0.18, 0.12);
+  scene.add(pData.spinArrow);
+
+  // Trail — pre-allocate buffer once, reuse every frame
+  const TRAIL_N = 12;
+  pData.trailN = TRAIL_N;
+  const trailArr = new Float32Array(TRAIL_N * 3);
+  const trailAttr = new THREE.BufferAttribute(trailArr, 3);
+  trailAttr.setUsage(THREE.DynamicDrawUsage);
+  pData.trailGeo = new THREE.BufferGeometry();
+  pData.trailGeo.setAttribute("position", trailAttr);
+  const trailMat = new THREE.LineBasicMaterial({ color: initColor, transparent: true, opacity: 0.6 });
+  pData.trailLine = new THREE.Line(pData.trailGeo, trailMat);
+  scene.add(pData.trailLine);
+
+  // Ghost beams (차단된 채널 시각화)
+  pData.ghosts = [];
+  for (const gi of pData.ghostInfos) {
+    const GHOST_N = 10;
+    const ghostArr  = new Float32Array(GHOST_N * 3);
+    const ghostAttr = new THREE.BufferAttribute(ghostArr, 3);
+    ghostAttr.setUsage(THREE.DynamicDrawUsage);
+    const ghostGeo  = new THREE.BufferGeometry();
+    ghostGeo.setAttribute("position", ghostAttr);
+    const ghostLine = new THREE.Line(ghostGeo,
+      new THREE.LineBasicMaterial({ color: gi.colorHex, transparent: true, opacity: 0, depthWrite: false }));
+    scene.add(ghostLine);
+
+    const ghostSphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.09, 8, 8),
+      new THREE.MeshStandardMaterial({ color: gi.colorHex, emissive: gi.colorHex, emissiveIntensity: 0.7, transparent: true, opacity: 0 })
+    );
+    scene.add(ghostSphere);
+
+    pData.ghosts.push({ ...gi, line: ghostLine, geo: ghostGeo, attr: ghostAttr, arr: ghostArr, N: GHOST_N, sphere: ghostSphere });
+  }
+
+  state.activeParticles.push(pData);
+  state.emitted += 1;
+  updateReadouts();
+}
+
+function removeParticle3D(p) {
+  if (p.sphere)    { scene.remove(p.sphere);    p.sphere.geometry.dispose(); }
+  if (p.spinArrow)  scene.remove(p.spinArrow);
+  if (p.trailLine)  { scene.remove(p.trailLine); p.trailGeo.dispose(); }
+  for (const g of p.ghosts || []) {
+    scene.remove(g.line);   g.geo.dispose();
+    scene.remove(g.sphere); g.sphere.geometry.dispose();
+  }
+}
+
+function spawnPuff3D(position, color) {
+  const mesh = new THREE.Mesh(
+    new THREE.SphereGeometry(0.15, 8, 8),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8 })
+  );
+  mesh.position.copy(position);
+  scene.add(mesh);
+  state.puffs3D.push({ mesh, birth: performance.now(), duration: 800 });
+}
+
+function updateParticles(now) {
+  const toRemove = [];
+  for (const p of state.activeParticles) {
+    const elapsed = now - p.birth;
+    const t  = elapsed / p.duration;
+    const cl = Math.max(0, Math.min(1, t));
+
+    // Count when arrived
+    if (t >= 1 && !p.counted) {
+      p.counted = true;
+      if      (p.result === "plus")  state.detectedPlus  += 1;
+      else if (p.result === "minus") state.detectedMinus += 1;
+      else                           state.lost          += 1;
+      if (p.puffPos) spawnPuff3D(p.puffPos, p.puffColor);
+      updateReadouts();
+    }
+
+    // Update position on curve
+    const pos = p.curve.getPointAt(cl);
+    p.sphere.position.copy(pos);
+    p.spinArrow.position.copy(pos);
+
+    // Color update
+    const col = getColorAtFrac(p.normalizedColorStops, cl);
+    p.sphere.material.color.setHex(col);
+    p.sphere.material.emissive.setHex(col);
+    p.spinArrow.setColor(col);
+
+    // Spin direction update
+    const spinDir = getSpinDirAtFrac(p.normalizedSpinStops, cl, p.spinPhase, now);
+    p.spinArrow.setDirection(spinDir.normalize());
+
+    // Trail update — reuse pre-allocated buffer
+    const trailAttr = p.trailGeo.getAttribute("position");
+    const trailArr  = trailAttr.array;
+    const trailN    = p.trailN;
+    for (let i = 0; i < trailN; i++) {
+      const tf = Math.max(0, cl - (cl * (trailN - 1 - i) / (trailN - 1)) * 0.35);
+      const tp = p.curve.getPointAt(Math.min(1, Math.max(0, tf)));
+      trailArr[i * 3]     = tp.x;
+      trailArr[i * 3 + 1] = tp.y;
+      trailArr[i * 3 + 2] = tp.z;
+    }
+    trailAttr.needsUpdate = true;
+    p.trailLine.material.color.setHex(col);
+    p.trailLine.material.opacity = Math.min(0.7, cl * 2);
+
+    // Ghost beam 애니메이션
+    for (const g of p.ghosts) {
+      if (cl < g.startFrac) continue;
+      const ghostElapsed  = elapsed - p.duration * g.startFrac;
+      const ghostDuration = Math.max(300, g.curveLen / 2.8 * 1000);
+      const ghostCl = Math.min(1, ghostElapsed / ghostDuration);
+      const opacity = ghostCl < 0.75 ? 0.5 : 0.5 * (1 - (ghostCl - 0.75) / 0.25);
+
+      const gPos = g.curve.getPointAt(ghostCl);
+      g.sphere.position.copy(gPos);
+      g.sphere.material.opacity = opacity;
+
+      const arr = g.arr;
+      for (let i = 0; i < g.N; i++) {
+        const tf = ghostCl * (i / (g.N - 1));
+        const tp = g.curve.getPointAt(Math.min(1, tf));
+        arr[i * 3] = tp.x; arr[i * 3 + 1] = tp.y; arr[i * 3 + 2] = tp.z;
+      }
+      g.attr.needsUpdate = true;
+      g.line.material.opacity = opacity * 0.5;
+    }
+
+    if (t > 1.1) toRemove.push(p);
+  }
+  if (toRemove.length) {
+    const removeSet = new Set(toRemove);
+    state.activeParticles = state.activeParticles.filter(x => !removeSet.has(x));
+    for (const p of toRemove) removeParticle3D(p);
+  }
+}
+
+function updatePuffs(now) {
+  const toRemove = [];
+  for (const puff of state.puffs3D) {
+    const elapsed = now - puff.birth;
+    const t = elapsed / puff.duration;
+    if (t >= 1) { toRemove.push(puff); continue; }
+    const scale = 0.2 + t * 0.6;
+    puff.mesh.scale.setScalar(scale);
+    puff.mesh.material.opacity = 0.8 * (1 - t);
+  }
+  if (toRemove.length) {
+    const removeSet = new Set(toRemove);
+    state.puffs3D = state.puffs3D.filter(x => !removeSet.has(x));
+    for (const puff of toRemove) { scene.remove(puff.mesh); puff.mesh.geometry.dispose(); }
+  }
+}
+
+// Animate source sphere pulse
+let sourceAnimTime = 0;
+function animateSource(dt) {
+  sourceAnimTime += dt;
+  const pulse = 0.9 + 0.12 * Math.sin(sourceAnimTime * 3.0);
+  sourceMesh.scale.setScalar(pulse);
+  sourceLight.intensity = 1.2 + 0.5 * Math.sin(sourceAnimTime * 2.5);
+}
+
+// ── Main Tick ──
+function tick(now) {
+  if (!state.lastTime) state.lastTime = now;
+  const dt = Math.min(0.05, (now - state.lastTime) / 1000);
+  state.lastTime = now;
+
+  resizeRenderer();
+  animateSource(dt);
+
+  if (state.running) {
+    if (state.emitted < 120) {
+      state.emissionAccumulator += dt * 14;
+      while (state.emissionAccumulator >= 1 && state.emitted < 120) {
+        spawnParticle3D();
+        state.emissionAccumulator -= 1;
+      }
+    } else if (!state.activeParticles.length) {
+      state.running = false;
+      if (!state.runSettled) {
+        state.runSettled = true;
+        finalizeMissionRun();
+      }
+    }
+  }
+
+  updateParticles(now);
+  updatePuffs(now);
+  controls.update();
+
+  // 메인 씬
+  renderer.render(scene, camera);
+
+  updateBlochSphere(now);
+  requestAnimationFrame(tick);
+}
+
+// ── Modal Helpers ──
+function openModal(id)  { document.getElementById(id).classList.remove("hidden"); }
+function closeModal(id) { document.getElementById(id).classList.add("hidden"); }
+
+// ── Experiment Cards ──
+function buildExpCards() {
+  const setupTags = setup => {
+    const tags = [];
+    if (setup.aA !== "none") tags.push(`A: ${setup.aA}축${setup.fA !== "both" ? " (" + (setup.fA === "plus" ? "+만" : "−만") + ")" : ""}`);
+    if (setup.aB !== "none") tags.push(`B: ${setup.aB}축${setup.fB !== "both" ? " (" + (setup.fB === "plus" ? "+만" : "−만") + ")" : ""}`);
+    if (setup.aC !== "none") tags.push(`C: ${setup.aC}축${setup.fC !== "both" ? " (" + (setup.fC === "plus" ? "+만" : "−만") + ")" : ""}`);
+    return tags;
+  };
+
+  const list = document.getElementById("expList");
+  labMissions.forEach((m, i) => {
+    const tags = setupTags(m.setup).map(t => `<span class="exp-tag">${t}</span>`).join("");
+    const card = document.createElement("div");
+    card.className = "exp-card";
+    card.innerHTML = `
+      <div class="exp-num">${i + 1}</div>
+      <div class="exp-body">
+        <div class="exp-title">${m.title}</div>
+        <div class="exp-desc">${m.brief}</div>
+        <div class="exp-setup">${tags}</div>
+      </div>`;
+    card.addEventListener("click", () => {
+      loadMission(i);
+      closeModal("expModal");
+    });
+    list.appendChild(card);
+  });
+}
+
+// ── Init ──
+function init() {
+  rebuildScene3D();
+
+  const inputs = [ui.axisA, ui.axisB, ui.axisC, ui.filterA, ui.filterB, ui.filterC];
+  inputs.forEach(el => {
+    el.addEventListener("change", () => syncAfterSettingsChange());
+    el.addEventListener("input",  () => syncAfterSettingsChange());
+  });
+
+  ui.runBtn.addEventListener("click", startRun);
+  ui.pauseBtn.addEventListener("click", () => { state.running = false; });
+  ui.resetBtn.addEventListener("click", () => {
+    state.running = false;
+    clearRunState();
+    setMissionReport({ tone: "waiting", title: "실험 초기화", detail: "초기화 완료! 다시 실행해봐.", checks: null });
+  });
+  ui.replayBtn.addEventListener("click", () => {
+    state.running = false;
+    clearRunState();
+    startRun();
+  });
+  ui.loadMissionBtn.addEventListener("click", () => loadMission(state.game.missionIndex));
+  ui.nextMissionBtn.addEventListener("click", () => loadMission(state.game.missionIndex + 1));
+
+  ui.resetViewBtn.addEventListener("click", () => {
+    camera.position.set(CAM_DEFAULT.x, CAM_DEFAULT.y, CAM_DEFAULT.z);
+    controls.target.set(0, 0, 0);
+    controls.update();
+  });
+
+  ui.fullscreenBtn.addEventListener("click", async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+        ui.fullscreenBtn.textContent = "전체화면 해제";
+      } else {
+        await document.exitFullscreen();
+        ui.fullscreenBtn.textContent = "전체화면";
+      }
+    } catch (e) {
+      ui.fullscreenBtn.textContent = "전체화면";
+    }
+  });
+  document.addEventListener("fullscreenchange", () => {
+    ui.fullscreenBtn.textContent = document.fullscreenElement ? "전체화면 해제" : "전체화면";
+  });
+
+  document.querySelectorAll("[data-preset]").forEach(btn =>
+    btn.addEventListener("click", () => applyPreset(btn.dataset.preset))
+  );
+
+  buildExpCards();
+
+  document.getElementById("helpBtn").addEventListener("click",        () => openModal("helpModal"));
+  document.getElementById("helpClose").addEventListener("click",      () => closeModal("helpModal"));
+  document.getElementById("helpStart").addEventListener("click",      () => {
+    closeModal("helpModal");
+    showMissionIntro(getCurrentMission());
+  });
+  document.getElementById("experimentsBtn").addEventListener("click", () => openModal("expModal"));
+  document.getElementById("expClose").addEventListener("click",       () => closeModal("expModal"));
+  document.getElementById("expCancel").addEventListener("click",      () => closeModal("expModal"));
+  document.getElementById("principleBtn").addEventListener("click",   () => openModal("principleModal"));
+  document.getElementById("principleClose").addEventListener("click", () => closeModal("principleModal"));
+  document.getElementById("principleCancel").addEventListener("click",() => closeModal("principleModal"));
+  document.getElementById("introStartBtn").addEventListener("click",  () => closeModal("missionIntroModal"));
+
+  ["helpModal", "expModal", "principleModal", "missionIntroModal"].forEach(id => {
+    document.getElementById(id).addEventListener("click", e => {
+      if (e.target.id === id) closeModal(id);
+    });
+  });
+
+  loadMission(0, { showIntro: false });
+  openModal("helpModal");
+  requestAnimationFrame(tick);
+}
+
+init();
+</script>
+</body>
+</html>
