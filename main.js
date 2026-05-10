@@ -112,6 +112,7 @@ const projects = [
   { title: "도플러효과", category: "파동/광학", desc: "음원의 속도와 진동수에 따른 관측 음원의 변화 관찰하기", tags: ["도플러", "파동"], emoji: "🎵", demo: "./simul/도플러효과.html", curriculumId: "[12역학03-03]", thumb: "./thumb_nail/도플러효과.png" },
 
   // ===== 12전자 =====
+  { title: "정전기 유도와 유전분극", category: "전자/반도체", desc: "도체의 자유 전자 이동과 유전체의 전자구름 변위를 각각 관찰하기", tags: ["정전기유도", "유전분극", "도체", "유전체"], emoji: "⚡", demo: "./simul/정전기 유도와 유전분극.html", curriculumId: "[12전자01-02]", thumb: "./thumb_nail/정전기 유도와 유전분극.svg" },
   { title: "로런츠 힘과 오로라", category: "전자/반도체", desc: "자기장 속 전하의 원운동(F=qvB) 실험부터 태양풍이 만드는 오로라의 원리까지!", tags: ["로런츠힘", "자기장", "오로라",], emoji: "🌌", demo: "./simul/로런츠 힘.html", curriculumId: "[12전자01-04]", thumb: "./thumb_nail/로런츠 힘.png" },
   { title: "RLC 공명", category: "전자/반도체", desc: "직렬 RLC 회로의 공명/위상·전류 변화 시각화하기", tags: ["회로", "공명"], emoji: "🔄", demo: "./simul/RLC 공명.html", curriculumId: "[12전자01-06]", thumb: "./thumb_nail/RLC회로.png" },
   { title: "러더퍼드 알파입자 산란실험", category: "시뮬레이션", desc: "러더퍼드의 알파입자 산란실험 확인하기", tags: ["산란", "쿨롱"], emoji: "🧪", demo: "./simul/러더퍼드 알파입자 산란실험.html", curriculumId: "[12전자01-06]", thumb: "./thumb_nail/러더퍼드_산란실험.png" },
