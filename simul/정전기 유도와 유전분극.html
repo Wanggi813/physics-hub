@@ -1,0 +1,1050 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>정전기 유도와 유전분극</title>
+  <meta name="description" content="균일한 외부 전기장 속에서 도체의 자유 전자 재분포와 유전체의 전자구름 변위를 각각 관찰하는 시뮬레이션입니다." />
+  <style>
+    :root {
+      --bg0: #edf7ff;
+      --bg1: #f8fbff;
+      --panel: rgba(255, 255, 255, 0.9);
+      --line: rgba(125, 151, 181, 0.3);
+      --ink: #142033;
+      --muted: #64748b;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --cyan: #22d3ee;
+      --teal: #14b8a6;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 16% 16%, rgba(14, 165, 233, 0.18), transparent 32%),
+        radial-gradient(circle at 84% 24%, rgba(20, 184, 166, 0.14), transparent 30%),
+        linear-gradient(135deg, var(--bg0), var(--bg1) 62%, #eefcf8);
+      color: var(--ink);
+      font-family: Pretendard, "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      user-select: none;
+      touch-action: none;
+    }
+
+    canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+
+    header {
+      position: fixed;
+      top: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      pointer-events: none;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(20px, 2.2vw, 32px);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #0f4c81 0%, #1d6fa4 38%, #0e9488 72%, #0f766e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 2px 12px rgba(14, 148, 136, 0.22));
+    }
+
+    .subtitle {
+      margin-top: 5px;
+      color: rgba(71, 85, 105, 0.72);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .panel {
+      position: fixed;
+      z-index: 30;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel);
+      box-shadow: 0 18px 46px rgba(71, 85, 105, 0.16);
+      backdrop-filter: blur(16px);
+    }
+
+    #readout {
+      top: 18px;
+      right: 18px;
+      width: min(360px, calc(100vw - 36px));
+      padding: 15px 16px;
+    }
+
+    #controls {
+      left: 18px;
+      bottom: 18px;
+      width: min(440px, calc(100vw - 36px));
+      padding: 15px 16px;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    #stateBadge {
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: #e0f2fe;
+      color: #075985;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .segmented,
+    .charge-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    button {
+      min-height: 38px;
+      border: 1px solid #d2dbe8;
+      border-radius: 10px;
+      background: #fff;
+      color: #334155;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 850;
+      cursor: pointer;
+      transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+
+    button.active {
+      border-color: #38bdf8;
+      background: #e0f2fe;
+      color: #075985;
+    }
+
+    #fieldRight.active {
+      border-color: #fecaca;
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    #fieldLeft.active {
+      border-color: #bfdbfe;
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .control-block { margin-top: 10px; }
+
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .value {
+      color: #0f172a;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-weight: 900;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 5px;
+      margin: 0;
+      accent-color: #0ea5e9;
+      cursor: pointer;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 36px;
+      padding: 8px 10px;
+      margin-top: 12px;
+      border: 1px solid #dbe3ee;
+      border-radius: 10px;
+      background: #fff;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .toggle input {
+      width: 17px;
+      height: 17px;
+      margin: 0;
+      accent-color: #0ea5e9;
+    }
+
+    #dipoleToggle { display: none; }
+
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.26);
+      font-size: 13px;
+    }
+
+    .data-row:last-of-type { border-bottom: 0; }
+    .data-row span:first-child { color: var(--muted); font-weight: 800; }
+    .data-row span:last-child { color: #0f172a; font-weight: 900; text-align: right; }
+
+    #explain {
+      margin-top: 12px;
+      padding: 11px 12px;
+      border-radius: 11px;
+      background: rgba(241, 245, 249, 0.92);
+      color: #334155;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.56;
+    }
+
+    #hint {
+      position: fixed;
+      left: 50%;
+      bottom: 20px;
+      transform: translateX(-50%);
+      z-index: 10;
+      padding: 7px 15px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.78);
+      color: rgba(51, 65, 85, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      backdrop-filter: blur(10px);
+      font-size: 12px;
+      font-weight: 800;
+      pointer-events: none;
+    }
+
+    @media (max-width: 860px) {
+      header {
+        top: 10px;
+      }
+
+      h1 { font-size: clamp(15px, 5vw, 20px); }
+
+      .subtitle { display: none; }
+
+      #readout {
+        top: 52px;
+        left: 12px;
+        right: 12px;
+        width: auto;
+        padding: 10px 12px;
+      }
+
+      #explain { display: none; }
+
+      #controls {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        width: auto;
+        padding: 11px 12px;
+      }
+
+      .data-row {
+        padding: 5px 0;
+        font-size: 12px;
+      }
+
+      .segmented,
+      .charge-row {
+        margin-bottom: 8px;
+      }
+
+      .control-block { margin-top: 7px; }
+      #hint { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <header>
+    <h1>정전기 유도와 유전분극</h1>
+    <div class="subtitle">균일한 외부 전기장 속에서 도체와 유전체의 전하 분리를 비교</div>
+  </header>
+
+  <section class="panel" id="readout" aria-label="관찰 결과">
+    <div class="panel-title">관찰 결과 <span id="stateBadge">도체</span></div>
+    <div class="data-row"><span>원자핵/양이온</span><span id="nucleusValue">고정</span></div>
+    <div class="data-row"><span>전자 행동</span><span id="electronValue">자유 전자 이동</span></div>
+    <div class="data-row"><span>물체 내부 전기장</span><span id="insideFieldValue">0</span></div>
+    <div class="data-row"><span>표면 전하</span><span id="surfaceValue">유도 전하</span></div>
+    <div id="explain">도체에서는 양이온 격자가 고정되어 있고, 자유 전자가 표면으로 재분포하여 내부 전기장을 0으로 만듭니다.</div>
+  </section>
+
+  <section class="panel" id="controls" aria-label="조건 조절">
+    <div class="panel-title">조건 조절</div>
+    <div class="segmented">
+      <button id="modeConductor" class="active" type="button">도체</button>
+      <button id="modeDielectric" type="button">유전체</button>
+    </div>
+    <div class="charge-row">
+      <button id="fieldRight" class="active" type="button">+판 왼쪽</button>
+      <button id="fieldLeft" type="button">+판 오른쪽</button>
+    </div>
+    <div class="control-block">
+      <label class="control-label" for="strength">외부 전기장 세기 <span class="value" id="strengthValue">0%</span></label>
+      <input id="strength" type="range" min="0" max="100" step="1" value="0" />
+    </div>
+    <label class="toggle"><input id="showField" type="checkbox" checked />전기장선 표시</label>
+    <label class="toggle" id="dipoleToggle"><input id="showDipole" type="checkbox" checked />쌍극자 벡터(p⃗) 표시</label>
+  </section>
+
+  <div id="hint">도체는 내부장이 0, 유전체는 내부장이 약해지는 점을 확인해 보세요.</div>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const el = {
+      modeConductor: document.getElementById("modeConductor"),
+      modeDielectric: document.getElementById("modeDielectric"),
+      fieldRight: document.getElementById("fieldRight"),
+      fieldLeft: document.getElementById("fieldLeft"),
+      strength: document.getElementById("strength"),
+      showField: document.getElementById("showField"),
+      showDipole: document.getElementById("showDipole"),
+      dipoleToggle: document.getElementById("dipoleToggle"),
+      strengthValue: document.getElementById("strengthValue"),
+      nucleusValue: document.getElementById("nucleusValue"),
+      electronValue: document.getElementById("electronValue"),
+      insideFieldValue: document.getElementById("insideFieldValue"),
+      surfaceValue: document.getElementById("surfaceValue"),
+      stateBadge: document.getElementById("stateBadge"),
+      explain: document.getElementById("explain")
+    };
+
+    const state = {
+      mode: "conductor",
+      fieldDir: 1,
+      strength: 0,
+      showField: true,
+      showDipole: true,
+      time: 0
+    };
+
+    const conductorMotion = {
+      key: "",
+      fromShift: 0,
+      targetShift: 0,
+      startTime: 0,
+      duration: 0.9
+    };
+
+    const scene = {
+      dpr: 1,
+      w: 0,
+      h: 0,
+      cy: 0,
+      leftPlate: 0,
+      rightPlate: 0,
+      plateTop: 0,
+      plateBottom: 0,
+      body: { x: 0, y: 0, w: 0, h: 0, r: 0 }
+    };
+
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+
+    function resize() {
+      scene.dpr = clamp(window.devicePixelRatio || 1, 1, 2);
+      scene.w = window.innerWidth;
+      scene.h = window.innerHeight;
+      canvas.width = Math.floor(scene.w * scene.dpr);
+      canvas.height = Math.floor(scene.h * scene.dpr);
+      ctx.setTransform(scene.dpr, 0, 0, scene.dpr, 0, 0);
+      layout();
+    }
+
+    function layout() {
+      const mobile = scene.w < 860;
+      const top = mobile ? 126 : 92;
+      const bottom = mobile ? 286 : 105;
+      const available = Math.max(330, scene.h - top - bottom);
+      scene.cy = top + available * 0.5;
+      scene.leftPlate = mobile ? 26 : Math.max(54, scene.w * 0.065);
+      scene.rightPlate = mobile ? scene.w - 26 : Math.min(scene.w - 54, scene.w * 0.935);
+      scene.plateTop = scene.cy - (mobile ? 160 : 235);
+      scene.plateBottom = scene.cy + (mobile ? 160 : 235);
+
+      scene.body.w = mobile ? clamp(scene.w * 0.76, 290, 420) : clamp(scene.w * 0.58, 640, 860);
+      scene.body.h = mobile ? clamp(scene.h * 0.34, 240, 310) : clamp(scene.h * 0.48, 390, 520);
+      scene.body.x = scene.w * 0.5;
+      scene.body.y = scene.cy;
+      scene.body.r = mobile ? 18 : 24;
+    }
+
+    function setMode(mode) {
+      state.mode = mode;
+      el.modeConductor.classList.toggle("active", mode === "conductor");
+      el.modeDielectric.classList.toggle("active", mode === "dielectric");
+      el.dipoleToggle.style.display = mode === "dielectric" ? "" : "none";
+      update();
+    }
+
+    function setFieldDirection(dir) {
+      state.fieldDir = dir;
+      el.fieldRight.classList.toggle("active", dir > 0);
+      el.fieldLeft.classList.toggle("active", dir < 0);
+      update();
+    }
+
+    function update() {
+      state.strength = Number(el.strength.value) / 100;
+      state.showField = el.showField.checked;
+      state.showDipole = el.showDipole.checked;
+      el.strengthValue.textContent = `${Math.round(state.strength * 100)}%`;
+
+      if (state.mode === "conductor") {
+        el.stateBadge.textContent = "도체";
+        el.nucleusValue.textContent = "양이온 격자 고정";
+        el.electronValue.textContent = state.strength <= 0.02
+          ? "열운동만 있음"
+          : `재배치 후 열운동 ${Math.round(state.strength * 100)}%`;
+        el.insideFieldValue.textContent = "0";
+        el.surfaceValue.textContent = state.strength <= 0.02 ? "없음" : state.fieldDir > 0 ? "왼쪽 -, 오른쪽 +" : "왼쪽 +, 오른쪽 -";
+        el.explain.textContent = "도체에서는 양이온 격자가 고정되어 있고, 자유 전자가 잠깐 이동해 표면 전하 분포를 만든 뒤 평균 위치를 유지하며 작은 열운동만 합니다.";
+      } else {
+        el.stateBadge.textContent = "유전체";
+        el.nucleusValue.textContent = "원자핵 고정";
+        el.electronValue.textContent = `전자구름 변형 ${Math.round(state.strength * 100)}%`;
+        el.insideFieldValue.textContent = state.strength <= 0.02 ? "없음" : "외부장보다 약함";
+        el.surfaceValue.textContent = state.strength <= 0.02 ? "없음" : state.fieldDir > 0 ? "왼쪽 -, 오른쪽 +" : "왼쪽 +, 오른쪽 -";
+        el.explain.textContent = "유전체에서는 원자핵이 격자 자리에 거의 고정되고, 전자구름 중심만 전기장 반대 방향으로 치우칩니다. 그래서 결합 전하가 생기고 내부 전기장이 약해집니다.";
+      }
+    }
+
+    function roundRect(x, y, w, h, r) {
+      const rr = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rr, y);
+      ctx.arcTo(x + w, y, x + w, y + h, rr);
+      ctx.arcTo(x + w, y + h, x, y + h, rr);
+      ctx.arcTo(x, y + h, x, y, rr);
+      ctx.arcTo(x, y, x + w, y, rr);
+      ctx.closePath();
+    }
+
+    function drawBackground() {
+      ctx.clearRect(0, 0, scene.w, scene.h);
+      ctx.save();
+      ctx.strokeStyle = "rgba(125, 151, 181, 0.13)";
+      ctx.lineWidth = 1;
+      const step = 46;
+      for (let x = 0; x <= scene.w + step; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, scene.h);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= scene.h + step; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(scene.w, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function plateSign(side) {
+      const leftPositive = state.fieldDir > 0;
+      if (side === "left") return leftPositive ? 1 : -1;
+      return leftPositive ? -1 : 1;
+    }
+
+    function drawPlates() {
+      drawPlate(scene.leftPlate, "left", plateSign("left"));
+      drawPlate(scene.rightPlate, "right", plateSign("right"));
+    }
+
+    function drawPlate(x, side, sign) {
+      const h = scene.plateBottom - scene.plateTop;
+      const w = scene.w < 860 ? 18 : 26;
+      const left = x - w / 2;
+      const grad = ctx.createLinearGradient(left, scene.plateTop, left + w, scene.plateTop);
+      if (sign > 0) {
+        grad.addColorStop(0, "#991b1b");
+        grad.addColorStop(0.5, "#ef4444");
+        grad.addColorStop(1, "#fecaca");
+      } else {
+        grad.addColorStop(0, "#1e3a8a");
+        grad.addColorStop(0.5, "#3b82f6");
+        grad.addColorStop(1, "#bfdbfe");
+      }
+
+      ctx.save();
+      ctx.shadowColor = sign > 0 ? "rgba(248, 113, 113, 0.4)" : "rgba(96, 165, 250, 0.4)";
+      ctx.shadowBlur = 22 * state.strength;
+      roundRect(left, scene.plateTop, w, h, 12);
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.45)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      const count = scene.w < 860 ? 6 : 9;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = `900 ${scene.w < 860 ? 15 : 19}px system-ui`;
+      ctx.fillStyle = "#fff";
+      for (let i = 0; i < count; i++) {
+        const y = scene.plateTop + h * (0.1 + i * 0.8 / (count - 1));
+        ctx.fillText(sign > 0 ? "+" : "-", x, y);
+      }
+
+      ctx.font = "800 12px system-ui";
+      ctx.fillStyle = "rgba(248, 250, 252, 0.9)";
+      ctx.fillText(sign > 0 ? "+판" : "-판", x, scene.plateBottom + 20);
+      ctx.restore();
+    }
+
+    function drawFieldLines() {
+      if (!state.showField) return;
+      if (state.strength <= 0.01) return;
+      const b = scene.body;
+      const bodyLeft = b.x - b.w / 2;
+      const bodyRight = b.x + b.w / 2;
+      const lines = scene.w < 860 ? 8 : 12;
+      const yTop = scene.plateTop + 34;
+      const yBottom = scene.plateBottom - 34;
+      const dir = state.fieldDir;
+      const startX = dir > 0 ? scene.leftPlate + 18 : scene.rightPlate - 18;
+      const endX = dir > 0 ? scene.rightPlate - 18 : scene.leftPlate + 18;
+      const matLeft = dir > 0 ? bodyLeft : bodyRight;
+      const matRight = dir > 0 ? bodyRight : bodyLeft;
+
+      ctx.save();
+      for (let i = 0; i < lines; i++) {
+        const y = yTop + (yBottom - yTop) * i / (lines - 1);
+        const insideBand = y > b.y - b.h * 0.43 && y < b.y + b.h * 0.43;
+        if (state.mode === "conductor" && insideBand) {
+          drawFieldSegment(startX, y, matLeft - dir * 10, y, dir, "rgba(239, 68, 68, 0.54)");
+          drawFieldSegment(matRight + dir * 10, y, endX, y, dir, "rgba(14, 116, 144, 0.48)");
+        } else if (state.mode === "dielectric" && insideBand) {
+          drawFieldSegment(startX, y, matLeft, y, dir, "rgba(239, 68, 68, 0.48)");
+          drawFieldSegment(matLeft, y, matRight, y, dir, "rgba(14, 116, 144, 0.30)", 1.1);
+          drawFieldSegment(matRight, y, endX, y, dir, "rgba(14, 116, 144, 0.48)");
+        } else {
+          drawFieldSegment(startX, y, endX, y, dir, "rgba(14, 116, 144, 0.32)", 1.3);
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawFieldSegment(x1, y1, x2, y2, dir, color, width = 1.5) {
+      const fromX = dir > 0 ? Math.min(x1, x2) : Math.max(x1, x2);
+      const toX = dir > 0 ? Math.max(x1, x2) : Math.min(x1, x2);
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(fromX, y1);
+      ctx.lineTo(toX, y2);
+      ctx.stroke();
+      if (Math.abs(toX - fromX) > 48) {
+        const ax = fromX + (toX - fromX) * 0.62;
+        ctx.fillStyle = color;
+        ctx.translate(ax, y1);
+        ctx.rotate(dir > 0 ? 0 : Math.PI);
+        ctx.beginPath();
+        ctx.moveTo(8, 0);
+        ctx.lineTo(-5, -4);
+        ctx.lineTo(-3, 0);
+        ctx.lineTo(-5, 4);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function bodyBounds() {
+      const b = scene.body;
+      return {
+        left: b.x - b.w / 2,
+        top: b.y - b.h / 2,
+        right: b.x + b.w / 2,
+        bottom: b.y + b.h / 2,
+        w: b.w,
+        h: b.h
+      };
+    }
+
+    function drawBodyBase(fill, stroke) {
+      const b = bodyBounds();
+      ctx.save();
+      ctx.shadowColor = stroke;
+      ctx.shadowBlur = 22;
+      roundRect(b.left, b.top, b.w, b.h, scene.body.r);
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+      return b;
+    }
+
+    function drawConductor() {
+      const b = drawBodyBase(conductorGradient(), "rgba(203, 213, 225, 0.82)");
+      drawConductorLattice(b);
+      drawConductorSurfaceCharges(b);
+      drawConductorVectors(b);
+      drawBodyLabel("금속 도체", "양이온 격자 고정, 자유 전자만 이동");
+    }
+
+    function conductorGradient() {
+      const b = bodyBounds();
+      const grad = ctx.createLinearGradient(b.left, b.top, b.right, b.bottom);
+      grad.addColorStop(0, "rgba(255, 255, 255, 0.96)");
+      grad.addColorStop(0.42, "rgba(219, 234, 254, 0.88)");
+      grad.addColorStop(0.78, "rgba(174, 188, 207, 0.9)");
+      grad.addColorStop(1, "rgba(100, 116, 139, 0.92)");
+      return grad;
+    }
+
+    function drawConductorLattice(b) {
+      const cols = 6;
+      const rows = 5;
+      const ionR = scene.w < 860 ? 5 : 6;
+      const electronR = scene.w < 860 ? 5.8 : 7;
+      const electronShift = currentElectronShift(b);
+      const k = Math.min(1, Math.abs(electronShift) / (b.w * 0.24 || 1));
+
+      ctx.save();
+      roundRect(b.left, b.top, b.w, b.h, scene.body.r);
+      ctx.clip();
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const x = b.left + b.w * (0.13 + col * 0.74 / (cols - 1));
+          const y = b.top + b.h * (0.18 + row * 0.64 / (rows - 1));
+          drawNucleus(x, y, ionR, 0.72, true);
+        }
+      }
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const x = b.left + b.w * (0.13 + col * 0.74 / (cols - 1));
+          const y = b.top + b.h * (0.18 + row * 0.64 / (rows - 1));
+          const phase = row * cols + col + 1;
+          const thermal = thermalJitter(phase, k);
+          const px = clamp(x + electronShift * 0.78 + thermal.x, b.left + 18, b.right - 18);
+          const py = y + thermal.y;
+          drawElectron(px, py, electronR, 0.9);
+        }
+      }
+
+      ctx.restore();
+    }
+
+    function targetElectronShift(b) {
+      return -state.fieldDir * state.strength * b.w * 0.24;
+    }
+
+    function currentElectronShift(b) {
+      const target = targetElectronShift(b);
+      const key = `${state.fieldDir}|${state.strength.toFixed(3)}|${Math.round(b.w)}`;
+      if (conductorMotion.key !== key) {
+        conductorMotion.fromShift = interpolateShift();
+        conductorMotion.targetShift = target;
+        conductorMotion.startTime = state.time;
+        conductorMotion.key = key;
+      }
+      return interpolateShift();
+    }
+
+    function interpolateShift() {
+      const t = clamp((state.time - conductorMotion.startTime) / conductorMotion.duration, 0, 1);
+      const eased = easeOutCubic(t);
+      return conductorMotion.fromShift + (conductorMotion.targetShift - conductorMotion.fromShift) * eased;
+    }
+
+    function thermalJitter(seed, k) {
+      const settled = clamp((state.time - conductorMotion.startTime) / conductorMotion.duration, 0, 1);
+      const amplitude = 0.9 + settled * 1.8 + k * 0.6;
+      return {
+        x: Math.sin(state.time * 7.1 + seed * 1.7) * amplitude,
+        y: Math.cos(state.time * 8.3 + seed * 1.2) * amplitude
+      };
+    }
+
+    function drawConductorSurfaceCharges(b) {
+      const electronShift = currentElectronShift(b);
+      const k = Math.min(1, Math.abs(electronShift) / (b.w * 0.24 || 1));
+      if (k <= 0.02) return;
+      const negativeSide = state.fieldDir > 0 ? "left" : "right";
+      const positiveSide = negativeSide === "left" ? "right" : "left";
+      drawSurfaceColumn(b, negativeSide, -1, Math.round(k * 15), 0.9);
+      drawSurfaceColumn(b, positiveSide, 1, Math.round(k * 13), 0.72);
+    }
+
+    function drawSurfaceColumn(b, side, sign, count, alpha) {
+      if (count <= 0) return;
+      const x = side === "left" ? b.left + 13 : b.right - 13;
+      for (let i = 0; i < count; i++) {
+        const y = b.top + b.h * (0.12 + i * 0.76 / Math.max(1, count - 1));
+        drawChargeDot(x, y, sign, scene.w < 860 ? 6 : 7.5, alpha);
+      }
+    }
+
+    function drawConductorVectors(b) {
+      const k = state.strength;
+      const y = b.top + b.h * 0.2;
+      ctx.save();
+      ctx.font = "850 12px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillStyle = k > 0.02 ? "rgba(37, 99, 235, 0.96)" : "rgba(71, 85, 105, 0.86)";
+      ctx.fillText(k > 0.02 ? "자유 전자 재배치" : "전기장 0: 평균 분포 균일", scene.body.x, b.top - 34);
+      ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+      ctx.fillText("도체 내부 E = 0", scene.body.x, b.top - 16);
+      ctx.fillStyle = "rgba(37, 99, 235, 0.9)";
+      ctx.fillText("평형 뒤에는 평균 이동 0, 작은 열운동만 유지", scene.body.x, b.bottom + 72);
+      ctx.restore();
+    }
+
+    function drawDielectric() {
+      const b = drawBodyBase(dielectricGradient(), "rgba(94, 234, 212, 0.82)");
+      drawDielectricGrid(b);
+      drawDielectricAtoms(b);
+      if (state.showDipole) drawDipoleArrows(b);
+      drawBoundCharges(b);
+      drawDielectricVectors(b);
+      drawBodyLabel("유전체", "원자핵 고정, 전자구름만 미세하게 변위");
+      drawDielectricMagnifier(b);
+    }
+
+    function dielectricGradient() {
+      const b = bodyBounds();
+      const grad = ctx.createLinearGradient(b.left, b.top, b.right, b.bottom);
+      grad.addColorStop(0, "rgba(204, 251, 241, 0.78)");
+      grad.addColorStop(0.48, "rgba(240, 253, 250, 0.62)");
+      grad.addColorStop(1, "rgba(153, 246, 228, 0.74)");
+      return grad;
+    }
+
+    function drawDielectricGrid(b) {
+      ctx.save();
+      roundRect(b.left, b.top, b.w, b.h, scene.body.r);
+      ctx.clip();
+      ctx.globalAlpha = 0.28;
+      ctx.strokeStyle = "#0f766e";
+      ctx.lineWidth = 1;
+      const step = scene.w < 860 ? 34 : 42;
+      for (let x = b.left + step; x < b.right; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, b.top + 12);
+        ctx.lineTo(x, b.bottom - 12);
+        ctx.stroke();
+      }
+      for (let y = b.top + step; y < b.bottom; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(b.left + 12, y);
+        ctx.lineTo(b.right - 12, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawDielectricAtoms(b) {
+      const cols = 6;
+      const rows = 5;
+      const k = dielectricResponse();
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const x = b.left + b.w * (0.13 + col * 0.74 / (cols - 1));
+          const y = b.top + b.h * (0.18 + row * 0.64 / (rows - 1));
+          drawPolarizedAtom(x, y, k);
+        }
+      }
+    }
+
+    function dielectricResponse() {
+      return clamp(state.strength * 0.88, 0, 1);
+    }
+
+    function drawPolarizedAtom(x, y, k) {
+      const atom = getPolarizedAtomGeometry(k, scene.w < 860 ? 17 : 22);
+      const electronShift = atom.shift;
+      const cloudR = atom.radius;
+      const rx = atom.rx;
+      const ry = atom.ry;
+      drawPolarizedAtomShape(x, y, cloudR, rx, ry, electronShift, k, scene.w < 860 ? 6 : 7);
+    }
+
+    function getPolarizedAtomGeometry(k, baseRadius) {
+      const cloudR = baseRadius;
+      return {
+        radius: cloudR,
+        shift: -state.fieldDir * k * cloudR * 0.82,
+        rx: cloudR * (1 + 0.72 * k),
+        ry: cloudR * (1 - 0.34 * k)
+      };
+    }
+
+    function drawPolarizedAtomShape(x, y, cloudR, rx, ry, electronShift, k, nucleusR) {
+      ctx.save();
+
+      ctx.strokeStyle = "rgba(100, 116, 139, 0.24)";
+      ctx.setLineDash([3, 4]);
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(x, y, cloudR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = `rgba(59, 130, 246, ${0.15 + k * 0.17})`;
+      ctx.beginPath();
+      ctx.ellipse(x + electronShift, y, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = `rgba(37, 99, 235, ${0.58 + k * 0.28})`;
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.ellipse(x + electronShift, y, rx, ry, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      drawNucleus(x, y, nucleusR, 0.95, false);
+      ctx.restore();
+    }
+
+    function drawBoundCharges(b) {
+      const k = dielectricResponse();
+      if (k <= 0.02) return;
+      const negativeSide = state.fieldDir > 0 ? "left" : "right";
+      const positiveSide = negativeSide === "left" ? "right" : "left";
+      drawSurfaceColumn(b, negativeSide, -1, Math.round(k * 11), 0.58);
+      drawSurfaceColumn(b, positiveSide, 1, Math.round(k * 11), 0.5);
+    }
+
+    function drawDielectricVectors(b) {
+      ctx.save();
+      ctx.font = "850 12px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(185, 28, 28, 0.92)";
+      ctx.fillText("외부 E", scene.body.x, b.top - 34);
+      ctx.fillStyle = "rgba(37, 99, 235, 0.95)";
+      ctx.fillText("전자구름 변위", scene.body.x, b.top - 16);
+      ctx.fillStyle = "rgba(13, 148, 136, 0.95)";
+      ctx.fillText("내부 E 감소", scene.body.x, b.bottom + 72);
+      ctx.fillStyle = "rgba(71, 85, 105, 0.86)";
+      ctx.fillText("회색 점선: 전기장 없을 때 원형 전자구름", scene.body.x, b.bottom + 90);
+      ctx.restore();
+    }
+
+    function drawDielectricMagnifier(b) {
+      const k = dielectricResponse();
+      const mobile = scene.w < 860;
+      const panelW = mobile ? Math.min(scene.w - 24, 260) : 270;
+      const panelH = mobile ? 145 : 170;
+      const panelX = mobile ? (scene.w - panelW) / 2 : scene.w - panelW - 24;
+      const panelY = mobile ? Math.max(72, b.top - panelH - 18) : Math.min(scene.h - panelH - 24, b.bottom + 68);
+      const cx = panelX + panelW * 0.5;
+      const cy = panelY + panelH * 0.55;
+
+      ctx.save();
+      roundRect(panelX, panelY, panelW, panelH, 18);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(20, 184, 166, 0.42)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.font = "900 13px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+      ctx.fillText("유전체 원자 확대", cx, panelY + 24);
+
+      const atom = getPolarizedAtomGeometry(k, mobile ? 34 : 42);
+      const nucR = mobile ? 9 : 11;
+      drawPolarizedAtomShape(cx, cy, atom.radius, atom.rx, atom.ry, atom.shift, k, nucR);
+
+      if (state.showDipole && k > 0.02) {
+        const ay = cy - nucR - 3;
+        const magCloudR = mobile ? 34 : 42;
+        drawArrowLine(cx + atom.shift, ay, cx, ay, "#7c3aed", clamp(0.65 + k * 0.3, 0, 0.95), 2.5);
+        ctx.save();
+        ctx.font = `900 ${mobile ? 11 : 13}px system-ui`;
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#7c3aed";
+        ctx.globalAlpha = 0.9;
+        ctx.fillText("p", cx + atom.shift * 0.5, cy - magCloudR - 6);
+        ctx.restore();
+      }
+
+      ctx.font = "800 11px system-ui";
+      ctx.fillStyle = "rgba(71, 85, 105, 0.85)";
+      ctx.fillText("원자핵 고정", cx, panelY + panelH - 30);
+      ctx.fillStyle = "rgba(37, 99, 235, 0.9)";
+      ctx.fillText(`전자구름 변형 ${Math.round(state.strength * 100)}%`, cx, panelY + panelH - 13);
+
+      ctx.restore();
+    }
+
+    function drawArrowLine(x1, y, x2, color, alpha, lw) {
+      const len = x2 - x1;
+      if (Math.abs(len) < 2) return;
+      const dir = len > 0 ? 1 : -1;
+      const hl = Math.min(7, Math.abs(len) * 0.45);
+      const hw = hl * 0.55;
+      ctx.save();
+      ctx.globalAlpha = clamp(alpha, 0, 1);
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = lw !== undefined ? lw : 2;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(x1, y);
+      ctx.lineTo(x2 - dir * hl, y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x2, y);
+      ctx.lineTo(x2 - dir * hl, y - hw);
+      ctx.lineTo(x2 - dir * hl, y + hw);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawDipoleArrows(b) {
+      const k = dielectricResponse();
+      if (k <= 0.02) return;
+      const mobile = scene.w < 860;
+      const cloudR = mobile ? 17 : 22;
+      const cols = 6, rows = 5;
+      const shift = getPolarizedAtomGeometry(k, cloudR).shift;
+      const ayOff = cloudR + (mobile ? 3 : 4);
+      const color = "#7c3aed";
+      const alpha = clamp(0.55 + k * 0.35, 0, 0.95);
+
+      ctx.save();
+      roundRect(b.left, b.top, b.w, b.h, scene.body.r);
+      ctx.clip();
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const x = b.left + b.w * (0.13 + col * 0.74 / (cols - 1));
+          const y = b.top + b.h * (0.18 + row * 0.64 / (rows - 1));
+          drawArrowLine(x + shift, y + ayOff, x, y + ayOff, color, alpha);
+        }
+      }
+
+      ctx.restore();
+    }
+
+    function drawBodyLabel(title, detail) {
+      const b = bodyBounds();
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+      ctx.font = "900 18px system-ui";
+      ctx.fillText(title, scene.body.x, b.bottom + 31);
+      ctx.fillStyle = "rgba(71, 85, 105, 0.88)";
+      ctx.font = "750 12px system-ui";
+      ctx.fillText(detail, scene.body.x, b.bottom + 50);
+      ctx.restore();
+    }
+
+    function drawNucleus(x, y, r, alpha, small) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = "#ef4444";
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = `900 ${small ? r * 1.25 : r * 1.35}px system-ui`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("+", x, y - r * 0.05);
+      ctx.restore();
+    }
+
+    function drawElectron(x, y, r, alpha) {
+      drawChargeDot(x, y, -1, r, alpha);
+    }
+
+    function drawChargeDot(x, y, sign, r, alpha) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = sign > 0 ? "#ef4444" : "#3b82f6";
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = `900 ${r * 1.4}px system-ui`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(sign > 0 ? "+" : "-", x, y - r * 0.05);
+      ctx.restore();
+    }
+
+    function render(time = 0) {
+      state.time = time / 1000;
+      drawBackground();
+      drawPlates();
+      drawFieldLines();
+      if (state.mode === "conductor") {
+        drawConductor();
+      } else {
+        drawDielectric();
+      }
+      requestAnimationFrame(render);
+    }
+
+    el.modeConductor.addEventListener("click", () => setMode("conductor"));
+    el.modeDielectric.addEventListener("click", () => setMode("dielectric"));
+    el.fieldRight.addEventListener("click", () => setFieldDirection(1));
+    el.fieldLeft.addEventListener("click", () => setFieldDirection(-1));
+    el.strength.addEventListener("input", update);
+    el.showField.addEventListener("change", update);
+    el.showDipole.addEventListener("change", update);
+    window.addEventListener("resize", resize);
+
+    resize();
+    setMode("conductor");
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>
