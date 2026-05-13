@@ -1,0 +1,3128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>자성체</title>
+<style>
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+:root{
+  --bg:#edf7ff;--panel:rgba(255,255,255,0.9);--border:rgba(14,148,136,0.22);
+  --text:#142033;--muted:#64748b;--accent:#0e9488;
+  --deep:#0f4c81;--warm:#f59e0b;
+  --ferro:#ef4444;--para:#0f4c81;--dia:#7c3aed;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:"Pretendard",-apple-system,"Noto Sans KR",sans-serif;
+  touch-action:none;-webkit-user-select:none;user-select:none}
+header{position:fixed;top:0;left:0;right:0;height:50px;
+  background:rgba(248,252,255,0.96);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;padding:0 14px;z-index:100;gap:10px}
+.brand{font-weight:800;font-size:16px;white-space:nowrap;
+  background:linear-gradient(120deg,#0f4c81,#0e9488 62%,#f59e0b);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.tabs{display:flex;gap:3px;background:rgba(14,148,136,0.09);border-radius:9px;padding:3px;flex-shrink:0}
+.tab-btn{padding:5px 16px;border-radius:6px;border:none;background:transparent;
+  color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
+.tab-btn.active{background:var(--accent);color:#fff}
+canvas#sim{position:fixed;top:50px;left:0;right:0;bottom:0;width:100%;height:calc(100% - 50px)}
+.hud{position:fixed;left:12px;top:62px;width:260px;
+  background:var(--panel);backdrop-filter:blur(14px);
+  border:1px solid var(--border);border-radius:13px;box-shadow:0 14px 34px rgba(15,76,129,0.12);
+  padding:13px;z-index:50;max-height:calc(100vh - 74px);overflow-y:auto}
+.hud h3{font-size:13px;font-weight:700;color:var(--accent);
+  margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.bgroup{display:flex;gap:5px;flex-wrap:wrap;margin:8px 0}
+.btn{flex:1;padding:9px 6px;border-radius:7px;border:1px solid var(--border);
+  background:rgba(255,255,255,0.72);color:var(--text);font-size:11px;font-weight:600;
+  cursor:pointer;transition:all .2s;font-family:inherit;text-align:center;min-width:50px}
+.btn:hover{background:rgba(14,148,136,.10);border-color:var(--accent)}
+.btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.on{background:#16a34a;border-color:#16a34a;color:#fff}
+.btn.ferro{border-color:var(--ferro)} .btn.ferro.active{background:var(--ferro)}
+.btn.para{border-color:var(--para)}   .btn.para.active{background:var(--para)}
+.btn.dia{border-color:var(--dia)}     .btn.dia.active{background:var(--dia)}
+.mdesc{margin-top:10px;font-size:11px;color:var(--muted);line-height:1.7;white-space:pre-line}
+.sep{border-top:1px solid var(--border);margin:10px 0}
+.app-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.app-card{background:rgba(255,255,255,0.72);border:1px solid var(--border);
+  border-radius:9px;padding:9px;text-align:center;cursor:pointer;transition:all .2s}
+.app-card:hover,.app-card.active{border-color:var(--accent);background:rgba(14,148,136,.10)}
+.app-card .ai{font-size:24px}.app-card .an{font-size:11px;color:var(--muted);margin-top:3px}
+.app-card.active .an{color:var(--accent)}
+.rpanel{position:fixed;right:12px;top:62px;width:270px;
+  background:var(--panel);backdrop-filter:blur(14px);
+  border:1px solid var(--border);border-radius:13px;padding:13px;z-index:50;box-shadow:0 14px 34px rgba(15,76,129,0.12);
+  max-height:calc(100vh - 74px);overflow-y:auto}
+.rpanel h3{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:10px;
+  padding-bottom:8px;border-bottom:1px solid var(--border)}
+.rpanel-info{font-size:11px;color:var(--muted);line-height:1.7;white-space:pre-line}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:rgba(14,148,136,.28);border-radius:4px}
+@media(max-width:768px){
+  .brand{font-size:13px} .tab-btn{padding:4px 10px;font-size:11px}
+  canvas#sim{top:50px;bottom:46vh;height:calc(54vh - 50px)}
+  .hud,.rpanel{position:fixed!important;top:auto!important;bottom:0!important;
+    left:0!important;right:0!important;width:100%!important;
+    height:46vh!important;border-radius:13px 13px 0 0;max-height:46vh}
+  .rpanel{display:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">🧲 자성체</div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(0)">자성체 종류</button>
+    <button class="tab-btn"        onclick="switchTab(1)">전자석 응용</button>
+  </div>
+</header>
+<canvas id="sim"></canvas>
+
+<!-- TAB 0 HUD -->
+<div class="hud" id="hud0">
+  <h3>🔬 자성체 종류 비교</h3>
+  <div class="bgroup">
+    <button class="btn on" id="mag-btn" onclick="toggleMagnet()">🧲 자기장 ON</button>
+    <button class="btn on" id="line-btn" onclick="toggleFieldLines()">자기력선 ON</button>
+  </div>
+  <div class="sep"></div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:6px">자성체 소환</div>
+  <div class="bgroup">
+    <button class="btn ferro" onclick="spawnMaterial('ferro')">강자성체 +</button>
+    <button class="btn para"  onclick="spawnMaterial('para')">상자성체 +</button>
+    <button class="btn dia"   onclick="spawnMaterial('dia')">반자성체 +</button>
+  </div>
+  <div class="bgroup">
+    <button class="btn" onclick="resetSandbox()">초기화</button>
+  </div>
+  <div class="sep"></div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:6px">물질 설명 보기</div>
+  <div class="bgroup">
+    <button class="btn ferro active" id="b-ferro" onclick="selInfo('ferro')">강자성체</button>
+    <button class="btn para"         id="b-para"  onclick="selInfo('para')">상자성체</button>
+    <button class="btn dia"          id="b-dia"   onclick="selInfo('dia')">반자성체</button>
+  </div>
+  <div class="mdesc" id="mat-desc"></div>
+</div>
+
+<!-- TAB 1 HUD -->
+<div class="hud" id="hud1" style="display:none">
+  <h3>⚡ 전자석 응용 선택</h3>
+  <div class="app-grid">
+    <div class="app-card active" onclick="selApp('speaker')"><div class="ai">🔊</div><div class="an">스피커</div></div>
+    <div class="app-card"        onclick="selApp('maglev')" ><div class="ai">🚄</div><div class="an">자기부상</div></div>
+  </div>
+</div>
+
+<!-- Right panel: app info -->
+<div class="rpanel" id="rp1" style="display:none">
+  <h3 id="app-title">🔊 실제 스피커 구조</h3>
+  <div class="rpanel-info" id="app-desc"></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// CANVAS
+// ─────────────────────────────────────────────
+const sim = document.getElementById('sim');
+const ctx = sim.getContext('2d');
+function resize(){ sim.width=sim.offsetWidth; sim.height=sim.offsetHeight; }
+window.addEventListener('resize', resize);
+
+// ─────────────────────────────────────────────
+// GLOBAL
+// ─────────────────────────────────────────────
+let tab = 0, ph = 0;
+let magnetOn = true;
+let showFieldLines = true;
+const MAIN_FIELD_ANGLE = Math.PI/2;
+
+// ─────────────────────────────────────────────
+// MATERIAL DATA
+// ─────────────────────────────────────────────
+const MAT_INFO = {
+  ferro:{
+    color:'#ff6b6b',
+    desc:'대표: 철(Fe), 니켈(Ni), 코발트(Co)\n\n'
+        +'대부분의 덩어리 강자성체는 여러 자기구역(domain)으로\n'
+        +'나뉘며, 한 구역 안에서는 쌍극자가 같은 방향으로 정렬됩니다.\n\n'
+        +'자기장 ON → 자기구역 벽 이동 및 구역 방향 회전\n'
+        +'       → 강한 인력(자기장 쪽으로 당겨짐)\n\n'
+        +'자기장 OFF 후에도 한동안 자화 유지 → 잔류자화\n'
+        +'(다만 충격·열적 요동 등으로 서서히 약해질 수 있음)\n\n'
+        +'퀴리 온도 초과 → 상자성으로 전환',
+  },
+  para:{
+    color:'#6bbbff',
+    desc:'대표: 알루미늄(Al), 산소(O₂), 백금(Pt)\n\n'
+        +'자기 쌍극자가 존재하지만 열운동으로\n'
+        +'무질서하게 배열되어 있습니다.\n\n'
+        +'자기장 ON → 자기장 방향으로 약하게 정렬\n'
+        +'       → 약한 인력(강자성보다 훨씬 약함)\n\n'
+        +'자기장 OFF → 즉시 무질서로 복귀\n'
+        +'(잔류자화 없음)\n\n'
+        +'온도 증가 → 자화 감소 (퀴리 법칙)',
+  },
+  dia:{
+    color:'#b06bff',
+    desc:'대표: 구리(Cu), 금(Au), 물(H₂O), 비스무트(Bi)\n\n'
+        +'고유 자기 쌍극자가 없습니다.\n'
+        +'(아래 화살표 = 유도된 궤도 자기 모멘트)\n\n'
+        +'자기장 ON → 렌츠 법칙에 의해 유도 전류 발생\n'
+        +'       → 외부 자기장을 상쇄하는 방향으로 자화\n'
+        +'       → 약한 척력(자기장에서 밀려남)\n\n'
+        +'자기장 OFF → 즉시 사라짐\n\n'
+        +'완전 반자성의 대표 예: 초전도체의 마이스너 효과',
+  },
+};
+
+const APP_DATA = {
+  speaker:{
+    title:'🔊 스피커 (동전형)',
+    desc:'【원리】 플레밍의 왼손 법칙\nF = BIL (자기력 = 자속밀도 × 전류 × 길이)\n\n'
+        +'【동작】\n'
+        +'① 영구자석이 보이스 코일 틈새에\n'
+        +'   강한 방사형(radial) 자기장 B를 형성\n'
+        +'② 음성 신호 전류 I가 보이스 코일에 흐름\n'
+        +'③ F = BIL → 코일에 축 방향 힘 발생\n'
+        +'④ 전류 방향 따라 힘 방향 바뀜 (AC)\n'
+        +'⑤ 코일에 붙은 진동판(콘)이 앞뒤로 진동\n'
+        +'⑥ 공기 압력 변화 → 소리\n\n'
+        +'【응용】 이어폰, 헤드폰, 스피커, 수중 소나',
+  },
+  mri:{
+    title:'🏥 MRI (자기공명영상)',
+    desc:'【원리】 핵자기공명 (NMR)\n\n'
+        +'【동작】\n'
+        +'① 초전도 솔레노이드: 1.5~7 T 균일 자기장 B₀\n'
+        +'② 인체 내 수소(¹H) 원자핵(양성자)이 B₀ 방향으로 정렬\n'
+        +'③ 라디오파(RF) 펄스 → 양성자 세차 운동\n'
+        +'   (라모어 주파수: f = γB₀/2π)\n'
+        +'④ RF 펄스 종료 → 양성자 이완(relaxation)\n'
+        +'⑤ 이완 시 방출된 신호 수집 → 영상 재구성\n\n'
+        +'【특징】 방사선 없음 / 연조직 고해상도\n'
+        +'초전도 냉각: 액체 헬륨 (4 K, -269 °C)',
+  },
+  maglev:{
+    title:'🚄 자기부상열차 (SCMaglev)',
+    desc:'【원리】 초전도 전자석의 반발력과 흡인력\n\n'
+        +'【동작 - 초전도형 (SCMaglev)】\n'
+        +'① 열차 하부: 초전도 전자석 (액체 헬륨 냉각)\n'
+        +'② 가이드웨이: 지상 코일 (8자형 배치)\n'
+        +'③ 열차 진입 → 유도 전류 발생\n'
+        +'④ 반발력: 열차 부상 (약 10 cm)\n'
+        +'⑤ 선형 동기 전동기 → 전진 추력\n\n'
+        +'【제원 (일본 SCMaglev L0계)】\n'
+        +'세계 기록: 603 km/h (2015년)\n'
+        +'마찰 없음 → 소음·진동·마모 극소',
+  },
+  motor:{
+    title:'⚙️ DC 전동기',
+    desc:'【원리】 플레밍의 왼손 법칙\nF = qv×B = IL×B\n\n'
+        +'【동작】\n'
+        +'① 자석이 만드는 균일 자기장 B 속에 코일\n'
+        +'② 전류 I가 흐르면 양쪽 도선에 로런츠 힘\n'
+        +'   AB 변: 위 방향 힘 (F = BIL, 왼손 법칙)\n'
+        +'   CD 변: 아래 방향 힘 → 합쳐서 회전력(토크)\n'
+        +'③ 정류자(commutator)가 180° 회전마다\n'
+        +'   전류 방향 전환 → 항상 같은 방향 회전\n\n'
+        +'【응용】 전기차 구동 모터, 세탁기, 드론 BLDC',
+  },
+};
+
+const APP_FOCUS = {
+  speaker:{
+    title:'🔊 실제 스피커 구조',
+    desc:'스피커는 둥근 진동판, 고무 서라운드, 중앙 더스트캡, 뒤쪽의 보이스 코일과 영구자석으로 이루어집니다.\n\n교류 전류가 보이스 코일에 흐르면 자석의 자기장 속에서 코일이 앞뒤로 힘을 받고, 코일에 붙은 진동판이 공기를 밀고 당기며 소리를 만듭니다.'
+  },
+  maglev:{
+    title:'🚄 실제 자기부상열차 구조',
+    desc:'자기부상열차는 바퀴 대신 차체 아래 전자석 또는 초전도 자석과 선로 쪽 코일을 이용해 떠서 움직입니다.\n\n차체와 가이드웨이 사이에 작은 간격이 생기고, 선로 코일의 자기장이 차체를 들어 올리거나 옆에서 잡아 주며 앞으로 끌어갑니다.'
+  }
+};
+
+// ─────────────────────────────────────────────
+// TAB SWITCH
+// ─────────────────────────────────────────────
+function switchTab(i){
+  tab=i;
+  document.querySelectorAll('.tab-btn').forEach((b,j)=>b.classList.toggle('active',j===i));
+  document.getElementById('hud0').style.display=i===0?'':'none';
+  document.getElementById('hud1').style.display=i===1?'':'none';
+  document.getElementById('rp1').style.display=i===1?'':'none';
+  if(i===0) initTab0();
+  if(i===1) selApp(emApp);
+}
+
+// ─────────────────────────────────────────────
+// TAB 0 — 자성체 종류 비교
+// ─────────────────────────────────────────────
+const MAT_TYPES = {
+  ferro:{ color:'#ff6b6b', label:'강자성체', forceLabel:'강한 인력' },
+  para :{ color:'#6bbbff', label:'상자성체', forceLabel:'약한 인력' },
+  dia  :{ color:'#b06bff', label:'반자성체', forceLabel:'약한 척력' },
+};
+
+let sandboxObjects = [];
+let nailObjects = [];
+let nextObjectId = 1;
+let dragging = null;
+let selectedObject = null;
+
+// domain color pairs [inner, outer]
+const DC=[['#c83030','#2255aa'],['#aa3399','#33aa55'],['#cc5511','#2266cc'],
+          ['#119955','#993366'],['#aa2244','#2244aa'],['#6633cc','#33bb66']];
+
+const NAIL_TYPES = {
+  iron:{label:'철', color:'#64748b', head:'#334155', response:0.18, note:'강한 인력'},
+  aluminum:{label:'알루미늄', color:'#94a3b8', head:'#64748b', response:0.036, note:'약한 인력'},
+  copper:{label:'구리', color:'#d97706', head:'#92400e', response:-0.024, note:'매우 약한 척력'}
+};
+
+function initTab0(){
+  if(sandboxObjects.length===0) spawnStarterObjects();
+  selInfo('ferro');
+}
+
+function selInfo(type){
+  ['ferro','para','dia'].forEach(t=>document.getElementById('b-'+t).classList.toggle('active',t===type));
+  const m=MAT_INFO[type];
+  document.getElementById('mat-desc').innerHTML=
+    `<span style="color:${m.color};font-weight:700">${MAT_TYPES[type].label}</span>\n${m.desc}`;
+}
+
+function toggleMagnet(){
+  magnetOn=!magnetOn;
+  const btn=document.getElementById('mag-btn');
+  btn.textContent=magnetOn?'🧲 자기장 ON':'🧲 자기장 OFF';
+  btn.classList.toggle('on',magnetOn);
+}
+
+function toggleFieldLines(){
+  showFieldLines=!showFieldLines;
+  const btn=document.getElementById('line-btn');
+  btn.textContent=showFieldLines?'자기력선 ON':'자기력선 OFF';
+  btn.classList.toggle('on',showFieldLines);
+}
+
+function makeDipoles(count){
+  const dipoles=[];
+  const domainMap=[
+    0,0,1,1,2,
+    0,3,3,1,2,
+    4,4,3,5,5
+  ];
+  for(let i=0;i<count;i++){
+    const dom=domainMap[i%domainMap.length];
+    const base=dom/DC.length*Math.PI*2;
+    dipoles.push({
+      angle:base+(Math.random()-.5)*0.35,
+      target:base,
+      locked:base+(Math.random()-.5)*0.18,
+      dom
+    });
+  }
+  return dipoles;
+}
+
+function createMaterial(type,x,y){
+  const size=materialSize();
+  return {
+    id:nextObjectId++, type, x, y, vx:0, vy:0, w:size.w, h:size.h,
+    dipoles:makeDipoles(15), mag:0, tempMag:0, inField:false,
+    everMagnetized:false, dragging:false
+  };
+}
+
+function spawnMaterial(type){
+  const W=sim.width||900, H=sim.height||520;
+  const mg=magnetGeom();
+  const size=materialSize();
+  const count=sandboxObjects.length;
+  let x=mg.fieldX+mg.fieldW+size.w*.72+(count%3)*18;
+  if(x>W-size.w/2) x=Math.max(mg.fieldX-size.w*.85, 330);
+  const y=Math.min(H-size.h/2-12, Math.max(size.h/2+12, H*.32+(count%5)*(size.h*.66)));
+  const obj=createMaterial(type,x,y);
+  sandboxObjects.push(obj);
+  selectedObject=obj;
+  selInfo(type);
+}
+
+function spawnStarterObjects(){
+  const W=sim.width||900, H=sim.height||520;
+  const mg=magnetGeom();
+  let x=mg.fieldX+mg.fieldW+105;
+  if(x>W-95) x=Math.max(mg.fieldX-120, 330);
+  ['ferro','para','dia'].forEach((t,i)=>{
+    const obj=createMaterial(t, x, H*(.28+i*.23));
+    sandboxObjects.push(obj);
+    if(t==='ferro' && !selectedObject) selectedObject=obj;
+  });
+}
+
+function resetSandbox(){
+  sandboxObjects=[];
+  selectedObject=null;
+  spawnStarterObjects();
+  resetNails();
+  selInfo('ferro');
+}
+
+function magnetGeom(){
+  const W=sim.width, H=sim.height;
+  const compact=W<760;
+  const fieldW=compact?Math.min(132,W*.34):Math.min(205,Math.max(155,W*.18));
+  const fieldH=Math.min(Math.max(260,H*.62),Math.max(260,H-150));
+  const fieldX=compact?18:Math.min(W-fieldW-250,Math.max(285,W*.30));
+  const fieldY=Math.max(compact?104:128,(H-fieldH)/2+34);
+  const mW=fieldW;
+  const mH=compact?82:96;
+  const mX=fieldX+fieldW/2;
+  const mY=fieldY-mH/2-12;
+  return {
+    mX,mY,mW,mH,
+    fieldX,fieldY,fieldW,fieldH
+  };
+}
+
+function sandboxScale(){
+  const W=sim.width||900, H=sim.height||520;
+  const base=Math.min(W/1120,H/680);
+  return Math.max(0.88,Math.min(1.08,base));
+}
+
+function materialSize(){
+  const s=sandboxScale();
+  return {
+    w:Math.round(132*s),
+    h:Math.round(66*s),
+    scale:s
+  };
+}
+
+function syncMaterialSizes(){
+  const size=materialSize();
+  sandboxObjects.forEach(o=>{
+    o.w=size.w;
+    o.h=size.h;
+  });
+}
+
+function nailTrayGeom(){
+  const W=sim.width, H=sim.height;
+  const compact=W<820;
+  const s=sandboxScale();
+  const trayW=compact?Math.min(W-28,Math.round(300*s)):Math.round(320*s);
+  const trayH=compact?Math.round(124*s):Math.round(152*s);
+  return {
+    x:compact?W-trayW-14:W-trayW-18,
+    y:compact?Math.max(86,H-trayH-18):H-trayH-28,
+    w:trayW,
+    h:trayH,
+    compact
+  };
+}
+
+function nailBinGeom(tray){
+  const s=sandboxScale();
+  const pad=10*s;
+  const top=(tray.compact?58:62)*s;
+  const bottom=(tray.compact?12:16)*s;
+  return {
+    x:tray.x+pad,
+    y:tray.y+top,
+    w:tray.w-pad*2,
+    h:Math.max(48,tray.h-top-bottom)
+  };
+}
+
+function resetNails(){
+  const g=nailTrayGeom();
+  const bin=nailBinGeom(g);
+  const mix=['iron','copper','aluminum','iron','aluminum','iron','copper','iron','aluminum',
+             'copper','iron','aluminum','iron','copper','iron','aluminum','iron','copper'];
+  const cols=6;
+  nailObjects=[];
+  mix.forEach((type,slot)=>{
+    const c=slot%cols, r=Math.floor(slot/cols);
+    const x=bin.x+bin.w*(0.10+c*0.16)+((r%2)-0.5)*8;
+    const y=bin.y+bin.h*(0.55+r*0.12)+(c%2-0.5)*7;
+    const homeAngle=-0.95+((slot*37)%120)/100;
+    nailObjects.push({type, slot, x, y, vx:0, vy:0, angle:homeAngle, homeAngle});
+  });
+}
+
+function syncNailRests(){
+  if(nailObjects.length===0) resetNails();
+}
+
+function pointInRect(x,y,r){
+  return x>=r.x && x<=r.x+r.w && y>=r.y && y<=r.y+r.h;
+}
+
+function hitObject(x,y){
+  for(let i=sandboxObjects.length-1;i>=0;i--){
+    const o=sandboxObjects[i];
+    if(x>=o.x-o.w/2 && x<=o.x+o.w/2 && y>=o.y-o.h/2 && y<=o.y+o.h/2) return o;
+  }
+  return null;
+}
+
+function selectFallbackObject(){
+  selectedObject=sandboxObjects.find(o=>o.type==='ferro') || sandboxObjects[0] || null;
+}
+
+function removeObject(obj){
+  sandboxObjects=sandboxObjects.filter(o=>o!==obj);
+  if(dragging && dragging.obj===obj) dragging=null;
+  if(selectedObject===obj) selectFallbackObject();
+}
+
+function pointerPos(e){
+  const rect=sim.getBoundingClientRect();
+  return {x:e.clientX-rect.left,y:e.clientY-rect.top};
+}
+
+sim.addEventListener('pointerdown',e=>{
+  if(tab!==0) return;
+  const p=pointerPos(e);
+  const obj=hitObject(p.x,p.y);
+  if(!obj) return;
+  dragging={obj,dx:p.x-obj.x,dy:p.y-obj.y};
+  obj.dragging=true;
+  selectedObject=obj;
+  sandboxObjects=sandboxObjects.filter(o=>o!==obj).concat(obj);
+  sim.setPointerCapture?.(e.pointerId);
+  selInfo(obj.type);
+});
+
+sim.addEventListener('pointermove',e=>{
+  if(!dragging) return;
+  const p=pointerPos(e);
+  dragging.obj.x=p.x-dragging.dx;
+  dragging.obj.y=p.y-dragging.dy;
+  dragging.obj.vx=0;
+  dragging.obj.vy=0;
+});
+
+function endDrag(e){
+  if(!dragging) return;
+  dragging.obj.dragging=false;
+  sim.releasePointerCapture?.(e.pointerId);
+  dragging=null;
+}
+sim.addEventListener('pointerup',endDrag);
+sim.addEventListener('pointercancel',endDrag);
+sim.addEventListener('dblclick',e=>{
+  if(tab!==0) return;
+  const p=pointerPos(e);
+  const obj=hitObject(p.x,p.y);
+  if(!obj) return;
+  removeObject(obj);
+});
+
+function nearestMagnetizedFerro(obj){
+  let best=null, bestScore=0;
+  sandboxObjects.forEach(other=>{
+    if(other===obj || other.type!=='ferro' || other.mag<0.16) return;
+    const dx=other.x-obj.x, dy=other.y-obj.y;
+    const d2=dx*dx+dy*dy;
+    const score=other.mag/(d2+1000);
+    if(score>bestScore){ best=other; bestScore=score; }
+  });
+  return best;
+}
+
+function updateSandbox(){
+  syncMaterialSizes();
+  const W=sim.width, H=sim.height;
+  const mg=magnetGeom();
+  const field={x:mg.fieldX,y:mg.fieldY,w:mg.fieldW,h:mg.fieldH};
+
+  sandboxObjects.forEach(o=>{
+    o.inField=magnetOn && pointInRect(o.x,o.y,field);
+    if(o.inField){
+      if(o.type==='ferro'){
+        o.mag+=(1-o.mag)*0.04;
+        o.everMagnetized=o.mag>.35 || o.everMagnetized;
+      } else if(o.type==='para') {
+        o.tempMag+=(0.62-o.tempMag)*0.07;
+      } else {
+        o.tempMag+=(-0.56-o.tempMag)*0.07;
+      }
+    } else {
+      if(o.type==='ferro' && o.mag>0){
+        o.mag*=o.dragging?0.997:0.9985;
+        if(o.mag<0.045){
+          o.mag=0;
+          o.everMagnetized=false;
+        }
+      }
+      if(o.type==='para' || o.type==='dia') o.tempMag*=0.88;
+    }
+  });
+
+  sandboxObjects.forEach(o=>{
+    if(!o.dragging){
+      if(o.inField){
+        if(o.type==='ferro') o.vy-=0.18*(0.45+o.mag);
+        if(o.type==='para')  o.vy-=0.038;
+        if(o.type==='dia')   o.vy+=0.014;
+      }
+
+      sandboxObjects.forEach(src=>{
+        if(src===o || src.type!=='ferro' || src.mag<0.16) return;
+        const dx=src.x-o.x, dy=src.y-o.y;
+        const d=Math.hypot(dx,dy);
+        if(d<1 || d>280) return;
+        let f=0;
+        if(o.type==='ferro') f=0.13*src.mag*(1-d/300);
+        if(o.type==='para')  f=0.036*src.mag*(1-d/300);
+        if(o.type==='dia')   f=-0.024*src.mag*(1-d/300);
+        o.vx+=dx/d*f;
+        o.vy+=dy/d*f;
+      });
+
+      o.vx*=0.92;
+      o.vy*=0.92;
+      o.x+=o.vx;
+      o.y+=o.vy;
+      if(o.x<o.w/2){ o.x=o.w/2; o.vx=Math.abs(o.vx)*0.35; }
+      if(o.x>W-o.w/2){ o.x=W-o.w/2; o.vx=-Math.abs(o.vx)*0.35; }
+      if(o.y<o.h/2){ o.y=o.h/2; o.vy=Math.abs(o.vy)*0.35; }
+      if(o.y>H-o.h/2){ o.y=H-o.h/2; o.vy=-Math.abs(o.vy)*0.35; }
+    }
+
+    const nearby=nearestMagnetizedFerro(o);
+    const nearAngle=nearby?Math.atan2(o.y-nearby.y,o.x-nearby.x):0;
+    const fieldAngle=o.inField?MAIN_FIELD_ANGLE:nearAngle;
+    o.dipoles.forEach(d=>{
+      if(o.type==='ferro'){
+        if(o.inField){
+          let da=MAIN_FIELD_ANGLE-d.locked;
+          while(da>Math.PI) da-=Math.PI*2;
+          while(da<-Math.PI) da+=Math.PI*2;
+          d.locked+=da*0.045;
+        } else if(o.mag<0.35){
+          const base=d.dom/DC.length*Math.PI*2;
+          let dda=base-d.locked;
+          while(dda>Math.PI) dda-=Math.PI*2;
+          while(dda<-Math.PI) dda+=Math.PI*2;
+          d.locked+=dda*(0.004+(0.35-o.mag)*0.02);
+        }
+        d.target=d.locked+(Math.random()-.5)*(o.inField?0.10:(1-o.mag)*0.9);
+      } else if(o.type==='para'){
+        const align=o.inField || nearby;
+        const jitter=o.inField?0.34:Math.PI*(1.1-Math.abs(o.tempMag));
+        d.target=align?fieldAngle+(Math.random()-.5)*jitter:Math.random()*Math.PI*2;
+      } else {
+        const align=o.inField || nearby;
+        const jitter=o.inField?0.34:Math.PI*(1.0-Math.abs(o.tempMag));
+        d.target=align?fieldAngle+Math.PI+(Math.random()-.5)*jitter:Math.random()*Math.PI*2;
+      }
+      let da=d.target-d.angle;
+      while(da>Math.PI) da-=Math.PI*2;
+      while(da<-Math.PI) da+=Math.PI*2;
+      d.angle+=da*(o.type==='ferro'?0.08:0.045);
+    });
+  });
+}
+
+function updateNails(){
+  syncNailRests();
+  const W=sim.width, H=sim.height;
+  const tray=nailTrayGeom();
+  const bin=nailBinGeom(tray);
+  const floor=bin.y+bin.h-10;
+  const left=bin.x+12, right=bin.x+bin.w-12;
+  const sources=sandboxObjects.filter(o=>o.type==='ferro' && o.mag>0.16);
+  nailObjects.forEach((n,i)=>{
+    const meta=NAIL_TYPES[n.type];
+    n.vy+=0.085;
+
+    let targetAngle=n.homeAngle;
+    let repelX=0, repelY=0, repelPower=0;
+    sources.forEach(src=>{
+      const dx=src.x-n.x, dy=src.y-n.y;
+      const d=Math.hypot(dx,dy);
+      if(d<1 || d>340) return;
+      const falloff=1-d/360;
+      const f=meta.response*src.mag*falloff;
+      const ux=dx/d, uy=dy/d;
+      n.vx+=ux*f;
+      n.vy+=uy*f;
+      if(meta.response<0){
+        const repel=Math.abs(f);
+        repelX-=ux*repel;
+        repelY-=uy*repel;
+        repelPower+=repel;
+      }
+      targetAngle=meta.response<0?Math.atan2(-dy,-dx):Math.atan2(dy,dx);
+    });
+
+    if(meta.response<0 && repelPower>0){
+      const rl=Math.hypot(repelX,repelY);
+      if(rl>0){
+        const ax=repelX/rl, ay=repelY/rl;
+        const toward=-(n.vx*ax+n.vy*ay);
+        if(toward>0){
+          n.vx+=ax*toward*1.08;
+          n.vy+=ay*toward*1.08;
+        }
+        const awaySpeed=n.vx*ax+n.vy*ay;
+        const minAway=Math.min(0.04,repelPower*0.85);
+        if(awaySpeed<minAway){
+          n.vx+=ax*(minAway-awaySpeed);
+          n.vy+=ay*(minAway-awaySpeed);
+        }
+      }
+    }
+
+    n.vx*=0.94;
+    n.vy*=0.94;
+    n.x+=n.vx;
+    n.y+=n.vy;
+
+    if(n.x<left){
+      n.x=left;
+      n.vx=Math.abs(n.vx)*0.38;
+    }
+    if(n.x>right){
+      n.x=right;
+      n.vx=-Math.abs(n.vx)*0.38;
+    }
+    if(n.y>floor){
+      n.y=floor;
+      n.vy=-Math.abs(n.vy)*0.22;
+      n.vx*=0.74;
+    }
+    if(n.y<70){
+      n.y=70;
+      n.vy=Math.abs(n.vy)*0.3;
+    }
+    n.x=Math.max(22,Math.min(W-22,n.x));
+    n.y=Math.min(H-22,n.y);
+
+    let da=targetAngle-n.angle;
+    while(da>Math.PI) da-=Math.PI*2;
+    while(da<-Math.PI) da+=Math.PI*2;
+    n.angle+=da*0.08;
+  });
+}
+
+function drawDipoleSmall(x,y,ang,sz,type,dom){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(ang);
+  const h=sz*.5,w=sz*.22;
+  if(type==='ferro'){
+    const[ca,cb]=DC[dom%DC.length];
+    ctx.fillStyle=cb; ctx.beginPath(); ctx.rect(-h,-w,h,w*2); ctx.fill();
+    ctx.fillStyle=ca; ctx.beginPath(); ctx.rect(0,-w,h,w*2); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.9)';
+    ctx.beginPath(); ctx.moveTo(h+4,0); ctx.lineTo(h-3,-w*.85); ctx.lineTo(h-3,w*.85); ctx.fill();
+  } else {
+    const col=MAT_TYPES[type].color;
+    ctx.strokeStyle=col; ctx.lineWidth=1.8; ctx.shadowColor=col; ctx.shadowBlur=4;
+    ctx.beginPath(); ctx.moveTo(-h+1,0); ctx.lineTo(h-4,0); ctx.stroke();
+    ctx.fillStyle=col;
+    ctx.beginPath(); ctx.moveTo(h+3,0); ctx.lineTo(h-4,-w*.7); ctx.lineTo(h-4,w*.7); ctx.fill();
+    ctx.shadowBlur=0;
+  }
+  ctx.restore();
+}
+
+function drawArrowH(x1,y,x2,col,lw,headSz){
+  ctx.save(); ctx.strokeStyle=col; ctx.fillStyle=col;
+  ctx.lineWidth=lw; ctx.shadowColor=col; ctx.shadowBlur=10;
+  ctx.beginPath(); ctx.moveTo(x1,y); ctx.lineTo(x2-(x2>x1?headSz:-headSz),y); ctx.stroke();
+  ctx.beginPath();
+  const d=x2>x1?1:-1;
+  ctx.moveTo(x2,y); ctx.lineTo(x2-d*headSz,y-headSz*.6); ctx.lineTo(x2-d*headSz,y+headSz*.6);
+  ctx.fill(); ctx.shadowBlur=0; ctx.restore();
+}
+
+function cubicPoint(p0,p1,p2,p3,t){
+  const u=1-t;
+  return {
+    x:u*u*u*p0.x+3*u*u*t*p1.x+3*u*t*t*p2.x+t*t*t*p3.x,
+    y:u*u*u*p0.y+3*u*u*t*p1.y+3*u*t*t*p2.y+t*t*t*p3.y
+  };
+}
+
+function cubicTangent(p0,p1,p2,p3,t){
+  const u=1-t;
+  return {
+    x:3*u*u*(p1.x-p0.x)+6*u*t*(p2.x-p1.x)+3*t*t*(p3.x-p2.x),
+    y:3*u*u*(p1.y-p0.y)+6*u*t*(p2.y-p1.y)+3*t*t*(p3.y-p2.y)
+  };
+}
+
+function drawCurveArrowHead(p0,p1,p2,p3,t,col,sz){
+  const p=cubicPoint(p0,p1,p2,p3,t);
+  const v=cubicTangent(p0,p1,p2,p3,t);
+  const a=Math.atan2(v.y,v.x);
+  ctx.save();
+  ctx.fillStyle=col;
+  ctx.translate(p.x,p.y);
+  ctx.rotate(a);
+  ctx.beginPath();
+  ctx.moveTo(sz,0);
+  ctx.lineTo(-sz*.65,-sz*.42);
+  ctx.lineTo(-sz*.65,sz*.42);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawFerroFieldLines(){
+  if(!showFieldLines) return;
+  sandboxObjects.forEach(o=>{
+    if(o.type!=='ferro' || o.mag<0.16) return;
+    const alpha=Math.min(0.55,0.14+o.mag*0.42);
+    const col=`rgba(239,68,68,${alpha})`;
+    const top={x:o.x,y:o.y-o.h/2+9};
+    const bottom={x:o.x,y:o.y+o.h/2-9};
+    const spreads=[58,82,108];
+    ctx.save();
+    ctx.strokeStyle=col;
+    ctx.lineWidth=1.3;
+    ctx.shadowColor='rgba(239,68,68,0.18)';
+    ctx.shadowBlur=10;
+    spreads.forEach((spread,i)=>{
+      [-1,1].forEach(side=>{
+        const p0={x:top.x+side*(12+i*5),y:top.y};
+        const p3={x:bottom.x+side*(12+i*5),y:bottom.y};
+        const p1={x:o.x+side*spread,y:o.y-o.h*.95};
+        const p2={x:o.x+side*spread,y:o.y+o.h*.95};
+        ctx.beginPath();
+        ctx.moveTo(p0.x,p0.y);
+        ctx.bezierCurveTo(p1.x,p1.y,p2.x,p2.y,p3.x,p3.y);
+        ctx.stroke();
+        drawCurveArrowHead(p0,p1,p2,p3,0.58,col,5.5);
+      });
+    });
+    ctx.restore();
+  });
+}
+
+function drawInteractionArrows(){
+  sandboxObjects.forEach(src=>{
+    if(src.type!=='ferro' || src.mag<0.16) return;
+    sandboxObjects.forEach(o=>{
+      if(o===src || (o.type!=='ferro' && o.type!=='para' && o.type!=='dia')) return;
+      const dx=src.x-o.x, dy=src.y-o.y;
+      const d=Math.hypot(dx,dy);
+      if(d<40 || d>280) return;
+      const col=o.type==='ferro'?'rgba(239,68,68,0.72)'
+        :o.type==='para'?'rgba(2,132,199,0.42)':'rgba(139,92,246,0.64)';
+      const ux=dx/d, uy=dy/d;
+      if(o.type==='ferro' || o.type==='para'){
+        const len=o.type==='ferro'?54:30;
+        const lw=o.type==='ferro'?2.4:1.5;
+        arrowLine(o.x+ux*62,o.y+uy*32,o.x+ux*(62+len),o.y+uy*(32+len),col,lw,o.type==='ferro'?8:6);
+      } else {
+        arrowLine(o.x-ux*38,o.y-uy*20,o.x-ux*58,o.y-uy*32,col,1.2,5);
+      }
+    });
+  });
+}
+
+function drawSandboxObject(o){
+  const t=o.type, meta=MAT_TYPES[t], bx=o.x-o.w/2, by=o.y-o.h/2;
+  const os=o.w/132;
+  const glow=t==='ferro' && o.mag>.18;
+  if(glow){
+    ctx.shadowColor='rgba(255,107,107,0.55)';
+    ctx.shadowBlur=24;
+  }
+  ctx.fillStyle=`rgba(${t==='ferro'?'255,232,232':t==='para'?'224,242,254':'239,232,255'},0.92)`;
+  ctx.beginPath();
+  ctx.roundRect?ctx.roundRect(bx,by,o.w,o.h,8*os):ctx.rect(bx,by,o.w,o.h);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.strokeStyle=o.dragging?'rgba(15,23,42,0.85)':meta.color+'88';
+  ctx.lineWidth=o.dragging?2.4*os:1.5*os;
+  ctx.stroke();
+  if(selectedObject===o){
+    ctx.strokeStyle='rgba(37,99,235,0.72)';
+    ctx.lineWidth=2*os;
+    ctx.setLineDash([6,4]);
+    ctx.beginPath();
+    const pad=5*os;
+    ctx.roundRect?ctx.roundRect(bx-pad,by-pad,o.w+pad*2,o.h+pad*2,10*os):ctx.rect(bx-pad,by-pad,o.w+pad*2,o.h+pad*2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  const cols=5, rows=3;
+  if(t==='ferro'){
+    ctx.save();
+    ctx.globalAlpha=0.16;
+    o.dipoles.slice(0,cols*rows).forEach((d,i)=>{
+      const dc=i%cols, dr=Math.floor(i/cols);
+      const cellW=o.w/cols, cellH=o.h/rows;
+      ctx.fillStyle=DC[d.dom%DC.length][0];
+      ctx.fillRect(bx+dc*cellW+1*os,by+dr*cellH+1*os,cellW-2*os,cellH-2*os);
+    });
+    ctx.restore();
+    ctx.strokeStyle='rgba(15,23,42,0.14)';
+    ctx.lineWidth=1*os;
+    for(let c=1;c<cols;c++){
+      ctx.beginPath(); ctx.moveTo(bx+c*o.w/cols,by+4*os); ctx.lineTo(bx+c*o.w/cols,by+o.h-4*os); ctx.stroke();
+    }
+    for(let r=1;r<rows;r++){
+      ctx.beginPath(); ctx.moveTo(bx+4*os,by+r*o.h/rows); ctx.lineTo(bx+o.w-4*os,by+r*o.h/rows); ctx.stroke();
+    }
+  }
+  o.dipoles.slice(0,cols*rows).forEach((d,i)=>{
+    const dc=i%cols, dr=Math.floor(i/cols);
+    const marginX=18*os, marginY=15*os;
+    const dx=bx+marginX+dc*(o.w-marginX*2)/(cols-1);
+    const dy=by+marginY+dr*(o.h-marginY*2)/(rows-1);
+    drawDipoleSmall(dx,dy,d.angle,13*os,t,d.dom);
+  });
+
+  ctx.fillStyle=meta.color;
+  ctx.font=`bold ${Math.max(11,13*os)}px Pretendard,sans-serif`;
+  ctx.textAlign='center';
+  ctx.shadowColor=meta.color;
+  ctx.shadowBlur=8;
+  ctx.fillText(meta.label, o.x, by-9*os);
+  ctx.shadowBlur=0;
+
+  if(t==='ferro' && o.mag>.12){
+    ctx.font=`bold ${Math.max(10,12*os)}px sans-serif`;
+    ctx.textBaseline='middle';
+    ctx.fillStyle='#ff6b6b'; ctx.fillText('N', o.x, by+11*os);
+    ctx.fillStyle='#6bbbff'; ctx.fillText('S', o.x, by+o.h-11*os);
+    ctx.textBaseline='alphabetic';
+    ctx.fillStyle=`rgba(255,107,107,${0.36+Math.min(o.mag,1)*0.42})`;
+    ctx.font='10px Pretendard,sans-serif';
+    ctx.fillText(o.inField?'자화 중':'잔류자화 감소 중', o.x, by+o.h+15);
+  } else if((t==='para' || t==='dia') && Math.abs(o.tempMag)>.12){
+    ctx.fillStyle=meta.color;
+    ctx.font='10px Pretendard,sans-serif';
+    ctx.fillText(t==='para'?'유도 자화: 끌림':'유도 자화: 밀림', o.x, by+o.h+15);
+  }
+
+  if(o.inField){
+    const len=(t==='ferro'?54:30)*os;
+    const dir=t==='dia'?1:-1;
+    arrowLine(o.x+o.w/2+16*os,o.y,o.x+o.w/2+16*os,o.y+dir*len,meta.color,t==='ferro'?2.8*os:1.6*os,t==='ferro'?8*os:6*os);
+  }
+}
+
+function drawTapeLabel(cx,cy,text,opt){
+  opt=opt||{};
+  const rot=opt.rot ?? -0.035;
+  const h=opt.h || 25;
+  const pad=opt.pad || 12;
+  const font=opt.font || 'bold 12px Pretendard,sans-serif';
+  ctx.save();
+  ctx.font=font;
+  const w=Math.max(opt.minW||0,ctx.measureText(text).width+pad*2);
+  ctx.translate(cx,cy);
+  ctx.rotate(rot);
+  ctx.shadowColor='rgba(120,85,20,0.13)';
+  ctx.shadowBlur=8;
+  ctx.fillStyle=opt.color || 'rgba(255,244,183,0.92)';
+  ctx.strokeStyle=opt.stroke || 'rgba(217,119,6,0.24)';
+  ctx.lineWidth=1;
+  rrect(-w/2,-h/2,w,h,5);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.stroke();
+  ctx.fillStyle=opt.textColor || '#334155';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillText(text,0,1);
+  ctx.textBaseline='alphabetic';
+  ctx.restore();
+}
+
+function drawMissionNote(tray){
+  const noteW=Math.min(286,tray.w);
+  const noteH=82;
+  const x=tray.x;
+  const y=Math.max(76,tray.y-noteH-12);
+  const sources=sandboxObjects.filter(o=>o.type==='ferro' && o.mag>0.16);
+  let ironNear=0, copperNear=0;
+  if(sources.length){
+    nailObjects.forEach(n=>{
+      const d=Math.min(...sources.map(src=>Math.hypot(src.x-n.x,src.y-n.y)));
+      if(n.type==='iron' && d<95) ironNear++;
+      if(n.type==='copper' && d<72) copperNear++;
+    });
+  }
+  const active=sources.length>0;
+  const lines=active
+    ? [`철 못 반응 ${ironNear}개 관찰`, copperNear?'구리 못이 너무 가까움':'구리 못은 밀려나는 중']
+    : ['강자성체를 먼저 자화시키기','상자 옆으로 가져가 반응 보기'];
+
+  ctx.save();
+  ctx.fillStyle='rgba(255,252,224,0.92)';
+  ctx.strokeStyle='rgba(217,119,6,0.22)';
+  ctx.lineWidth=1;
+  ctx.shadowColor='rgba(120,85,20,0.10)';
+  ctx.shadowBlur=16;
+  rrect(x,y,noteW,noteH,10);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.stroke();
+  drawTapeLabel(x+72,y+4,'분류 미션',{rot:-0.02,h:22,minW:94});
+  ctx.fillStyle='#334155';
+  ctx.font='bold 11px Pretendard,sans-serif';
+  ctx.textAlign='left';
+  ctx.fillText('자화된 강자성체로 철 못만 골라내기',x+14,y+35);
+  ctx.font='10px Pretendard,sans-serif';
+  lines.forEach((line,i)=>{
+    const yy=y+54+i*16;
+    ctx.strokeStyle=i===1 && active && copperNear?'#ef4444':'#0e9488';
+    ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.arc(x+18,yy-3,4,0,Math.PI*2);
+    ctx.stroke();
+    ctx.fillStyle='rgba(51,65,85,0.88)';
+    ctx.fillText(line,x+29,yy);
+  });
+  ctx.restore();
+}
+
+function drawDomainZoomPanel(W,H){
+  const obj=selectedObject && selectedObject.type==='ferro' ? selectedObject : null;
+  if(!obj) return;
+
+  const compact=W<820;
+  const s=sandboxScale();
+  const panelW=compact?Math.min(W-28,Math.round(290*s)):Math.round(300*s);
+  const panelH=compact?Math.round(160*s):Math.round(210*s);
+  const x=compact?14:W-panelW-18;
+  const y=compact?H-panelH-18:70;
+  const cols=5, rows=3;
+
+  ctx.save();
+  ctx.shadowColor='rgba(30,64,175,0.14)';
+  ctx.shadowBlur=22;
+  ctx.fillStyle='rgba(255,255,255,0.88)';
+  ctx.strokeStyle='rgba(37,99,235,0.18)';
+  ctx.lineWidth=1;
+  rrect(x,y,panelW,panelH,12*s);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.stroke();
+
+  drawTapeLabel(x+102,y+14,'자기구역 확대',{rot:0,h:22,minW:124});
+  ctx.fillStyle='rgba(93,112,136,0.95)';
+  ctx.font='11px Pretendard,sans-serif';
+  ctx.textAlign='left';
+  const status=obj.inField?'자기장 안: 구역 방향 정렬':'자기장 밖: 잔류자화 완화';
+  ctx.fillText(status,x+14,y+43);
+
+  const gridX=x+16*s;
+  const gridY=y+(compact?57:64)*s;
+  const gridW=panelW-32*s;
+  const gridH=panelH-(compact?83:102)*s;
+  const cellW=gridW/cols;
+  const cellH=gridH/rows;
+  ctx.lineWidth=1;
+  obj.dipoles.slice(0,cols*rows).forEach((d,i)=>{
+    const c=i%cols, r=Math.floor(i/cols);
+    const cx=gridX+c*cellW+cellW/2;
+    const cy=gridY+r*cellH+cellH/2;
+    ctx.fillStyle=DC[d.dom%DC.length][0]+'26';
+    ctx.strokeStyle='rgba(15,23,42,0.12)';
+    ctx.beginPath();
+    ctx.rect(gridX+c*cellW,gridY+r*cellH,cellW,cellH);
+    ctx.fill();
+    ctx.stroke();
+    drawDipoleSmall(cx,cy,d.angle,(compact?19:24)*s,'ferro',d.dom);
+  });
+
+  const barX=gridX, barY=gridY+gridH+(compact?14:18)*s, barW=gridW, barH=8*s;
+  ctx.fillStyle='rgba(226,232,240,0.9)';
+  rrect(barX,barY,barW,barH,4); ctx.fill();
+  const magW=barW*Math.min(1,obj.mag);
+  const grad=ctx.createLinearGradient(barX,0,barX+barW,0);
+  grad.addColorStop(0,'#fecaca');
+  grad.addColorStop(1,'#ef4444');
+  ctx.fillStyle=grad;
+  rrect(barX,barY,magW,barH,4); ctx.fill();
+  ctx.fillStyle='rgba(93,112,136,0.95)';
+  ctx.font='10px Pretendard,sans-serif';
+  ctx.fillText('자화 정도',barX,barY+22);
+
+  ctx.restore();
+}
+
+function drawNail(n,scale){
+  const meta=NAIL_TYPES[n.type];
+  scale=scale||1;
+  ctx.save();
+  ctx.translate(n.x,n.y);
+  ctx.rotate(n.angle);
+  ctx.shadowColor='rgba(15,23,42,0.12)';
+  ctx.shadowBlur=7;
+  ctx.lineCap='round';
+  ctx.strokeStyle=meta.color;
+  ctx.lineWidth=5*scale;
+  ctx.beginPath();
+  ctx.moveTo(-20*scale,0);
+  ctx.lineTo(16*scale,0);
+  ctx.stroke();
+  ctx.shadowBlur=0;
+  ctx.fillStyle=meta.head;
+  ctx.beginPath();
+  ctx.arc(-22*scale,0,5.6*scale,0,Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle=meta.color;
+  ctx.beginPath();
+  ctx.moveTo(22*scale,0);
+  ctx.lineTo(13*scale,-4*scale);
+  ctx.lineTo(13*scale,4*scale);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawNailTray(){
+  if(sim.width<700 || sim.height<430) return;
+  const g=nailTrayGeom();
+  drawMissionNote(g);
+  ctx.save();
+  ctx.fillStyle='rgba(255,255,255,0.78)';
+  ctx.strokeStyle='rgba(37,99,235,0.16)';
+  ctx.lineWidth=1;
+  ctx.shadowColor='rgba(15,76,129,0.10)';
+  ctx.shadowBlur=18;
+  rrect(g.x,g.y,g.w,g.h,12);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.stroke();
+
+  drawTapeLabel(g.x+75,g.y+16,'섞인 못 상자',{rot:0.025,h:22,minW:118});
+
+  const legendY=g.y+(g.compact?47:48);
+  const legends=[
+    {type:'iron', text:'철: 강자성체'},
+    {type:'aluminum', text:'알루미늄: 상자성체'},
+    {type:'copper', text:'구리: 반자성체'}
+  ];
+  legends.forEach((item,i)=>{
+    const meta=NAIL_TYPES[item.type];
+    const x=g.x+g.w*(0.18+i*0.31);
+    ctx.fillStyle='rgba(255,255,255,0.78)';
+    ctx.strokeStyle='rgba(37,99,235,0.12)';
+    ctx.lineWidth=1;
+    rrect(x-43,legendY-11,86,22,7);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle=meta.color;
+    ctx.beginPath();
+    ctx.arc(x-32,legendY,4.5,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle='#334155';
+    ctx.font='bold 9px Pretendard,sans-serif';
+    ctx.textAlign='left';
+    ctx.fillText(item.text,x-23,legendY+3);
+  });
+
+  const bin=nailBinGeom(g);
+  const bx=bin.x, by=bin.y+4, bw=bin.w, bh=Math.max(38,bin.h-4);
+  const binGrad=ctx.createLinearGradient(0,by,0,by+bh);
+  binGrad.addColorStop(0,'rgba(241,245,249,0.34)');
+  binGrad.addColorStop(1,'rgba(203,213,225,0.58)');
+  ctx.fillStyle=binGrad;
+  ctx.strokeStyle='rgba(15,23,42,0.12)';
+  ctx.lineWidth=1;
+  rrect(bx,by,bw,bh,9);
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle='rgba(100,116,139,0.34)';
+  ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.moveTo(bx+4,by+8);
+  ctx.lineTo(bx+4,by+bh-5);
+  ctx.lineTo(bx+bw-4,by+bh-5);
+  ctx.lineTo(bx+bw-4,by+8);
+  ctx.stroke();
+
+  nailObjects.forEach(n=>drawNail(n,g.compact?0.76:0.86));
+  ctx.restore();
+}
+
+function drawTab0(){
+  const W=sim.width, H=sim.height;
+  ctx.clearRect(0,0,W,H);
+  const g=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.7);
+  g.addColorStop(0,'#f8fbff'); g.addColorStop(0.62,'#edf7ff'); g.addColorStop(1,'#e9fbf7');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+  updateSandbox();
+  updateNails();
+
+  const mg=magnetGeom();
+  const {mX,mY,mW,mH,fieldX,fieldY,fieldW,fieldH}=mg;
+  const gActive=magnetOn;
+
+  if(gActive){
+    ctx.fillStyle='rgba(251,191,36,0.16)';
+    ctx.strokeStyle='rgba(217,119,6,0.34)';
+    ctx.setLineDash([8,7]);
+    rrect(fieldX,fieldY,fieldW,fieldH,14);
+    ctx.fill();
+    ctx.stroke();
+    ctx.setLineDash([]);
+    drawTapeLabel(fieldX+fieldW/2,fieldY+20,'자기장 영역',{rot:-0.018,minW:110});
+  }
+
+  if(gActive){
+    ctx.shadowColor='rgba(251,191,36,0.42)';
+    ctx.shadowBlur=40;
+  }
+  ctx.fillStyle=gActive?'#3060c0':'#1a2a4a';
+  ctx.beginPath(); ctx.rect(mX-mW/2, mY-mH/2, mW, mH/2); ctx.fill();
+  ctx.fillStyle=gActive?'#c03030':'#2a1a1a';
+  ctx.beginPath(); ctx.rect(mX-mW/2, mY, mW, mH/2); ctx.fill();
+  ctx.shadowBlur=0;
+
+  ctx.strokeStyle='rgba(15,23,42,0.20)';
+  ctx.lineWidth=1;
+  ctx.beginPath(); ctx.rect(mX-mW/2,mY-mH/2,mW,mH); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(mX-mW/2,mY); ctx.lineTo(mX+mW/2,mY); ctx.stroke();
+
+  ctx.font='bold 24px sans-serif';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillStyle=gActive?'#6bbbff':'#334466'; ctx.fillText('S',mX,mY-mH/4);
+  ctx.fillStyle=gActive?'#ff6b6b':'#443333'; ctx.fillText('N',mX,mY+mH/4);
+  ctx.textBaseline='alphabetic';
+
+  if(magnetOn){
+    const numLines=9;
+    for(let i=0;i<numLines;i++){
+      const frac=i/(numLines-1);
+      const xx=fieldX+frac*fieldW;
+      const alpha=0.15-Math.abs(frac-.5)*0.08;
+      ctx.strokeStyle=`rgba(217,119,6,${alpha+0.08})`;
+      ctx.lineWidth=1;
+      ctx.setLineDash([5,7]);
+      ctx.beginPath();
+      ctx.moveTo(xx, fieldY+18);
+      ctx.lineTo(xx, fieldY+fieldH-18);
+      ctx.stroke();
+      if(i===Math.floor(numLines/2)){
+        ctx.setLineDash([]);
+        arrowLine(xx,fieldY+24,xx,fieldY+fieldH-24,'rgba(217,119,6,0.46)',1,6);
+      }
+    }
+    ctx.setLineDash([]);
+  }
+
+  drawNailTray();
+  drawFerroFieldLines();
+  drawInteractionArrows();
+  sandboxObjects.forEach(drawSandboxObject);
+  drawDomainZoomPanel(W,H);
+
+  ctx.fillStyle='rgba(30,41,59,0.52)';
+  ctx.font='12px Pretendard,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('자성체를 소환한 뒤 드래그해서 자기장 영역에 넣고 빼 보세요', W/2, 20);
+
+  if(sandboxObjects.some(o=>o.type==='ferro' && o.mag>.18)){
+    ctx.fillStyle='rgba(185,28,28,0.58)';
+    ctx.font='11px Pretendard,sans-serif';
+    ctx.fillText('자화된 강자성체는 자기장 밖에서도 잠시 작은 자석처럼 작용하지만, 시간이 지나며 서서히 약해집니다', W/2, H-18);
+  }
+}
+
+// ─────────────────────────────────────────────
+// TAB 1 — 전자석 응용
+// ─────────────────────────────────────────────
+let emApp='speaker';
+
+function selApp(app){
+  if(app!=='speaker' && app!=='maglev') app='speaker';
+  emApp=app;
+  document.querySelectorAll('.app-card').forEach((c,i)=>{
+    c.classList.toggle('active',['speaker','maglev'][i]===app);
+  });
+  const d=APP_FOCUS[app] || APP_DATA[app];
+  document.getElementById('app-title').textContent=d.title;
+  document.getElementById('app-desc').textContent=d.desc;
+}
+
+// ── helpers ──
+function rrect(x,y,w,h,r){
+  ctx.beginPath();
+  if(ctx.roundRect) ctx.roundRect(x,y,w,h,r);
+  else ctx.rect(x,y,w,h);
+}
+function arrowLine(x1,y1,x2,y2,col,lw,hs){
+  hs=hs||7;
+  ctx.save(); ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=lw||1.5;
+  ctx.shadowColor=col; ctx.shadowBlur=8;
+  const ang=Math.atan2(y2-y1,x2-x1);
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2-Math.cos(ang)*hs,y2-Math.sin(ang)*hs); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-Math.cos(ang-0.4)*hs*1.4,y2-Math.sin(ang-0.4)*hs*1.4);
+  ctx.lineTo(x2-Math.cos(ang+0.4)*hs*1.4,y2-Math.sin(ang+0.4)*hs*1.4);
+  ctx.closePath(); ctx.fill(); ctx.shadowBlur=0; ctx.restore();
+}
+function dot(x,y,r,col){ ctx.fillStyle=col; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); }
+function label(txt,x,y,col,sz,align){
+  ctx.save(); ctx.fillStyle=col||'rgba(255,255,255,0.5)';
+  ctx.font=(sz||11)+'px Pretendard,sans-serif';
+  ctx.textAlign=align||'center'; ctx.fillText(txt,x,y); ctx.restore();
+}
+function currentDot(x,y,r,intoPage,col){
+  col=col||'rgba(255,165,50,0.85)';
+  ctx.strokeStyle=col; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.stroke();
+  if(intoPage){
+    // ⊗ cross
+    ctx.beginPath();
+    ctx.moveTo(x-r*.65,y-r*.65); ctx.lineTo(x+r*.65,y+r*.65);
+    ctx.moveTo(x+r*.65,y-r*.65); ctx.lineTo(x-r*.65,y+r*.65);
+    ctx.stroke();
+  } else {
+    // ⊙ dot
+    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(x,y,r*.4,0,Math.PI*2); ctx.fill();
+  }
+}
+
+// ── SPEAKER ──
+function drawSpeaker(W,H){
+  const cx=W/2+20, cy=H/2;
+  const gapW=18, gapH=110;
+  const poleW=40, outerH=160, outerW=20;
+  const coneLen=200, coneHalf=80;
+
+  // ── Permanent magnet assembly ──
+  // Top outer pole (S)
+  ctx.fillStyle='#1a3a6a';
+  rrect(cx-poleW/2-gapW/2-outerW, cy-outerH/2, outerW, (outerH-gapH)/2, 3);
+  ctx.fill();
+  // Bottom outer pole (S)
+  rrect(cx-poleW/2-gapW/2-outerW, cy+gapH/2, outerW, (outerH-gapH)/2, 3);
+  ctx.fill();
+  // Center pole piece (N)
+  ctx.fillStyle='#6a1a1a';
+  rrect(cx-poleW/2-gapW/2-outerW-poleW, cy-gapH/2, poleW, gapH, 3);
+  ctx.fill();
+
+  // Pole labels
+  ctx.font='bold 14px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='#ff8080'; ctx.fillText('N', cx-poleW/2-gapW/2-outerW-poleW/2, cy);
+  ctx.fillStyle='#8080ff'; ctx.fillText('S', cx-poleW/2-gapW/2-outerW/2, cy-gapH/2-12);
+  ctx.fillStyle='#8080ff'; ctx.fillText('S', cx-poleW/2-gapW/2-outerW/2, cy+gapH/2+12);
+  ctx.textBaseline='alphabetic';
+
+  // Radial B field in gap (arrows: from N outward = right)
+  const numB=5;
+  for(let i=0;i<numB;i++){
+    const yy=cy-gapH/2+14+i*(gapH-28)/(numB-1);
+    arrowLine(cx-poleW/2-gapW/2-outerW-2, yy, cx-poleW/2-gapW/2+4, yy,'rgba(255,160,80,0.6)',1.2,5);
+  }
+  label('B →', cx-poleW/2-gapW/2-outerW/2, cy+gapH/2+28,'rgba(255,160,80,0.5)',10);
+
+  // Voice coil oscillation
+  const coilOff=Math.sin(ph*3)*22;
+  const coilX=cx-poleW/2-gapW/2+gapW/2;
+  const coilY=cy+coilOff;
+
+  // Coil rectangle
+  ctx.strokeStyle='rgba(255,165,50,0.9)'; ctx.lineWidth=4;
+  ctx.beginPath();
+  ctx.rect(coilX-gapW/2, coilY-gapH/2+6, gapW, gapH-12);
+  ctx.stroke();
+
+  // Current indicators (⊗/⊙) on top and bottom of coil cross-section
+  const iDir=Math.sin(ph*3)>0; // true = current→right in top wire (⊙ top, ⊗ bottom)
+  currentDot(coilX, coilY-gapH/2+18, 9, !iDir, 'rgba(255,165,50,0.9)');
+  currentDot(coilX, coilY+gapH/2-18, 9,  iDir, 'rgba(255,165,50,0.9)');
+  label(iDir?'⊙':'⊗', coilX+18, coilY-gapH/2+22,'rgba(255,200,80,0.6)',9);
+  label(iDir?'⊗':'⊙', coilX+18, coilY+gapH/2-14,'rgba(255,200,80,0.6)',9);
+
+  // Force arrow on coil
+  const fDir=Math.sign(Math.sin(ph*3));
+  if(Math.abs(fDir)>0.1){
+    arrowLine(coilX+gapW+5, coilY, coilX+gapW+5+fDir*35, coilY,'#ffdd00',2.5,8);
+    label('F=BIL', coilX+gapW+22+fDir*20, coilY-12,'#ffdd00',10);
+  }
+
+  // Cone (attached to coil)
+  const coneBaseX=cx-poleW/2-gapW/2+gapW+4;
+  ctx.fillStyle='rgba(180,200,230,0.18)';
+  ctx.strokeStyle='rgba(180,200,230,0.70)'; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(coneBaseX, coilY-gapH/2+6);
+  ctx.lineTo(coneBaseX+coneLen, cy-coneHalf);
+  ctx.lineTo(coneBaseX+coneLen, cy+coneHalf);
+  ctx.lineTo(coneBaseX, coilY+gapH/2-6);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  label('진동판(콘)', coneBaseX+coneLen*.55, cy+coneHalf+16,'rgba(180,200,230,0.55)',10);
+
+  // Sound wave lines to the right
+  const sw=coneBaseX+coneLen+12;
+  for(let w=0;w<4;w++){
+    const wph=ph*4+w*1.2;
+    const amp=12+w*8, freq=0.05;
+    ctx.strokeStyle=`rgba(100,200,255,${0.5-w*0.1})`; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    for(let yy=cy-coneHalf;yy<=cy+coneHalf;yy+=2){
+      const wx=sw+w*22+Math.sin((yy-cy)*freq*2+wph)*amp;
+      yy===cy-coneHalf?ctx.moveTo(wx,yy):ctx.lineTo(wx,yy);
+    }
+    ctx.stroke();
+  }
+  label('음파', sw+90, cy-coneHalf-8,'rgba(100,200,255,0.5)',10);
+
+  // Labels
+  label('영구자석', cx-poleW/2-gapW/2-outerW-poleW-18, cy,'rgba(255,255,255,0.4)',10,'right');
+  label('보이스 코일', coilX, cy+gapH/2+22,'rgba(255,165,50,0.6)',10);
+
+  // Title
+  ctx.font='bold 16px Pretendard,sans-serif'; ctx.textAlign='center';
+  ctx.fillStyle='#4f9eff'; ctx.shadowColor='#4f9eff'; ctx.shadowBlur=10;
+  ctx.fillText('동전형 스피커 단면도', W/2, 26); ctx.shadowBlur=0;
+}
+
+// ── MRI ──
+function drawMRI(W,H){
+  const cx=W/2, cy=H/2;
+  const boreW=360, boreH=200;
+  const wallT=55;
+
+  // Main solenoid body (side view)
+  // Outer body
+  ctx.fillStyle='rgba(40,60,100,0.7)';
+  rrect(cx-boreW/2-wallT, cy-boreH/2-wallT, boreW+wallT*2, boreH+wallT*2, 18);
+  ctx.fill();
+  ctx.strokeStyle='rgba(80,140,255,0.3)'; ctx.lineWidth=1.5; ctx.stroke();
+
+  // Bore (patient tunnel) - inner cutout
+  ctx.fillStyle='rgba(10,18,35,0.95)';
+  rrect(cx-boreW/2, cy-boreH/2, boreW, boreH, 5);
+  ctx.fill();
+
+  // Superconducting coil rings (shown as vertical bands)
+  const coilPositions=[-150,-90,-30,30,90,150];
+  coilPositions.forEach(dx=>{
+    const grad=ctx.createLinearGradient(cx+dx-12,0,cx+dx+12,0);
+    grad.addColorStop(0,'rgba(50,100,200,0.5)');
+    grad.addColorStop(.5,'rgba(80,160,255,0.8)');
+    grad.addColorStop(1,'rgba(50,100,200,0.5)');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.rect(cx+dx-10, cy-boreH/2-wallT, 20, boreH+wallT*2);
+    ctx.fill();
+  });
+  label('초전도 코일', cx, cy-boreH/2-wallT-12,'rgba(80,160,255,0.6)',10);
+
+  // Uniform B₀ field lines inside bore (horizontal, left→right)
+  const numLines=7;
+  for(let i=0;i<numLines;i++){
+    const yy=cy-boreH/2+18+i*(boreH-36)/(numLines-1);
+    ctx.strokeStyle='rgba(79,158,255,0.25)'; ctx.lineWidth=1; ctx.setLineDash([8,6]);
+    ctx.beginPath(); ctx.moveTo(cx-boreW/2+10,yy); ctx.lineTo(cx+boreW/2-10,yy); ctx.stroke();
+    // arrowhead
+    if(i===numLines>>1){
+      ctx.setLineDash([]);
+      arrowLine(cx-boreW/2+10,yy,cx+boreW/2-10,yy,'rgba(79,158,255,0.4)',1,6);
+    }
+  }
+  ctx.setLineDash([]);
+  label('B₀ (균일 자기장)', cx, cy-boreH/2+9,'rgba(79,158,255,0.55)',10);
+
+  // Patient body (simplified oval)
+  const patW=200, patH=90;
+  ctx.fillStyle='rgba(255,220,180,0.18)';
+  ctx.strokeStyle='rgba(255,220,180,0.4)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.ellipse(cx,cy,patW/2,patH/2,0,0,Math.PI*2);
+  ctx.fill(); ctx.stroke();
+  label('환자 (수소 원자핵 ¹H)', cx, cy+patH/2+14,'rgba(255,220,180,0.4)',10);
+
+  // Precessing spin vectors (inside patient body)
+  const spinCount=8;
+  for(let i=0;i<spinCount;i++){
+    const sx=cx+(i%4-1.5)*44;
+    const sy=cy+(i<4?-22:22);
+    const tilt=0.5;
+    const spinPh=ph*2.5+i*0.7;
+    const px=Math.cos(spinPh)*14, py=Math.sin(spinPh)*5;
+    // spin axis (tilted from B₀)
+    ctx.strokeStyle='rgba(255,200,100,0.7)'; ctx.lineWidth=2;
+    ctx.shadowColor='#ffcc40'; ctx.shadowBlur=6;
+    ctx.beginPath(); ctx.moveTo(sx,sy+8); ctx.lineTo(sx+px,sy+py-26); ctx.stroke();
+    ctx.shadowBlur=0;
+    dot(sx+px,sy+py-26,2.5,'rgba(255,200,100,0.8)');
+  }
+  label('¹H 핵스핀 세차운동', cx, cy-patH/2-8,'rgba(255,200,100,0.55)',10);
+
+  // Larmor frequency label
+  label('f = γB₀/2π (라모어 주파수)', cx+boreW/2+10, cy,'rgba(255,255,255,0.3)',10,'left');
+
+  // Liquid helium cryostat label
+  ctx.fillStyle='rgba(100,200,255,0.3)'; ctx.font='10px Pretendard,sans-serif';
+  ctx.textAlign='left';
+  ctx.fillText('액체 헬륨 냉각 (4 K)', cx-boreW/2-wallT+6, cy-boreH/2-wallT+14);
+
+  // Title
+  ctx.font='bold 16px Pretendard,sans-serif'; ctx.textAlign='center';
+  ctx.fillStyle='#4f9eff'; ctx.shadowColor='#4f9eff'; ctx.shadowBlur=10;
+  ctx.fillText('MRI 스캐너 단면도 (초전도 솔레노이드)', W/2, 24); ctx.shadowBlur=0;
+}
+
+// ── MAGLEV ──
+function drawMaglev(W,H){
+  const cy=H*.55;
+  const trackY=cy+80;
+  const trainW=280, trainH=60;
+  const trackH=22, trackW=W*.72;
+  const trackX=W*.14;
+  const lift=Math.abs(Math.sin(ph*0.5))*4+8; // slowly breathing oscillation for visual
+  const trainY=trackY-trainH-lift;
+  const trainX=W/2-trainW/2;
+
+  // background city/landscape hint
+  ctx.fillStyle='rgba(30,50,100,0.15)';
+  for(let b=0;b<8;b++){
+    const bx=W*.04+b*(W*.12);
+    const bh=30+b%3*25;
+    ctx.fillRect(bx, trackY+trackH-bh, 30, bh);
+  }
+
+  // Guideway track (T-shape)
+  ctx.fillStyle='rgba(60,80,120,0.85)';
+  ctx.beginPath(); ctx.rect(trackX, trackY, trackW, trackH); ctx.fill();
+  // Track coil pattern (guideway coils)
+  const coilSpacing=30;
+  for(let xi=trackX+15; xi<trackX+trackW-15; xi+=coilSpacing){
+    const side=Math.floor((xi-trackX)/coilSpacing)%2;
+    ctx.fillStyle=side?'rgba(255,100,100,0.35)':'rgba(100,100,255,0.35)';
+    ctx.beginPath(); ctx.rect(xi-8, trackY+2, 16, trackH-4); ctx.fill();
+    ctx.strokeStyle=side?'rgba(255,100,100,0.5)':'rgba(100,100,255,0.5)';
+    ctx.lineWidth=1; ctx.stroke();
+    // N/S label
+    ctx.fillStyle=side?'rgba(255,100,100,0.7)':'rgba(100,100,255,0.7)';
+    ctx.font='8px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(side?'N':'S', xi, trackY+trackH/2+4);
+  }
+  label('가이드웨이 (지상 코일)', W/2, trackY+trackH+14,'rgba(180,190,220,0.4)',10);
+
+  // Repulsion force arrows (between track and train bottom)
+  const numForce=5;
+  for(let i=0;i<numForce;i++){
+    const fx=trainX+30+i*(trainW-60)/(numForce-1);
+    const flen=lift*2.2;
+    arrowLine(fx, trackY-2, fx, trackY-2-flen,'rgba(79,255,150,0.7)',1.5,6);
+    arrowLine(fx, trainY+trainH+2, fx, trainY+trainH+2+flen,'rgba(79,255,150,0.5)',1.5,5);
+  }
+  label('반발력 (부상)', trainX-60, trainY+trainH/2,'rgba(79,255,150,0.6)',10,'right');
+
+  // Train body
+  const trainGrad=ctx.createLinearGradient(trainX,trainY,trainX,trainY+trainH);
+  trainGrad.addColorStop(0,'rgba(140,180,240,0.9)');
+  trainGrad.addColorStop(1,'rgba(60,100,180,0.85)');
+  ctx.fillStyle=trainGrad;
+  rrect(trainX, trainY, trainW, trainH, 14);
+  ctx.fill();
+  ctx.strokeStyle='rgba(180,220,255,0.5)'; ctx.lineWidth=1.5; ctx.stroke();
+
+  // Train windows
+  for(let w=0;w<5;w++){
+    ctx.fillStyle='rgba(200,230,255,0.4)';
+    ctx.beginPath(); ctx.rect(trainX+35+w*48, trainY+12, 30, 22); ctx.fill();
+  }
+  // Nose
+  ctx.fillStyle='rgba(100,150,220,0.9)';
+  ctx.beginPath();
+  ctx.moveTo(trainX, trainY+5);
+  ctx.quadraticCurveTo(trainX-30, trainY+trainH/2, trainX, trainY+trainH-5);
+  ctx.fill();
+
+  // Superconducting coils on train bottom
+  const scCount=4;
+  for(let i=0;i<scCount;i++){
+    const sx=trainX+30+i*(trainW-60)/(scCount-1)-20;
+    ctx.strokeStyle='rgba(100,200,255,0.7)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.rect(sx, trainY+trainH-10, 40, 9); ctx.stroke();
+  }
+  label('초전도 전자석', W/2, trainY-10,'rgba(100,200,255,0.55)',10);
+
+  // levitation gap indicator
+  const gapMidY=(trainY+trainH+trackY)/2;
+  ctx.strokeStyle='rgba(79,255,150,0.4)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(trainX+trainW+12,trainY+trainH); ctx.lineTo(trainX+trainW+12,trackY); ctx.stroke();
+  ctx.setLineDash([]);
+  label(`≈ ${(lift+2).toFixed(0)} cm 부상`, trainX+trainW+22, gapMidY,'rgba(79,255,150,0.6)',10,'left');
+
+  // Speed label
+  label('600+ km/h', W/2, trainY+trainH/2+5,'rgba(255,255,255,0.5)',14);
+
+  // Propulsion arrow
+  arrowLine(trainX-25,trainY+trainH*.3,trainX-80,trainY+trainH*.3,'rgba(255,200,50,0.7)',2.5,8);
+  label('추진력 (LIM)', trainX-55, trainY+trainH*.3-12,'rgba(255,200,50,0.5)',10);
+
+  // Title
+  ctx.font='bold 16px Pretendard,sans-serif'; ctx.textAlign='center';
+  ctx.fillStyle='#4f9eff'; ctx.shadowColor='#4f9eff'; ctx.shadowBlur=10;
+  ctx.fillText('초전도 자기부상열차 (SCMaglev)', W/2, 26); ctx.shadowBlur=0;
+}
+
+// ── DC MOTOR ──
+function drawMotor(W,H){
+  const cx=W/2+30, cy=H/2+10;
+  const poleGap=130; // distance between N and S pole inner faces
+  const poleW=55, poleH=200;
+  const coilW=100, coilH=80;
+  const coilAngle=ph*1.2; // rotation angle
+
+  // Draw horseshoe magnet poles (N left, S right)
+  // N pole (left)
+  ctx.fillStyle='rgba(180,40,40,0.8)';
+  rrect(cx-poleGap/2-poleW, cy-poleH/2, poleW, poleH, 6); ctx.fill();
+  // connecting top yoke
+  ctx.fillStyle='rgba(140,40,40,0.6)';
+  ctx.beginPath(); ctx.rect(cx-poleGap/2-poleW, cy-poleH/2-30, poleW*2+poleGap, 30); ctx.fill();
+  ctx.beginPath(); ctx.rect(cx-poleGap/2-poleW, cy+poleH/2, poleW*2+poleGap, 30); ctx.fill();
+  // S pole (right)
+  ctx.fillStyle='rgba(40,40,180,0.8)';
+  rrect(cx+poleGap/2, cy-poleH/2, poleW, poleH, 6); ctx.fill();
+
+  // Labels
+  ctx.font='bold 26px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='#ff8080'; ctx.fillText('N', cx-poleGap/2-poleW/2, cy);
+  ctx.fillStyle='#8080ff'; ctx.fillText('S', cx+poleGap/2+poleW/2, cy);
+  ctx.textBaseline='alphabetic';
+
+  // B field arrows (from N to S = left to right)
+  const numBf=6;
+  for(let i=0;i<numBf;i++){
+    const yy=cy-80+i*32;
+    arrowLine(cx-poleGap/2+4,yy,cx+poleGap/2-4,yy,'rgba(255,100,100,0.3)',1,6);
+  }
+  label('B →', cx, cy-90,'rgba(255,160,80,0.45)',10);
+
+  // Rotating rectangular coil
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(coilAngle);
+
+  // Coil sides
+  const hw=coilW/2, hh=coilH/2;
+  // AB side (top in initial position) — coming out of page (⊙) when going up
+  const abDir = Math.cos(coilAngle)>=0; // current in AB: depends on rotation phase
+  ctx.strokeStyle='rgba(255,165,50,0.95)'; ctx.lineWidth=5;
+  ctx.shadowColor='#ffa532'; ctx.shadowBlur=10;
+  // AB (top conductor)
+  ctx.beginPath(); ctx.moveTo(-hw,-hh); ctx.lineTo(hw,-hh); ctx.stroke();
+  // CD (bottom conductor)
+  ctx.beginPath(); ctx.moveTo(-hw,hh); ctx.lineTo(hw,hh); ctx.stroke();
+  // Left/right end connectors
+  ctx.strokeStyle='rgba(255,165,50,0.4)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(-hw,-hh); ctx.lineTo(-hw,hh); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo( hw,-hh); ctx.lineTo( hw,hh); ctx.stroke();
+  ctx.shadowBlur=0;
+
+  // Current direction on AB and CD
+  currentDot(0,-hh, 10, !abDir, 'rgba(255,165,50,0.9)');
+  currentDot(0, hh, 10,  abDir, 'rgba(255,165,50,0.9)');
+
+  // Force arrows on AB and CD
+  const fmag=38;
+  const fAB=abDir?-1:1; // force direction on AB
+  arrowLine(40,-hh,40,-hh+fAB*fmag,'rgba(79,255,150,0.9)',2.5,8);
+  arrowLine(40, hh,40, hh-fAB*fmag,'rgba(79,255,150,0.9)',2.5,8);
+  label('F=BIL',52,-hh+fAB*fmag/2,'rgba(79,255,150,0.7)',9,'left');
+
+  ctx.restore(); // end rotation
+
+  // Axle dot
+  dot(cx,cy,7,'rgba(255,200,100,0.9)');
+  dot(cx,cy,3,'rgba(255,240,180,1.0)');
+
+  // Commutator (below center)
+  const comY=cy+130;
+  ctx.fillStyle='rgba(200,150,60,0.5)';
+  rrect(cx-20,comY-15,18,30,4); ctx.fill();
+  rrect(cx+2, comY-15,18,30,4); ctx.fill();
+  // brushes
+  ctx.fillStyle='rgba(150,150,160,0.6)';
+  ctx.beginPath(); ctx.rect(cx-28,comY-8,8,16); ctx.fill();
+  ctx.beginPath(); ctx.rect(cx+20,comY-8,8,16); ctx.fill();
+  label('정류자', cx, comY+22,'rgba(200,150,60,0.5)',10);
+  label('브러시',cx+34,comY,'rgba(150,150,160,0.5)',9,'left');
+
+  // Torque rotation arc
+  ctx.strokeStyle='rgba(79,255,150,0.35)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(cx,cy,60,coilAngle,coilAngle+Math.PI*.8); ctx.stroke();
+  arrowLine(cx+Math.cos(coilAngle+Math.PI*.8)*60,cy+Math.sin(coilAngle+Math.PI*.8)*60,
+            cx+Math.cos(coilAngle+Math.PI*.83)*58,cy+Math.sin(coilAngle+Math.PI*.83)*58,
+            'rgba(79,255,150,0.5)',1.5,5);
+  label('토크',cx+72,cy-40,'rgba(79,255,150,0.5)',10);
+
+  // Formula label
+  label('τ = NBIA (N: 권수)', cx, cy+poleH/2+50,'rgba(255,255,255,0.25)',11);
+
+  // Title
+  ctx.font='bold 16px Pretendard,sans-serif'; ctx.textAlign='center';
+  ctx.fillStyle='#4f9eff'; ctx.shadowColor='#4f9eff'; ctx.shadowBlur=10;
+  ctx.fillText('DC 전동기 작동 원리', W/2, 26); ctx.shadowBlur=0;
+}
+
+function appStage(W,H){
+  const left=W>900?292:24;
+  const right=W>900?304:24;
+  const x=left;
+  const w=Math.max(320,W-left-right);
+  return {x,w,cx:x+w/2,top:28,bottom:H-28};
+}
+
+function drawAppTitle(title,subtitle,W){
+  ctx.save();
+  ctx.textAlign='center';
+  ctx.fillStyle='#172f4a';
+  ctx.font='bold 19px Pretendard,sans-serif';
+  ctx.fillText(title,W/2,28);
+  ctx.fillStyle='rgba(93,112,136,0.9)';
+  ctx.font='11px Pretendard,sans-serif';
+  ctx.fillText(subtitle,W/2,48);
+  ctx.restore();
+}
+
+function drawAppSurface(st,H){
+  ctx.save();
+  const top=62;
+  const h=Math.max(260,H-94);
+  ctx.shadowColor='rgba(30,64,175,0.10)';
+  ctx.shadowBlur=22;
+  ctx.fillStyle='rgba(255,255,255,0.42)';
+  ctx.strokeStyle='rgba(14,148,136,0.14)';
+  ctx.lineWidth=1;
+  rrect(st.x+4,top,st.w-8,h,18);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.stroke();
+
+  const band=ctx.createLinearGradient(0,top,0,top+h);
+  band.addColorStop(0,'rgba(255,255,255,0.36)');
+  band.addColorStop(0.58,'rgba(224,242,254,0.18)');
+  band.addColorStop(1,'rgba(204,251,241,0.26)');
+  ctx.fillStyle=band;
+  rrect(st.x+18,top+14,st.w-36,h-28,14);
+  ctx.fill();
+
+  ctx.strokeStyle='rgba(14,148,136,0.10)';
+  ctx.setLineDash([6,8]);
+  ctx.beginPath();
+  ctx.moveTo(st.cx,top+24);
+  ctx.lineTo(st.cx,top+h-24);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawSpeakerPrinciplePanel(x,y,w,h,pulse){
+  ctx.save();
+  ctx.fillStyle='rgba(255,255,255,0.82)';
+  ctx.strokeStyle='rgba(37,99,235,0.16)';
+  ctx.lineWidth=1;
+  ctx.shadowColor='rgba(30,64,175,0.10)';
+  ctx.shadowBlur=14;
+  rrect(x,y,w,h,10);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.stroke();
+
+  ctx.fillStyle='#172f4a';
+  ctx.font='bold 12px Pretendard,sans-serif';
+  ctx.textAlign='left';
+  ctx.fillText('원리 확대',x+12,y+20);
+
+  const cy=y+h*.56;
+  const left=x+18;
+  const magnetX=x+w*.32;
+  const coilX=x+w*.50+pulse*5;
+  const coneX=x+w*.66+pulse*7;
+
+  ctx.strokeStyle='rgba(37,99,235,0.85)';
+  ctx.lineWidth=1.6;
+  ctx.beginPath();
+  for(let i=0;i<42;i++){
+    const t=i/41;
+    const px=left+t*w*.18;
+    const py=y+h*.35+Math.sin(t*Math.PI*4+ph*3)*12;
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+  ctx.fillStyle='#2563eb';
+  ctx.font='9px Pretendard,sans-serif';
+  ctx.fillText('교류 전류 I',left,y+h*.22);
+
+  ctx.fillStyle='#ef4444';
+  rrect(magnetX-18,cy-42,16,84,4);
+  ctx.fill();
+  ctx.fillStyle='#2563eb';
+  rrect(magnetX+18,cy-42,16,84,4);
+  ctx.fill();
+  ctx.fillStyle='#fff';
+  ctx.font='bold 10px sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('N',magnetX-10,cy);
+  ctx.fillText('S',magnetX+26,cy);
+
+  for(let i=-1;i<=1;i++){
+    const yy=cy+i*20;
+    arrowLine(magnetX-1,yy,magnetX+18,yy,'rgba(37,99,235,0.48)',1.2,5);
+  }
+  ctx.fillStyle='#2563eb';
+  ctx.font='9px Pretendard,sans-serif';
+  ctx.fillText('B',magnetX+8,cy-49);
+
+  ctx.strokeStyle='#f59e0b';
+  ctx.lineWidth=4;
+  ctx.beginPath();
+  ctx.rect(coilX-10,cy-34,20,68);
+  ctx.stroke();
+  ctx.fillStyle='#92400e';
+  ctx.font='9px Pretendard,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('보이스 코일',coilX,cy+50);
+
+  const fEnd=coilX+Math.sign(pulse||1)*36;
+  arrowLine(coilX+16,cy, fEnd, cy,'rgba(245,158,11,0.88)',2.3,7);
+  ctx.fillStyle='#92400e';
+  ctx.font='bold 10px Pretendard,sans-serif';
+  ctx.fillText('힘 F',coilX+Math.sign(pulse||1)*30,cy-12);
+
+  ctx.fillStyle='rgba(148,163,184,0.25)';
+  ctx.strokeStyle='rgba(71,85,105,0.72)';
+  ctx.lineWidth=1.6;
+  ctx.beginPath();
+  ctx.moveTo(coneX,cy-38);
+  ctx.lineTo(coneX+48,cy-14);
+  ctx.lineTo(coneX+48,cy+14);
+  ctx.lineTo(coneX,cy+38);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle='#334155';
+  ctx.font='9px Pretendard,sans-serif';
+  ctx.fillText('진동판',coneX+28,cy+52);
+
+  for(let i=0;i<3;i++){
+    ctx.strokeStyle=`rgba(37,99,235,${0.44-i*.09})`;
+    ctx.lineWidth=1.4;
+    ctx.beginPath();
+    ctx.arc(coneX+58+i*13,cy,16+i*8,-Math.PI*.42,Math.PI*.42);
+    ctx.stroke();
+  }
+  ctx.fillStyle='#2563eb';
+  ctx.font='9px Pretendard,sans-serif';
+  ctx.fillText('소리',x+w-28,cy-34);
+
+  ctx.restore();
+}
+
+function drawMaglevPrinciplePanel(x,y,w,h){
+  ctx.save();
+
+  // Panel background
+  ctx.fillStyle='rgba(255,255,255,0.82)';
+  ctx.strokeStyle='rgba(37,99,235,0.16)';
+  ctx.lineWidth=1;
+  ctx.shadowColor='rgba(30,64,175,0.10)';
+  ctx.shadowBlur=14;
+  rrect(x,y,w,h,10);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.stroke();
+
+  ctx.fillStyle='#172f4a';
+  ctx.font='bold 12px Pretendard,sans-serif';
+  ctx.textAlign='left';
+  ctx.fillText('원리 확대',x+12,y+20);
+
+  const pad=14;
+  const iX=x+pad, iW=w-pad*2;
+
+  // Train sweeps left→right, looping
+  const sweep=((ph*0.52)%1+1)%1;
+
+  const trackY=y+h*0.68;
+  const trackH=18;
+  const nMag=4;               // N-S-N-S 자석 4개
+  const nC=8;
+  const cStep=iW/nC;
+  const cW=Math.max(13,cStep*0.58);
+  const cH=12;
+
+  // Train: 4 magnets wide
+  const magBarH=11;
+  const tH=20;
+  const magPitch=cStep*1.12;   // one magnet = ~one coil spacing
+  const tW=magPitch*nMag;
+  const tX=iX-tW*0.3+(iW+tW*0.3)*sweep;
+  const tY=trackY-tH-magBarH-10;
+
+  // Clip interior
+  ctx.beginPath();
+  ctx.rect(iX,y+22,iW,h-26);
+  ctx.clip();
+
+  // Track surface
+  ctx.fillStyle='rgba(226,232,240,0.95)';
+  rrect(iX,trackY,iW,trackH+4,3);
+  ctx.fill();
+  ctx.strokeStyle='rgba(100,116,139,0.28)';
+  ctx.lineWidth=1;
+  ctx.stroke();
+
+  // ── Coils: polarity = same pole as the train magnet directly above (→ repulsion = 부상)
+  //          ahead of train: continues N-S-N-S pattern  → first coil ahead is opposite
+  //          of the last train magnet (S) → N → attracts S-leading-magnet → 추진
+  for(let i=0;i<nC;i++){
+    const cx=iX+cStep*(i+0.5);
+    const cX=cx-cW/2;
+    const cY=trackY+3;
+    const dist=cx-tX;            // distance from left edge of train (>0 inside/ahead)
+
+    let pole=null, alpha=0, isUnder=false;
+
+    if(dist>=0 && dist<tW){
+      // Under the train: pole = same as train magnet directly above
+      const mIdx=Math.min(nMag-1,Math.floor(dist/magPitch));
+      pole=mIdx%2===0?'N':'S';  // N,S,N,S from left
+      alpha=0.85;
+      isUnder=true;
+    } else if(dist>=tW && dist<tW+magPitch*2.2){
+      // Just ahead: continue the N-S-N-S pattern
+      // (last train magnet idx=3 is S; so first coil ahead = N, then S, ...)
+      const aIdx=Math.floor((dist-tW)/magPitch);
+      pole=aIdx%2===0?'N':'S';
+      alpha=0.72-(dist-tW)/(magPitch*2.2)*0.40;
+    } else {
+      ctx.fillStyle='rgba(203,213,225,0.25)';
+      rrect(cX,cY,cW,cH,3);
+      ctx.fill();
+      continue;
+    }
+
+    const isN=pole==='N';
+    ctx.shadowColor=isN?'rgba(239,68,68,0.22)':'rgba(37,99,235,0.22)';
+    ctx.shadowBlur=alpha>0.55?5:0;
+    ctx.fillStyle=isN?`rgba(239,68,68,${Math.max(0.22,alpha)})`:`rgba(37,99,235,${Math.max(0.22,alpha)})`;
+    rrect(cX,cY,cW,cH,3);
+    ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#fff';
+    ctx.font='bold 8px sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText(pole,cx,cY+8.5);
+
+    // Levitation arrows (under-train coils only): same-pole repulsion → upward
+    if(isUnder){
+      // Find the centre of the matching train magnet for this coil
+      const mIdx=Math.min(nMag-1,Math.floor((cx-tX)/magPitch));
+      const mCX=tX+(mIdx+0.5)*magPitch;
+      arrowLine(mCX,cY-1,mCX,tY+tH+magBarH+2,`rgba(22,163,74,0.62)`,1.5,5);
+    }
+  }
+
+  // Propulsion arrow: leading S-magnet attracted to N-coil just ahead
+  for(let i=0;i<nC;i++){
+    const cx=iX+cStep*(i+0.5);
+    const dist=cx-tX;
+    if(dist>=tW && dist<tW+magPitch*1.5){
+      const aEnd=cx-cW/2-3;
+      const aStart=tX+tW+2;
+      if(aEnd>aStart+10){
+        arrowLine(aStart,tY+tH*0.5+magBarH*0.4,aEnd,tY+tH*0.5+magBarH*0.4,
+                  'rgba(245,158,11,0.88)',2.0,7);
+        ctx.fillStyle='rgba(146,64,14,0.85)';
+        ctx.font='bold 8px Pretendard,sans-serif';
+        ctx.textAlign='center';
+        ctx.fillText('S↔N 흡인 → 추진',(aStart+aEnd)/2,tY+tH*0.22);
+      }
+      break;
+    }
+  }
+
+  // ── Train body ──
+  ctx.fillStyle='rgba(219,234,254,0.94)';
+  ctx.shadowColor='rgba(37,99,235,0.18)';
+  ctx.shadowBlur=8;
+  rrect(tX,tY,tW,tH,5);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(37,99,235,0.40)';
+  ctx.lineWidth=1.5;
+  ctx.stroke();
+
+  // N-S-N-S magnet bars at bottom of train (face down toward track)
+  for(let i=0;i<nMag;i++){
+    const isN=i%2===0;
+    const mX=tX+i*magPitch+1.5;
+    const mW=magPitch-3;
+    ctx.fillStyle=isN?'rgba(220,38,38,0.86)':'rgba(37,99,235,0.86)';
+    ctx.shadowBlur=0;
+    rrect(mX,tY+tH,mW,magBarH,3);
+    ctx.fill();
+    ctx.strokeStyle=isN?'rgba(185,28,28,0.28)':'rgba(30,64,175,0.28)';
+    ctx.lineWidth=1;
+    ctx.stroke();
+    ctx.fillStyle='#fff';
+    ctx.font='bold 8px sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText(isN?'N':'S',mX+mW/2,tY+tH+magBarH-2);
+  }
+
+  // Direction arrow to the right of train
+  const arE=Math.min(tX+tW+28,iX+iW-4);
+  if(arE>tX+tW+10){
+    arrowLine(tX+tW+2,tY+tH*0.38,arE,tY+tH*0.38,'rgba(245,158,11,0.90)',2.2,7);
+    ctx.fillStyle='rgba(146,64,14,0.88)';
+    ctx.font='bold 8px Pretendard,sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('진행',(tX+tW+2+arE)/2,tY+tH*0.18);
+  }
+
+  // ── Labels (outside clip) ──
+  ctx.restore();
+  ctx.save();
+  ctx.font='8.5px Pretendard,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillStyle='rgba(22,101,52,0.85)';
+  ctx.fillText('같은 극 반발 ↑ (부상)',x+w*0.30,trackY-8);
+  ctx.fillStyle='rgba(146,64,14,0.85)';
+  ctx.fillText('반대 극 흡인 → (추진)',x+w*0.73,trackY-8);
+  ctx.fillStyle='rgba(51,65,85,0.72)';
+  ctx.fillText('선로 코일 (N-S-N-S)',x+w*0.50,trackY+trackH+16);
+
+  // Mini legend
+  const ly=y+h-10;
+  ctx.fillStyle='rgba(239,68,68,0.75)'; ctx.fillRect(iX+2,ly-7,8,8);
+  ctx.fillStyle='rgba(51,65,85,0.70)'; ctx.font='7.5px Pretendard,sans-serif'; ctx.textAlign='left';
+  ctx.fillText('N극',iX+13,ly);
+  ctx.fillStyle='rgba(37,99,235,0.75)'; ctx.fillRect(iX+30,ly-7,8,8);
+  ctx.fillText('S극  |  차체·선로 모두 N-S-N-S 교번',iX+41,ly);
+
+  ctx.restore();
+}
+
+function drawSpeakerRealistic(W,H){
+  const st=appStage(W,H);
+  drawAppTitle('실제 스피커 구조','진동판이 앞뒤로 움직이며 공기를 밀고 당겨 소리를 만듭니다',W);
+
+  const compact=st.w<520;
+  const cx=compact?st.cx:st.x+st.w*0.38;
+  const cy=H*0.52;
+  const R=Math.min(st.w*(compact?0.34:0.25),H*0.31,150);
+  const pulse=Math.sin(ph*3.2);
+  const conePulse=1+pulse*0.018;
+
+  ctx.save();
+  ctx.shadowColor='rgba(15,23,42,0.22)';
+  ctx.shadowBlur=24;
+  const frameGrad=ctx.createRadialGradient(cx-R*.2,cy-R*.28,R*.18,cx,cy,R*1.08);
+  frameGrad.addColorStop(0,'#f8fafc');
+  frameGrad.addColorStop(0.38,'#94a3b8');
+  frameGrad.addColorStop(0.72,'#334155');
+  frameGrad.addColorStop(1,'#0f172a');
+  ctx.fillStyle=frameGrad;
+  ctx.beginPath();
+  ctx.arc(cx,cy,R,0,Math.PI*2);
+  ctx.fill();
+  ctx.shadowBlur=0;
+
+  ctx.strokeStyle='rgba(255,255,255,0.65)';
+  ctx.lineWidth=Math.max(2,R*0.018);
+  ctx.beginPath();
+  ctx.arc(cx,cy,R*.94,0,Math.PI*2);
+  ctx.stroke();
+
+  for(let i=0;i<6;i++){
+    const a=i*Math.PI/3+Math.PI/6;
+    const sx=cx+Math.cos(a)*R*.84;
+    const sy=cy+Math.sin(a)*R*.84;
+    ctx.fillStyle='rgba(226,232,240,0.92)';
+    ctx.beginPath();
+    ctx.arc(sx,sy,R*.055,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle='rgba(51,65,85,0.78)';
+    ctx.beginPath();
+    ctx.arc(sx,sy,R*.025,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle='#111827';
+  ctx.beginPath();
+  ctx.arc(cx,cy,R*.77,0,Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle='rgba(15,23,42,0.55)';
+  ctx.lineWidth=R*.09;
+  ctx.beginPath();
+  ctx.arc(cx,cy,R*.68,0,Math.PI*2);
+  ctx.stroke();
+
+  const coneGrad=ctx.createRadialGradient(cx-R*.18,cy-R*.2,R*.06,cx,cy,R*.65);
+  coneGrad.addColorStop(0,'#dbeafe');
+  coneGrad.addColorStop(0.22,'#64748b');
+  coneGrad.addColorStop(0.62,'#1e293b');
+  coneGrad.addColorStop(1,'#020617');
+  ctx.fillStyle=coneGrad;
+  ctx.beginPath();
+  ctx.ellipse(cx,cy,R*.53*conePulse,R*.53*conePulse,0,0,Math.PI*2);
+  ctx.fill();
+
+  for(let i=0;i<8;i++){
+    const a=i*Math.PI/4+ph*.08;
+    ctx.strokeStyle='rgba(255,255,255,0.10)';
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(a)*R*.18,cy+Math.sin(a)*R*.18);
+    ctx.lineTo(cx+Math.cos(a)*R*.50,cy+Math.sin(a)*R*.50);
+    ctx.stroke();
+  }
+
+  const capGrad=ctx.createRadialGradient(cx-R*.08,cy-R*.10,R*.02,cx,cy,R*.22);
+  capGrad.addColorStop(0,'#e2e8f0');
+  capGrad.addColorStop(0.55,'#475569');
+  capGrad.addColorStop(1,'#0f172a');
+  ctx.fillStyle=capGrad;
+  ctx.beginPath();
+  ctx.arc(cx,cy,R*.22*(1+pulse*.025),0,Math.PI*2);
+  ctx.fill();
+
+  const waveX=cx+R+24;
+  for(let i=0;i<4;i++){
+    const alpha=0.46-i*.08;
+    ctx.strokeStyle=`rgba(37,99,235,${alpha})`;
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.arc(waveX+i*18+Math.abs(pulse)*5,cy,R*.28+i*R*.12,-Math.PI*.42,Math.PI*.42);
+    ctx.stroke();
+  }
+
+  if(!compact){
+    const sx=st.x+st.w*0.72;
+    const sy=cy;
+    const coneX=sx-58+pulse*5;
+    ctx.fillStyle='rgba(255,255,255,0.72)';
+    ctx.strokeStyle='rgba(37,99,235,0.16)';
+    ctx.lineWidth=1;
+    rrect(sx-105,sy-R*.58,210,R*1.16,10);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle='rgba(148,163,184,0.26)';
+    ctx.strokeStyle='rgba(71,85,105,0.55)';
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(coneX,sy-R*.38);
+    ctx.lineTo(coneX+92,sy-R*.08);
+    ctx.lineTo(coneX+92,sy+R*.08);
+    ctx.lineTo(coneX,sy+R*.38);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.strokeStyle='#f59e0b';
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.rect(coneX-16,sy-R*.22,18,R*.44);
+    ctx.stroke();
+
+    ctx.fillStyle='#334155';
+    rrect(sx-105,sy-R*.30,42,R*.60,8);
+    ctx.fill();
+    ctx.fillStyle='#ef4444';
+    rrect(sx-102,sy-R*.24,16,R*.48,5);
+    ctx.fill();
+    ctx.fillStyle='#2563eb';
+    rrect(sx-83,sy-R*.24,16,R*.48,5);
+    ctx.fill();
+
+    arrowLine(coneX-4,sy,coneX-4+pulse*34,sy,'rgba(245,158,11,0.85)',2.2,7);
+
+    ctx.fillStyle='#334155';
+    ctx.font='bold 11px Pretendard,sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('보이스 코일',coneX-7,sy+R*.36);
+    ctx.fillText('영구자석',sx-84,sy+R*.42);
+    ctx.fillText('진동판',coneX+62,sy-R*.42);
+  }
+
+  ctx.fillStyle='rgba(51,65,85,0.9)';
+  ctx.font='bold 12px Pretendard,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('실제 스피커 유닛',cx,cy+R+24);
+
+  const panelW=compact?Math.min(st.w-36,380):Math.min(st.w*.40,330);
+  const panelH=compact?128:152;
+  const panelX=compact?st.x+(st.w-panelW)/2:st.x+st.w*.58;
+  const panelY=compact?Math.max(58,Math.min(H-panelH-16,cy+R+36)):68;
+  drawSpeakerPrinciplePanel(panelX,panelY,panelW,panelH,pulse);
+  ctx.restore();
+}
+
+function drawMaglevRealistic(W,H){
+  const st=appStage(W,H);
+  drawAppTitle('실제 자기부상열차 구조','차체 아래 자석과 선로 코일 사이의 힘으로 떠서 움직입니다',W);
+
+  const trainW=Math.min(st.w*.82,620);
+  const trainH=Math.min(H*.17,92);
+  const trainX=st.cx-trainW/2;
+  const guideY=H*.66;
+  const lift=16+Math.sin(ph*.9)*2.2;
+  const trainY=guideY-trainH-lift;
+  const nose=trainW*.22;
+
+  ctx.save();
+  ctx.fillStyle='rgba(203,213,225,0.38)';
+  for(let i=0;i<7;i++){
+    const bx=st.x+i*(st.w/6);
+    const bh=20+(i%3)*14;
+    ctx.fillRect(bx,H*.73-bh,36,bh);
+  }
+
+  ctx.shadowColor='rgba(15,23,42,0.18)';
+  ctx.shadowBlur=16;
+  ctx.fillStyle='rgba(100,116,139,0.72)';
+  rrect(st.x+st.w*.06,guideY,st.w*.88,22,4);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.fillStyle='rgba(226,232,240,0.96)';
+  rrect(st.x+st.w*.09,guideY+22,st.w*.82,34,6);
+  ctx.fill();
+  ctx.strokeStyle='rgba(100,116,139,0.42)';
+  ctx.stroke();
+
+  // Coil polarity shifts with time to show the traveling wave (LSM principle)
+  const coilCount=12;
+  const wavePhase=Math.floor(ph*3);
+  for(let i=0;i<coilCount;i++){
+    const x=st.x+st.w*.13+i*(st.w*.74/(coilCount-1));
+    // Two-pole traveling wave: N-N-S-S repeating, shifted by wavePhase
+    const pat=(i+wavePhase)%4;
+    const isN=pat<2;
+    ctx.fillStyle=isN?'rgba(239,68,68,0.38)':'rgba(37,99,235,0.38)';
+    rrect(x-10,guideY+5,20,12,3);
+    ctx.fill();
+    ctx.fillStyle=isN?'rgba(127,29,29,0.70)':'rgba(30,64,175,0.70)';
+    ctx.font='bold 7px sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText(isN?'N':'S',x,guideY+14);
+  }
+
+  for(let i=0;i<6;i++){
+    const x=trainX+trainW*.18+i*(trainW*.58/5);
+    arrowLine(x,guideY-3,x,guideY-lift+4,'rgba(22,163,74,0.55)',1.8,6);
+  }
+
+  const trainGrad=ctx.createLinearGradient(0,trainY,0,trainY+trainH);
+  trainGrad.addColorStop(0,'#ffffff');
+  trainGrad.addColorStop(0.45,'#dbeafe');
+  trainGrad.addColorStop(1,'#60a5fa');
+  ctx.fillStyle=trainGrad;
+  ctx.shadowColor='rgba(37,99,235,0.22)';
+  ctx.shadowBlur=20;
+  ctx.beginPath();
+  ctx.moveTo(trainX+18,trainY+trainH*.88);
+  ctx.quadraticCurveTo(trainX+trainW*.10,trainY+trainH*.12,trainX+nose,trainY+trainH*.08);
+  ctx.lineTo(trainX+trainW*.84,trainY+trainH*.08);
+  ctx.quadraticCurveTo(trainX+trainW*.98,trainY+trainH*.12,trainX+trainW+18,trainY+trainH*.48);
+  ctx.quadraticCurveTo(trainX+trainW*.93,trainY+trainH*.90,trainX+trainW*.78,trainY+trainH*.94);
+  ctx.lineTo(trainX+34,trainY+trainH*.94);
+  ctx.quadraticCurveTo(trainX+10,trainY+trainH*.94,trainX+18,trainY+trainH*.88);
+  ctx.closePath();
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(37,99,235,0.38)';
+  ctx.lineWidth=1.5;
+  ctx.stroke();
+
+  ctx.strokeStyle='#2563eb';
+  ctx.lineWidth=4;
+  ctx.beginPath();
+  ctx.moveTo(trainX+nose*.55,trainY+trainH*.62);
+  ctx.lineTo(trainX+trainW*.86,trainY+trainH*.62);
+  ctx.stroke();
+  ctx.strokeStyle='#ef4444';
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(trainX+nose*.62,trainY+trainH*.70);
+  ctx.lineTo(trainX+trainW*.82,trainY+trainH*.70);
+  ctx.stroke();
+
+  ctx.fillStyle='rgba(15,23,42,0.72)';
+  for(let i=0;i<7;i++){
+    const x=trainX+nose+i*(trainW*.50/6);
+    rrect(x,trainY+trainH*.22,trainW*.055,trainH*.22,6);
+    ctx.fill();
+  }
+  ctx.fillStyle='rgba(15,23,42,0.64)';
+  rrect(trainX+trainW*.82,trainY+trainH*.24,trainW*.06,trainH*.20,6);
+  ctx.fill();
+
+  ctx.strokeStyle='rgba(14,165,233,0.72)';
+  ctx.lineWidth=3;
+  for(let i=0;i<4;i++){
+    const x=trainX+trainW*.22+i*(trainW*.14);
+    ctx.beginPath();
+    ctx.rect(x,trainY+trainH*.84,trainW*.085,8);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle='rgba(22,163,74,0.72)';
+  ctx.setLineDash([5,5]);
+  ctx.lineWidth=1.4;
+  ctx.beginPath();
+  ctx.moveTo(trainX+trainW+26,trainY+trainH);
+  ctx.lineTo(trainX+trainW+26,guideY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='rgba(22,101,52,0.88)';
+  ctx.font='bold 11px Pretendard,sans-serif';
+  ctx.textAlign='left';
+  ctx.fillText('부상 간격',trainX+trainW+34,(trainY+trainH+guideY)/2+4);
+
+  arrowLine(trainX+trainW*.08,trainY+trainH*.38,trainX+trainW*.22,trainY+trainH*.38,'rgba(245,158,11,0.78)',2.4,8);
+  ctx.fillStyle='rgba(146,64,14,0.92)';
+  ctx.font='bold 11px Pretendard,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('추진',trainX+trainW*.15,trainY+trainH*.25);
+
+  ctx.fillStyle='rgba(51,65,85,0.9)';
+  ctx.font='bold 12px Pretendard,sans-serif';
+  ctx.fillText('가이드웨이 코일',st.cx,guideY+75);
+
+  const panelW=st.w<560?st.w-36:Math.min(st.w*.58,430);
+  const panelH=st.w<560?132:148;
+  const panelX=st.w<560?st.x+18:st.x+st.w*.08;
+  const panelY=62;
+  drawMaglevPrinciplePanel(panelX,panelY,panelW,panelH);
+  ctx.restore();
+}
+
+function drawSpeakerCutaway(W,H){
+  const st=appStage(W,H);
+  drawAppTitle('스피커 단면과 작동 원리','보이스 코일이 자기장 속에서 힘을 받아 진동판을 앞뒤로 움직입니다',W);
+
+  const compact=st.w<560;
+  const s=Math.max(0.72,Math.min(1.08,st.w/720,H/560));
+  const cy=H*.55;
+  const backX=st.x+st.w*(compact?0.20:0.24);
+  const rimX=st.x+st.w*(compact?0.68:0.62);
+  const rimH=132*s;
+  const rimW=24*s;
+  const throatX=backX+132*s+Math.sin(ph*3.2)*8*s;
+  const throatH=40*s;
+  const pulse=Math.sin(ph*3.2);
+
+  ctx.save();
+
+  // Speaker basket and front rim
+  ctx.strokeStyle='rgba(51,65,85,0.58)';
+  ctx.lineWidth=5*s;
+  ctx.lineCap='round';
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>{
+    ctx.beginPath();
+    ctx.moveTo(backX+74*s,cy+b*32*s);
+    ctx.lineTo(rimX-rimW*.45,cy+a*rimH*.42);
+    ctx.stroke();
+  });
+
+  ctx.shadowColor='rgba(15,23,42,0.18)';
+  ctx.shadowBlur=18;
+  const coneGrad=ctx.createLinearGradient(throatX,cy-rimH/2,rimX,cy+rimH/2);
+  coneGrad.addColorStop(0,'#475569');
+  coneGrad.addColorStop(0.42,'#cbd5e1');
+  coneGrad.addColorStop(1,'#eff6ff');
+  ctx.fillStyle=coneGrad;
+  ctx.strokeStyle='rgba(51,65,85,0.64)';
+  ctx.lineWidth=2*s;
+  ctx.beginPath();
+  ctx.moveTo(throatX,cy-throatH/2);
+  ctx.lineTo(rimX,cy-rimH/2);
+  ctx.quadraticCurveTo(rimX+rimW*.45,cy,rimX,cy+rimH/2);
+  ctx.lineTo(throatX,cy+throatH/2);
+  ctx.quadraticCurveTo(throatX+16*s,cy,throatX,cy-throatH/2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.stroke();
+
+  ctx.strokeStyle='rgba(15,23,42,0.48)';
+  ctx.lineWidth=11*s;
+  ctx.beginPath();
+  ctx.ellipse(rimX,cy,rimW,rimH/2,0,0,Math.PI*2);
+  ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,0.70)';
+  ctx.lineWidth=3*s;
+  ctx.beginPath();
+  ctx.ellipse(rimX,cy,rimW*.56,rimH*.36,0,0,Math.PI*2);
+  ctx.stroke();
+
+  // Dust cap / cone center
+  ctx.fillStyle='rgba(30,41,59,0.72)';
+  ctx.beginPath();
+  ctx.ellipse(throatX+34*s,cy,24*s,31*s,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.28)';
+  ctx.lineWidth=1.5*s;
+  ctx.stroke();
+
+  // Magnet assembly and pole gap
+  ctx.fillStyle='#334155';
+  rrect(backX-32*s,cy-58*s,86*s,116*s,8*s);
+  ctx.fill();
+  ctx.fillStyle='#ef4444';
+  rrect(backX-25*s,cy-46*s,24*s,92*s,5*s);
+  ctx.fill();
+  ctx.fillStyle='#2563eb';
+  rrect(backX+24*s,cy-46*s,24*s,92*s,5*s);
+  ctx.fill();
+  ctx.fillStyle='#fff';
+  ctx.font=`bold ${12*s}px sans-serif`;
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillText('N',backX-13*s,cy);
+  ctx.fillText('S',backX+36*s,cy);
+  ctx.textBaseline='alphabetic';
+
+  // Voice coil
+  const coilX=throatX-12*s;
+  ctx.strokeStyle='#f59e0b';
+  ctx.lineWidth=5*s;
+  ctx.beginPath();
+  ctx.rect(coilX-13*s,cy-34*s,24*s,68*s);
+  ctx.stroke();
+  for(let i=-1;i<=1;i++){
+    arrowLine(backX+2*s,cy+i*20*s,backX+28*s,cy+i*20*s,'rgba(37,99,235,0.52)',1.4*s,5*s);
+  }
+
+  // Signal wire and force
+  ctx.strokeStyle='rgba(37,99,235,0.82)';
+  ctx.lineWidth=1.8*s;
+  ctx.beginPath();
+  const wireStartX=st.x+24*s;
+  const wireY=cy+92*s;
+  for(let i=0;i<70;i++){
+    const t=i/69;
+    const x=wireStartX+t*(coilX-wireStartX);
+    const y=wireY+Math.sin(t*Math.PI*6+ph*3.2)*9*s;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  arrowLine(coilX+22*s,cy,coilX+22*s+pulse*54*s,cy,'rgba(245,158,11,0.9)',2.8*s,8*s);
+
+  // Sound waves from moving cone
+  for(let i=0;i<4;i++){
+    const alpha=0.46-i*.08;
+    ctx.strokeStyle=`rgba(37,99,235,${alpha})`;
+    ctx.lineWidth=2*s;
+    ctx.beginPath();
+    ctx.ellipse(rimX+42*s+i*30*s+Math.abs(pulse)*6*s,cy,12*s+i*15*s,42*s+i*15*s,0,-Math.PI*.45,Math.PI*.45);
+    ctx.stroke();
+  }
+
+  // Labels
+  ctx.fillStyle='rgba(51,65,85,0.95)';
+  ctx.font=`bold ${11*s}px Pretendard,sans-serif`;
+  ctx.textAlign='center';
+  ctx.fillText('영구자석',backX+10*s,cy-70*s);
+  ctx.fillText('보이스 코일',coilX,cy+54*s);
+  ctx.fillText('진동판',rimX-66*s,cy-rimH*.45);
+  ctx.fillText('공기 진동',rimX+124*s,cy-rimH*.44);
+  ctx.fillStyle='rgba(37,99,235,0.92)';
+  ctx.fillText('자기장 B',backX+16*s,cy-55*s);
+  ctx.fillStyle='rgba(37,99,235,0.92)';
+  ctx.fillText('음성 전류 I',wireStartX+55*s,wireY+28*s);
+  ctx.fillStyle='rgba(146,64,14,0.95)';
+  ctx.fillText('힘 F = BIL',coilX+Math.sign(pulse||1)*42*s,cy-15*s);
+
+  const panelW=compact?Math.min(st.w-30,420):Math.min(360,st.w*.34);
+  const panelH=compact?112:130;
+  const panelX=compact?st.x+(st.w-panelW)/2:st.x+st.w-panelW-18;
+  const panelY=compact?H-panelH-16:72;
+  drawSpeakerPrinciplePanel(panelX,panelY,panelW,panelH,pulse);
+
+  ctx.restore();
+}
+
+function drawSpeakerSectionClean(W,H){
+  const st=appStage(W,H);
+  drawAppTitle('스피커 단면 원리','자기장 속 보이스 코일이 힘을 받아 진동판을 앞뒤로 움직입니다',W);
+
+  const compact=st.w<590;
+  const s=Math.max(0.76,Math.min(1.08,st.w/760,H/560));
+  const cy=H*.56;
+  const motorX=st.x+st.w*(compact?0.22:0.24);
+  const rimX=st.x+st.w*(compact?0.66:0.61);
+  const pulse=Math.sin(ph*3.2);
+  const motion=pulse*9*s;
+  const coilX=motorX+112*s+motion;
+  const coneThroat=coilX+15*s;
+  const rimRx=22*s;
+  const rimRy=105*s;
+
+  ctx.save();
+
+  // Back magnet motor: steel yoke, permanent magnet, pole piece.
+  ctx.shadowColor='rgba(15,23,42,0.18)';
+  ctx.shadowBlur=18;
+  ctx.fillStyle='#334155';
+  rrect(motorX-52*s,cy-78*s,104*s,156*s,12*s);
+  ctx.fill();
+  ctx.shadowBlur=0;
+
+  ctx.fillStyle='#475569';
+  rrect(motorX-35*s,cy-54*s,70*s,108*s,8*s);
+  ctx.fill();
+  ctx.fillStyle='#ef4444';
+  rrect(motorX-28*s,cy-46*s,25*s,92*s,5*s);
+  ctx.fill();
+  ctx.fillStyle='#2563eb';
+  rrect(motorX+4*s,cy-46*s,25*s,92*s,5*s);
+  ctx.fill();
+  ctx.fillStyle='#e2e8f0';
+  rrect(motorX+39*s,cy-30*s,56*s,60*s,8*s);
+  ctx.fill();
+  ctx.fillStyle='#64748b';
+  rrect(motorX+83*s,cy-19*s,34*s,38*s,5*s);
+  ctx.fill();
+
+  ctx.fillStyle='#fff';
+  ctx.font=`bold ${12*s}px sans-serif`;
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillText('N',motorX-15*s,cy);
+  ctx.fillText('S',motorX+17*s,cy);
+  ctx.textBaseline='alphabetic';
+
+  // Basket frame.
+  ctx.strokeStyle='rgba(71,85,105,0.54)';
+  ctx.lineWidth=5*s;
+  ctx.lineCap='round';
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([side,dy])=>{
+    ctx.beginPath();
+    ctx.moveTo(motorX+70*s,cy+dy*42*s);
+    ctx.lineTo(rimX-rimRx*.6,cy+side*rimRy*.78);
+    ctx.stroke();
+  });
+
+  // Cone and surround.
+  const coneGrad=ctx.createLinearGradient(coneThroat,cy-rimRy,rimX,cy+rimRy);
+  coneGrad.addColorStop(0,'#475569');
+  coneGrad.addColorStop(0.48,'#cbd5e1');
+  coneGrad.addColorStop(1,'#f8fafc');
+  ctx.fillStyle=coneGrad;
+  ctx.strokeStyle='rgba(51,65,85,0.58)';
+  ctx.lineWidth=2*s;
+  ctx.beginPath();
+  ctx.moveTo(coneThroat,cy-30*s);
+  ctx.quadraticCurveTo(rimX-120*s,cy-82*s,rimX,cy-rimRy);
+  ctx.quadraticCurveTo(rimX+rimRx*.85,cy,rimX,cy+rimRy);
+  ctx.quadraticCurveTo(rimX-120*s,cy+82*s,coneThroat,cy+30*s);
+  ctx.quadraticCurveTo(coneThroat+12*s,cy,coneThroat,cy-30*s);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.strokeStyle='rgba(15,23,42,0.62)';
+  ctx.lineWidth=13*s;
+  ctx.beginPath();
+  ctx.ellipse(rimX,cy,rimRx,rimRy,0,0,Math.PI*2);
+  ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,0.76)';
+  ctx.lineWidth=3*s;
+  ctx.beginPath();
+  ctx.ellipse(rimX,cy,rimRx*.45,rimRy*.78,0,0,Math.PI*2);
+  ctx.stroke();
+
+  // Dust cap and voice coil former.
+  ctx.fillStyle='rgba(30,41,59,0.78)';
+  ctx.beginPath();
+  ctx.ellipse(coneThroat+38*s,cy,25*s,35*s,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.26)';
+  ctx.lineWidth=1.4*s;
+  ctx.stroke();
+
+  ctx.fillStyle='rgba(226,232,240,0.86)';
+  rrect(coilX-7*s,cy-43*s,14*s,86*s,5*s);
+  ctx.fill();
+  ctx.strokeStyle='#f59e0b';
+  ctx.lineWidth=5*s;
+  ctx.beginPath();
+  ctx.rect(coilX-16*s,cy-35*s,28*s,70*s);
+  ctx.stroke();
+
+  // B field and force on coil.
+  for(let i=-1;i<=1;i++){
+    arrowLine(motorX+34*s,cy+i*22*s,motorX+83*s,cy+i*22*s,'rgba(37,99,235,0.50)',1.5*s,5*s);
+  }
+  arrowLine(coilX+20*s,cy,coilX+20*s+pulse*54*s,cy,'rgba(245,158,11,0.90)',2.7*s,8*s);
+
+  // AC signal wire.
+  const wireStartX=st.x+28*s;
+  const wireY=cy+105*s;
+  ctx.strokeStyle='rgba(37,99,235,0.85)';
+  ctx.lineWidth=1.8*s;
+  ctx.beginPath();
+  for(let i=0;i<76;i++){
+    const t=i/75;
+    const x=wireStartX+t*(coilX-wireStartX);
+    const y=wireY+Math.sin(t*Math.PI*6+ph*3.2)*8*s;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+
+  // Sound waves.
+  for(let i=0;i<4;i++){
+    ctx.strokeStyle=`rgba(37,99,235,${0.48-i*.08})`;
+    ctx.lineWidth=2*s;
+    ctx.beginPath();
+    ctx.ellipse(rimX+52*s+i*31*s+Math.abs(pulse)*5*s,cy,11*s+i*15*s,44*s+i*16*s,0,-Math.PI*.42,Math.PI*.42);
+    ctx.stroke();
+  }
+
+  // Labels kept close to the actual parts.
+  ctx.fillStyle='rgba(51,65,85,0.96)';
+  ctx.font=`bold ${11*s}px Pretendard,sans-serif`;
+  ctx.textAlign='center';
+  ctx.fillText('영구자석',motorX,cy-92*s);
+  ctx.fillText('보이스 코일',coilX,cy+57*s);
+  ctx.fillText('진동판',rimX-78*s,cy-rimRy*.58);
+  ctx.fillText('소리',rimX+128*s,cy-rimRy*.50);
+  ctx.fillStyle='rgba(37,99,235,0.92)';
+  ctx.fillText('자기장 B',motorX+64*s,cy-42*s);
+  ctx.fillText('교류 전류 I',wireStartX+66*s,wireY+28*s);
+  ctx.fillStyle='rgba(146,64,14,0.95)';
+  ctx.fillText('힘 F = BIL',coilX+Math.sign(pulse||1)*44*s,cy-17*s);
+
+  // A small, clean sequence strip for the principle.
+  const stripW=Math.min(st.w-30,compact?430:520);
+  const stripH=48*s;
+  const stripX=st.x+(st.w-stripW)/2;
+  const stripY=H-stripH-18;
+  ctx.fillStyle='rgba(255,255,255,0.78)';
+  ctx.strokeStyle='rgba(37,99,235,0.14)';
+  ctx.lineWidth=1;
+  rrect(stripX,stripY,stripW,stripH,9*s);
+  ctx.fill();
+  ctx.stroke();
+  const steps=['전류 I','자기장 B','코일 힘 F','진동판','소리'];
+  steps.forEach((txt,i)=>{
+    const x=stripX+stripW*(0.10+i*0.20);
+    ctx.fillStyle=i===2?'#d97706':'#334155';
+    ctx.font=`bold ${10*s}px Pretendard,sans-serif`;
+    ctx.fillText(txt,x,stripY+stripH*.58);
+    if(i<steps.length-1) arrowLine(x+32*s,stripY+stripH*.50,x+stripW*.15,stripY+stripH*.50,'rgba(37,99,235,0.38)',1.2*s,4*s);
+  });
+
+  ctx.restore();
+}
+
+function drawSpeakerDriver(cx,cy,r,pulse){
+  ctx.save();
+  ctx.shadowColor='rgba(2,6,23,0.28)';
+  ctx.shadowBlur=18;
+  const outer=ctx.createRadialGradient(cx-r*.22,cy-r*.28,r*.08,cx,cy,r);
+  outer.addColorStop(0,'#f8fafc');
+  outer.addColorStop(0.30,'#64748b');
+  outer.addColorStop(0.72,'#1e293b');
+  outer.addColorStop(1,'#020617');
+  ctx.fillStyle=outer;
+  ctx.beginPath();
+  ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.fill();
+  ctx.shadowBlur=0;
+
+  ctx.strokeStyle='rgba(255,255,255,0.60)';
+  ctx.lineWidth=Math.max(2,r*.025);
+  ctx.beginPath();
+  ctx.arc(cx,cy,r*.90,0,Math.PI*2);
+  ctx.stroke();
+
+  ctx.strokeStyle='rgba(15,23,42,0.92)';
+  ctx.lineWidth=r*.12;
+  ctx.beginPath();
+  ctx.arc(cx,cy,r*.72,0,Math.PI*2);
+  ctx.stroke();
+
+  const coneScale=1+pulse*.018;
+  const cone=ctx.createRadialGradient(cx-r*.18,cy-r*.18,r*.04,cx,cy,r*.60);
+  cone.addColorStop(0,'#e2e8f0');
+  cone.addColorStop(0.30,'#64748b');
+  cone.addColorStop(0.70,'#1e293b');
+  cone.addColorStop(1,'#020617');
+  ctx.fillStyle=cone;
+  ctx.beginPath();
+  ctx.arc(cx,cy,r*.58*coneScale,0,Math.PI*2);
+  ctx.fill();
+
+  for(let i=0;i<10;i++){
+    const a=i*Math.PI*2/10+ph*.05;
+    ctx.strokeStyle='rgba(255,255,255,0.08)';
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(a)*r*.20,cy+Math.sin(a)*r*.20);
+    ctx.lineTo(cx+Math.cos(a)*r*.54,cy+Math.sin(a)*r*.54);
+    ctx.stroke();
+  }
+
+  const cap=ctx.createRadialGradient(cx-r*.07,cy-r*.08,r*.02,cx,cy,r*.23);
+  cap.addColorStop(0,'#f8fafc');
+  cap.addColorStop(0.52,'#64748b');
+  cap.addColorStop(1,'#0f172a');
+  ctx.fillStyle=cap;
+  ctx.beginPath();
+  ctx.arc(cx,cy,r*.23*(1+pulse*.025),0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle='rgba(226,232,240,0.95)';
+  for(let i=0;i<4;i++){
+    const a=Math.PI/4+i*Math.PI/2;
+    const sx=cx+Math.cos(a)*r*.82;
+    const sy=cy+Math.sin(a)*r*.82;
+    ctx.beginPath();
+    ctx.arc(sx,sy,r*.045,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle='rgba(51,65,85,0.8)';
+    ctx.beginPath();
+    ctx.arc(sx,sy,r*.019,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle='rgba(226,232,240,0.95)';
+  }
+  ctx.restore();
+}
+
+function drawSpeakerMechanismPanel(x,y,w,h,pulse){
+  ctx.save();
+  ctx.fillStyle='rgba(255,255,255,0.86)';
+  ctx.strokeStyle='rgba(37,99,235,0.16)';
+  ctx.lineWidth=1;
+  ctx.shadowColor='rgba(30,64,175,0.12)';
+  ctx.shadowBlur=16;
+  rrect(x,y,w,h,12);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.stroke();
+
+  ctx.fillStyle='#172f4a';
+  ctx.font='bold 13px Pretendard,sans-serif';
+  ctx.textAlign='left';
+  ctx.fillText('원리 단면',x+14,y+23);
+
+  const cy=y+h*.52;
+  const magnetX=x+w*.20;
+  const coilX=x+w*.39+pulse*5;
+  const coneX=x+w*.52+pulse*7;
+  const rimX=x+w*.75+pulse*8;
+  const rimRy=Math.min(58,h*.28);
+
+  ctx.fillStyle='#334155';
+  rrect(magnetX-38,cy-56,72,112,8);
+  ctx.fill();
+  ctx.fillStyle='#ef4444';
+  rrect(magnetX-30,cy-44,22,88,5);
+  ctx.fill();
+  ctx.fillStyle='#2563eb';
+  rrect(magnetX+8,cy-44,22,88,5);
+  ctx.fill();
+  ctx.fillStyle='#fff';
+  ctx.font='bold 11px sans-serif';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillText('N',magnetX-19,cy);
+  ctx.fillText('S',magnetX+19,cy);
+  ctx.textBaseline='alphabetic';
+
+  for(let i=-1;i<=1;i++){
+    const yy=cy+i*22;
+    arrowLine(magnetX-5,yy,magnetX+32,yy,'rgba(37,99,235,0.50)',1.4,5);
+  }
+  ctx.fillStyle='#2563eb';
+  ctx.font='10px Pretendard,sans-serif';
+  ctx.fillText('자기장 B',magnetX+14,cy-64);
+
+  drawVoiceCoilDetail(coilX,cy,0.92);
+  ctx.fillStyle='#92400e';
+  ctx.font='10px Pretendard,sans-serif';
+  ctx.fillText('보이스 코일',coilX,cy+56);
+
+  ctx.strokeStyle='rgba(37,99,235,0.85)';
+  ctx.lineWidth=1.7;
+  ctx.beginPath();
+  for(let i=0;i<52;i++){
+    const t=i/51;
+    const px=x+15+t*(coilX-x-28);
+    const py=y+h*.80+Math.sin(t*Math.PI*6+ph*3.2)*8;
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+  ctx.fillStyle='#2563eb';
+  ctx.font='10px Pretendard,sans-serif';
+  ctx.textAlign='left';
+  ctx.fillText('전류 I',x+16,y+h*.88);
+
+  arrowLine(coilX+18,cy,coilX+18+Math.sign(pulse||1)*40,cy,'rgba(245,158,11,0.90)',2.4,7);
+  ctx.fillStyle='#92400e';
+  ctx.font='bold 10px Pretendard,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('힘 F',coilX+Math.sign(pulse||1)*34,cy-12);
+
+  const coneGrad=ctx.createLinearGradient(coneX,cy-rimRy,rimX,cy+rimRy);
+  coneGrad.addColorStop(0,'rgba(71,85,105,0.68)');
+  coneGrad.addColorStop(0.55,'rgba(203,213,225,0.70)');
+  coneGrad.addColorStop(1,'rgba(248,250,252,0.92)');
+  ctx.fillStyle=coneGrad;
+  ctx.strokeStyle='rgba(71,85,105,0.72)';
+  ctx.lineWidth=1.8;
+  ctx.beginPath();
+  ctx.moveTo(coneX,cy-32);
+  ctx.quadraticCurveTo(coneX+(rimX-coneX)*.46,cy-rimRy*.78,rimX,cy-rimRy);
+  ctx.quadraticCurveTo(rimX+13,cy,rimX,cy+rimRy);
+  ctx.quadraticCurveTo(coneX+(rimX-coneX)*.46,cy+rimRy*.78,coneX,cy+32);
+  ctx.quadraticCurveTo(coneX+12,cy,coneX,cy-32);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle='rgba(15,23,42,0.48)';
+  ctx.lineWidth=5;
+  ctx.beginPath();
+  ctx.ellipse(rimX,cy,10,rimRy,0,0,Math.PI*2);
+  ctx.stroke();
+  ctx.fillStyle='rgba(30,41,59,0.74)';
+  ctx.beginPath();
+  ctx.ellipse(coneX+24,cy,16,24,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle='#334155';
+  ctx.font='10px Pretendard,sans-serif';
+  ctx.fillText('진동판',rimX-24,cy+rimRy+18);
+
+  for(let i=0;i<3;i++){
+    ctx.strokeStyle=`rgba(37,99,235,${0.42-i*.08})`;
+    ctx.lineWidth=1.6;
+    ctx.beginPath();
+    ctx.arc(rimX+22+i*17,cy,18+i*9,-Math.PI*.42,Math.PI*.42);
+    ctx.stroke();
+  }
+  ctx.fillStyle='#2563eb';
+  ctx.font='10px Pretendard,sans-serif';
+  ctx.fillText('소리',x+w-26,cy-35);
+  ctx.restore();
+}
+
+function drawVoiceCoilDetail(cx,cy,scale){
+  ctx.save();
+  scale=scale||1;
+  ctx.fillStyle='rgba(226,232,240,0.82)';
+  rrect(cx-44*scale,cy-10*scale,88*scale,20*scale,5*scale);
+  ctx.fill();
+  ctx.strokeStyle='rgba(100,116,139,0.40)';
+  ctx.lineWidth=1*scale;
+  ctx.stroke();
+
+  const grad=ctx.createLinearGradient(0,cy-18*scale,0,cy+18*scale);
+  grad.addColorStop(0,'#b45309');
+  grad.addColorStop(0.28,'#f59e0b');
+  grad.addColorStop(0.50,'#fde68a');
+  grad.addColorStop(0.72,'#f59e0b');
+  grad.addColorStop(1,'#92400e');
+  ctx.strokeStyle=grad;
+  ctx.lineWidth=3.4*scale;
+  ctx.lineCap='round';
+  for(let i=0;i<10;i++){
+    const xx=cx-36*scale+i*8*scale;
+    ctx.beginPath();
+    ctx.ellipse(xx,cy,4.8*scale,18*scale,0,0,Math.PI*2);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle='rgba(120,53,15,0.70)';
+  ctx.lineWidth=1.1*scale;
+  for(let i=0;i<9;i++){
+    const xx=cx-32*scale+i*8*scale;
+    ctx.beginPath();
+    ctx.moveTo(xx,cy-17*scale);
+    ctx.lineTo(xx+6*scale,cy+17*scale);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle='rgba(255,247,237,0.70)';
+  ctx.lineWidth=1.1*scale;
+  ctx.beginPath();
+  ctx.moveTo(cx-39*scale,cy-8*scale);
+  ctx.lineTo(cx-39*scale,cy+8*scale);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx+39*scale,cy-8*scale);
+  ctx.lineTo(cx+39*scale,cy+8*scale);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawSpeakerPolished(W,H){
+  const st=appStage(W,H);
+  drawAppTitle('스피커 구조와 작동 원리','왼쪽은 원리 단면, 오른쪽은 실제 스피커 모습입니다',W);
+  drawAppSurface(st,H);
+
+  const compact=st.w<640;
+  const pulse=Math.sin(ph*3.2);
+  const cabH=Math.min(H*(compact?0.43:0.56),compact?230:330);
+  const cabW=cabH*.62;
+  const cabX=compact?st.cx-cabW/2:st.x+st.w*.75-cabW/2;
+  const cabY=compact?74:H*.54-cabH/2+14;
+  const r=Math.min(cabW*.34,cabH*.23);
+  const wooferX=cabX+cabW/2;
+  const wooferY=cabY+cabH*.64;
+  const tweeterY=cabY+cabH*.26;
+
+  ctx.save();
+  ctx.shadowColor='rgba(15,23,42,0.24)';
+  ctx.shadowBlur=22;
+  const cabGrad=ctx.createLinearGradient(cabX,cabY,cabX,cabY+cabH);
+  cabGrad.addColorStop(0,'#334155');
+  cabGrad.addColorStop(0.46,'#172033');
+  cabGrad.addColorStop(1,'#020617');
+  ctx.fillStyle=cabGrad;
+  rrect(cabX,cabY,cabW,cabH,18);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(255,255,255,0.18)';
+  ctx.lineWidth=2;
+  ctx.stroke();
+
+  ctx.fillStyle='rgba(15,23,42,0.50)';
+  rrect(cabX+cabW*.09,cabY+cabH*.08,cabW*.82,cabH*.84,14);
+  ctx.fill();
+
+  drawSpeakerDriver(wooferX,wooferY,r*1.28,pulse);
+  drawSpeakerDriver(wooferX,tweeterY,r*.55,-pulse*.7);
+
+  ctx.fillStyle='rgba(226,232,240,0.86)';
+  ctx.font='bold 12px Pretendard,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('스피커 유닛',wooferX,cabY+cabH+22);
+
+  const waveX=cabX+cabW+18;
+  for(let i=0;i<4;i++){
+    ctx.strokeStyle=`rgba(37,99,235,${0.38-i*.07})`;
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.arc(waveX+i*20+Math.abs(pulse)*5,wooferY,36+i*16,-Math.PI*.36,Math.PI*.36);
+    ctx.stroke();
+  }
+
+  const panelW=compact?Math.min(st.w-42,430):Math.min(st.w*.46,430);
+  const panelH=compact?Math.min(170,H-cabY-cabH-58):Math.min(246,H*.50);
+  const panelX=compact?st.x+(st.w-panelW)/2:st.x+34;
+  const panelY=compact?Math.max(cabY+cabH+38,H-panelH-18):H*.54-panelH/2+14;
+  drawSpeakerMechanismPanel(panelX,panelY,panelW,Math.max(146,panelH),pulse);
+
+  ctx.restore();
+}
+
+function drawMaglevMoving(W,H){
+  const st=appStage(W,H);
+  drawAppTitle('움직이는 자기부상열차','선로 코일의 자기장이 차체를 띄우고 앞으로 밀어냅니다',W);
+  drawAppSurface(st,H);
+
+  const trainW=Math.min(st.w*.58,460);
+  const trainH=Math.min(H*.15,86);
+  const guideY=H*.72;
+  const lift=18+Math.sin(ph*.9)*2.5;
+  const travel=st.w+trainW*1.35;
+  const trainX=st.x-trainW*.78+((ph*130)%travel);
+  const trainY=guideY-trainH-lift;
+  const nose=trainW*.22;
+  const coilPhase=Math.floor(ph*5);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(st.x+18,64,st.w-36,H-98);
+  ctx.clip();
+
+  // Moving background posts make the train's motion easier to read.
+  const bgOffset=(ph*110)%84;
+  ctx.fillStyle='rgba(148,163,184,0.26)';
+  for(let x=st.x-bgOffset;x<st.x+st.w+90;x+=84){
+    const bh=28+((Math.floor(x/84)%3+3)%3)*18;
+    ctx.fillRect(x,guideY+50-bh,28,bh);
+  }
+
+  ctx.shadowColor='rgba(15,23,42,0.16)';
+  ctx.shadowBlur=14;
+  ctx.fillStyle='rgba(100,116,139,0.70)';
+  rrect(st.x+st.w*.07,guideY,st.w*.86,22,4);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.fillStyle='rgba(226,232,240,0.96)';
+  rrect(st.x+st.w*.09,guideY+22,st.w*.82,34,6);
+  ctx.fill();
+  ctx.strokeStyle='rgba(100,116,139,0.38)';
+  ctx.stroke();
+
+  const coilSpacing=42;
+  const magPitch=trainW/4;      // each of the 4 N-S-N-S magnets
+  for(let cx=st.x+st.w*.10;cx<st.x+st.w*.90;cx+=coilSpacing){
+    const dist=cx-trainX;       // distance from left edge of train
+    let pole,alpha;
+    if(dist>=0 && dist<trainW){
+      // Under the train: coil pole = same as the train magnet directly above
+      // → same-pole repulsion → 부상
+      const mIdx=Math.min(3,Math.floor(dist/magPitch));
+      pole=mIdx%2===0?'N':'S';  // N,S,N,S from left
+      alpha=0.50;
+    } else if(dist>=trainW && dist<trainW+magPitch*2.2){
+      // Just ahead: continue the N-S-N-S pattern
+      // (last magnet idx=3 is S → first ahead coil = N → attracts S → 추진)
+      const aIdx=Math.floor((dist-trainW)/magPitch);
+      pole=aIdx%2===0?'N':'S';
+      alpha=0.40-(dist-trainW)/(magPitch*2.2)*0.16;
+    } else {
+      // Inactive — faint N-S-N-S to hint at traveling wave
+      const iStep=Math.round(dist/coilSpacing);
+      pole=iStep%2===0?'N':'S';
+      alpha=0.16;
+    }
+    ctx.fillStyle=pole==='N'?`rgba(239,68,68,${alpha})`:`rgba(37,99,235,${alpha})`;
+    rrect(cx-12,guideY+5,24,12,3);
+    ctx.fill();
+    ctx.fillStyle=pole==='N'?`rgba(127,29,29,${Math.min(alpha*1.6,0.9)})`:`rgba(30,64,175,${Math.min(alpha*1.6,0.9)})`;
+    ctx.font='bold 8px sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText(pole,cx,guideY+14);
+  }
+
+  // Levitation arrows follow the moving train.
+  for(let i=0;i<6;i++){
+    const x=trainX+trainW*.18+i*(trainW*.56/5);
+    if(x<st.x || x>st.x+st.w) continue;
+    arrowLine(x,guideY-2,x,trainY+trainH+4,'rgba(22,163,74,0.58)',1.9,6);
+  }
+
+  // Motion streaks
+  for(let i=0;i<4;i++){
+    ctx.strokeStyle=`rgba(37,99,235,${0.20-i*.04})`;
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(trainX-24-i*26,trainY+trainH*(.33+i*.09));
+    ctx.lineTo(trainX-78-i*30,trainY+trainH*(.33+i*.09));
+    ctx.stroke();
+  }
+
+  // Train body
+  const grad=ctx.createLinearGradient(0,trainY,0,trainY+trainH);
+  grad.addColorStop(0,'#ffffff');
+  grad.addColorStop(.45,'#dbeafe');
+  grad.addColorStop(1,'#60a5fa');
+  ctx.fillStyle=grad;
+  ctx.shadowColor='rgba(37,99,235,0.24)';
+  ctx.shadowBlur=20;
+  ctx.beginPath();
+  ctx.moveTo(trainX+16,trainY+trainH*.88);
+  ctx.quadraticCurveTo(trainX+trainW*.09,trainY+trainH*.12,trainX+nose,trainY+trainH*.08);
+  ctx.lineTo(trainX+trainW*.84,trainY+trainH*.08);
+  ctx.quadraticCurveTo(trainX+trainW*.98,trainY+trainH*.12,trainX+trainW+18,trainY+trainH*.48);
+  ctx.quadraticCurveTo(trainX+trainW*.93,trainY+trainH*.90,trainX+trainW*.78,trainY+trainH*.94);
+  ctx.lineTo(trainX+34,trainY+trainH*.94);
+  ctx.quadraticCurveTo(trainX+10,trainY+trainH*.94,trainX+16,trainY+trainH*.88);
+  ctx.closePath();
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(37,99,235,0.42)';
+  ctx.lineWidth=1.5;
+  ctx.stroke();
+
+  ctx.strokeStyle='#2563eb';
+  ctx.lineWidth=4;
+  ctx.beginPath();
+  ctx.moveTo(trainX+nose*.55,trainY+trainH*.62);
+  ctx.lineTo(trainX+trainW*.86,trainY+trainH*.62);
+  ctx.stroke();
+  ctx.strokeStyle='#ef4444';
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(trainX+nose*.62,trainY+trainH*.70);
+  ctx.lineTo(trainX+trainW*.82,trainY+trainH*.70);
+  ctx.stroke();
+
+  ctx.fillStyle='rgba(15,23,42,0.74)';
+  for(let i=0;i<7;i++){
+    const wx=trainX+nose+i*(trainW*.50/6);
+    rrect(wx,trainY+trainH*.22,trainW*.055,trainH*.22,6);
+    ctx.fill();
+  }
+  ctx.fillStyle='rgba(15,23,42,0.64)';
+  rrect(trainX+trainW*.82,trainY+trainH*.24,trainW*.06,trainH*.20,6);
+  ctx.fill();
+
+  ctx.strokeStyle='rgba(14,165,233,0.78)';
+  ctx.lineWidth=3;
+  for(let i=0;i<4;i++){
+    const mx=trainX+trainW*.22+i*(trainW*.14);
+    ctx.beginPath();
+    ctx.rect(mx,trainY+trainH*.84,trainW*.085,8);
+    ctx.stroke();
+  }
+
+  arrowLine(trainX+trainW*.10,trainY+trainH*.36,trainX+trainW*.26,trainY+trainH*.36,'rgba(245,158,11,0.82)',2.4,8);
+  ctx.fillStyle='rgba(146,64,14,0.92)';
+  ctx.font='bold 11px Pretendard,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('진행 방향',trainX+trainW*.18,trainY+trainH*.22);
+
+  ctx.restore();
+
+  ctx.save();
+  ctx.fillStyle='rgba(51,65,85,0.92)';
+  ctx.font='bold 12px Pretendard,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('가이드웨이 코일',st.cx,guideY+76);
+
+  const panelW=st.w<560?st.w-42:Math.min(st.w*.48,390);
+  const panelH=st.w<560?128:142;
+  const panelX=st.w<560?st.x+21:st.x+34;
+  const panelY=76;
+  drawMaglevPrinciplePanel(panelX,panelY,panelW,panelH);
+  ctx.restore();
+}
+
+function drawTab1(){
+  const W=sim.width, H=sim.height;
+  ctx.clearRect(0,0,W,H);
+  const g=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.7);
+  g.addColorStop(0,'#f8fbff'); g.addColorStop(0.62,'#edf7ff'); g.addColorStop(1,'#e9fbf7');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+  if(emApp!=='speaker' && emApp!=='maglev') emApp='speaker';
+  if(emApp==='speaker') drawSpeakerPolished(W,H);
+  else                  drawMaglevMoving(W,H);
+}
+
+// ─────────────────────────────────────────────
+// MAIN LOOP
+// ─────────────────────────────────────────────
+function loop(){
+  ph+=0.018;
+  if(tab===0) drawTab0();
+  else        drawTab1();
+  requestAnimationFrame(loop);
+}
+
+function init(){
+  resize();
+  initTab0();
+  selApp('speaker');
+  loop();
+}
+window.addEventListener('load',init);
+</script>
+</body>
+</html>
