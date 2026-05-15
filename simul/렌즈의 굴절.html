@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <title>렌즈의 굴절</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <script src="./libs/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
   <style>
     :root {
       --bg1: #f7fbff;
@@ -301,6 +301,22 @@
       margin-top: 4px;
     }
 
+    .cb-property-section {
+      margin-top: 6px;
+    }
+
+    .cb-property-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .cb-opt-property {
+      border-radius: 10px;
+      padding: 6px 8px;
+      text-align: left;
+      white-space: normal;
+      line-height: 1.35;
+    }
+
     /* 최고점수 팝 애니메이션 */
     @keyframes bestPop {
       0% {
@@ -327,6 +343,36 @@
     #lens-challenge .best-badge.best-bump {
       animation: bestPop .6s ease-out;
     }
+
+    /* === 스크린 패널 (우측 하단) === */
+    .screen-panel {
+      position: fixed;
+      bottom: 14px;
+      right: 14px;
+      z-index: 10;
+      background: #111827;
+      border: 1px solid #374151;
+      border-radius: 12px;
+      padding: 8px 10px;
+      text-align: center;
+      pointer-events: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    .screen-panel-title {
+      color: #9ca3af;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      letter-spacing: .05em;
+    }
+    .screen-status {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+    .screen-status.good { color: #34d399; font-weight: 700; }
+    .screen-status.warn { color: #fbbf24; }
+    .screen-status.bad  { color: #f87171; }
   </style>
 </head>
 
@@ -367,10 +413,50 @@
       <p class="note">공식: <em>1/f = 1/a + 1/b, &nbsp; m = -b/a</em> (표준부호: a&gt;0, b&gt;0(실상)/b&lt;0(허상))</p>
     </div>
     <!-- ▲ 값 섹션 -->
+
+    <!-- 심화탐구 섹션 -->
+    <div style="margin-top:10px;border-top:1px solid #e6eef9;padding-top:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:14.5px;font-weight:700;color:#1e40af;">심화탐구</span>
+        <button id="toggleAdv" style="font-size:12px;padding:2px 10px;border:1px solid #bfdbfe;border-radius:999px;background:#eff6ff;color:#1d4ed8;cursor:pointer;">펼치기</button>
+      </div>
+      <div id="advSection" style="display:none;">
+        <div class="row">
+          <label style="min-width:90px">렌즈 직경</label>
+          <input id="lensDiam" type="range" min="50" max="600" value="480" />
+        </div>
+        <div class="row">
+          <label style="min-width:90px">추가 광선</label>
+          <input id="extraRaysSlider" type="range" min="0" max="20" value="0" />
+        </div>
+        <div style="margin:6px 0 4px;">
+          <label style="font-size:14.5px;color:#546076;font-weight:600;">가림막 (%)</label>
+          <div style="display:flex;gap:10px;margin-top:4px;">
+            <div style="flex:1;">
+              <label style="font-size:13px;color:#6b7280;">위쪽</label>
+              <input id="blockTop" type="range" min="0" max="100" value="0" style="width:100%;display:block;"/>
+            </div>
+            <div style="flex:1;">
+              <label style="font-size:13px;color:#6b7280;">아래쪽</label>
+              <input id="blockBottom" type="range" min="0" max="100" value="0" style="width:100%;display:block;"/>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <label style="min-width:90px">매질</label>
+          <select id="medium">
+            <option value="air">공기 (n=1.0)</option>
+            <option value="hotAir">가열된 공기 (n≈1.1)</option>
+            <option value="water">물 (n=1.33)</option>
+            <option value="glass">동일 유리 (n=1.5)</option>
+          </select>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 왼쪽 아래 힌트 (기존 그대로) -->
-  <div class="hint">드래그: 렌즈 세로선, 물체 밑점 ●, 화살촉 ●</div>
+  <div class="hint">드래그: 렌즈 세로선, 스크린 세로선, 물체 밑점 ●, 화살촉 ●</div>
 
   <!-- 왼쪽 위 렌즈 도전 박스 -->
   <div class="challenge-box" id="lens-challenge">
@@ -394,7 +480,7 @@
     <!-- 정답제출 버튼은 더 이상 쓰지 않으므로 숨김 -->
     <button id="lens-submit" class="cb-btn cb-btn-secondary" style="display:none;">정답 제출</button>
 
-    <div class="cb-section">
+    <div class="cb-section cb-kind-section">
       <div class="cb-subtitle">상의 종류</div>
       <div class="cb-choice-grid">
         <button class="cb-opt cb-opt-kind" data-kind="도립실상">도립 실상</button>
@@ -405,7 +491,7 @@
     </div>
 
     <div class="cb-section cb-size-section">
-      <div class="cb-subtitle">크기 (9~10라운드에서 사용)</div>
+      <div class="cb-subtitle">크기 (4~10라운드에서 사용)</div>
       <div class="cb-choice-grid cb-size-grid">
         <button class="cb-opt cb-opt-size" data-size="확대">확대</button>
         <button class="cb-opt cb-opt-size" data-size="동일">동일</button>
@@ -413,9 +499,18 @@
       </div>
     </div>
 
+    <div class="cb-section cb-property-section" style="display:none;">
+      <div class="cb-subtitle">물리적 성질</div>
+      <div class="cb-choice-grid cb-property-grid">
+        <button class="cb-opt cb-opt-property"></button>
+        <button class="cb-opt cb-opt-property"></button>
+        <button class="cb-opt cb-opt-property"></button>
+      </div>
+    </div>
+
     <div class="cb-msg" id="lens-msg">
       도전 버튼을 눌러<br>렌즈 도전 게임을 시작하세요.
-      <small>총 10라운드, 정답마다 +50점 · 오답은 0점</small>
+      <small>1~5단계 기본 압축 · 6~10단계 심화탐구</small>
     </div>
   </div>
 
@@ -426,6 +521,7 @@
     let objectX, objectH;
     let dragging = null;
     let dragOffsetX = 0, dragOffsetY = 0;
+    let screenX;
 
     let ui = {};
     const EPS = 1e-4;
@@ -449,6 +545,29 @@
       ui.showInfo = document.getElementById('showInfo');
       ui.showGuide = document.getElementById('showGuide');
       ui.kvSection = document.getElementById('kvSection');
+      ui.lensDiam = document.getElementById('lensDiam');
+      ui.extraRaysSlider = document.getElementById('extraRaysSlider');
+      ui.blockTop = document.getElementById('blockTop');
+      ui.blockBottom = document.getElementById('blockBottom');
+      ui.medium = document.getElementById('medium');
+
+      const toggleAdv = document.getElementById('toggleAdv');
+      const advSection = document.getElementById('advSection');
+      if (toggleAdv && advSection) {
+        toggleAdv.addEventListener('click', () => {
+          const open = advSection.style.display !== 'none';
+          advSection.style.display = open ? 'none' : 'block';
+          toggleAdv.textContent = open ? '펼치기' : '접기';
+          if (open) {
+            // 접을 때 심화 설정 초기화
+            if (ui.lensDiam)         ui.lensDiam.value = 480;
+            if (ui.extraRaysSlider)  ui.extraRaysSlider.value = 0;
+            if (ui.blockTop)         ui.blockTop.value = 0;
+            if (ui.blockBottom)      ui.blockBottom.value = 0;
+            if (ui.medium)           ui.medium.value = 'air';
+          }
+        });
+      }
       ui.kv = {
         f: document.getElementById('kv_f'),
         do: document.getElementById('kv_do'),
@@ -472,6 +591,7 @@
       lensX = W * 0.5;
       objectX = W * 0.25;
       objectH = 120;
+      screenX = W * 0.5 + 200;
     }
 
     function windowResized() {
@@ -481,22 +601,47 @@
       axisY = Math.round(rawAxis / GRID) * GRID;
       lensX = constrain(lensX, 40, W - 40);
       objectX = constrain(objectX, 20, W - 20);
+      screenX = constrain(screenX, 40, W - 20);
     }
 
     function draw() {
-      clear();
-      noStroke(); fill(255, 255, 255, 230); rect(0, 0, width, height);
-
       const type = ui.lensType.value;
       const fmag = parseFloat(ui.focal.value);
-      const f = (type === 'convex') ? +fmag : -fmag;
+
+      // 매질에 따른 유효 초점거리
+      const medium = ui.medium ? ui.medium.value : 'air';
+      const n_m = { water: 1.33, hotAir: 1.1, glass: 1.5, air: 1.0 }[medium] || 1.0;
+      let fmag_eff = fmag;
+      if (n_m > 1.0 && n_m < 1.5) fmag_eff = fmag * (0.5 / (1.5 / n_m - 1));
+      const f = (type === 'convex') ? +fmag_eff : -fmag_eff;
+
+      // 렌즈 직경 & 가림막 계산
+      const lensDiam = ui.lensDiam ? parseFloat(ui.lensDiam.value) : 480;
+      const blockTopPct = ui.blockTop ? parseFloat(ui.blockTop.value) : 0;
+      const blockBotPct = ui.blockBottom ? parseFloat(ui.blockBottom.value) : 0;
+      const lensR = lensDiam / 2;
+      const btAmt = lensDiam * blockTopPct / 100;
+      const bbAmt = lensDiam * blockBotPct / 100;
+      const lensTopY = axisY - lensR;
+      const lensBotY = axisY + lensR;
+      const openTopY = lensTopY + btAmt;
+      const openBotY = lensBotY - bbAmt;
+      const effectiveR = Math.max(0, openBotY - openTopY) / 2;
+
+      // 배경색 (매질별)
+      const bgFill = medium === 'water'  ? [240, 249, 255, 230] :
+                     medium === 'hotAir' ? [255, 241, 242, 230] :
+                     medium === 'glass'  ? [243, 244, 246, 230] : [255, 255, 255, 230];
+
+      clear();
+      noStroke(); fill(...bgFill); rect(0, 0, width, height);
 
       if (ui.showGrid.checked) drawGrid();
 
       stroke('#2563eb'); strokeWeight(2.2);
       line(0, axisY, width, axisY);
 
-      drawLensSilhouette(lensX, f, type);
+      drawLensSilhouette(lensX, fmag, type, lensR);
 
       const objTip = { x: objectX, y: axisY - objectH };
       drawArrow(objectX, axisY, objTip.x, objTip.y, color(37, 99, 235), true);
@@ -508,6 +653,7 @@
 
       if (Math.abs(denom) < EPS) { atInfinity = true; b = Infinity; m = NaN; }
       else { b = 1 / denom; m = -b / a; }
+      if (medium === 'glass') { atInfinity = true; b = Infinity; m = NaN; }
 
       const imgX = atInfinity ? (incomingLeft ? width - 10 : 10)
         : (incomingLeft ? lensX + b : lensX - b);
@@ -515,8 +661,55 @@
       const imgTip = { x: imgX, y: axisY - imgH };
       const isReal = !atInfinity && (b > 0);
 
+      // 가림막 그리기
+      push(); fill('#1f2937'); noStroke();
+      if (blockTopPct > 0) rect(lensX - 18, lensTopY, 36, btAmt);
+      if (blockBotPct > 0) rect(lensX - 18, lensBotY - bbAmt, 36, bbAmt);
+      pop();
+
       if (ui.showRays.checked) {
-        drawPrincipalRays({ objTip, lensX, axisY, f, type, incomingLeft });
+        if (medium === 'glass') {
+          drawGlassRays({ objTip, lensX, axisY, f, type, incomingLeft });
+        } else {
+          drawPrincipalRays({ objTip, lensX, axisY, f, type, incomingLeft });
+        }
+      }
+
+      // 추가 광선 (심화)
+      const numExtra = ui.extraRaysSlider ? parseInt(ui.extraRaysSlider.value) : 0;
+      if (numExtra > 0 && openBotY > openTopY) {
+        const step = (openBotY - openTopY) / (numExtra + 1);
+        push(); strokeWeight(1.2);
+        for (let ri = 1; ri <= numExtra; ri++) {
+          const ry = openTopY + ri * step;
+          stroke(253, 224, 71, 150);
+          line(objTip.x, objTip.y, lensX, ry);
+          if (atInfinity) {
+            if (medium === 'glass') {
+              // 굴절 없음: 입사 방향 그대로 직진
+              const dx = lensX - objTip.x, dy = ry - objTip.y;
+              const scale = Math.abs(dx) < 0.01 ? 1000
+                : (incomingLeft ? width - lensX : lensX) / Math.abs(dx);
+              line(lensX, ry, lensX + dx * scale, ry + dy * scale);
+            } else {
+              line(lensX, ry, incomingLeft ? width : 0, ry);
+            }
+          } else if (isReal) {
+            const sl = (imgTip.y - ry) / (imgTip.x - lensX);
+            const dx = incomingLeft ? width - lensX : -lensX;
+            line(lensX, ry, lensX + dx, ry + sl * dx);
+          } else {
+            const dirX = lensX - imgTip.x, dirY = ry - imgTip.y;
+            const t = Math.abs(dirX) > 0.01 ? (incomingLeft ? width - lensX : lensX) / Math.abs(dirX) : 0;
+            const signX = incomingLeft ? 1 : -1;
+            line(lensX, ry, lensX + dirX * t * signX, ry + dirY * t * signX);
+            drawingContext.setLineDash([4, 5]);
+            stroke(253, 224, 71, 70);
+            line(lensX, ry, imgTip.x, imgTip.y);
+            drawingContext.setLineDash([]);
+          }
+        }
+        pop();
       }
 
       if (!atInfinity) {
@@ -524,20 +717,39 @@
         drawArrow(imgX, axisY, imgTip.x, imgTip.y, clr, isReal, !isReal);
       } else {
         push(); noStroke(); fill('#f59e0b'); textAlign(CENTER, BOTTOM); textSize(16);
-        text('a ≈ f  →  상이 무한 원거리(평행광)', width * 0.5, 26); pop();
+        const infMsg = (medium === 'glass')
+          ? '동일 매질: 굴절 없음  (빛이 직진)'
+          : 'a ≈ f  →  상이 무한 원거리(평행광)';
+        text(infMsg, width * 0.5, 26); pop();
       }
 
       // 허상 보조선: 9~10라운드에는 난이도 상승을 위해 숨김
       if (ui.showGuide.checked && !atInfinity && !isReal && !(lensGameOn && lensGameRound >= 9)) {
-        const passPt = { x: lensX, y: objTip.y };
+        const F_in_ref = incomingLeft
+          ? { x: lensX - Math.abs(f), y: axisY }
+          : { x: lensX + Math.abs(f), y: axisY };
+        const hit2 = lineIntersectionWithX(objTip, F_in_ref, lensX);
+
         push();
-        stroke(100, 116, 139); strokeWeight(2);
         drawingContext.setLineDash([7, 7]);
-        line(passPt.x, passPt.y, imgTip.x, imgTip.y);
+
+        // 노란 광선 보조선: 렌즈(objTip.y 높이) → 허상
+        stroke(255, 193, 7, 200); strokeWeight(2);
+        line(lensX, objTip.y, imgTip.x, imgTip.y);
+
+        // 청색 광선 보조선: 렌즈 중심 → 허상
+        stroke(56, 189, 248, 200); strokeWeight(2);
+        line(lensX, axisY, imgTip.x, imgTip.y);
+
+        // 보라색 광선 보조선: hit2 → 허상
+        if (hit2) {
+          stroke(168, 85, 247, 200); strokeWeight(2);
+          line(hit2.x, hit2.y, imgTip.x, imgTip.y);
+        }
+
         drawingContext.setLineDash([]);
         noStroke(); fill(100, 116, 139);
-        circle(passPt.x, passPt.y, 6);
-        circle(imgTip.x, imgTip.y, 6);
+        circle(imgTip.x, imgTip.y, 8);
         pop();
       }
 
@@ -551,11 +763,29 @@
       drawHandles();
 
       if (ui.showInfo.checked) {
-        updateKV(f, a, b, m, atInfinity, incomingLeft);
+        updateKV(f, a, b, m, atInfinity, incomingLeft, medium);
       }
 
-      // === 6~10라운드: 렌즈 중심부터 오른쪽 모두 완전히 가리기 (불투명) ===
-      if (lensGameOn && lensGameRound >= 6 && lensGameRound <= 10) {
+      // === 스크린 그리기 & 미니 캔버스 업데이트 ===
+      {
+        const screenPx = Math.max(1, screenX - lensX);
+        push();
+        stroke(156, 163, 175); strokeWeight(5);
+        line(screenX, 0, screenX, height);
+        noStroke(); fill(75, 85, 99); textAlign(LEFT, TOP); textSize(13);
+        textStyle(BOLD);
+        text('스크린', screenX + 7, 22);
+        textStyle(NORMAL);
+        pop();
+        updateScreenCanvas(a, b, atInfinity, isReal, screenPx, objectH, effectiveR);
+      }
+
+      // 도전 라운드 중 추론형 문제에서는 렌즈 오른쪽을 가림
+      if (
+        lensGameOn &&
+        typeof window.shouldHideLensChallengeRightSide === 'function' &&
+        window.shouldHideLensChallengeRightSide()
+      ) {
         push();
         noStroke();
         fill(255);               // 완전 불투명
@@ -574,16 +804,30 @@
     }
 
     /* ===== 렌즈 실루엣 ===== */
-    function drawLensSilhouette(x, f, type) {
-      const top = 24, bot = height - 24;
+    function drawLensSilhouette(x, f, type, limitR) {
+      const top = (limitR != null) ? Math.max(24, axisY - limitR) : 24;
+      const bot = (limitR != null) ? Math.min(height - 24, axisY + limitR) : height - 24;
       const h = bot - top;
+      const semiAp = h / 2;
       const leftPts = [], rightPts = [];
       const steps = 64;
 
+      // 사기타 공식으로 초점거리에 따른 렌즈 두께 계산
+      // sagitta ≈ semiAp² / (2R), 볼록렌즈 R ≈ f (n=1.5 가정)
+      const fAbs = Math.max(10, Math.abs(f));
+      const sagitta = Math.min(38, semiAp * semiAp / fAbs * 0.04);
+      let centerHalf, edgeHalf;
+      if (type === 'convex') {
+        centerHalf = Math.max(4, sagitta);  // 중앙이 두꺼움
+        edgeHalf = 2;
+      } else {
+        edgeHalf = Math.max(7, sagitta + 4);  // 가장자리가 두꺼움
+        centerHalf = 2;
+      }
+
       for (let i = 0; i <= steps; i++) {
         const t = i / steps, y = top + t * h, s = Math.sin(t * Math.PI);
-        let half;
-        if (type === 'convex') { half = 6 + 18 * s; } else { half = 18 - 12 * s; }
+        const half = edgeHalf + (centerHalf - edgeHalf) * s;
         leftPts.push({ x: x - half, y }); rightPts.push({ x: x + half, y });
       }
 
@@ -601,8 +845,9 @@
       stroke('#60a5fa'); strokeWeight(1.6);
       line(x, top, x, bot);
 
-      noStroke(); fill('#475569'); textAlign(CENTER, TOP); textSize(16);
-      text((type === 'convex') ? '볼록렌즈' : '오목렌즈', x, 2);
+      // 라벨: 렌즈 아래
+      noStroke(); fill('#475569'); textAlign(CENTER, TOP); textSize(15);
+      text((type === 'convex') ? '볼록렌즈' : '오목렌즈', x, bot + 5);
       pop();
     }
 
@@ -643,9 +888,6 @@
       } else {
         const dir = { x: lensX - F_in.x, y: objTip.y - F_in.y };
         extendFromDir({ x: lensX, y: objTip.y }, dir, incomingLeft ? +1 : -1);
-        drawingContext.setLineDash([6, 6]); stroke(255, 193, 7, 140);
-        extendFromDir({ x: lensX, y: objTip.y }, { x: -dir.x, y: -dir.y }, incomingLeft ? -1 : +1);
-        drawingContext.setLineDash([]);
       }
       pop();
 
@@ -661,6 +903,34 @@
       const hit2 = lineIntersectionWithX(objTip, F_in, lensX);
       if (hit2) { line(objTip.x, objTip.y, hit2.x, hit2.y); extendHorizontal(hit2, incomingLeft ? +1 : -1); }
       pop();
+    }
+
+    function drawGlassRays({ objTip, lensX, axisY, f, type, incomingLeft }) {
+      const sideSign = incomingLeft ? +1 : -1;
+      const F_in = incomingLeft
+        ? { x: lensX - Math.abs(f), y: axisY }
+        : { x: lensX + Math.abs(f), y: axisY };
+
+      // 황색: 수평 입사 → 그대로 직진
+      push(); stroke(255, 193, 7, 230); strokeWeight(2.4);
+      line(objTip.x, objTip.y, lensX, objTip.y);
+      extendFromDir({ x: lensX, y: objTip.y }, { x: sideSign, y: 0 }, sideSign);
+      pop();
+
+      // 청색: 중심 통과 → 그대로 직진
+      push(); stroke(56, 189, 248, 230); strokeWeight(2.4);
+      line(objTip.x, objTip.y, lensX, axisY);
+      extendFromDir({ x: lensX, y: axisY }, { x: lensX - objTip.x, y: axisY - objTip.y }, sideSign);
+      pop();
+
+      // 보라: F_in 향하던 선 → 그대로 직진
+      const hit2 = lineIntersectionWithX(objTip, F_in, lensX);
+      if (hit2) {
+        push(); stroke(168, 85, 247, 230); strokeWeight(2.4);
+        line(objTip.x, objTip.y, hit2.x, hit2.y);
+        extendFromDir(hit2, { x: hit2.x - objTip.x, y: hit2.y - objTip.y }, sideSign);
+        pop();
+      }
     }
 
     function extendFromThrough(P, Q, sideSign) { const dir = { x: Q.x - P.x, y: Q.y - P.y }; extendFromDir(P, dir, sideSign); }
@@ -701,14 +971,18 @@
       line(x, y, x + dir * ah, y + ah * 0.6); pop();
     }
 
-    function updateKV(f, a, b, m, atInf, incomingLeft) {
+    function updateKV(f, a, b, m, atInf, incomingLeft, medium) {
       const fmt = (v) => (Number.isFinite(v) ? (Math.abs(v) > 9999 ? v.toExponential(2) : v.toFixed(2)) : '—');
       const sideIn = incomingLeft ? '입사측(좌)' : '입사측(우)';
       const sideOut = incomingLeft ? '출사측(우)' : '출사측(좌)';
 
       ui.kv.f.textContent = `${fmt(f)} px  ${f > 0 ? '(볼록)' : '(오목)'}`;
       ui.kv.do.textContent = `${fmt(a)} px ${sideIn}  ≡  a`;
-      if (atInf) {
+      if (medium === 'glass') {
+        ui.kv.di.textContent = '— (굴절 없음)';
+        ui.kv.m.textContent = '—';
+        ui.kv.kind.innerHTML = `<span class="badge" style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e">동일 매질 — 직진</span>`;
+      } else if (atInf) {
         ui.kv.di.textContent = '∞ (평행)  ≡  b';
         ui.kv.m.textContent = '—';
         ui.kv.kind.innerHTML = `a ≈ f  →  <span class="badge real">상이 무한 원거리</span>`;
@@ -730,8 +1004,8 @@
       fill('#2563eb');
       circle(objectX, axisY, 11);
       circle(objectX, axisY - objectH, 11);
-      fill('#60a5fa');
-      rect(lensX - 4, 18, 8, 22, 3);
+      fill('#4ade80');
+      rect(screenX - 4, 18, 8, 22, 3);
       pop();
     }
 
@@ -742,6 +1016,9 @@
 
       if (px < 0 || px > width || py < 0 || py > height) return;
 
+      if (Math.abs(px - screenX) < 10) {
+        dragging = 'screen'; return;
+      }
       if (Math.abs(px - lensX) < 10) {
         dragging = 'lens'; dragOffsetX = px - lensX; return;
       }
@@ -756,9 +1033,12 @@
     function pointerDragged(px, py) {
       if (!dragging) return;
 
-      if (dragging === 'lens') {
+      if (dragging === 'screen') {
+        screenX = constrain(px, lensX + 5, width - 20);
+      } else if (dragging === 'lens') {
         lensX = constrain(px - dragOffsetX, 40, width - 40);
         if (Math.abs(lensX - objectX) < 10) lensX = (lensX > objectX) ? objectX + 10 : objectX - 10;
+        screenX = Math.max(screenX, lensX + 5);
       } else if (dragging === 'obj-base') {
         objectX = constrain(px - dragOffsetX, 20, width - 20);
         if (Math.abs(lensX - objectX) < 10) objectX = (objectX < lensX) ? lensX - 10 : lensX + 10;
@@ -818,7 +1098,72 @@
 
       pointerReleased();
       return false;
-    }</script>
+    }
+
+    function updateScreenCanvas(a, b, atInfinity, isReal, screenPx, objectH, effectiveR = 100) {
+      const canvas = document.getElementById('screen-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const sw = canvas.width, sh = canvas.height;
+      const scx = sw / 2, scy = sh / 2;
+
+      ctx.clearRect(0, 0, sw, sh);
+      ctx.fillStyle = '#111827';
+      ctx.fillRect(0, 0, sw, sh);
+
+      let blurRadius = 0, labelText = '—', labelClass = '';
+
+      if (atInfinity) {
+        blurRadius = 30;
+        labelText = '상 없음 (직진)';
+      } else if (isReal) {
+        blurRadius = effectiveR * Math.abs(screenPx - b) / Math.max(1, b);
+        if (blurRadius < 5) { labelText = '선명한 실상 맺힘!'; labelClass = 'good'; }
+        else { labelText = '흐릿한 실상'; labelClass = 'warn'; }
+      } else {
+        blurRadius = effectiveR * (screenPx + Math.abs(b)) / Math.max(1, Math.abs(b));
+        labelText = '빛이 퍼짐 (허상)'; labelClass = 'bad';
+      }
+      blurRadius = Math.min(blurRadius, 40);
+
+      const scale = (sh * 0.38) / 200;
+      const projectedH = -(screenPx / Math.max(1, a)) * objectH;
+      const drawH = Math.max(-sh * 0.42, Math.min(sh * 0.42, projectedH * scale));
+
+      ctx.save();
+      ctx.filter = `blur(${blurRadius}px)`;
+      ctx.globalAlpha = 0.9;
+      ctx.strokeStyle = '#34d399';
+      ctx.fillStyle = '#34d399';
+      ctx.lineWidth = 4;
+
+      const arrowSize = 13;
+      const tipY = scy - drawH;
+      const dir = drawH > 0 ? 1 : -1;
+
+      // 직선은 삼각형 밑변에서 멈춤
+      ctx.beginPath();
+      ctx.moveTo(scx, scy);
+      ctx.lineTo(scx, tipY + dir * arrowSize);
+      ctx.stroke();
+
+      // 삼각형: 꼭짓점=tipY, 밑변=tipY + dir*arrowSize
+      ctx.beginPath();
+      ctx.moveTo(scx, tipY);
+      ctx.lineTo(scx - 7, tipY + dir * arrowSize);
+      ctx.lineTo(scx + 7, tipY + dir * arrowSize);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+
+      const labelEl = document.getElementById('screen-label');
+      if (labelEl) {
+        labelEl.textContent = labelText;
+        labelEl.className = 'screen-status' + (labelClass ? ' ' + labelClass : '');
+      }
+    }
+  </script>
 
   <!-- ===== 렌즈 도전 게임 로직 (점수/판정) ===== -->
   <script>
@@ -828,16 +1173,22 @@
       const elBest = document.getElementById('lens-best');
       const elMsg = document.getElementById('lens-msg');
       const btnStart = document.getElementById('lens-start');
+      const kindSection = document.querySelector('.cb-kind-section');
       const kindButtons = document.querySelectorAll('.cb-opt-kind');
       const sizeSection = document.querySelector('.cb-size-section');
       const sizeButtons = document.querySelectorAll('.cb-opt-size');
+      const propertySection = document.querySelector('.cb-property-section');
+      const propertyButtons = document.querySelectorAll('.cb-opt-property');
 
       let score = 0;
       let bestScore = 0;
       let answerKind = null;   // '도립실상' 등
-      let answerSize = null;   // '확대','동일','축소' (9~10라운드에서 사용)
+      let answerSize = null;   // '확대','동일','축소' (4~10라운드에서 사용)
+      let answerProperty = null;
       let selectedKind = null;
       let selectedSize = null;
+      let selectedProperty = null;
+      const TOTAL_ROUNDS = 10;
 
       function updateBestScoreUI(animate) {
         if (!elBest) return;
@@ -870,6 +1221,29 @@
         });
       }
 
+      function selectProperty(property) {
+        selectedProperty = property;
+        propertyButtons.forEach(btn => {
+          btn.classList.toggle('selected', btn.dataset.property === property);
+        });
+      }
+
+      function setPropertyChoices(choices) {
+        propertyButtons.forEach((btn, idx) => {
+          const choice = choices[idx];
+          if (!choice) {
+            btn.style.display = 'none';
+            btn.textContent = '';
+            btn.dataset.property = '';
+            return;
+          }
+          btn.style.display = 'block';
+          btn.textContent = choice.label;
+          btn.dataset.property = choice.value;
+          btn.classList.remove('selected');
+        });
+      }
+
       function resetGame() {
         score = 0;
         lensGameOn = false;
@@ -879,17 +1253,128 @@
         elScore.textContent = '0';
         selectedKind = null;
         selectedSize = null;
+        selectedProperty = null;
+        answerProperty = null;
         kindButtons.forEach(btn => btn.classList.remove('selected'));
         sizeButtons.forEach(btn => btn.classList.remove('selected'));
+        propertyButtons.forEach(btn => btn.classList.remove('selected'));
+        if (kindSection) kindSection.style.display = 'block';
         sizeSection.style.display = 'none';
+        propertySection.style.display = 'none';
         elMsg.innerHTML =
           '도전 버튼을 눌러<br>렌즈 도전 게임을 시작하세요.' +
-          '<small>총 10라운드, 정답마다 +50점 · 오답은 0점</small>';
+          '<small>1~5단계 기본 압축 · 6~10단계 심화탐구</small>';
       }
       resetGame();
 
       function randomBetween(min, max) {
         return min + Math.random() * (max - min);
+      }
+
+      function getRoundMode(round) {
+        return {
+          advanced: round >= 6,
+          requiresSize: round >= 4,
+          hideRight: round === 3 || round === 5
+        };
+      }
+
+      window.shouldHideLensChallengeRightSide = function () {
+        return lensGameOn && getRoundMode(lensGameRound).hideRight;
+      };
+
+      function setAdvancedPanel(open) {
+        const section = document.getElementById('advSection');
+        const toggle = document.getElementById('toggleAdv');
+        if (!section || !toggle) return;
+        section.style.display = open ? 'block' : 'none';
+        toggle.textContent = open ? '접기' : '펼치기';
+      }
+
+      function resetAdvancedControls() {
+        if (ui.lensDiam) ui.lensDiam.value = 480;
+        if (ui.extraRaysSlider) ui.extraRaysSlider.value = 0;
+        if (ui.blockTop) ui.blockTop.value = 0;
+        if (ui.blockBottom) ui.blockBottom.value = 0;
+        if (ui.medium) ui.medium.value = 'air';
+      }
+
+      function effectiveFocalMagnitude(fmag, medium) {
+        const n_m = { water: 1.33, hotAir: 1.1, glass: 1.5, air: 1.0 }[medium] || 1.0;
+        if (n_m > 1.0 && n_m < 1.5) return fmag * (0.5 / (1.5 / n_m - 1));
+        return fmag;
+      }
+
+      function applyAdvancedRoundSettings(round) {
+        resetAdvancedControls();
+        if (round < 6) {
+          setAdvancedPanel(false);
+          answerProperty = null;
+          return '기본 설정으로 상의 종류를 판단합니다.';
+        }
+
+        setAdvancedPanel(true);
+        if (round === 6) {
+          if (ui.lensDiam) ui.lensDiam.value = 180;
+          if (ui.extraRaysSlider) ui.extraRaysSlider.value = 10;
+          answerProperty = 'small-aperture';
+          setPropertyChoices([
+            { value: 'small-aperture', label: '통과하는 빛의 양이 줄고, 스크린의 흐림 폭도 작아진다.' },
+            { value: 'partial-image', label: '렌즈가 작아진 만큼 상의 일부가 잘려서 사라진다.' },
+            { value: 'focal-shorter', label: '렌즈 직경이 작아져 초점거리가 짧아진다.' }
+          ]);
+          return '심화탐구 1: 렌즈 직경을 줄이면 어떤 물리적 성질이 달라질까요?';
+        }
+        if (round === 7) {
+          if (ui.extraRaysSlider) ui.extraRaysSlider.value = 12;
+          if (ui.blockTop) ui.blockTop.value = 55;
+          answerProperty = 'blocked-rays';
+          setPropertyChoices([
+            { value: 'half-image', label: '위쪽을 가렸으므로 상의 위쪽 절반만 사라진다.' },
+            { value: 'blocked-rays', label: '일부 광선만 줄어들어 상 전체는 남지만 밝기가 약해진다.' },
+            { value: 'no-refraction', label: '가림막 때문에 렌즈의 굴절 작용 자체가 사라진다.' }
+          ]);
+          return '심화탐구 2: 위쪽 가림막은 상의 어느 성질에 가장 직접적으로 영향을 줄까요?';
+        }
+        if (round === 8) {
+          if (ui.lensDiam) ui.lensDiam.value = 260;
+          if (ui.extraRaysSlider) ui.extraRaysSlider.value = 14;
+          if (ui.blockTop) ui.blockTop.value = 35;
+          if (ui.blockBottom) ui.blockBottom.value = 35;
+          answerProperty = 'less-light-same-position';
+          setPropertyChoices([
+            { value: 'less-light-same-position', label: '빛의 양은 줄지만, 렌즈 공식이 정하는 상의 위치는 거의 그대로다.' },
+            { value: 'position-by-block', label: '가림막의 위치에 따라 상의 위치가 위아래로 이동한다.' },
+            { value: 'bigger-image', label: '렌즈가 일부 가려지면 배율이 커져 상이 확대된다.' }
+          ]);
+          return '심화탐구 3: 위아래를 함께 가리면 위치, 배율, 빛의 양 중 무엇이 주로 변할까요?';
+        }
+        if (round === 9) {
+          if (ui.extraRaysSlider) ui.extraRaysSlider.value = 8;
+          if (ui.medium) ui.medium.value = 'water';
+          answerProperty = 'focal-longer';
+          setPropertyChoices([
+            { value: 'focal-longer', label: '공기 중보다 굴절능이 약해져 유효 초점거리가 길어진다.' },
+            { value: 'focal-shorter-medium', label: '물의 굴절률이 크므로 렌즈의 유효 초점거리가 짧아진다.' },
+            { value: 'only-brightness', label: '매질은 밝기만 바꾸고 초점거리에는 영향을 주지 않는다.' }
+          ]);
+          return '심화탐구 4: 렌즈 주변 매질을 물로 바꾸면 렌즈의 굴절능은 어떻게 될까요?';
+        }
+        if (round === 10) {
+          if (ui.lensDiam) ui.lensDiam.value = 220;
+          if (ui.extraRaysSlider) ui.extraRaysSlider.value = 16;
+          if (ui.blockTop) ui.blockTop.value = 25;
+          if (ui.blockBottom) ui.blockBottom.value = 25;
+          if (ui.medium) ui.medium.value = 'hotAir';
+          answerProperty = 'combined';
+          setPropertyChoices([
+            { value: 'combined', label: '매질 때문에 초점거리는 길어지고, 작은 구경 때문에 빛의 양은 줄어든다.' },
+            { value: 'glass-like', label: '가열된 공기에서는 굴절이 완전히 사라져 모든 광선이 직진한다.' },
+            { value: 'aperture-focal', label: '작은 구경이 초점거리를 직접 짧게 만들어 상의 위치를 바꾼다.' }
+          ]);
+          return '심화탐구 5: 매질 변화와 작은 구경이 동시에 있을 때 핵심 물리 성질은 무엇일까요?';
+        }
+        return '심화탐구 설정을 관찰하며 답을 고르세요.';
       }
 
       // 현재 설정에서 상의 종류/크기 계산
@@ -924,24 +1409,32 @@
         lensGameOn = true;
         lensRoundLocked = false;
         elScore.textContent = String(score);
-        elRound.textContent = lensGameRound + '/10';
+        elRound.textContent = lensGameRound + '/' + TOTAL_ROUNDS;
+        const roundMode = getRoundMode(lensGameRound);
 
         selectedKind = null;
         selectedSize = null;
+        selectedProperty = null;
         kindButtons.forEach(btn => btn.classList.remove('selected'));
         sizeButtons.forEach(btn => btn.classList.remove('selected'));
+        propertyButtons.forEach(btn => btn.classList.remove('selected'));
 
-        const requiresSize = lensGameRound >= 9;
-        sizeSection.style.display = requiresSize ? 'block' : 'none';
+        const requiresSize = roundMode.requiresSize;
+        if (kindSection) kindSection.style.display = roundMode.advanced ? 'none' : 'block';
+        sizeSection.style.display = (!roundMode.advanced && requiresSize) ? 'block' : 'none';
+        propertySection.style.display = roundMode.advanced ? 'block' : 'none';
+        const roundGuide = applyAdvancedRoundSettings(lensGameRound);
 
         // === 랜덤 파라미터 생성 (렌즈 종류, f, a, 물체 높이) ===
         const type = (Math.random() < 0.5) ? 'convex' : 'concave';
         ui.lensType.value = type;
 
         const fmag = randomBetween(60, 260);
-        ui.focal.value = String(Math.round(fmag));
+        const fmagRounded = Math.round(fmag);
+        ui.focal.value = String(fmagRounded);
         const fSign = (type === 'convex') ? +1 : -1;
-        const f = fSign * Math.round(fmag);
+        const medium = ui.medium ? ui.medium.value : 'air';
+        const f = fSign * effectiveFocalMagnitude(fmagRounded, medium);
 
         const marginLeft = Math.max(40, W * 0.12);
         const marginRightOfObject = 40;
@@ -968,7 +1461,7 @@
             trials++;
             continue;
           }
-          // 9~10라운드에는 크기도 명확하게 구분되도록
+          // 크기 판단 라운드에는 크기도 명확하게 구분되도록
           if (requiresSize && !state.sizeLabel) {
             trials++;
             continue;
@@ -978,19 +1471,24 @@
           break;
         }
 
-        if (lensGameRound <= 5) {
+        if (lensGameRound <= 2) {
           elMsg.innerHTML =
             '왼쪽 물체와 렌즈에서 만들어진 오른쪽 상을 보고<br>' +
             '<b>상이 도립/정립 & 실상/허상</b>이<br>어떤 조합인지 선택하세요.';
-        } else if (lensGameRound <= 8) {
+        } else if (lensGameRound === 3) {
           elMsg.innerHTML =
             '렌즈 중심부터 오른쪽이 가려진 상태입니다.<br>' +
             '광선 진행과 렌즈 공식을 떠올리며<br>' +
             '<b>상이 도립/정립 & 실상/허상</b>을 추론해 보세요.';
+        } else if (lensGameRound <= 5) {
+          elMsg.innerHTML =
+            '기본 도전 압축 단계입니다.<br>' +
+            '<b>상의 종류</b>와 <b>크기</b>를 함께 선택하세요.' +
+            (roundMode.hideRight ? '<br><small>오른쪽 상은 가려져 있으니 광선과 식으로 추론합니다.</small>' : '');
         } else {
           elMsg.innerHTML =
-            '상이 도립/정립 & 실상/허상에 더해<br>' +
-            '<b>크기가 확대/동일/축소</b>인지까지 함께 맞춰 보세요.';
+            roundGuide + '<br>' +
+            '<b>물리적 성질</b>을 가장 잘 설명한 선택지를 고르세요.';
         }
       }
 
@@ -1035,7 +1533,7 @@
             '❌ 오답입니다. 이번 라운드는 0점입니다.<br><small>다음 라운드로 넘어갑니다.</small>';
         }
 
-        if (lensGameRound >= 10) {
+        if (lensGameRound >= TOTAL_ROUNDS) {
           setTimeout(() => {
             endGame();
           }, 600);
@@ -1049,12 +1547,21 @@
 
       function checkAnswerAndAdvance() {
         if (!lensGameOn || lensGameRound === 0) return;
+        if (getRoundMode(lensGameRound).advanced) {
+          if (!answerProperty) {
+            elMsg.innerHTML = '라운드 세팅 중 오류가 발생했습니다. 다시 도전해 주세요.';
+            return;
+          }
+          handleResult(selectedProperty === answerProperty);
+          return;
+        }
+
         if (!answerKind) {
           elMsg.innerHTML = '라운드 세팅 중 오류가 발생했습니다. 다시 도전해 주세요.';
           return;
         }
 
-        const requiresSize = lensGameRound >= 9;
+        const requiresSize = getRoundMode(lensGameRound).requiresSize;
         const correctKind = (selectedKind === answerKind);
         let correctSize = true;
 
@@ -1070,8 +1577,8 @@
         handleResult(isCorrect);
       }
 
-      // 상의 종류 버튼: 1~8라운드는 이 버튼을 누르는 순간 바로 채점,
-      // 9~10라운드는 크기까지 선택한 뒤 (크기 버튼 클릭 시) 채점
+      // 상의 종류 버튼: 크기 판단 전 라운드는 이 버튼을 누르는 순간 바로 채점,
+      // 크기 판단 라운드는 크기까지 선택한 뒤 채점
       kindButtons.forEach(btn => {
         btn.addEventListener('click', () => {
           if (lensRoundLocked) return;
@@ -1082,11 +1589,11 @@
             return;
           }
 
-          if (lensGameRound <= 8) {
-            // 1~8라운드는 상의 종류만으로 채점
+          if (!getRoundMode(lensGameRound).requiresSize) {
+            // 기본 전반 라운드는 상의 종류만으로 채점
             checkAnswerAndAdvance();
           } else {
-            // 9~10라운드는 크기도 필요 → 크기까지 선택되면 채점
+            // 크기 판단 라운드는 크기도 필요 → 크기까지 선택되면 채점
             if (selectedSize) {
               checkAnswerAndAdvance();
             } else {
@@ -1097,7 +1604,7 @@
         });
       });
 
-      // 크기 버튼: 9~10라운드에서만 사용, 이 버튼을 누르는 순간 채점
+      // 크기 버튼: 4~10라운드에서 사용, 이 버튼을 누르는 순간 채점
       sizeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
           if (lensRoundLocked) return;
@@ -1108,8 +1615,8 @@
             return;
           }
 
-          if (lensGameRound < 9) {
-            elMsg.innerHTML = '9~10라운드에서만 크기를 함께 맞추는 문제입니다.';
+          if (!getRoundMode(lensGameRound).requiresSize) {
+            elMsg.innerHTML = '4~10라운드에서 크기를 함께 맞추는 문제입니다.';
             return;
           }
 
@@ -1119,7 +1626,24 @@
             return;
           }
 
-          // 9~10라운드: 종류+크기 모두 선택되면 바로 채점
+          // 종류+크기 모두 선택되면 바로 채점
+          checkAnswerAndAdvance();
+        });
+      });
+
+      propertyButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (lensRoundLocked) return;
+          if (!lensGameOn || lensGameRound === 0) {
+            elMsg.innerHTML = '먼저 <b>도전</b> 버튼을 눌러 라운드를 시작해 주세요.';
+            return;
+          }
+          if (!getRoundMode(lensGameRound).advanced) {
+            elMsg.innerHTML = '6~10라운드에서 심화탐구의 물리적 성질을 묻는 문제입니다.';
+            return;
+          }
+
+          selectProperty(btn.dataset.property);
           checkAnswerAndAdvance();
         });
       });
@@ -1127,6 +1651,13 @@
       btnStart.addEventListener('click', startGame);
     })();
   </script>
+
+  <!-- 스크린 상 패널 (우측 하단) -->
+  <div class="screen-panel">
+    <div class="screen-panel-title">스크린 상 (Screen)</div>
+    <canvas id="screen-canvas" width="140" height="140" style="display:block;border-radius:6px;"></canvas>
+    <div class="screen-status" id="screen-label">—</div>
+  </div>
 
   <!-- ===== Firebase 점수 연동 (렌즈 도전 게임) ===== -->
   <script type="module">
