@@ -4,15 +4,25 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>전자기유도</title>
+  <title>전자기 유도</title>
   <style>
-@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+
     :root {
-      --ink: #334155;
-      --primary: #0284c7;
-      --danger: #d9534f;
+      --ink: #152238;
+      --muted: #52677f;
+      --panel: rgba(255, 255, 255, 0.94);
+      --border: rgba(15, 122, 138, 0.22);
+      --primary: #008b9a;
+      --primary-2: #1f5eff;
+      --danger: #ef3f3f;
       --success: #16a34a;
-      --warn: #d97706;
+      --warn: #f08a00;
+      --copper: #d5842f;
+    }
+
+    * {
+      box-sizing: border-box;
     }
 
     html,
@@ -27,35 +37,39 @@
 
     body {
       color: var(--ink);
-      font-family: "Pretendard", system-ui, -apple-system, sans-serif;
-      background: radial-gradient(circle at 50% 30%, #f1f5f9 0%, #cbd5e1 100%);
+      font-family: "Pretendard", system-ui, -apple-system, "Noto Sans KR", sans-serif;
+      background:
+        radial-gradient(circle at 48% 27%, #ffffff 0%, #e7fbff 37%, #c7edf6 100%),
+        linear-gradient(180deg, #f7fdff, #ccecf5);
     }
 
     header {
       position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
+      right: 0;
+      height: 48px;
       padding: 10px 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      z-index: 5;
+      z-index: 30;
       pointer-events: none;
-      box-sizing: border-box;
     }
 
     .brand {
       pointer-events: auto;
-      font-weight: 700;
+      font-weight: 800;
       font-size: 18px;
-      color: #1e293b;
-      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+      color: #10213a;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+      white-space: nowrap;
     }
 
     .small {
       font-size: 12px;
-      color: #64748b;
+      color: var(--muted);
+      text-align: right;
     }
 
     #scene {
@@ -71,33 +85,145 @@
       outline: none;
     }
 
-    /* UI 레이어 (PC에서는 투명 컨테이너, 모바일에서는 하단 패널) */
     #ui-layer {
-      position: absolute;
+      position: fixed;
       inset: 0;
+      z-index: 20;
       pointer-events: none;
-      z-index: 10;
-      display: flex;
-      flex-direction: column;
-      /* PC 배치용 */
     }
 
-    /* HUD 패널 */
+    .hud,
+    .graphbox,
+    .formula {
+      pointer-events: auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 18px 40px rgba(18, 73, 108, 0.16);
+    }
+
     .hud {
       position: fixed;
       left: 14px;
-      top: 50px;
-      width: 320px;
-      background: rgba(255, 255, 255, 0.90);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(200, 200, 200, 0.5);
-      border-radius: 12px;
-      padding: 16px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-      max-height: 80vh;
+      top: 58px;
+      width: 322px;
+      max-height: calc(100vh - 72px);
       overflow-y: auto;
-      pointer-events: auto;
-      -webkit-overflow-scrolling: touch;
+      border-radius: 12px;
+      padding: 15px;
+    }
+
+    .graphbox {
+      position: fixed;
+      right: 14px;
+      top: 58px;
+      width: 318px;
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .formula {
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      width: 318px;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    h2,
+    h3 {
+      margin: 0;
+      line-height: 1.25;
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--primary);
+      padding-bottom: 9px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mode-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+      padding: 4px;
+      border-radius: 9px;
+      background: rgba(15, 122, 138, 0.09);
+      margin-bottom: 12px;
+    }
+
+    .tab-btn,
+    .btn {
+      min-height: 38px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 700;
+      transition: transform 0.12s ease, background 0.2s ease, border-color 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .tab-btn {
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.76);
+      color: var(--ink);
+      font-size: 12px;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .btn:active,
+    .tab-btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn.primary {
+      background: var(--primary-2);
+      color: #fff;
+      border-color: var(--primary-2);
+    }
+
+    .btn.warn {
+      background: var(--warn);
+      color: #fff;
+      border-color: var(--warn);
+    }
+
+    .btn.success {
+      background: var(--success);
+      color: #fff;
+      border-color: var(--success);
+    }
+
+    .btn.active {
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+      filter: saturate(1.12);
     }
 
     .row {
@@ -105,655 +231,1083 @@
       grid-template-columns: 1fr auto;
       gap: 8px;
       align-items: center;
-      margin: 12px 0;
+      margin: 11px 0;
     }
 
     .row label {
-      font-size: 14px;
-      font-weight: 600;
-      color: #475569;
+      min-width: 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: #334760;
+    }
+
+    .value {
+      min-width: 66px;
+      text-align: right;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--primary);
+      font-variant-numeric: tabular-nums;
     }
 
     input[type=range] {
+      grid-column: 1 / -1;
       width: 100%;
+      height: 24px;
       accent-color: var(--primary);
       cursor: pointer;
-      height: 24px;
     }
 
-    select {
-      padding: 8px;
-      border-radius: 4px;
-      border: 1px solid #cbd5e1;
-      color: #475569;
-      font-size: 14px;
-      width: 100%;
-    }
-
-    .status-box {
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid #e2e8f0;
-      font-size: 13px;
-      color: #64748b;
-      line-height: 1.6;
-    }
-
-    .val-highlight {
-      color: var(--primary);
-      font-weight: bold;
-    }
-
-    /* 버튼 그룹 */
-    .control-grid {
+    .readings {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      gap: 7px;
       margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
     }
 
-    .btn {
-      padding: 14px 8px;
+    .meter {
+      border: 1px solid rgba(15, 122, 138, 0.24);
+      background: rgba(248, 253, 255, 0.86);
       border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      color: white;
-      background: #64748b;
-      transition: all 0.2s;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      line-height: 1.3;
-      -webkit-tap-highlight-color: transparent;
+      padding: 9px 8px;
+      min-height: 62px;
     }
 
-    .btn:active {
-      transform: scale(0.98);
-    }
-
-    .btn.active {
-      background: var(--primary);
-      box-shadow: 0 0 0 2px #bae6fd;
-    }
-
-    .btn-magnet {
-      background: #6366f1;
-    }
-
-    .btn-current {
-      background: var(--warn);
-    }
-
-    .btn-pause {
-      background: var(--danger);
-    }
-
-    .btn-pause.paused {
-      background: var(--success);
-    }
-
-    .btn-slow {
-      background: #10b981;
-      grid-column: span 2;
-      font-size: 14px;
-      padding: 14px;
-    }
-
-    .btn-slow.active-mode {
-      background: #059669;
-      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-      border: 2px solid #a7f3d0;
-    }
-
-    /* 그래프 */
-    .graphbox {
-      position: fixed;
-      right: 14px;
-      top: 50px;
-      width: 280px;
-      background: rgba(255, 255, 255, 0.9);
-      border-radius: 12px;
-      padding: 10px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-      pointer-events: auto;
-      /* PC에서도 클릭 등 가능하게 */
-    }
-
-    .graphbox canvas {
+    .meter span {
       display: block;
-      width: 100%;
-      height: auto;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 5px;
     }
 
-    /* =========================================
-       ★ 모바일 반응형 (Split View) 스타일 적용 ★
-       ========================================= */
-    @media (max-width: 768px) {
+    .meter strong {
+      display: block;
+      color: #142033;
+      font-size: 17px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
 
-      /* 헤더 간소화 */
-      header .small {
-        display: none;
-      }
+    .meter small {
+      color: var(--muted);
+      font-size: 10px;
+      margin-left: 2px;
+    }
 
+    #graph {
+      width: 294px;
+      height: 156px;
+      display: block;
+    }
+
+    .legend {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: flex-end;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .key {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .swatch {
+      width: 18px;
+      height: 3px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .info-line {
+      display: grid;
+      grid-template-columns: 78px 1fr;
+      gap: 7px;
+    }
+
+    .info-line strong {
+      color: #142033;
+    }
+
+    .direction-badge {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(20, 32, 51, 0.84);
+      color: #eaf6ff;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      padding: 9px 18px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0;
+      pointer-events: none;
+      box-shadow: 0 14px 36px rgba(20, 32, 51, 0.2);
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(15, 122, 138, 0.28);
+      border-radius: 999px;
+    }
+
+    @media (max-width: 820px) {
       header {
-        height: 40px;
-        font-size: 14px;
+        height: 44px;
+        padding: 8px 10px;
       }
 
       .brand {
-        font-size: 16px;
+        font-size: 15px;
       }
 
-      /* 3D Scene: 화면 상단 45% 고정 */
+      .small {
+        display: none;
+      }
+
       #scene {
-        position: fixed !important;
-        top: 0;
-        left: 0;
-        width: 100% !important;
-        height: 45vh !important;
-        /* JS 리사이즈 로직과 일치 */
-        border-bottom: 2px solid #cbd5e1;
-        z-index: 0;
+        bottom: 46vh;
       }
 
       #scene canvas {
-        width: 100% !important;
-        height: 100% !important;
-      }
-
-      /* UI 레이어 컨테이너: 화면 하단 55% 스크롤 영역 */
-      #ui-layer {
-        position: fixed;
-        top: 45vh;
-        /* Scene 바로 아래 시작 */
-        left: 0;
-        width: 100%;
-        height: 55vh;
-        /* 나머지 높이 */
-        overflow-y: auto;
-        /* 세로 스크롤 허용 */
-        background: #f8fafc;
-        pointer-events: auto;
-        display: block;
-        /* 블록 요소로 변경 */
-        padding-top: 10px;
-        padding-bottom: 40px;
-      }
-
-      /* UI 내부 요소들의 고정(fixed) 속성 해제하고 흐름에 따르게 변경 */
-      .hud,
-      .graphbox {
-        position: relative !important;
-        top: auto !important;
-        left: auto !important;
-        right: auto !important;
-        bottom: auto !important;
-        width: 92% !important;
-        max-width: none !important;
-        margin: 0 auto 12px auto !important;
-        transform: none !important;
-        background: #ffffff;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        height: 54vh;
       }
 
       .hud {
-        max-height: none !important;
-        order: 2;
+        top: auto;
+        left: 0;
+        bottom: 0;
+        width: 56vw;
+        height: 46vh;
+        max-height: 46vh;
+        border-radius: 12px 12px 0 0;
+        padding: 11px;
       }
 
-      /* 컨트롤 패널 순서 */
       .graphbox {
-        order: 1;
+        top: auto;
+        right: 0;
+        bottom: 0;
+        width: 44vw;
+        height: 46vh;
+        border-radius: 12px 12px 0 0;
+        padding: 11px;
+        overflow-y: auto;
       }
 
-      /* 그래프를 위로 올리거나 내릴 수 있음 (여기선 HTML 순서 따름) */
-
-      /* 스크롤바 스타일링 */
-      #ui-layer::-webkit-scrollbar {
-        width: 6px;
+      .formula,
+      .direction-badge {
+        display: none;
       }
 
-      #ui-layer::-webkit-scrollbar-track {
-        background: transparent;
+      #graph {
+        width: 100%;
+        height: 132px;
       }
 
-      #ui-layer::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 4px;
+      .readings {
+        grid-template-columns: 1fr;
+      }
+
+      .control-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .row {
+        margin: 8px 0;
+      }
+
+      .value {
+        min-width: 58px;
       }
     }
   </style>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-
 </head>
 
 <body>
-
   <header>
-    <div class="brand">🔷 직류 전동기 실험실</div>
-    <div class="small">Rounded Wire Joints (Tablet Touch Ready)</div>
+    <div class="brand">전자기 유도 시뮬레이션</div>
+    <div class="small">Faraday induction · moving magnet model</div>
   </header>
 
   <div id="scene"></div>
 
   <div id="ui-layer">
+    <section class="hud">
+      <h2 class="panel-title">실험 설정</h2>
 
-    <div class="graphbox">
-      <canvas id="graph" width="300" height="120"></canvas>
-      <div style="text-align:right; font-size:11px; color:#64748b; margin-top:4px;">Time →</div>
-    </div>
-
-    <div class="hud">
-      <div class="row">
-        <label for="I_curr">전류 크기 (Current)</label>
-        <span style="font-family:monospace; font-weight:bold;"><span id="Ival">0.16</span> A</span>
+      <div class="mode-tabs" aria-label="실험 방식">
+        <button class="tab-btn active" id="modeMagnet" type="button">자석 운동</button>
+        <button class="tab-btn" id="modeRotate" type="button">심화: 코일 회전</button>
       </div>
-      <input id="I_curr" type="range" min="0" max="0.32" step="0.01" value="0.16" />
 
       <div class="row">
-        <label for="B_field">자기장 세기 (B)</label>
-        <span style="font-family:monospace; font-weight:bold;"><span id="Bval">0.08</span> T</span>
+        <label for="speed">왕복 속도</label>
+        <span class="value" id="speedVal">2.4 rad/s</span>
+        <input id="speed" type="range" min="0" max="8" value="2.4" step="0.1" />
       </div>
-      <input id="B_field" type="range" min="0" max="0.16" step="0.01" value="0.08" />
 
       <div class="row">
-        <label>코일 개수</label>
-        <select id="coilCount">
-          <option value="1">1개 (기본)</option>
-          <option value="2">2개 (십자)</option>
-          <option value="4">4개 (원형)</option>
-        </select>
+        <label for="field">자기장 세기</label>
+        <span class="value" id="fieldVal">0.65 T</span>
+        <input id="field" type="range" min="0" max="1.2" value="0.65" step="0.01" />
+      </div>
+
+      <div class="row">
+        <label for="turns">코일 감은 수</label>
+        <span class="value" id="turnsVal">24 회</span>
+        <input id="turns" type="range" min="1" max="60" value="24" step="1" />
+      </div>
+
+      <div class="row">
+        <label for="load">전압계 저항</label>
+        <span class="value" id="loadVal">12 Ω</span>
+        <input id="load" type="range" min="1" max="40" value="12" step="1" />
       </div>
 
       <div class="control-grid">
-        <button id="btnSlowToggle" class="btn btn-slow">🐢 0.1배속 느리게 보기 (OFF)</button>
-        <button id="btnMagnetSwap" class="btn btn-magnet">🧲 자석 위치 변경<br>(N ↔ S)</button>
-        <button id="btnCurrentRev" class="btn btn-current">⚡ 전류 방향 변경<br>(정방향)</button>
-        <button id="toggleForce" class="btn active">힘 화살표 보기</button>
-        <button id="btnPause" class="btn btn-pause">⏸ 일시정지</button>
-        <button id="resetCam" class="btn" style="grid-column: span 2;">📷 카메라 리셋</button>
+        <button class="btn success" id="pause" type="button">일시정지</button>
+        <button class="btn warn" id="slowMotion" type="button">슬로우모션</button>
+        <button class="btn primary" id="reverseField" type="button">N/S 극 반전</button>
+        <button class="btn" id="reverseWinding" type="button">감은 방향 반전</button>
       </div>
 
-      <div class="status-box">
-        <div>실제 입력 전류 = <span class="val-highlight" id="dispI">0.16</span> A</div>
-        <div>자기력 F = <span class="val-highlight" id="Fval">0.00</span> N</div>
-        <div>회전 속도 = <span class="val-highlight" id="RPMval">0</span> RPM</div>
+      <div class="readings">
+        <div class="meter">
+          <span>자속 Φ</span>
+          <strong id="fluxOut">0.000<small> Wb</small></strong>
+        </div>
+        <div class="meter">
+          <span>유도 기전력 ε</span>
+          <strong id="emfOut">0.00<small> V</small></strong>
+        </div>
+        <div class="meter">
+          <span>유도 전류 I</span>
+          <strong id="currentOut">0.00<small> A</small></strong>
+        </div>
+        <div class="meter">
+          <span>전압계 V</span>
+          <strong id="powerOut">0.00<small> V</small></strong>
+        </div>
       </div>
-    </div>
+    </section>
 
+    <section class="graphbox">
+      <h3 class="panel-title">자속과 유도 기전력</h3>
+      <canvas id="graph" width="294" height="156"></canvas>
+      <div class="legend">
+        <span class="key"><span class="swatch" style="background:#0f7a8a"></span>자속</span>
+        <span class="key"><span class="swatch" style="background:#d97706"></span>기전력</span>
+      </div>
+    </section>
+
+    <section class="formula">
+      <div class="info-line"><strong>패러데이</strong><span>ε = -N · dΦ/dt</span></div>
+      <div class="info-line"><strong>렌츠 법칙</strong><span>자석이 다가오거나 멀어질 때 유도 전류는 자속 변화를 방해하는 방향으로 흐른다.</span></div>
+      <div class="info-line"><strong>전압계</strong><span>큰 저항으로 연결된 계기가 유도 기전력의 부호와 크기를 보여준다.</span></div>
+    </section>
+
+    <div class="direction-badge" id="directionBadge">유도 전류 방향: 시계 방향</div>
   </div>
 
   <script>
-    (function () {
-      // 1. 변수 설정
+    (() => {
       const elScene = document.getElementById('scene');
-      const inputI = document.getElementById('I_curr');
-      const inputB = document.getElementById('B_field');
-      const selectCoils = document.getElementById('coilCount');
+      const speedInput = document.getElementById('speed');
+      const fieldInput = document.getElementById('field');
+      const turnsInput = document.getElementById('turns');
+      const loadInput = document.getElementById('load');
+      const speedVal = document.getElementById('speedVal');
+      const fieldVal = document.getElementById('fieldVal');
+      const turnsVal = document.getElementById('turnsVal');
+      const loadVal = document.getElementById('loadVal');
+      const fluxOut = document.getElementById('fluxOut');
+      const emfOut = document.getElementById('emfOut');
+      const currentOut = document.getElementById('currentOut');
+      const powerOut = document.getElementById('powerOut');
+      const directionBadge = document.getElementById('directionBadge');
+      const modeRotate = document.getElementById('modeRotate');
+      const modeMagnet = document.getElementById('modeMagnet');
+      const pauseBtn = document.getElementById('pause');
+      const slowMotionBtn = document.getElementById('slowMotion');
+      const reverseWindingBtn = document.getElementById('reverseWinding');
+      const reverseFieldBtn = document.getElementById('reverseField');
+      const graph = document.getElementById('graph');
+      const graphCtx = graph.getContext('2d');
 
-      const btnSlowToggle = document.getElementById('btnSlowToggle');
-      const btnMagnetSwap = document.getElementById('btnMagnetSwap');
-      const btnCurrentRev = document.getElementById('btnCurrentRev');
-      const btnForce = document.getElementById('toggleForce');
-      const btnPause = document.getElementById('btnPause');
-      const btnResetCam = document.getElementById('resetCam');
-
-      const dispIval = document.getElementById('Ival');
-      const dispBval = document.getElementById('Bval');
-      const dispI = document.getElementById('dispI');
-      const dispFval = document.getElementById('Fval');
-      const dispRPM = document.getElementById('RPMval');
-
-      let angularVelocity = 0;
-      let currentAngle = 0;
-
-      let rawInputCurrent = 0.16;
-      let rawInputB = 0.08;
-
-      let magnetDirection = 1;
-      let currentDirection = 1;
-      let isPaused = false;
-      let showForceArrows = true;
-
-      const NORMAL_SPEED_FACTOR = 1.0;
-      const SLOW_SPEED_FACTOR = 0.1;
-      let currentSpeedFactor = NORMAL_SPEED_FACTOR;
-
-      const gCanvas = document.getElementById('graph');
-      const ctxG = gCanvas.getContext('2d');
-      const gBuf = new Float32Array(300);
-      let gIdx = 0;
-      let maxGraphY = 10;
-
-      // 2. 3D 씬 설정
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setPixelRatio(window.devicePixelRatio);
-
-      // 초기 사이즈 (resize 핸들러에서 덮어씌움)
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.outputEncoding = THREE.sRGBEncoding;
       elScene.appendChild(renderer.domElement);
 
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
-      camera.position.set(20, 15, 30);
-      camera.lookAt(0, 0, 0);
+      scene.background = new THREE.Color(0xeefdff);
+      scene.fog = new THREE.Fog(0xeefdff, 78, 165);
 
-      // OrbircControls
+      const camera = new THREE.PerspectiveCamera(42, 1, 1, 1000);
+      const cameraHome = new THREE.Vector3(0, 12, 33);
+      const cameraTarget = new THREE.Vector3(0, 0, 0);
+      camera.position.copy(cameraHome);
+
       const controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
-      controls.enableZoom = true;
+      controls.dampingFactor = 0.08;
+      controls.target.copy(cameraTarget);
       controls.enablePan = false;
-      controls.minDistance = 10;
-      controls.maxDistance = 100;
 
-      const ambLight = new THREE.AmbientLight(0xffffff, 0.7);
-      scene.add(ambLight);
-      const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-      dirLight.position.set(10, 20, 10);
-      scene.add(dirLight);
+      scene.add(new THREE.AmbientLight(0xffffff, 1.18));
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1.65);
+      keyLight.position.set(18, 24, 28);
+      scene.add(keyLight);
+      const hemi = new THREE.HemisphereLight(0xffffff, 0x9edff0, 0.86);
+      scene.add(hemi);
 
-      // 재질 정의
-      const matCopper = new THREE.MeshStandardMaterial({ color: 0xa65d29, roughness: 0.3, metalness: 0.6 });
-      const matSteel = new THREE.MeshStandardMaterial({ color: 0xbdc3c7, roughness: 0.4, metalness: 0.5 });
-      const matBrass = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3, metalness: 0.7 });
+      const matCopper = new THREE.MeshStandardMaterial({ color: 0xd8842f, roughness: 0.22, metalness: 0.82, emissive: 0x241006, emissiveIntensity: 0.08 });
+      const matSteel = new THREE.MeshStandardMaterial({ color: 0xd8e4ec, roughness: 0.3, metalness: 0.58 });
+      const matDark = new THREE.MeshStandardMaterial({ color: 0x203044, roughness: 0.76 });
+      const magnetRed = '#c0392b';
+      const magnetBlue = '#2980b9';
+      const matRed = new THREE.MeshBasicMaterial({ color: 0xc0392b });
+      const matBlue = new THREE.MeshBasicMaterial({ color: 0x2980b9 });
+      const matField = new THREE.MeshBasicMaterial({ color: 0x00bcd4, transparent: true, opacity: 0.88 });
+      const matCurrentForward = new THREE.MeshBasicMaterial({ color: 0xff6a00, depthTest: false });
+      const matCurrentReverse = new THREE.MeshBasicMaterial({ color: 0x00c8ff, depthTest: false });
 
-      const colRed = 0xc0392b;
-      const colBlue = 0x2980b9;
-      const matRed = new THREE.MeshStandardMaterial({ color: colRed, roughness: 0.4, metalness: 0.1 });
-      const matBlue = new THREE.MeshStandardMaterial({ color: colBlue, roughness: 0.4, metalness: 0.1 });
-      const matDark = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.9 });
-      const matArrow = new THREE.MeshPhongMaterial({ color: 0x2ecc71, emissive: 0x004400, shininess: 50 });
+      const coilArea = 0.052;
+      const graphLength = graph.width;
+      const fluxBuf = new Float32Array(graphLength);
+      const emfBuf = new Float32Array(graphLength);
+      let graphIndex = 0;
+      let mode = 'magnet';
+      let paused = false;
+      let motionDirection = 1;
+      let windingDirection = 1;
+      let slowMotion = false;
+      let poleDirection = 1;
+      let theta = 0.2;
+      let magnetPhase = -1.1;
+      let prevFlux = null;
+      let visualTurnCount = 0;
+      let lastTime = performance.now();
+      let latestCurrent = 0;
+      let voltmeterNeedle = null;
+      let voltmeterTargetAngle = 0;
+      let voltmeterNeedleAngle = 0;
+      let coilTopPoleBadge = null;
+      let coilBottomPoleBadge = null;
+      let coilPolarityArrow = null;
+      let coilPoleState = '';
 
-      // 3. 객체 생성
-      let magnetL, magnetR;
-      function createMagnetMesh(isN) {
-        const g = new THREE.BoxGeometry(4, 10, 10);
-        const m = new THREE.Mesh(g, isN ? matRed : matBlue);
-        const cvs = document.createElement('canvas'); cvs.width = 64; cvs.height = 64;
-        const ctx = cvs.getContext('2d');
-        ctx.fillStyle = isN ? '#c0392b' : '#2980b9';
-        ctx.fillRect(0, 0, 64, 64);
-        ctx.fillStyle = 'white'; ctx.font = 'bold 40px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(isN ? 'N' : 'S', 32, 32);
-        const tex = new THREE.CanvasTexture(cvs);
-        const label = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), new THREE.MeshBasicMaterial({ map: tex }));
-        m.add(label);
-        return m;
-      }
-      function initMagnets() {
-        magnetL = createMagnetMesh(true); magnetL.position.set(-10, 0, 0);
-        magnetL.children[0].position.x = 2.1; magnetL.children[0].rotation.y = Math.PI / 2;
-        scene.add(magnetL);
-        magnetR = createMagnetMesh(false); magnetR.position.set(10, 0, 0);
-        magnetR.children[0].position.x = -2.1; magnetR.children[0].rotation.y = -Math.PI / 2;
-        scene.add(magnetR);
-      }
-      initMagnets();
+      const root = new THREE.Group();
+      scene.add(root);
 
-      function updateMagnetVisuals() {
-        const isNormal = magnetDirection === 1;
-        magnetL.material = isNormal ? matRed : matBlue;
-        updateMagnetLabel(magnetL, isNormal ? 'N' : 'S', isNormal ? '#c0392b' : '#2980b9');
-        magnetR.material = isNormal ? matBlue : matRed;
-        updateMagnetLabel(magnetR, isNormal ? 'S' : 'N', isNormal ? '#2980b9' : '#c0392b');
-      }
-      function updateMagnetLabel(mesh, text, bgColor) {
-        const labelMesh = mesh.children[0];
-        const cvs = document.createElement('canvas'); cvs.width = 64; cvs.height = 64;
-        const ctx = cvs.getContext('2d');
-        ctx.fillStyle = bgColor; ctx.fillRect(0, 0, 64, 64);
-        ctx.fillStyle = 'white'; ctx.font = 'bold 40px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(text, 32, 32);
-        labelMesh.material.map = new THREE.CanvasTexture(cvs);
-      }
+      const sideMagnets = new THREE.Group();
+      const barMagnet = new THREE.Group();
+      const coilGroup = new THREE.Group();
+      const fieldGroup = new THREE.Group();
+      const baseGroup = new THREE.Group();
+      root.add(sideMagnets, barMagnet, coilGroup, fieldGroup, baseGroup);
 
-      // 위치 설정
-      const MAIN_Z = 7.0;
-      const BRUSH_Z = 7.4;
-      const COMM_CENTER_Z = MAIN_Z;
-      const COIL_END_Z = MAIN_Z - 1.0;
+      const currentParticles = [];
 
-      function createCurvedBrushGeo() {
-        const shape = new THREE.Shape();
-        const rIn = 1.3;
-        const rOut = 1.8;
-        const ang = Math.PI / 3;
-        shape.absarc(0, 0, rIn, -ang / 2, ang / 2, false);
-        shape.absarc(0, 0, rOut, ang / 2, -ang / 2, true);
-        const extrudeSettings = { depth: 2.0, bevelEnabled: false, curveSegments: 16 };
-        const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-        geo.translate(0, 0, -1.0);
-        return geo;
+      function makeLabel(text, color) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 128;
+        canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 128, 128);
+        ctx.fillStyle = '#fff';
+        ctx.font = '800 76px Pretendard, Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 64, 68);
+        const tex = new THREE.CanvasTexture(canvas);
+        const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
+        return new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4), mat);
       }
 
-      const brushGeo = createCurvedBrushGeo();
-      const brushGroup = new THREE.Group();
-      scene.add(brushGroup);
-
-      const brushR = new THREE.Mesh(brushGeo, matDark);
-      brushR.position.set(0, 0, BRUSH_Z);
-      const brushL = new THREE.Mesh(brushGeo, matDark);
-      brushL.position.set(0, 0, BRUSH_Z);
-      brushL.rotation.z = Math.PI;
-      brushGroup.add(brushL, brushR);
-
-      const wireGeo = new THREE.CylinderGeometry(0.2, 0.2, 8);
-      const wireL = new THREE.Mesh(wireGeo, matRed);
-      wireL.rotation.z = Math.PI / 2; wireL.position.set(-5.8, 0, BRUSH_Z);
-      const wireR = new THREE.Mesh(wireGeo, matBlue);
-      wireR.rotation.z = Math.PI / 2; wireR.position.set(5.8, 0, BRUSH_Z);
-      brushGroup.add(wireL, wireR);
-
-      // 4. 로터 생성
-      let rotorGroup = new THREE.Group();
-      let arrows = [];
-
-      function createArrow() {
-        const g = new THREE.Group();
-        const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 1, 12), matArrow);
-        cyl.position.y = 0.5;
-        const cone = new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.8, 12), matArrow);
-        cone.position.y = 1.4;
-        g.add(cyl, cone);
-        return g;
+      function makeMagnetBox(label, mat, labelColor) {
+        const group = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.BoxGeometry(3.4, 9, 9), mat);
+        const cap = new THREE.Mesh(new THREE.BoxGeometry(3.48, 9.08, 0.18), new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.18
+        }));
+        cap.position.z = 4.6;
+        const labelMesh = makeLabel(label, labelColor);
+        labelMesh.position.z = 4.72;
+        group.add(body, cap, labelMesh);
+        group.userData.labelMesh = labelMesh;
+        return group;
       }
 
-      function createRotor(n) {
-        if (rotorGroup) scene.remove(rotorGroup);
-        rotorGroup = new THREE.Group();
-        scene.add(rotorGroup);
-        arrows = [];
+      const leftMagnet = makeMagnetBox('N', matRed, magnetRed);
+      const rightMagnet = makeMagnetBox('S', matBlue, magnetBlue);
+      leftMagnet.position.x = -8.5;
+      rightMagnet.position.x = 8.5;
+      sideMagnets.add(leftMagnet, rightMagnet);
 
-        const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 26, 16), matSteel);
+      function makeMovingMagnetHalf(label, mat, labelColor, y) {
+        const group = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.BoxGeometry(2.3, 3.8, 2.3), mat);
+        const labelMesh = makeLabel(label, labelColor);
+        labelMesh.scale.set(0.72, 0.72, 0.72);
+        labelMesh.position.z = 1.18;
+        group.position.y = y;
+        group.add(body, labelMesh);
+        group.userData.labelMesh = labelMesh;
+        return group;
+      }
+
+      const barN = makeMovingMagnetHalf('N', matRed, magnetRed, 1.9);
+      const barS = makeMovingMagnetHalf('S', matBlue, magnetBlue, -1.9);
+      barMagnet.add(barN, barS);
+      barMagnet.visible = true;
+
+      function updateLabel(meshGroup, text, color) {
+        const old = meshGroup.userData.labelMesh;
+        if (old) meshGroup.remove(old);
+        const label = makeLabel(text, color);
+        if (meshGroup === barN || meshGroup === barS) {
+          label.scale.set(0.72, 0.72, 0.72);
+          label.position.z = 1.18;
+        } else {
+          label.position.z = 4.72;
+        }
+        meshGroup.add(label);
+        meshGroup.userData.labelMesh = label;
+      }
+
+      function updatePoleVisuals() {
+        if (poleDirection > 0) {
+          leftMagnet.children[0].material = matRed;
+          rightMagnet.children[0].material = matBlue;
+          updateLabel(leftMagnet, 'N', magnetRed);
+          updateLabel(rightMagnet, 'S', magnetBlue);
+          barN.children[0].material = matRed;
+          barS.children[0].material = matBlue;
+          updateLabel(barN, 'N', magnetRed);
+          updateLabel(barS, 'S', magnetBlue);
+        } else {
+          leftMagnet.children[0].material = matBlue;
+          rightMagnet.children[0].material = matRed;
+          updateLabel(leftMagnet, 'S', magnetBlue);
+          updateLabel(rightMagnet, 'N', magnetRed);
+          barN.children[0].material = matBlue;
+          barS.children[0].material = matRed;
+          updateLabel(barN, 'S', magnetBlue);
+          updateLabel(barS, 'N', magnetRed);
+        }
+        buildFieldArrows();
+      }
+
+      function makeCylinderBetween(a, b, radius, mat) {
+        const mid = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
+        const dir = new THREE.Vector3().subVectors(b, a);
+        const len = dir.length();
+        const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, len, 14), mat);
+        mesh.position.copy(mid);
+        mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+        return mesh;
+      }
+
+      function addWirePath(group, points, radius, mat) {
+        for (let i = 0; i < points.length - 1; i++) {
+          group.add(makeCylinderBetween(points[i], points[i + 1], radius, mat));
+        }
+      }
+
+      function makeCurrentArrowMarker() {
+        const group = new THREE.Group();
+        const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.42, 12), matCurrentForward);
+        const head = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.34, 16), matCurrentForward);
+        shaft.position.y = 0.21;
+        head.position.y = 0.55;
+        shaft.renderOrder = 10;
+        head.renderOrder = 10;
+        group.add(shaft, head);
+        group.userData.kind = 'arrow';
+        return group;
+      }
+
+      function makeVoltmeter() {
+        const group = new THREE.Group();
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.32, metalness: 0.06, emissive: 0x071c3d, emissiveIntensity: 0.03 });
+        const rimMat = new THREE.MeshBasicMaterial({ color: 0x1f5eff });
+        const tickMat = new THREE.MeshBasicMaterial({ color: 0x26384f });
+        const needleMat = new THREE.MeshBasicMaterial({ color: 0xff3232, depthTest: false });
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 0.82, 0.24, 48), bodyMat);
+        body.rotation.x = Math.PI / 2;
+        const rim = new THREE.Mesh(new THREE.TorusGeometry(0.82, 0.045, 10, 56), rimMat);
+        rim.position.z = 0.14;
+
+        for (let i = -3; i <= 3; i++) {
+          const angle = i * Math.PI / 12;
+          const r1 = i === 0 ? 0.56 : 0.62;
+          const r2 = 0.74;
+          const a = new THREE.Vector3(Math.sin(angle) * r1, Math.cos(angle) * r1, 0.19);
+          const b = new THREE.Vector3(Math.sin(angle) * r2, Math.cos(angle) * r2, 0.19);
+          const tick = makeCylinderBetween(a, b, i === 0 ? 0.018 : 0.012, tickMat);
+          group.add(tick);
+        }
+
+        const needle = new THREE.Group();
+        const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.62, 12), needleMat);
+        shaft.position.y = 0.31;
+        shaft.renderOrder = 20;
+        const tip = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.18, 14), needleMat);
+        tip.position.y = 0.66;
+        tip.renderOrder = 20;
+        const pivot = new THREE.Mesh(new THREE.SphereGeometry(0.075, 16, 10), needleMat);
+        pivot.renderOrder = 20;
+        needle.position.z = 0.24;
+        needle.add(shaft, tip, pivot);
+        voltmeterNeedle = needle;
+
+        const label = makeLabel('V', '#1f5eff');
+        label.scale.set(0.24, 0.24, 0.24);
+        label.position.y = -0.32;
+        label.position.z = 0.18;
+        group.add(body, rim, needle, label);
+        return group;
+      }
+
+      function makePoleBadge(text, color) {
+        const group = new THREE.Group();
+        const label = makeLabel(text, color);
+        label.scale.set(0.42, 0.42, 0.42);
+        label.position.z = 0.18;
+        group.add(label);
+        group.userData.labelMesh = label;
+        return group;
+      }
+
+      function setPoleBadge(badge, text, color) {
+        if (!badge) return;
+        const old = badge.userData.labelMesh;
+        if (old) badge.remove(old);
+        const label = makeLabel(text, color);
+        label.scale.set(0.42, 0.42, 0.42);
+        label.position.z = 0.18;
+        badge.add(label);
+        badge.userData.labelMesh = label;
+      }
+
+      function updateCoilPolarity(emf) {
+        if (!coilTopPoleBadge || !coilBottomPoleBadge) return;
+        const nextState = Math.abs(emf) < 0.02 ? 'neutral' : (emf > 0 ? 'topN' : 'topS');
+        if (nextState === coilPoleState) return;
+        coilPoleState = nextState;
+        if (nextState === 'neutral') {
+          setPoleBadge(coilTopPoleBadge, '-', '#94a3b8');
+          setPoleBadge(coilBottomPoleBadge, '-', '#94a3b8');
+          if (coilPolarityArrow) coilPolarityArrow.visible = false;
+          return;
+        }
+        if (nextState === 'topN') {
+          setPoleBadge(coilTopPoleBadge, 'N', magnetRed);
+          setPoleBadge(coilBottomPoleBadge, 'S', magnetBlue);
+          setPolarityArrowDirection(1);
+        } else {
+          setPoleBadge(coilTopPoleBadge, 'S', magnetBlue);
+          setPoleBadge(coilBottomPoleBadge, 'N', magnetRed);
+          setPolarityArrowDirection(-1);
+        }
+      }
+
+      function setPolarityArrowDirection(direction) {
+        if (!coilPolarityArrow) return;
+        const dir = direction > 0 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(0, -1, 0);
+        const originY = direction > 0 ? -5.8 : 5.8;
+        coilPolarityArrow.visible = true;
+        coilPolarityArrow.position.set(-3.75, originY, 0);
+        coilPolarityArrow.setDirection(dir);
+      }
+
+      function clearGroup(group) {
+        while (group.children.length) group.remove(group.children[0]);
+      }
+
+      function buildCoil() {
+        if (mode === 'magnet') buildSolenoidCoil();
+        else buildRotatingCoil();
+      }
+
+      function buildRotatingCoil() {
+        clearGroup(coilGroup);
+        coilTopPoleBadge = null;
+        coilBottomPoleBadge = null;
+        coilPolarityArrow = null;
+        coilPoleState = '';
+        currentParticles.length = 0;
+        const turns = Number(turnsInput.value);
+        const count = Math.min(7, Math.max(1, Math.round(turns / 9)));
+        visualTurnCount = count;
+        const width = 5.6;
+        const height = 8.2;
+        const wire = 0.11;
+        const jointGeo = new THREE.SphereGeometry(wire * 1.08, 14, 10);
+
+        for (let i = 0; i < count; i++) {
+          const offset = (i - (count - 1) / 2) * 0.16;
+          const loop = new THREE.Group();
+          loop.add(makeCylinderBetween(new THREE.Vector3(offset, -width / 2, -height / 2), new THREE.Vector3(offset, -width / 2, height / 2), wire, matCopper));
+          loop.add(makeCylinderBetween(new THREE.Vector3(offset, width / 2, -height / 2), new THREE.Vector3(offset, width / 2, height / 2), wire, matCopper));
+          loop.add(makeCylinderBetween(new THREE.Vector3(offset, -width / 2, height / 2), new THREE.Vector3(offset, width / 2, height / 2), wire, matCopper));
+          loop.add(makeCylinderBetween(new THREE.Vector3(offset, -width / 2, -height / 2), new THREE.Vector3(offset, width / 2, -height / 2), wire, matCopper));
+          [
+            [offset, -width / 2, -height / 2],
+            [offset, width / 2, -height / 2],
+            [offset, -width / 2, height / 2],
+            [offset, width / 2, height / 2]
+          ].forEach(p => {
+            const joint = new THREE.Mesh(jointGeo, matCopper);
+            joint.position.set(p[0], p[1], p[2]);
+            loop.add(joint);
+          });
+          coilGroup.add(loop);
+        }
+
+        const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 17.6, 20), matSteel);
         shaft.rotation.x = Math.PI / 2;
-        rotorGroup.add(shaft);
+        coilGroup.add(shaft);
 
-        const COMM_LEN = 4.0;
-        const segs = n * 2;
-        const segmentArc = (Math.PI * 2) / segs;
-        const gapArc = 0.2;
-        const copperArc = segmentArc - gapArc;
-        const phaseFix = Math.PI / 2;
+        const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.72, 0.95, 24), matDark);
+        hub.rotation.x = Math.PI / 2;
+        coilGroup.add(hub);
 
-        for (let i = 0; i < segs; i++) {
-          const centerAngle = i * segmentArc + phaseFix;
-          const startAngle = centerAngle - (copperArc / 2);
-          const geo = new THREE.CylinderGeometry(1.2, 1.2, COMM_LEN, 32, 1, false, startAngle, copperArc);
-          const mesh = new THREE.Mesh(geo, matBrass);
-          mesh.rotation.x = Math.PI / 2; mesh.position.z = COMM_CENTER_Z;
-          rotorGroup.add(mesh);
-        }
+        const brushL = makeCylinderBetween(new THREE.Vector3(-4.7, -1.0, 0), new THREE.Vector3(-7.0, -1.0, 0), 0.08, matDark);
+        const brushR = makeCylinderBetween(new THREE.Vector3(4.7, 1.0, 0), new THREE.Vector3(7.0, 1.0, 0), 0.08, matDark);
+        clearGroup(baseGroup);
+        baseGroup.add(brushL, brushR);
+        const resistor = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.7, 1.0), new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.5, metalness: 0.1 }));
+        resistor.position.set(0, -6.1, -4.4);
+        baseGroup.add(resistor);
 
-        const angStep = Math.PI / n;
-
-        for (let i = 0; i < n; i++) {
-          const cGroup = new THREE.Group();
-          const w = 5, l = 12, t = 0.25;
-
-          const sideL = new THREE.Mesh(new THREE.CylinderGeometry(t, t, l, 8), matCopper);
-          sideL.rotation.x = Math.PI / 2; sideL.position.x = -w / 2;
-          const sideR = new THREE.Mesh(new THREE.CylinderGeometry(t, t, l, 8), matCopper);
-          sideR.rotation.x = Math.PI / 2; sideR.position.x = w / 2;
-          const sideB = new THREE.Mesh(new THREE.CylinderGeometry(t, t, w, 8), matCopper);
-          sideB.rotation.z = Math.PI / 2; sideB.position.z = -l / 2;
-
-          const commR = 1.2;
-          const armX = w / 2;
-          const connLen = armX - commR;
-          const connCenter = commR + connLen / 2;
-
-          const connL = new THREE.Mesh(new THREE.CylinderGeometry(t, t, connLen, 8), matCopper);
-          connL.rotation.z = Math.PI / 2; connL.position.x = -connCenter; connL.position.z = COIL_END_Z;
-          const connR = new THREE.Mesh(new THREE.CylinderGeometry(t, t, connLen, 8), matCopper);
-          connR.rotation.z = Math.PI / 2; connR.position.x = connCenter; connR.position.z = COIL_END_Z;
-
-          cGroup.add(sideL, sideR, sideB, connL, connR);
-
-          const jointGeo = new THREE.SphereGeometry(t, 12, 8);
-
-          const jointLFront = new THREE.Mesh(jointGeo, matCopper); jointLFront.position.set(-w / 2, 0, COIL_END_Z);
-          const jointLBack = new THREE.Mesh(jointGeo, matCopper); jointLBack.position.set(-w / 2, 0, -l / 2);
-          const jointRBack = new THREE.Mesh(jointGeo, matCopper); jointRBack.position.set(w / 2, 0, -l / 2);
-          const jointRFront = new THREE.Mesh(jointGeo, matCopper); jointRFront.position.set(w / 2, 0, COIL_END_Z);
-          cGroup.add(jointLFront, jointLBack, jointRBack, jointRFront);
-
-          const arrL = createArrow(); arrL.position.x = -w / 2;
-          const arrR = createArrow(); arrR.position.x = w / 2;
-          cGroup.add(arrL, arrR);
-
-          cGroup.rotation.z = i * angStep;
-          rotorGroup.add(cGroup);
-          arrows.push({ group: cGroup, L: arrL, R: arrR, baseAng: i * angStep });
+        const particleGeo = new THREE.SphereGeometry(0.16, 12, 8);
+        for (let i = 0; i < 34; i++) {
+          const dot = new THREE.Mesh(particleGeo, matCurrentForward);
+          dot.userData.phase = i / 34;
+          coilGroup.add(dot);
+          currentParticles.push(dot);
         }
       }
 
-      // 5. 물리 업데이트
-      function update() {
-        rawInputCurrent = parseFloat(inputI.value);
-        rawInputB = parseFloat(inputB.value);
+      function buildSolenoidCoil() {
+        clearGroup(coilGroup);
+        clearGroup(baseGroup);
+        currentParticles.length = 0;
 
-        if (isPaused) return;
+        const turns = Number(turnsInput.value);
+        const count = Math.min(42, Math.max(8, Math.round(turns * 0.72)));
+        visualTurnCount = count;
+        const radius = 2.45;
+        const length = 10.4;
+        const samples = count * 24;
+        const points = [];
 
-        const netDirection = currentDirection * magnetDirection;
-        let torqueSum = 0;
+        for (let i = 0; i <= samples; i++) {
+          const u = i / samples;
+          const angle = windingDirection * u * count * Math.PI * 2;
+          points.push(new THREE.Vector3(
+            radius * Math.cos(angle),
+            -length / 2 + u * length,
+            radius * Math.sin(angle)
+          ));
+        }
 
-        arrows.forEach(obj => {
-          const totalRot = rotorGroup.rotation.z + obj.baseAng;
-          const normRot = totalRot % (Math.PI * 2);
-          const factor = Math.abs(Math.cos(normRot));
-          const segmentTorque = factor * rawInputCurrent * rawInputB * netDirection;
-          torqueSum += segmentTorque;
+        const curve = new THREE.CatmullRomCurve3(points);
+        const helix = new THREE.Mesh(new THREE.TubeGeometry(curve, samples, 0.085, 12, false), matCopper);
+        coilGroup.add(helix);
 
-          if (showForceArrows && rawInputCurrent > 0.01) {
-            const s = Math.abs(segmentTorque) * 20.0;
-            if (s < 0.1) {
-              obj.L.visible = false; obj.R.visible = false;
-            } else {
-              obj.L.visible = true; obj.R.visible = true;
-              obj.L.scale.set(s, s, s); obj.R.scale.set(s, s, s);
-              const radius = 2.5;
-              const worldX_R = radius * Math.cos(totalRot);
-              const worldX_L = radius * Math.cos(totalRot + Math.PI);
-              const forceDirOnRightSide = (netDirection >= 0) ? 0 : Math.PI;
-              const forceDirOnLeftSide = (forceDirOnRightSide === 0) ? Math.PI : 0;
-              let targetR = (worldX_R >= 0) ? forceDirOnRightSide : forceDirOnLeftSide;
-              let targetL = (worldX_L >= 0) ? forceDirOnRightSide : forceDirOnLeftSide;
-              obj.R.rotation.z = -totalRot + targetR; obj.R.rotation.x = 0;
-              obj.L.rotation.z = -totalRot + targetL; obj.L.rotation.x = 0;
-            }
-          } else {
-            obj.L.visible = false; obj.R.visible = false;
-          }
+        const coreMat = new THREE.MeshStandardMaterial({
+          color: 0xb9f7ff,
+          roughness: 0.24,
+          metalness: 0.05,
+          transparent: true,
+          opacity: 0.12,
+          emissive: 0x003a46,
+          emissiveIntensity: 0.08
         });
+        const core = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.76, radius * 0.76, length + 0.6, 36), coreMat);
+        coilGroup.add(core);
 
-        if (rawInputCurrent < 0.01) torqueSum = 0;
+        coilTopPoleBadge = makePoleBadge('-', '#94a3b8');
+        coilBottomPoleBadge = makePoleBadge('-', '#94a3b8');
+        coilPoleState = 'neutral';
+        coilTopPoleBadge.position.set(-4.35, length / 2 - 0.35, 0.95);
+        coilBottomPoleBadge.position.set(-4.35, -length / 2 + 0.35, 0.95);
+        const polarityGuide = makeCylinderBetween(
+          new THREE.Vector3(-4.35, -length / 2 + 1.15, 0.9),
+          new THREE.Vector3(-4.35, length / 2 - 1.15, 0.9),
+          0.025,
+          new THREE.MeshBasicMaterial({ color: 0x00a9c0, transparent: true, opacity: 0.62 })
+        );
+        baseGroup.add(coilTopPoleBadge, coilBottomPoleBadge, polarityGuide);
 
-        const frictionCoef = 0.045; friction = frictionCoef * angularVelocity; inertia = 0.5;
-        alpha = (torqueSum - friction) / inertia; angularVelocity += alpha * 0.1;
-        const dt = 0.05 * currentSpeedFactor; currentAngle += angularVelocity * dt;
-        rotorGroup.rotation.z = currentAngle;
+        const outerX = radius + 3.2;
+        const resistorY = -1.45;
+        const resistorH = 2.5;
+        addWirePath(baseGroup, [
+          new THREE.Vector3(radius, length / 2, 0),
+          new THREE.Vector3(radius + 1.0, length / 2 + 0.45, 0),
+          new THREE.Vector3(outerX, length / 2 + 0.45, 0),
+          new THREE.Vector3(outerX, resistorY + resistorH / 2, 0)
+        ], 0.085, matCopper);
+        addWirePath(baseGroup, [
+          new THREE.Vector3(outerX, resistorY - resistorH / 2, 0),
+          new THREE.Vector3(outerX, -6.45, 0),
+          new THREE.Vector3(radius + 1.0, -length / 2 - 0.45, 0),
+          new THREE.Vector3(radius, -length / 2, 0)
+        ], 0.085, matCopper);
 
-        const rpm = Math.round((angularVelocity / (2 * Math.PI)) * 60);
-        dispIval.textContent = rawInputCurrent.toFixed(2); dispBval.textContent = rawInputB.toFixed(2);
-        dispI.textContent = (rawInputCurrent * currentDirection).toFixed(2);
-        dispFval.textContent = torqueSum.toFixed(2); dispRPM.textContent = rpm;
+        const voltmeter = makeVoltmeter();
+        voltmeter.position.set(outerX, resistorY, 0.08);
+        baseGroup.add(voltmeter);
 
-        gBuf[gIdx] = rpm; gIdx = (gIdx + 1) % 300;
+        const motionLine = makeCylinderBetween(new THREE.Vector3(0, -8.4, 0), new THREE.Vector3(0, 8.4, 0), 0.035, matSteel);
+        motionLine.material = new THREE.MeshBasicMaterial({ color: 0x6fb8cc, transparent: true, opacity: 0.62 });
+        baseGroup.add(motionLine);
+
+        coilPolarityArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(-3.75, -5.8, 0), 11.6, 0x00bcd4, 0.64, 0.32);
+        coilPolarityArrow.cone.material = matField;
+        coilPolarityArrow.line.material = matField;
+        coilPolarityArrow.visible = false;
+        baseGroup.add(coilPolarityArrow);
+
+        for (let i = 0; i < 12; i++) {
+          const arrow = makeCurrentArrowMarker();
+          arrow.userData.phase = (i + 0.35) / 12;
+          coilGroup.add(arrow);
+          currentParticles.push(arrow);
+        }
+      }
+
+      function pathPoint(t) {
+        if (mode === 'magnet') {
+          const count = Math.max(8, visualTurnCount || 18);
+          const radius = 2.45;
+          const length = 10.4;
+          const p = ((t % 1) + 1) % 1;
+          const angle = windingDirection * p * count * Math.PI * 2;
+          return new THREE.Vector3(
+            radius * Math.cos(angle),
+            -length / 2 + p * length,
+            radius * Math.sin(angle)
+          );
+        }
+
+        const width = 5.6;
+        const height = 8.2;
+        const p = ((t % 1) + 1) % 1;
+        if (p < 0.25) {
+          const k = p / 0.25;
+          return new THREE.Vector3(0, -width / 2, -height / 2 + k * height);
+        }
+        if (p < 0.5) {
+          const k = (p - 0.25) / 0.25;
+          return new THREE.Vector3(0, -width / 2 + k * width, height / 2);
+        }
+        if (p < 0.75) {
+          const k = (p - 0.5) / 0.25;
+          return new THREE.Vector3(0, width / 2, height / 2 - k * height);
+        }
+        const k = (p - 0.75) / 0.25;
+        return new THREE.Vector3(0, width / 2 - k * width, -height / 2);
+      }
+
+      function buildFieldArrows() {
+        clearGroup(fieldGroup);
+        const dir = poleDirection > 0 ? 1 : -1;
+        const arrowDir = new THREE.Vector3(dir, 0, 0);
+        for (let y = -3.2; y <= 3.2; y += 1.6) {
+          for (let z = -3.2; z <= 3.2; z += 1.6) {
+            const origin = new THREE.Vector3(-4.8 * dir, y, z);
+            const arrow = new THREE.ArrowHelper(arrowDir, origin, 9.4, 0x3aa8b7, 0.56, 0.28);
+            arrow.cone.material = matField;
+            arrow.line.material = matField;
+            fieldGroup.add(arrow);
+          }
+        }
+      }
+
+      function setMode(nextMode) {
+        mode = nextMode;
+        modeRotate.classList.toggle('active', mode === 'rotate');
+        modeMagnet.classList.toggle('active', mode === 'magnet');
+        sideMagnets.visible = mode === 'rotate';
+        fieldGroup.visible = mode === 'rotate';
+        barMagnet.visible = mode === 'magnet';
+        buildCoil();
+        coilGroup.rotation.set(0, 0, mode === 'rotate' ? theta : 0);
+        barMagnet.position.set(0, 0, 0);
+        prevFlux = null;
+      }
+
+      function valueText(number, digits, unit) {
+        return `${number.toFixed(digits)}<small> ${unit}</small>`;
+      }
+
+      function updateReadout(flux, emf, current, power) {
+        fluxOut.innerHTML = valueText(flux, 3, 'Wb');
+        emfOut.innerHTML = valueText(emf, 2, 'V');
+        currentOut.innerHTML = valueText(current, 2, 'A');
+        powerOut.innerHTML = valueText(emf, 2, 'V');
+        voltmeterTargetAngle = -Math.max(-1, Math.min(1, emf / 3)) * (Math.PI * 0.34);
+
+        const absCurrent = Math.abs(current);
+        if (absCurrent < 0.015) {
+          directionBadge.textContent = '유도 전류 방향: 거의 없음';
+        } else {
+          const prefix = mode === 'magnet' ? '위에서 볼 때 ' : '';
+          directionBadge.textContent = current > 0 ? `유도 전류 방향: ${prefix}시계 방향` : `유도 전류 방향: ${prefix}반시계 방향`;
+        }
+      }
+
+      function updateVoltmeterNeedle(delta) {
+        if (!voltmeterNeedle) return;
+        const follow = Math.min(1, delta * 9);
+        voltmeterNeedleAngle += (voltmeterTargetAngle - voltmeterNeedleAngle) * follow;
+        voltmeterNeedle.rotation.z = voltmeterNeedleAngle;
+      }
+
+      function updateControlLabels() {
+        speedVal.textContent = `${Number(speedInput.value).toFixed(1)} rad/s`;
+        fieldVal.textContent = `${Number(fieldInput.value).toFixed(2)} T`;
+        turnsVal.textContent = `${Number(turnsInput.value)} 회`;
+        loadVal.textContent = `${Number(loadInput.value)} Ω`;
+      }
+
+      function pushGraph(flux, emf) {
+        fluxBuf[graphIndex] = flux;
+        emfBuf[graphIndex] = emf;
+        graphIndex = (graphIndex + 1) % graphLength;
       }
 
       function drawGraph() {
-        // 캔버스의 실제 표시 크기에 맞춰 버퍼 크기 조정 (해상도 유지)
-        // 현재 graphbox css가 모바일에서 92% width이므로 고정 300px보다 유동적으로 그리는 게 좋음
-        // 여기선 간단히 비율 유지
-        ctxG.clearRect(0, 0, 300, 120);
-        ctxG.strokeStyle = 'rgba(200,200,200,0.5)'; ctxG.lineWidth = 1;
-        ctxG.beginPath(); ctxG.moveTo(0, 120); ctxG.lineTo(300, 120); ctxG.stroke();
-        ctxG.strokeStyle = '#0284c7'; ctxG.lineWidth = 2; ctxG.beginPath();
-        let curMax = 5; for (let i = 0; i < 300; i++) { const v = Math.abs(gBuf[i]); if (v > curMax) curMax = v; }
-        maxGraphY = curMax + 1;
-        for (let i = 0; i < 300; i++) {
-          const idx = (gIdx + i) % 300; const val = gBuf[idx];
-          const y = 120 - (Math.abs(val) / maxGraphY) * 110;
-          if (i === 0) ctxG.moveTo(i, y); else ctxG.lineTo(i, y);
+        const w = graph.width;
+        const h = graph.height;
+        graphCtx.clearRect(0, 0, w, h);
+        graphCtx.fillStyle = 'rgba(248, 252, 255, 0.82)';
+        graphCtx.fillRect(0, 0, w, h);
+        graphCtx.strokeStyle = 'rgba(90, 116, 140, 0.22)';
+        graphCtx.lineWidth = 1;
+
+        for (let i = 0; i <= 4; i++) {
+          const y = 16 + i * ((h - 32) / 4);
+          graphCtx.beginPath();
+          graphCtx.moveTo(0, y);
+          graphCtx.lineTo(w, y);
+          graphCtx.stroke();
         }
-        ctxG.stroke(); ctxG.fillStyle = "#0284c7"; ctxG.font = "10px sans-serif"; ctxG.fillText("Max: " + maxGraphY.toFixed(0) + " RPM", 5, 15);
+
+        const mid = h / 2;
+        graphCtx.strokeStyle = 'rgba(20, 32, 51, 0.28)';
+        graphCtx.beginPath();
+        graphCtx.moveTo(0, mid);
+        graphCtx.lineTo(w, mid);
+        graphCtx.stroke();
+
+        let fluxMax = 0.04;
+        let emfMax = 0.2;
+        for (let i = 0; i < graphLength; i++) {
+          fluxMax = Math.max(fluxMax, Math.abs(fluxBuf[i]));
+          emfMax = Math.max(emfMax, Math.abs(emfBuf[i]));
+        }
+
+        drawLine(fluxBuf, fluxMax, '#0f7a8a', 2.2);
+        drawLine(emfBuf, emfMax, '#d97706', 2.0);
+
+        graphCtx.fillStyle = '#64748b';
+        graphCtx.font = '700 10px Pretendard, sans-serif';
+        graphCtx.fillText(`Φ max ${fluxMax.toFixed(3)} Wb`, 8, 14);
+        graphCtx.fillText(`ε max ${emfMax.toFixed(2)} V`, w - 92, 14);
+
+        function drawLine(buffer, max, color, lineWidth) {
+          graphCtx.strokeStyle = color;
+          graphCtx.lineWidth = lineWidth;
+          graphCtx.beginPath();
+          for (let x = 0; x < graphLength; x++) {
+            const idx = (graphIndex + x) % graphLength;
+            const y = mid - (buffer[idx] / max) * (h * 0.38);
+            if (x === 0) graphCtx.moveTo(x, y);
+            else graphCtx.lineTo(x, y);
+          }
+          graphCtx.stroke();
+        }
       }
 
-      function animate() {
+      function computeFlux(delta) {
+        const speed = Number(speedInput.value) * motionDirection;
+        const field = Number(fieldInput.value) * poleDirection;
+
+        if (!paused) {
+          if (mode === 'rotate') {
+            theta += speed * delta;
+          } else {
+            magnetPhase += speed * delta;
+          }
+        }
+
+        if (mode === 'rotate') {
+          coilGroup.rotation.z = theta;
+          const flux = field * coilArea * Math.cos(theta);
+          return flux;
+        }
+
+        coilGroup.rotation.set(0, 0, 0);
+        const amplitude = 7.4;
+        const magnetY = amplitude * Math.sin(magnetPhase);
+        barMagnet.position.set(0, magnetY, 0);
+        barMagnet.rotation.set(0, 0, 0);
+        const coupling = Math.exp(-(magnetY * magnetY) / 18);
+        return field * coilArea * coupling;
+      }
+
+      function updateParticles(delta, current) {
+        const abs = Math.abs(current);
+        const visible = abs > 0.0005;
+        const sign = current >= 0 ? 1 : -1;
+        const speed = Math.min(1.55, 0.28 + abs * 0.55);
+        currentParticles.forEach((dot, i) => {
+          dot.visible = visible;
+          if (!visible) return;
+
+          if (dot.userData.kind === 'arrow') {
+            const phase = dot.userData.phase;
+            const p = pathPoint(phase);
+            const next = pathPoint(phase + 0.006 * sign);
+            const tangent = next.sub(p).normalize();
+            dot.position.copy(p);
+            dot.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
+            dot.children.forEach(child => {
+              child.material = sign > 0 ? matCurrentForward : matCurrentReverse;
+            });
+            dot.scale.setScalar(Math.min(1.55, 1.0 + abs * 0.16));
+            return;
+          }
+
+          dot.userData.phase += delta * speed * sign;
+          const p = pathPoint(dot.userData.phase + i / currentParticles.length);
+          dot.position.copy(p);
+          dot.material = sign > 0 ? matCurrentForward : matCurrentReverse;
+          const scale = Math.min(2.35, 1.15 + abs * 0.25);
+          dot.scale.setScalar(scale);
+        });
+      }
+
+      function animate(now) {
         requestAnimationFrame(animate);
-        update(); drawGraph();
+        const rawDelta = Math.min(0.05, (now - lastTime) / 1000 || 0.016);
+        const simDelta = slowMotion ? rawDelta * 0.22 : rawDelta;
+        lastTime = now;
+
+        const turns = Number(turnsInput.value);
+        const wantedVisual = mode === 'magnet'
+          ? Math.min(42, Math.max(8, Math.round(turns * 0.72)))
+          : Math.min(7, Math.max(1, Math.round(turns / 9)));
+        if (wantedVisual !== visualTurnCount) buildCoil();
+
+        updateControlLabels();
+        if (paused) {
+          controls.update();
+          renderer.render(scene, camera);
+          return;
+        }
+
+        const flux = computeFlux(simDelta);
+        let lenzEmf = 0;
+        let emf = 0;
+        if (prevFlux !== null && simDelta > 0) {
+          lenzEmf = -turns * (flux - prevFlux) / simDelta;
+          emf = windingDirection * lenzEmf;
+        }
+        prevFlux = flux;
+
+        const resistance = Number(loadInput.value);
+        const current = emf / resistance;
+        latestCurrent = current;
+        const power = current * current * resistance;
+
+        updateReadout(flux, emf, current, power);
+        updateCoilPolarity(lenzEmf);
+        updateVoltmeterNeedle(simDelta);
+        updateParticles(simDelta, latestCurrent);
+        pushGraph(flux, emf);
+        drawGraph();
+
         controls.update();
         renderer.render(scene, camera);
       }
 
-      selectCoils.onchange = () => createRotor(parseInt(selectCoils.value));
-      btnSlowToggle.onclick = () => {
-        currentSpeedFactor = (currentSpeedFactor === NORMAL_SPEED_FACTOR) ? SLOW_SPEED_FACTOR : NORMAL_SPEED_FACTOR;
-        btnSlowToggle.textContent = (currentSpeedFactor === SLOW_SPEED_FACTOR) ? "🐢 0.1배속 적용 중 (클릭하여 해제)" : "🐢 0.1배속 느리게 보기 (OFF)";
-        btnSlowToggle.classList.toggle("active-mode");
-      };
-      btnForce.onclick = () => { showForceArrows = !showForceArrows; btnForce.classList.toggle('active'); };
-      btnResetCam.onclick = () => { camera.position.set(20, 15, 30); controls.target.set(0, 0, 0); controls.update(); }
-      btnMagnetSwap.onclick = () => { magnetDirection *= -1; updateMagnetVisuals(); };
-      btnCurrentRev.onclick = () => {
-        currentDirection *= -1;
-        const isNormal = (currentDirection === 1);
-        btnCurrentRev.innerHTML = isNormal ? "⚡ 전류 방향 변경<br>(정방향)" : "⚡ 전류 방향 변경<br>(역방향)";
-        btnCurrentRev.style.background = isNormal ? "var(--warn)" : "#d35400";
-        wireL.material = isNormal ? matRed : matBlue;
-        wireR.material = isNormal ? matBlue : matRed;
-      };
-      btnPause.onclick = () => {
-        isPaused = !isPaused;
-        btnPause.innerHTML = isPaused ? "▶ 재생" : "⏸ 일시정지"; btnPause.classList.toggle("paused");
-      };
-
-      // ★ 반응형 리사이즈 로직 (PC/Mobile 분기) ★
-      function onWindowResize() {
-        const w = window.innerWidth;
-        let h = window.innerHeight;
-
-        // 모바일(768px 이하)이면 45% 높이만 캔버스로 사용
-        if (w <= 768) {
-          h = window.innerHeight * 0.45;
-        }
-
+      function onResize() {
+        const rect = elScene.getBoundingClientRect();
+        const w = Math.max(1, Math.round(rect.width || window.innerWidth));
+        const h = Math.max(1, Math.round(rect.height || window.innerHeight));
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
         renderer.setSize(w, h);
       }
-      window.addEventListener('resize', onWindowResize);
-      onWindowResize(); // 초기 실행
 
-      createRotor(1);
-      animate();
+      modeRotate.addEventListener('click', () => setMode('rotate'));
+      modeMagnet.addEventListener('click', () => setMode('magnet'));
+      pauseBtn.addEventListener('click', () => {
+        paused = !paused;
+        pauseBtn.textContent = paused ? '재생' : '일시정지';
+        pauseBtn.classList.toggle('success', !paused);
+        pauseBtn.classList.toggle('primary', paused);
+        lastTime = performance.now();
+      });
+      slowMotionBtn.addEventListener('click', () => {
+        slowMotion = !slowMotion;
+        slowMotionBtn.classList.toggle('active', slowMotion);
+        slowMotionBtn.textContent = slowMotion ? '슬로우모션 중' : '슬로우모션';
+        lastTime = performance.now();
+      });
+      reverseFieldBtn.addEventListener('click', () => {
+        poleDirection *= -1;
+        reverseFieldBtn.classList.toggle('active');
+        updatePoleVisuals();
+        prevFlux = null;
+      });
+      reverseWindingBtn.addEventListener('click', () => {
+        windingDirection *= -1;
+        reverseWindingBtn.classList.toggle('active', windingDirection < 0);
+        reverseWindingBtn.textContent = windingDirection > 0 ? '감은 방향 반전' : '반대 감기 적용';
+        buildCoil();
+        prevFlux = null;
+      });
+      [speedInput, fieldInput, turnsInput, loadInput].forEach(input => {
+        input.addEventListener('input', () => {
+          updateControlLabels();
+          prevFlux = null;
+        });
+      });
 
+      buildCoil();
+      buildFieldArrows();
+      updatePoleVisuals();
+      setMode('magnet');
+      updateControlLabels();
+      onResize();
+      window.addEventListener('resize', onResize);
+      requestAnimationFrame(animate);
     })();
   </script>
 </body>
