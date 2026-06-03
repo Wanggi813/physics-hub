@@ -95,7 +95,7 @@ const projects = [
   { title: "옴의 법칙", category: "전자/반도체", desc: "V=IR, 직렬/병렬 에 따른 옴의 법칙 확인하기", tags: ["전압", "전류"], emoji: "⚡", demo: "./simul/옴의 법칙.html", curriculumId: "[12물리02-02]", thumb: "./thumb_nail/옴의_법칙.png" },
   { title: "자성체", category: "전자/반도체", desc: "강자성/상자성/반자성, 전자석 응용 탐구", tags: ["자성체", "전자석"], emoji: "🧲", demo: "./simul/자성체.html", curriculumId: "[12물리02-04]", thumb: "./thumb_nail/자성체.svg" },
   { title: "직류 전동기", category: "전자/반도체", desc: "자기력(F=BIL)에 의한 직류 전동기의 회전 원리 탐구", tags: ["전동기", "자기력", "정류자", "코일"], emoji: "⚙️", demo: "./simul/전동기.html", curriculumId: "[12물리02-04]", thumb: "./thumb_nail/전동기.png" },
-  { title: "전자기 유도", category: "전자/반도체", desc: "자석 운동으로 변하는 자기선속, 유도 기전력, 렌츠 법칙을 관찰하기", tags: ["전자기유도", "자기선속", "유도기전력", "렌츠법칙", "솔레노이드"], emoji: "🧲", demo: "./simul/전자기유도.html", curriculumId: "[12물리02-06], [12전자01-05]", thumb: "./thumb_nail/전자기유도.png" },
+  { title: "전자기 유도", category: "전자/반도체", desc: "자석 운동으로 변하는 자기선속, 유도 기전력, 렌츠 법칙을 관찰하기", tags: ["전자기유도", "유도기전력", "렌츠법칙"], emoji: "🧲", demo: "./simul/전자기유도.html", curriculumId: "[12물리02-06], [12전자01-05]", thumb: "./thumb_nail/전자기유도.png" },
   { title: "간섭무늬", category: "파동/광학", desc: "파장과 파원의 간격 조절로 간섭 패턴 관찰.", tags: ["파동", "무늬"], emoji: "🎯", demo: "./simul/간섭무늬.html", curriculumId: "[12물리03-01]", thumb: "./thumb_nail/간섭무늬.png" },
   { title: "렌즈의 굴절", category: "파동/광학", desc: "렌즈의 종류에 따라 어떤 상이 맺히는지 확인하기", tags: ["렌즈", "상"], emoji: "🔭", demo: "./simul/렌즈의 굴절.html", curriculumId: "[12물리03-02]", thumb: "./thumb_nail/렌즈의_법칙.png" },
   { title: "스넬의 법칙", category: "파동/광학", desc: "굴절률 변화에 따른 입사/굴절/임계각 확인하기", tags: ["n1,n2", "TIR"], emoji: "📐", demo: "./simul/스넬의 법칙.html", curriculumId: "[12물리03-02]", thumb: "./thumb_nail/스넬의_법칙.png" },
