@@ -93,7 +93,7 @@ const projects = [
   { title: "열역학", category: "열", desc: "등압, 등적, 등온, 단열과정 확인하기", tags: ["열기관", "열과정"], emoji: "🐦‍🔥", demo: "./simul/열역학.html", curriculumId: "[12물리01-06], [12역학02-02]", thumb: "./thumb_nail/열역학.png" },
   { title: "전기장과 등전위면", category: "전자/반도체", desc: "전하가 만드는 전기장과 등전위면을 알아보기", tags: ["전기장", "등전위면"], emoji: "⚡", demo: "./simul/전기장과 등전위면.html", curriculumId: "[12물리02-01], [12전자01-01]", thumb: "./thumb_nail/전기장과_등전위면.png" },
   { title: "옴의 법칙", category: "전자/반도체", desc: "V=IR, 직렬/병렬 에 따른 옴의 법칙 확인하기", tags: ["전압", "전류"], emoji: "⚡", demo: "./simul/옴의 법칙.html", curriculumId: "[12물리02-02]", thumb: "./thumb_nail/옴의_법칙.png" },
-  { title: "자성체와 히스테리시스", category: "전자/반도체", desc: "강자성/상자성/반자성, B-H 자화 곡선, 전자석 응용 탐구", tags: ["자성체", "히스테리시스", "전자석"], emoji: "🧲", demo: "./simul/자성체.html", curriculumId: "[12물리02-04]", thumb: "./thumb_nail/자성체.svg" },
+  { title: "자성체", category: "전자/반도체", desc: "강자성/상자성/반자성, 전자석 응용 탐구", tags: ["자성체", "전자석"], emoji: "🧲", demo: "./simul/자성체.html", curriculumId: "[12물리02-04]", thumb: "./thumb_nail/자성체.svg" },
   { title: "직류 전동기", category: "전자/반도체", desc: "자기력(F=BIL)에 의한 직류 전동기의 회전 원리 탐구", tags: ["전동기", "자기력", "정류자", "코일"], emoji: "⚙️", demo: "./simul/전동기.html", curriculumId: "[12물리02-04]", thumb: "./thumb_nail/전동기.png" },
   { title: "전자기 유도", category: "전자/반도체", desc: "자석 운동으로 변하는 자기선속, 유도 기전력, 렌츠 법칙을 관찰하기", tags: ["전자기유도", "자기선속", "유도기전력", "렌츠법칙", "솔레노이드"], emoji: "🧲", demo: "./simul/전자기유도.html", curriculumId: "[12물리02-06], [12전자01-05]", thumb: "./thumb_nail/전자기유도.png" },
   { title: "간섭무늬", category: "파동/광학", desc: "파장과 파원의 간격 조절로 간섭 패턴 관찰.", tags: ["파동", "무늬"], emoji: "🎯", demo: "./simul/간섭무늬.html", curriculumId: "[12물리03-01]", thumb: "./thumb_nail/간섭무늬.png" },
