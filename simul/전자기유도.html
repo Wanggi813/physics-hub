@@ -151,7 +151,7 @@
 
     .mode-tabs {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 5px;
       padding: 4px;
       border-radius: 9px;
@@ -452,12 +452,13 @@
 
       <div class="mode-tabs" aria-label="실험 방식">
         <button class="tab-btn active" id="modeMagnet" type="button">자석 운동</button>
-        <button class="tab-btn" id="modeRotate" type="button">심화: 코일 회전</button>
+        <button class="tab-btn" id="modeRotate" type="button">코일 회전</button>
+        <button class="tab-btn" id="modeFreeDrag" type="button">자유 모드</button>
       </div>
 
-      <div class="row">
+      <div class="row" id="speedRow">
         <label for="speed">왕복 속도</label>
-        <span class="value" id="speedVal">2.4 rad/s</span>
+        <span class="value" id="speedVal">2.4 m/s</span>
         <input id="speed" type="range" min="0" max="8" value="2.4" step="0.1" />
       </div>
 
@@ -471,12 +472,6 @@
         <label for="turns">코일 감은 수</label>
         <span class="value" id="turnsVal">24 회</span>
         <input id="turns" type="range" min="1" max="60" value="24" step="1" />
-      </div>
-
-      <div class="row">
-        <label for="load">전압계 저항</label>
-        <span class="value" id="loadVal">12 Ω</span>
-        <input id="load" type="range" min="1" max="40" value="12" step="1" />
       </div>
 
       <div class="control-grid">
@@ -495,13 +490,9 @@
           <span>유도 기전력 ε</span>
           <strong id="emfOut">0.00<small> V</small></strong>
         </div>
-        <div class="meter">
-          <span>유도 전류 I</span>
-          <strong id="currentOut">0.00<small> A</small></strong>
-        </div>
-        <div class="meter">
-          <span>전압계 V</span>
-          <strong id="powerOut">0.00<small> V</small></strong>
+        <div class="meter" style="grid-column:1/-1;border-color:rgba(213,132,47,0.4);background:rgba(255,248,235,0.9)">
+          <span style="color:#b45309">최대 기전력 ε<sub>max</sub></span>
+          <strong id="maxEmfOut" style="color:#b45309">0.00<small> V</small></strong>
         </div>
       </div>
     </section>
@@ -530,18 +521,17 @@
       const speedInput = document.getElementById('speed');
       const fieldInput = document.getElementById('field');
       const turnsInput = document.getElementById('turns');
-      const loadInput = document.getElementById('load');
       const speedVal = document.getElementById('speedVal');
       const fieldVal = document.getElementById('fieldVal');
       const turnsVal = document.getElementById('turnsVal');
-      const loadVal = document.getElementById('loadVal');
       const fluxOut = document.getElementById('fluxOut');
       const emfOut = document.getElementById('emfOut');
-      const currentOut = document.getElementById('currentOut');
-      const powerOut = document.getElementById('powerOut');
       const directionBadge = document.getElementById('directionBadge');
       const modeRotate = document.getElementById('modeRotate');
       const modeMagnet = document.getElementById('modeMagnet');
+      const modeFreeDragEl = document.getElementById('modeFreeDrag');
+      const speedRow = document.getElementById('speedRow');
+      const maxEmfOut = document.getElementById('maxEmfOut');
       const pauseBtn = document.getElementById('pause');
       const slowMotionBtn = document.getElementById('slowMotion');
       const reverseWindingBtn = document.getElementById('reverseWinding');
@@ -611,6 +601,10 @@
       let coilBottomPoleBadge = null;
       let coilPolarityArrow = null;
       let coilPoleState = '';
+      let freeMagnetY = 0;
+      let isDraggingMagnet = false;
+      let lastPointerY = 0;
+      let maxEmf = 0;
 
       const root = new THREE.Group();
       scene.add(root);
@@ -845,7 +839,7 @@
       }
 
       function buildCoil() {
-        if (mode === 'magnet') buildSolenoidCoil();
+        if (mode === 'magnet' || mode === 'free') buildSolenoidCoil();
         else buildRotatingCoil();
       }
 
@@ -900,12 +894,11 @@
         resistor.position.set(0, -6.1, -4.4);
         baseGroup.add(resistor);
 
-        const particleGeo = new THREE.SphereGeometry(0.16, 12, 8);
-        for (let i = 0; i < 34; i++) {
-          const dot = new THREE.Mesh(particleGeo, matCurrentForward);
-          dot.userData.phase = i / 34;
-          coilGroup.add(dot);
-          currentParticles.push(dot);
+        for (let i = 0; i < 12; i++) {
+          const arrow = makeCurrentArrowMarker();
+          arrow.userData.phase = (i + 0.5) / 12;
+          coilGroup.add(arrow);
+          currentParticles.push(arrow);
         }
       }
 
@@ -1000,7 +993,7 @@
       }
 
       function pathPoint(t) {
-        if (mode === 'magnet') {
+        if (mode === 'magnet' || mode === 'free') {
           const count = Math.max(8, visualTurnCount || 18);
           const radius = 2.45;
           const length = 10.4;
@@ -1051,32 +1044,44 @@
         mode = nextMode;
         modeRotate.classList.toggle('active', mode === 'rotate');
         modeMagnet.classList.toggle('active', mode === 'magnet');
+        modeFreeDragEl.classList.toggle('active', mode === 'free');
         sideMagnets.visible = mode === 'rotate';
         fieldGroup.visible = mode === 'rotate';
-        barMagnet.visible = mode === 'magnet';
+        barMagnet.visible = mode === 'magnet' || mode === 'free';
+        speedRow.style.display = mode === 'free' ? 'none' : '';
+        controls.enabled = mode !== 'free';
         buildCoil();
         coilGroup.rotation.set(0, 0, mode === 'rotate' ? theta : 0);
         barMagnet.position.set(0, 0, 0);
+        freeMagnetY = 0;
         prevFlux = null;
+        maxEmf = 0;
+        maxEmfOut.innerHTML = valueText(0, 2, 'V');
       }
 
       function valueText(number, digits, unit) {
         return `${number.toFixed(digits)}<small> ${unit}</small>`;
       }
 
-      function updateReadout(flux, emf, current, power) {
+      function updateReadout(flux, emf, current) {
         fluxOut.innerHTML = valueText(flux, 3, 'Wb');
         emfOut.innerHTML = valueText(emf, 2, 'V');
-        currentOut.innerHTML = valueText(current, 2, 'A');
-        powerOut.innerHTML = valueText(emf, 2, 'V');
         voltmeterTargetAngle = -Math.max(-1, Math.min(1, emf / 3)) * (Math.PI * 0.34);
 
+        if (Math.abs(emf) > maxEmf) {
+          maxEmf = Math.abs(emf);
+          maxEmfOut.innerHTML = valueText(maxEmf, 2, 'V');
+        }
+
         const absCurrent = Math.abs(current);
-        if (absCurrent < 0.015) {
+        if (mode === 'free' && absCurrent < 0.015) {
+          directionBadge.textContent = '↕ 화면을 드래그하여 자석을 이동하세요';
+        } else if (absCurrent < 0.015) {
           directionBadge.textContent = '유도 전류 방향: 거의 없음';
         } else {
-          const prefix = mode === 'magnet' ? '위에서 볼 때 ' : '';
-          directionBadge.textContent = current > 0 ? `유도 전류 방향: ${prefix}시계 방향` : `유도 전류 방향: ${prefix}반시계 방향`;
+          const prefix = (mode === 'magnet' || mode === 'free') ? '위에서 볼 때 ' : '';
+          const isCW = (mode === 'magnet' || mode === 'free') ? current < 0 : current > 0;
+          directionBadge.textContent = isCW ? `유도 전류 방향: ${prefix}시계 방향` : `유도 전류 방향: ${prefix}반시계 방향`;
         }
       }
 
@@ -1088,10 +1093,13 @@
       }
 
       function updateControlLabels() {
-        speedVal.textContent = `${Number(speedInput.value).toFixed(1)} rad/s`;
+        if (mode === 'free') {
+          speedVal.textContent = '직접 조작';
+        } else {
+          speedVal.textContent = `${Number(speedInput.value).toFixed(1)} ${mode === 'rotate' ? 'rad/s' : 'm/s'}`;
+        }
         fieldVal.textContent = `${Number(fieldInput.value).toFixed(2)} T`;
         turnsVal.textContent = `${Number(turnsInput.value)} 회`;
-        loadVal.textContent = `${Number(loadInput.value)} Ω`;
       }
 
       function pushGraph(flux, emf) {
@@ -1160,7 +1168,7 @@
         if (!paused) {
           if (mode === 'rotate') {
             theta += speed * delta;
-          } else {
+          } else if (mode === 'magnet') {
             magnetPhase += speed * delta;
           }
         }
@@ -1173,7 +1181,7 @@
 
         coilGroup.rotation.set(0, 0, 0);
         const amplitude = 7.4;
-        const magnetY = amplitude * Math.sin(magnetPhase);
+        const magnetY = mode === 'free' ? freeMagnetY : amplitude * Math.sin(magnetPhase);
         barMagnet.position.set(0, magnetY, 0);
         barMagnet.rotation.set(0, 0, 0);
         const coupling = Math.exp(-(magnetY * magnetY) / 18);
@@ -1183,32 +1191,22 @@
       function updateParticles(delta, current) {
         const abs = Math.abs(current);
         const visible = abs > 0.0005;
-        const sign = current >= 0 ? 1 : -1;
-        const speed = Math.min(1.55, 0.28 + abs * 0.55);
-        currentParticles.forEach((dot, i) => {
+        const rawSign = current >= 0 ? 1 : -1;
+        // 솔레노이드 헬릭스는 위로 갈수록 시계 방향으로 감김 → 물리 전류 방향과 반대이므로 반전
+        const arrowSign = (mode === 'magnet' || mode === 'free') ? -rawSign : rawSign;
+        currentParticles.forEach(dot => {
           dot.visible = visible;
           if (!visible) return;
-
-          if (dot.userData.kind === 'arrow') {
-            const phase = dot.userData.phase;
-            const p = pathPoint(phase);
-            const next = pathPoint(phase + 0.006 * sign);
-            const tangent = next.sub(p).normalize();
-            dot.position.copy(p);
-            dot.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
-            dot.children.forEach(child => {
-              child.material = sign > 0 ? matCurrentForward : matCurrentReverse;
-            });
-            dot.scale.setScalar(Math.min(1.55, 1.0 + abs * 0.16));
-            return;
-          }
-
-          dot.userData.phase += delta * speed * sign;
-          const p = pathPoint(dot.userData.phase + i / currentParticles.length);
+          const phase = dot.userData.phase;
+          const p = pathPoint(phase);
+          const next = pathPoint(phase + 0.006 * arrowSign);
+          const tangent = next.sub(p).normalize();
           dot.position.copy(p);
-          dot.material = sign > 0 ? matCurrentForward : matCurrentReverse;
-          const scale = Math.min(2.35, 1.15 + abs * 0.25);
-          dot.scale.setScalar(scale);
+          dot.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
+          dot.children.forEach(child => {
+            child.material = arrowSign > 0 ? matCurrentForward : matCurrentReverse;
+          });
+          dot.scale.setScalar(Math.min(1.55, 1.0 + abs * 0.16));
         });
       }
 
@@ -1219,12 +1217,13 @@
         lastTime = now;
 
         const turns = Number(turnsInput.value);
-        const wantedVisual = mode === 'magnet'
+        const wantedVisual = (mode === 'magnet' || mode === 'free')
           ? Math.min(42, Math.max(8, Math.round(turns * 0.72)))
           : Math.min(7, Math.max(1, Math.round(turns / 9)));
         if (wantedVisual !== visualTurnCount) buildCoil();
 
         updateControlLabels();
+        if (mode === 'free') barMagnet.position.y = freeMagnetY;
         if (paused) {
           controls.update();
           renderer.render(scene, camera);
@@ -1240,12 +1239,11 @@
         }
         prevFlux = flux;
 
-        const resistance = Number(loadInput.value);
+        const resistance = 10;
         const current = emf / resistance;
         latestCurrent = current;
-        const power = current * current * resistance;
 
-        updateReadout(flux, emf, current, power);
+        updateReadout(flux, emf, current);
         updateCoilPolarity(lenzEmf);
         updateVoltmeterNeedle(simDelta);
         updateParticles(simDelta, latestCurrent);
@@ -1267,6 +1265,26 @@
 
       modeRotate.addEventListener('click', () => setMode('rotate'));
       modeMagnet.addEventListener('click', () => setMode('magnet'));
+      modeFreeDragEl.addEventListener('click', () => setMode('free'));
+
+      renderer.domElement.addEventListener('pointerdown', (e) => {
+        if (mode !== 'free') return;
+        isDraggingMagnet = true;
+        lastPointerY = e.clientY;
+        renderer.domElement.setPointerCapture(e.pointerId);
+      });
+      renderer.domElement.addEventListener('pointermove', (e) => {
+        if (mode !== 'free' || !isDraggingMagnet) return;
+        const rect = renderer.domElement.getBoundingClientRect();
+        const dy = e.clientY - lastPointerY;
+        freeMagnetY = Math.max(-7.4, Math.min(7.4, freeMagnetY - dy * (14.8 / rect.height)));
+        lastPointerY = e.clientY;
+      });
+      renderer.domElement.addEventListener('pointerup', (e) => {
+        if (!isDraggingMagnet) return;
+        isDraggingMagnet = false;
+        try { renderer.domElement.releasePointerCapture(e.pointerId); } catch (_) {}
+      });
       pauseBtn.addEventListener('click', () => {
         paused = !paused;
         pauseBtn.textContent = paused ? '재생' : '일시정지';
@@ -1293,10 +1311,12 @@
         buildCoil();
         prevFlux = null;
       });
-      [speedInput, fieldInput, turnsInput, loadInput].forEach(input => {
+      [speedInput, fieldInput, turnsInput].forEach(input => {
         input.addEventListener('input', () => {
           updateControlLabels();
           prevFlux = null;
+          maxEmf = 0;
+          maxEmfOut.innerHTML = valueText(0, 2, 'V');
         });
       });
 
