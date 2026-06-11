@@ -1,0 +1,2853 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>QUARKDEX</title>
+  <style>
+    :root {
+      --ivory: #f8f0d0;
+      --leaf: #d8e8a8;
+      --leaf-dark: #789048;
+      --ink: #2c1810;
+      --red: #e83030;
+      --blue: #3860d8;
+      --gold: #f8c800;
+      --green: #38b86c;
+      --purple: #8b54d8;
+      --panel: #fff8dc;
+      --shadow: #b87838;
+      --slot: #e8d890;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      background: #7ca858;
+      color: var(--ink);
+      font-family: "Courier New", "Lucida Console", monospace;
+      image-rendering: pixelated;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      overflow-x: hidden;
+      background:
+        linear-gradient(45deg, rgba(255,255,255,.12) 25%, transparent 25%) 0 0 / 20px 20px,
+        linear-gradient(-45deg, rgba(44,24,16,.08) 25%, transparent 25%) 0 0 / 20px 20px,
+        linear-gradient(180deg, #c8e08c, #8fbd66 46%, #5b8d50);
+    }
+
+    button {
+      font: inherit;
+      color: inherit;
+    }
+
+    .game {
+      width: min(1180px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 14px;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 12px;
+    }
+
+    .pixel-box {
+      border: 4px solid var(--ink);
+      border-radius: 0;
+      background: var(--panel);
+      box-shadow: 6px 6px 0 var(--shadow);
+    }
+
+    .topbar {
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 14px;
+      align-items: center;
+      background: linear-gradient(180deg, #fff8dc, #ecd087);
+      transition: background 0.8s ease;
+    }
+    .topbar.mode-expanded {
+      background: linear-gradient(180deg, #e8d4ff, #b880f0);
+    }
+    .topbar.mode-complete {
+      background: linear-gradient(180deg, #fff8c0, #ffd700);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .brand-title-row .logo-version {
+      font-size: 10px;
+      padding: 2px 8px;
+      box-shadow: 2px 2px 0 #1a0000;
+    }
+
+    .badge {
+      width: 52px;
+      height: 52px;
+      border: 4px solid var(--ink);
+      background: var(--red);
+      box-shadow: inset -5px -5px 0 rgba(0,0,0,.18);
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .badge::before,
+    .badge::after {
+      content: "";
+      position: absolute;
+      background: var(--ivory);
+    }
+
+    .badge::before {
+      width: 34px;
+      height: 8px;
+    }
+
+    .badge::after {
+      width: 8px;
+      height: 34px;
+    }
+
+    h1 {
+      font-size: clamp(24px, 4vw, 44px);
+      line-height: 1;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      margin-top: 5px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #5d4630;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .progress {
+      width: 250px;
+      display: grid;
+      gap: 6px;
+      font-weight: 900;
+      font-size: 14px;
+    }
+
+    .reset-btn {
+      align-self: center;
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--ink);
+      background: #e8e0c8;
+      box-shadow: 3px 3px 0 var(--ink);
+      font-size: 18px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      transition: transform .08s, box-shadow .08s;
+    }
+    .reset-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 var(--ink);
+    }
+
+    .reset-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+    }
+    .reset-modal.open {
+      display: flex;
+    }
+    .reset-box {
+      background: var(--ivory);
+      padding: 24px;
+      max-width: 280px;
+      width: 90%;
+      text-align: center;
+      display: grid;
+      gap: 10px;
+    }
+    .reset-box p {
+      font-size: 14px;
+      font-weight: 900;
+      margin: 0;
+    }
+    .reset-warn {
+      color: #c03020;
+      font-size: 11px !important;
+    }
+    .reset-btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .reset-confirm, .reset-cancel {
+      border: 3px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+      font-weight: 900;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 8px 4px;
+      transition: transform .08s, box-shadow .08s;
+    }
+    .reset-confirm:active, .reset-cancel:active {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 var(--ink);
+    }
+    .reset-confirm { background: #ff6b35; color: #fff; }
+    .reset-cancel  { background: #e8e0c8; }
+
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .bar {
+      height: 16px;
+      border: 3px solid var(--ink);
+      background: #d6c178;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bar span {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 0%;
+      background: repeating-linear-gradient(90deg, var(--green) 0 10px, #5de88f 10px 20px);
+      transition: width .35s steps(8);
+    }
+
+    .nav {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .tab,
+    .primary-btn,
+    .tool-btn,
+    .quark-btn,
+    .lepton-btn {
+      border: 3px solid var(--ink);
+      background: #ffe698;
+      box-shadow: 4px 4px 0 var(--ink);
+      min-height: 42px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .08s, box-shadow .08s, background .1s;
+    }
+
+    .quark-btn.quark-ext {
+      background: #e8d8ff;
+      border-color: #6600cc;
+      box-shadow: 4px 4px 0 #6600cc;
+    }
+
+    @keyframes unlock-flash {
+      0%   { background: #fff; }
+      20%  { background: #ffd700; }
+      40%  { background: #fff; }
+      60%  { background: #ffd700; }
+      80%  { background: #fff; }
+      100% { background: inherit; }
+    }
+
+    .unlock-flash {
+      animation: unlock-flash 1.2s ease-out;
+    }
+
+    .tab.active,
+    .primary-btn {
+      background: var(--gold);
+    }
+
+    .tab:active,
+    .primary-btn:active,
+    .tool-btn:active,
+    .quark-btn:active,
+    .lepton-btn:active {
+      transform: translate(3px, 3px);
+      box-shadow: 1px 1px 0 var(--ink);
+    }
+
+    .screen {
+      display: none;
+      min-height: 0;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .home-screen.active {
+      display: flex;
+    }
+
+    /* ── TITLE SCREEN ── */
+    .home-screen {
+      height: calc(100vh - 140px);
+      min-height: 560px;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, #06041a 0%, #110930 35%, #1c0d46 65%, #110930 100%);
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 20px 18px;
+    }
+
+    .title-stars {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .star {
+      position: absolute;
+      background: #fff;
+      image-rendering: pixelated;
+    }
+
+    @keyframes starTwinkle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.12; }
+    }
+
+    .bg-particles {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .bg-particle {
+      position: absolute;
+      border: 2px solid rgba(255,255,255,.28);
+      padding: 3px 8px;
+      font-weight: 900;
+      font-size: 15px;
+      color: rgba(255,255,255,.38);
+      background: rgba(255,255,255,.04);
+      white-space: nowrap;
+    }
+
+    .bg-particle sup {
+      font-size: .6em;
+      line-height: 0;
+      vertical-align: super;
+    }
+
+    .bg-particle.meson {
+      border-color: rgba(248,200,0,.35);
+      color: rgba(248,200,0,.5);
+      background: rgba(248,200,0,.05);
+    }
+
+    .bg-particle.baryon {
+      border-color: rgba(100,160,255,.38);
+      color: rgba(150,195,255,.52);
+      background: rgba(56,96,216,.07);
+    }
+
+    @keyframes bgFloat0 {
+      0%,100% { transform: translate(0,0); }
+      25%     { transform: translate(10px,-22px); }
+      50%     { transform: translate(18px,-10px); }
+      75%     { transform: translate(5px,-28px); }
+    }
+
+    @keyframes bgFloat1 {
+      0%,100% { transform: translate(0,0); }
+      33%     { transform: translate(-14px,-20px); }
+      66%     { transform: translate(-4px,-14px); }
+    }
+
+    @keyframes bgFloat2 {
+      0%,100% { transform: translate(0,0); }
+      50%     { transform: translate(12px,-32px); }
+    }
+
+    @keyframes bgFloat3 {
+      0%,100% { transform: translate(0,0); }
+      30%     { transform: translate(-10px,-16px); }
+      60%     { transform: translate(14px,-26px); }
+      80%     { transform: translate(6px,-20px); }
+    }
+
+    @keyframes bgFloat4 {
+      0%,100% { transform: translate(0,0); }
+      40%     { transform: translate(-16px,-22px); }
+      70%     { transform: translate(8px,-34px); }
+    }
+
+    .title-scanlines {
+      position: absolute;
+      inset: 0;
+      z-index: 15;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        180deg,
+        transparent 0px, transparent 3px,
+        rgba(0,0,0,.09) 3px, rgba(0,0,0,.09) 4px
+      );
+    }
+
+
+
+    .omega-name-strip {
+      background: rgba(16,8,40,.94);
+      border: 2px solid rgba(180,120,255,.55);
+      color: #c8a0ff;
+      padding: 3px 12px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      white-space: nowrap;
+      opacity: 0;
+      animation: fadeUp 0.3s steps(4) 3.78s forwards;
+    }
+
+    .title-logo-wrap {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      opacity: 0;
+      transform: translateY(-80px);
+      animation: logoDropIn 0.4s steps(6) 0.15s forwards;
+    }
+
+    .title-logo {
+      font-size: clamp(28px, 6vw, 64px);
+      font-weight: 900;
+      letter-spacing: 3px;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .logo-quark {
+      color: #f8c800;
+      text-shadow:
+        -3px -3px 0 #1a0800,  3px -3px 0 #1a0800,
+        -3px  3px 0 #1a0800,  3px  3px 0 #1a0800,
+        -3px  0   0 #1a0800,  3px  0   0 #1a0800,
+         0   -3px 0 #1a0800,  0    3px 0 #1a0800,
+         5px  5px 0 rgba(0,0,0,.65);
+    }
+
+    .logo-dex {
+      color: #ff5555;
+      text-shadow:
+        -3px -3px 0 #1a0000,  3px -3px 0 #1a0000,
+        -3px  3px 0 #1a0000,  3px  3px 0 #1a0000,
+        -3px  0   0 #1a0000,  3px  0   0 #1a0000,
+         0   -3px 0 #1a0000,  0    3px 0 #1a0000,
+         5px  5px 0 rgba(0,0,0,.65);
+    }
+
+    .logo-version {
+      background: #c82020;
+      color: #fff;
+      border: 3px solid #1a0000;
+      padding: 3px 14px;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      box-shadow: 3px 3px 0 #1a0000;
+      transition: background .4s, color .4s;
+    }
+    .logo-version.expanded {
+      background: #6600cc;
+      color: #fff;
+      border-color: #2a0055;
+      box-shadow: 3px 3px 0 #2a0055;
+    }
+    .logo-version.complete {
+      background: #c8a000;
+      color: #fff;
+      border-color: #5a3800;
+      box-shadow: 3px 3px 0 #5a3800;
+    }
+
+    /* ── Hall of Fame overlay ── */
+    .hall-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: linear-gradient(180deg, #040220 0%, #0a0540 40%, #180866 100%);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .hall-overlay.open { display: flex; }
+
+    .hall-scanlines {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px, transparent 3px,
+        rgba(0,0,0,.18) 3px, rgba(0,0,0,.18) 4px
+      );
+      pointer-events: none;
+    }
+
+    .hall-stars {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .hall-star {
+      position: absolute;
+      border-radius: 50%;
+      background: #fff;
+      animation: hall-twinkle 1.8s infinite alternate;
+    }
+    @keyframes hall-twinkle {
+      from { opacity: .2; }
+      to   { opacity: 1; }
+    }
+
+    .hall-inner {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      gap: 24px;
+      align-items: center;
+      justify-items: center;
+      padding: 48px 32px 40px;
+      width: 100%;
+      max-width: 720px;
+      min-height: 100%;
+      text-align: center;
+      overflow-y: auto;
+      box-sizing: border-box;
+    }
+
+    .hall-title-wrap { display: grid; gap: 12px; justify-items: center; }
+
+    .hall-trophy {
+      font-size: 64px;
+      animation: trophy-bounce .8s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 20px #ffd700);
+    }
+    @keyframes trophy-bounce {
+      from { transform: translateY(0) scale(1); }
+      to   { transform: translateY(-8px) scale(1.12); }
+    }
+
+    .hall-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(22px, 6vw, 40px);
+      line-height: 1.6;
+      color: #ffd700;
+      text-shadow:
+        -3px -3px 0 #5a3800, 3px -3px 0 #5a3800,
+        -3px  3px 0 #5a3800, 3px  3px 0 #5a3800,
+        0 5px 0 rgba(0,0,0,.6);
+      animation: hall-title-in .6s cubic-bezier(.2,1.4,.5,1) both;
+    }
+    @keyframes hall-title-in {
+      from { transform: scale(.5) translateY(30px); opacity: 0; }
+      to   { transform: scale(1)  translateY(0);    opacity: 1; }
+    }
+
+    .hall-sub {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(12px, 3vw, 18px);
+      color: #fff;
+      letter-spacing: 2px;
+      animation: hall-fade-in .5s .4s both;
+    }
+    @keyframes hall-fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .hall-particles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      justify-content: center;
+      max-width: 640px;
+      width: 100%;
+      animation: hall-fade-in .5s .7s both;
+    }
+    .hall-p-chip {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 11px;
+      padding: 5px 10px;
+      border: 2px solid rgba(255,215,0,.5);
+      color: #ffd700;
+      background: rgba(255,215,0,.08);
+    }
+
+    .hall-date {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 13px;
+      color: #aaa8ff;
+      animation: hall-fade-in .5s 1s both;
+    }
+
+    .hall-close {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 16px;
+      background: #ffd700;
+      color: #1a0800;
+      border: 4px solid #1c1008;
+      box-shadow: inset 0 0 0 2px #fff8dc, 5px 5px 0 #1c1008;
+      padding: 16px 40px;
+      cursor: pointer;
+      animation: hall-fade-in .5s 1.2s both, btn-pulse 1.5s 1.5s ease-in-out infinite alternate;
+    }
+    @keyframes btn-pulse {
+      from { box-shadow: inset 0 0 0 2px #fff8dc, 5px 5px 0 #1c1008; }
+      to   { box-shadow: inset 0 0 0 2px #fff8dc, 5px 5px 0 #1c1008, 0 0 24px #ffd700; }
+    }
+    .hall-close:active {
+      transform: translate(4px, 4px);
+      box-shadow: inset 0 0 0 2px #fff8dc, 1px 1px 0 #1c1008;
+    }
+
+    @keyframes logoDropIn {
+      from { transform: translateY(-80px); opacity: 0; }
+      to   { transform: translateY(0);     opacity: 1; }
+    }
+
+    .title-arena {
+      position: relative;
+      z-index: 2;
+      width: 260px;
+      min-height: 220px;
+      flex: 1;
+    }
+
+    .fly-quark {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 3;
+    }
+
+    .fly-quark .q-symbol {
+      width: 54px;
+      height: 54px;
+      font-size: 26px;
+      border-width: 4px;
+      box-shadow: 0 0 18px rgba(68,204,68,.9), 5px 5px 0 rgba(0,0,0,.55);
+    }
+
+    .fq-1 { animation: flyQ1 1.8s steps(20) 1.1s both; }
+    .fq-2 { animation: flyQ2 1.8s steps(20) 1.4s both; }
+    .fq-3 { animation: flyQ3 1.8s steps(20) 1.7s both; }
+
+    @keyframes flyQ1 {
+      from { transform: translate(calc(-50% - 190px), calc(-50% - 170px)); opacity: 0; }
+      7%   { opacity: 1; }
+      76%  { transform: translate(-50%, -50%); opacity: 1; }
+      90%  { transform: translate(-50%, -50%); opacity: 1; }
+      100% { transform: translate(-50%, -50%); opacity: 0; }
+    }
+
+    @keyframes flyQ2 {
+      from { transform: translate(calc(-50% + 190px), calc(-50% - 170px)); opacity: 0; }
+      7%   { opacity: 1; }
+      76%  { transform: translate(-50%, -50%); opacity: 1; }
+      90%  { transform: translate(-50%, -50%); opacity: 1; }
+      100% { transform: translate(-50%, -50%); opacity: 0; }
+    }
+
+    @keyframes flyQ3 {
+      from { transform: translate(-50%, calc(-50% + 210px)); opacity: 0; }
+      7%   { opacity: 1; }
+      76%  { transform: translate(-50%, -50%); opacity: 1; }
+      90%  { transform: translate(-50%, -50%); opacity: 1; }
+      100% { transform: translate(-50%, -50%); opacity: 0; }
+    }
+
+    .title-flash {
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      z-index: 20;
+      pointer-events: none;
+      opacity: 0;
+      animation: titleFlash 0.55s steps(5) 3.15s both;
+    }
+
+    @keyframes titleFlash {
+      0%   { opacity: 0; }
+      14%  { opacity: 1; }
+      55%  { opacity: 0.55; }
+      100% { opacity: 0; }
+    }
+
+    .title-particle {
+      position: absolute;
+      left: 50%;
+      top: 38%;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      animation: particleReveal 0.35s steps(5) 3.55s forwards;
+    }
+
+    @keyframes particleReveal {
+      from { opacity: 0; transform: translate(-50%, -50%) scale(0.25); }
+      to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    .omega-box {
+      width: 116px;
+      height: 116px;
+      border: 5px solid #fff;
+      background: linear-gradient(135deg, #1c0838, #5820b4);
+      display: grid;
+      place-items: center;
+      font-size: 56px;
+      font-weight: 900;
+      color: #fff;
+      box-shadow:
+        6px 6px 0 rgba(0,0,0,.7),
+        0 0 28px rgba(148,68,255,.85),
+        0 0 60px rgba(148,68,255,.35);
+      animation: omegaBob 2s steps(4) 4.0s infinite;
+    }
+
+    @keyframes omegaBob {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-10px); }
+    }
+
+    .omega-quarks {
+      display: flex;
+      gap: 10px;
+      opacity: 0;
+      animation: fadeUp 0.3s steps(4) 3.85s forwards;
+    }
+
+    .omega-quarks .q-symbol {
+      width: 34px;
+      height: 34px;
+      font-size: 16px;
+      border-width: 2px;
+      box-shadow: 3px 3px 0 rgba(0,0,0,.55);
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .title-dialogue {
+      position: relative;
+      z-index: 10;
+      width: min(400px, 94%);
+      background: #f0e8cc;
+      border: 4px solid #1c1008;
+      box-shadow:
+        inset 0 0 0 2px #f8f0dc,
+        inset 0 0 0 5px #8c7040,
+        4px 4px 0 #1c1008;
+      padding: 12px 16px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .title-press {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      color: #1c1008;
+      font-size: clamp(12px, 2.2vw, 15px);
+      font-weight: 900;
+      padding: 0;
+      cursor: pointer;
+      letter-spacing: 3px;
+      opacity: 0;
+      flex: 1;
+      text-align: center;
+    }
+
+    .title-press.visible {
+      animation: pressBlink 0.88s steps(2) infinite;
+    }
+
+    @keyframes pressBlink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    .dialogue-cursor {
+      color: #c82020;
+      font-size: 16px;
+      flex-shrink: 0;
+      opacity: 0;
+    }
+
+    .dialogue-cursor.visible {
+      animation: cursorBlink 0.6s steps(2) infinite;
+    }
+
+    @keyframes cursorBlink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+
+    .play-grid {
+      display: grid;
+      grid-template-columns: 280px minmax(340px, 1fr) 340px;
+      gap: 12px;
+      min-height: calc(100vh - 140px);
+      align-items: start;
+    }
+
+    .panel {
+      padding: 14px;
+      min-height: 0;
+      max-height: calc(100vh - 148px);
+      overflow: auto;
+      background: var(--panel);
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 16px;
+      font-weight: 900;
+      border-bottom: 3px solid var(--ink);
+      padding-bottom: 8px;
+    }
+
+    .quark-grid,
+    .lepton-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .quark-btn,
+    .lepton-btn {
+      min-height: 76px;
+      display: grid;
+      place-items: center;
+      gap: 4px;
+      padding: 8px;
+      background: var(--ivory);
+    }
+
+    .q-symbol {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border: 3px solid var(--ink);
+      color: #111;
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .q-meta {
+      font-size: 11px;
+      font-weight: 900;
+      color: #5d4630;
+      white-space: nowrap;
+    }
+
+    .anti .q-symbol {
+      background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.55) 0 5px, transparent 5px 10px);
+    }
+
+    .u { background: #ff6b35; }
+    .d { background: #4488ff; color: #fff; }
+    .s { background: #44cc44; }
+    .c { background: #cc44ff; color: #fff; }
+    .b { background: #ffd700; }
+    .t { background: #ff4488; }
+    .lep { background: #b8f3ff; }
+
+    .workbench {
+      display: grid;
+      grid-template-rows: auto auto auto;
+      gap: 12px;
+    }
+
+    .scene {
+      min-height: 290px;
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(56,96,216,.24), transparent 42%),
+        repeating-linear-gradient(0deg, rgba(44,24,16,.08) 0 3px, transparent 3px 18px),
+        #d8e8a8;
+    }
+
+    .slots {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .slot {
+      height: 98px;
+      border: 4px solid var(--ink);
+      background: var(--slot);
+      display: grid;
+      place-items: center;
+      position: relative;
+      box-shadow: inset 4px 4px 0 rgba(255,255,255,.45);
+    }
+
+    .slot.empty::after {
+      content: "?";
+      font-size: 40px;
+      color: rgba(44,24,16,.28);
+      font-weight: 900;
+    }
+
+    .slot .q-symbol {
+      width: 54px;
+      height: 54px;
+      font-size: 24px;
+    }
+
+    .slot small {
+      position: absolute;
+      bottom: 6px;
+      font-weight: 900;
+      font-size: 11px;
+    }
+
+    .charge-line {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 0 12px 12px;
+    }
+
+    .readout {
+      border: 3px solid var(--ink);
+      background: #fff8dc;
+      padding: 8px;
+      text-align: center;
+      font-weight: 900;
+      font-size: 13px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .primary-btn,
+    .tool-btn {
+      min-height: 52px;
+      font-size: 15px;
+    }
+
+    .message {
+      min-height: 106px;
+      padding: 12px;
+      background: #101010;
+      color: #f8f0d0;
+      border: 4px solid var(--ink);
+      box-shadow: inset 0 0 0 3px #5d4630;
+      display: grid;
+      align-content: center;
+      gap: 6px;
+      line-height: 1.5;
+      font-weight: 900;
+    }
+
+    .message strong {
+      color: var(--gold);
+    }
+
+    .result-card {
+      display: grid;
+      gap: 12px;
+    }
+
+    .particle-art {
+      min-height: 150px;
+      border: 4px solid var(--ink);
+      background:
+        radial-gradient(circle at 50% 50%, rgba(248,200,0,.35), transparent 36%),
+        #d9f0ff;
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .particle-art.flash {
+      animation: flash .55s steps(4);
+    }
+
+    @keyframes flash {
+      0%, 100% { filter: none; }
+      20% { filter: brightness(2.4); }
+      40% { filter: hue-rotate(70deg); }
+      60% { filter: brightness(1.7); }
+    }
+
+    .particle-cluster {
+      width: 120px;
+      height: 120px;
+      position: relative;
+    }
+
+    .particle-cluster .q-symbol {
+      position: absolute;
+      width: 48px;
+      height: 48px;
+    }
+
+    .particle-cluster .q-symbol:nth-child(1) { left: 36px; top: 0; }
+    .particle-cluster .q-symbol:nth-child(2) { left: 0; top: 62px; }
+    .particle-cluster .q-symbol:nth-child(3) { right: 0; top: 62px; }
+    .particle-cluster.two .q-symbol:nth-child(1) { left: 0; right: auto; top: 36px; }
+    .particle-cluster.two .q-symbol:nth-child(2) { left: auto; right: 0; top: 36px; }
+
+    .facts {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .fact {
+      border: 3px solid var(--ink);
+      background: #f8f0d0;
+      padding: 8px;
+      min-height: 54px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .fact span {
+      display: block;
+      color: #6b5538;
+      margin-bottom: 3px;
+      font-size: 10px;
+    }
+
+    .quote {
+      padding: 10px;
+      border: 3px solid var(--ink);
+      background: #d8e8a8;
+      font-size: 13px;
+      line-height: 1.55;
+      font-weight: 900;
+    }
+
+    .dex-screen {
+      min-height: calc(100vh - 140px);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 12px;
+    }
+
+    .filters {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 12px;
+    }
+
+    .multiplet-picker {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-left: 6px;
+      padding-left: 10px;
+      border-left: 3px solid var(--ink);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .multiplet-picker.active {
+      display: flex;
+    }
+
+    .multiplet-picker select {
+      min-height: 38px;
+      border: 3px solid var(--ink);
+      background: #fff8dc;
+      color: var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 900;
+      padding: 0 28px 0 10px;
+      border-radius: 0;
+      cursor: pointer;
+    }
+
+    .dex-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      grid-auto-rows: 184px;
+      gap: 10px;
+      padding: 12px;
+      max-height: calc(100vh - 224px);
+      overflow: auto;
+    }
+
+    .dex-grid.is-diagram {
+      display: block;
+      max-height: none;
+      text-align: center;
+    }
+
+    .multiplet-board {
+      width: max-content;
+      display: grid;
+      gap: 10px;
+      align-items: center;
+      justify-items: center;
+      padding: 30px 16px 16px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .multiplet-contours {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: visible;
+      opacity: .96;
+    }
+
+    .multiplet-labels {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .contour-line {
+      position: absolute;
+      left: 0;
+      width: 0;
+      height: 0;
+      border-top: 3px dashed rgba(44, 24, 16, .34);
+      transform-origin: 0 50%;
+    }
+
+    .contour-line.charge {
+      border-color: rgba(56, 96, 216, .62);
+    }
+
+    .contour-line.strange {
+      border-color: rgba(42, 150, 82, .62);
+      transform: none;
+    }
+
+    .contour-label {
+      position: absolute;
+      left: 50%;
+      top: -14px;
+      transform: translateX(-50%);
+      padding: 2px 5px;
+      border: 2px solid rgba(44, 24, 16, .55);
+      background: rgba(255, 248, 220, .96);
+      color: #5d4630;
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .contour-label.charge-label {
+      color: #324f9e;
+      border-color: rgba(56, 96, 216, .52);
+    }
+
+    .contour-label.strange-label {
+      left: 12%;
+      color: #2b7a45;
+      border-color: rgba(42, 150, 82, .55);
+    }
+
+    .multiplet-board.octet {
+      grid-template-columns: repeat(5, 168px);
+      grid-template-rows: repeat(3, 136px);
+    }
+
+    .multiplet-board.decuplet {
+      grid-template-columns: repeat(4, 168px);
+      grid-template-rows: repeat(4, 128px);
+    }
+
+    .multiplet-board.decuplet .multiplet-cell {
+      min-height: 111px;
+    }
+
+    .multiplet-axis {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 8px;
+      z-index: 3;
+      font-size: 12px;
+      font-weight: 900;
+      color: #6b5538;
+      background: rgba(255,248,220,.72);
+      border: 2px solid var(--ink);
+      padding: 4px 6px;
+    }
+
+    .multiplet-cell {
+      width: 168px;
+      min-height: 120px;
+      display: grid;
+      gap: 4px;
+      align-content: center;
+      justify-items: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .dex-card {
+      width: 100%;
+      height: 184px;
+      padding: 10px;
+      display: grid;
+      grid-template-rows: 18px 36px 50px 36px;
+      gap: 5px;
+      overflow: hidden;
+      background: #fff8dc;
+      border: 4px solid var(--ink);
+      box-shadow: 4px 4px 0 rgba(44,24,16,.32);
+      cursor: pointer;
+    }
+
+    .dex-card.multiplet-card {
+      width: 160px;
+      height: 111px;
+      padding: 7px 8px;
+      grid-template-rows: 14px 52px 25px;
+      gap: 2px;
+    }
+
+    .multiplet-cell .dex-card.multiplet-card {
+      height: 111px;
+      grid-template-rows: 14px 52px 25px;
+      gap: 2px;
+    }
+
+    .dex-card.multiplet-card .dex-sprite {
+      display: none;
+    }
+
+    .dex-card.multiplet-card .dex-num {
+      display: block;
+      font-size: 10px;
+      line-height: 1.1;
+      text-align: center;
+    }
+
+    .dex-card.multiplet-card .dex-title {
+      grid-template-rows: 1fr;
+      align-self: center;
+      place-items: center;
+    }
+
+    .dex-card.multiplet-card .dex-symbol {
+      font-size: 28px;
+      line-height: 1.15;
+      padding-top: 0;
+    }
+
+    .dex-card.multiplet-card .dex-name {
+      display: none;
+    }
+
+    .dex-card.multiplet-card p {
+      display: block;
+      font-size: 10px;
+      line-height: 1.15;
+      text-align: center;
+      -webkit-line-clamp: 2;
+    }
+
+    .dex-card.locked {
+      background: #d2c68c;
+      color: rgba(44,24,16,.55);
+    }
+
+    .dex-card.ext-card {
+      background: #f0e4ff;
+      border-color: #8833cc;
+    }
+
+    .dex-card.ext-card.locked {
+      background: #d8c4f0;
+      color: rgba(44,16,66,.55);
+    }
+
+    .dex-card.ext-card .dex-num {
+      color: #6600cc;
+    }
+
+    .dex-num {
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--blue);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .dex-sprite {
+      height: 42px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      overflow: hidden;
+    }
+
+    .dex-sprite .q-symbol {
+      width: 30px;
+      height: 30px;
+      font-size: 14px;
+      border-width: 2px;
+    }
+
+    .dex-title {
+      display: grid;
+      grid-template-rows: 1fr;
+      gap: 0;
+      place-items: center;
+      line-height: 1.1;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .dex-symbol {
+      display: block;
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--ink);
+      line-height: 1.25;
+      padding-top: 3px;
+      overflow: visible;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .dex-symbol sup,
+    .dex-symbol sub,
+    #particleSymbol sup,
+    #particleSymbol sub,
+    .symbol-mark sup,
+    .symbol-mark sub {
+      font-size: .55em;
+      line-height: 0;
+    }
+
+    .dex-symbol sup,
+    #particleSymbol sup,
+    .symbol-mark sup {
+      vertical-align: super;
+    }
+
+    .dex-symbol sub,
+    #particleSymbol sub,
+    .symbol-mark sub {
+      vertical-align: sub;
+    }
+
+    .dex-name {
+      display: none;
+      font-size: 12px;
+      font-weight: 900;
+      color: #6b5538;
+      line-height: 1.35;
+      overflow: hidden;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .dex-card p {
+      font-size: 11px;
+      line-height: 1.45;
+      font-weight: 900;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .learn-screen {
+      min-height: calc(100vh - 140px);
+      padding: 16px;
+      overflow: auto;
+    }
+
+    .learn-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .learn-card {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      line-height: 1.6;
+      font-weight: 900;
+      background: #fff8dc;
+    }
+
+    .learn-card h2 {
+      font-size: 20px;
+      border-bottom: 3px solid var(--ink);
+      padding-bottom: 6px;
+    }
+
+    .learn-card ul {
+      padding-left: 20px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(80px);
+      border: 4px solid var(--ink);
+      background: var(--gold);
+      box-shadow: 5px 5px 0 var(--ink);
+      padding: 12px 18px;
+      z-index: 30;
+      font-weight: 900;
+      transition: transform .25s steps(4);
+      text-align: center;
+      max-width: min(520px, 92vw);
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .shake {
+      animation: shake .28s steps(4);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      50% { transform: translateX(8px); }
+      75% { transform: translateX(-4px); }
+    }
+
+    @media (max-width: 980px) {
+      .game {
+        padding: 10px;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .progress {
+        width: 100%;
+      }
+
+      .home-screen,
+      .play-grid,
+      .dex-screen,
+      .learn-screen {
+        min-height: auto;
+        height: auto;
+      }
+
+      .play-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        max-height: none;
+      }
+
+      .home-screen {
+        overflow: hidden;
+        padding: 18px 14px 12px;
+      }
+
+      .title-arena {
+        min-height: 180px;
+      }
+
+      .slots {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        padding: 8px;
+      }
+
+      .slot {
+        height: 86px;
+      }
+
+      .dex-grid {
+        max-height: none;
+      }
+
+      .learn-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 540px) {
+      .topbar {
+        padding: 9px;
+      }
+
+      .brand {
+        gap: 8px;
+      }
+
+      .badge {
+        width: 44px;
+        height: 44px;
+        border-width: 3px;
+      }
+
+      .subtitle {
+        white-space: normal;
+        font-size: 11px;
+      }
+
+      .nav {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .quark-grid,
+      .lepton-grid,
+      .controls,
+      .facts {
+        grid-template-columns: 1fr;
+      }
+
+      .slot {
+        height: 74px;
+      }
+
+      .slot .q-symbol {
+        width: 42px;
+        height: 42px;
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="game">
+    <header class="topbar pixel-box">
+      <div class="brand">
+        <div class="badge" aria-hidden="true"></div>
+        <div>
+          <div class="brand-title-row">
+            <h1>QUARKDEX</h1>
+            <span class="logo-version" id="logoVersion">기본판</span>
+          </div>
+          <p class="subtitle">쿼크를 조합해 입자를 발견하는 입자 도감</p>
+        </div>
+      </div>
+      <button class="reset-btn" id="resetBtn" type="button" title="처음부터 다시 시작">↺</button>
+      <div class="progress">
+        <div class="progress-row">
+          <span>발견 <strong id="foundCount">0</strong>/<strong id="totalCount">32</strong></span>
+          <span id="foundPercent">0%</span>
+        </div>
+        <div class="bar" aria-label="도감 진행률"><span id="progressFill"></span></div>
+      </div>
+    </header>
+
+    <div class="hall-overlay" id="hallOverlay" role="dialog" aria-modal="true" aria-label="완전 도감 달성">
+      <div class="hall-stars" id="hallStars"></div>
+      <div class="hall-inner">
+        <div class="hall-title-wrap">
+          <div class="hall-trophy">★</div>
+          <div class="hall-title">FULL DEX<br>COMPLETE!</div>
+          <div class="hall-sub">전체 58종 완전 도감 달성!</div>
+        </div>
+        <div class="hall-particles" id="hallParticles"></div>
+        <div class="hall-date" id="hallDate"></div>
+        <button class="hall-close" id="hallClose" type="button">▶ 확인</button>
+      </div>
+      <div class="hall-scanlines"></div>
+    </div>
+
+    <div class="reset-modal" id="resetModal" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
+      <div class="reset-box pixel-box">
+        <p id="resetTitle">처음부터 다시 시작할까요?</p>
+        <p class="reset-warn">발견한 모든 입자와 진행 상황이 지워집니다.</p>
+        <div class="reset-btns">
+          <button class="reset-confirm" id="resetConfirm" type="button">예, 지웁니다</button>
+          <button class="reset-cancel" id="resetCancel" type="button">아니요</button>
+        </div>
+      </div>
+    </div>
+
+    <nav class="nav" aria-label="화면 선택">
+      <button class="tab active" type="button" data-screen="home">타이틀</button>
+      <button class="tab" type="button" data-screen="lab">조합</button>
+      <button class="tab" type="button" data-screen="dex">도감</button>
+      <button class="tab" type="button" data-screen="learn">원리</button>
+    </nav>
+
+    <section id="home" class="screen home-screen active" aria-label="타이틀 화면">
+      <div class="title-stars" id="titleStars" aria-hidden="true"></div>
+      <div class="bg-particles" id="bgParticles" aria-hidden="true"></div>
+      <div class="title-scanlines" aria-hidden="true"></div>
+
+      <div class="title-logo-wrap">
+        <div class="title-logo" aria-label="QUARKDEX">
+          <span class="logo-quark">QUARK</span><span class="logo-dex">DEX</span>
+        </div>
+        <div class="logo-version logo-version-title">기본판</div>
+      </div>
+
+      <div class="title-arena" aria-hidden="true">
+        <div class="fly-quark fq-1"><span class="q-symbol s">s</span></div>
+        <div class="fly-quark fq-2"><span class="q-symbol s">s</span></div>
+        <div class="fly-quark fq-3"><span class="q-symbol s">s</span></div>
+        <div class="title-flash"></div>
+        <div class="title-particle" id="titleParticle">
+          <div class="omega-name-strip">오메가 마이너스</div>
+          <div class="omega-box">Ω<sup style="font-size:.55em;line-height:0;vertical-align:super">-</sup></div>
+          <div class="omega-quarks">
+            <span class="q-symbol s">s</span>
+            <span class="q-symbol s">s</span>
+            <span class="q-symbol s">s</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="title-dialogue">
+        <button class="title-press" id="titlePress" type="button" data-screen-jump="lab">
+          ▶ PRESS&nbsp;&nbsp;START ◀
+        </button>
+        <span class="dialogue-cursor" id="dialogueCursor">♥</span>
+      </div>
+    </section>
+
+    <section id="lab" class="screen" aria-label="쿼크 조합 화면">
+      <div class="play-grid">
+        <aside class="panel pixel-box">
+          <div class="panel-title">
+            <span>쿼크 선택</span>
+            <small id="quarkModeLabel">기본 모드</small>
+          </div>
+          <div class="quark-grid" id="quarkButtons"></div>
+
+          <div class="panel-title" style="margin-top:16px">
+            <span>렙톤 관측</span>
+            <small>별도 발견</small>
+          </div>
+          <div class="lepton-grid" id="leptonButtons"></div>
+        </aside>
+
+        <section class="workbench">
+          <div class="scene pixel-box">
+            <div class="slots" id="slots"></div>
+            <div class="charge-line">
+              <div class="readout">전하 <span id="chargeReadout">0</span></div>
+              <div class="readout">재료 <span id="typeReadout">없음</span></div>
+              <div class="readout">가능성 <span id="hintReadout">?</span></div>
+            </div>
+          </div>
+          <div class="controls">
+            <button class="primary-btn" type="button" id="combineBtn">조합!</button>
+            <button class="tool-btn" type="button" id="clearBtn">비우기</button>
+          </div>
+          <div class="message" id="message">
+            <strong>PRESS START</strong>
+            <span>쿼크 2개는 메손, 쿼크 3개는 바리온입니다. 반쿼크는 메손 조합에 사용해요.</span>
+          </div>
+        </section>
+
+        <aside class="panel pixel-box">
+          <div class="panel-title">
+            <span>최근 발견</span>
+            <small id="latestNumber">#---</small>
+          </div>
+          <div class="result-card">
+            <div class="particle-art" id="particleArt">
+              <div class="particle-cluster" id="particleCluster"></div>
+            </div>
+            <div class="facts">
+              <div class="fact"><span>이름</span><strong id="particleName">아직 없음</strong></div>
+              <div class="fact"><span>기호</span><strong id="particleSymbol">---</strong></div>
+              <div class="fact"><span>전하</span><strong id="particleCharge">---</strong></div>
+              <div class="fact"><span>분류</span><strong id="particleFamily">---</strong></div>
+            </div>
+            <div class="quote" id="particleDesc">첫 입자를 발견하면 도감 카드가 열립니다.</div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="dex" class="screen" aria-label="입자 도감">
+      <div class="dex-screen">
+        <div class="filters pixel-box">
+          <button class="tab active" type="button" data-filter="all">전체</button>
+          <button class="tab" type="button" data-filter="meson">메손</button>
+          <button class="tab" type="button" data-filter="baryon">바리온</button>
+          <button class="tab" type="button" data-filter="lepton">렙톤</button>
+          <label class="multiplet-picker" id="multipletPicker">
+            <span>다중항</span>
+            <select id="multipletSelect" aria-label="다중항 선택"></select>
+          </label>
+        </div>
+        <div class="dex-grid pixel-box" id="dexGrid"></div>
+      </div>
+    </section>
+
+    <section id="learn" class="screen learn-screen pixel-box" aria-label="학습 원리">
+      <div class="learn-grid">
+        <article class="learn-card pixel-box">
+          <h2>조합 규칙</h2>
+          <ul>
+            <li>메손은 쿼크 1개와 반쿼크 1개가 만나 만들어집니다.</li>
+            <li>바리온은 쿼크 3개가 빨강, 초록, 파랑 색전하를 합쳐 중성이 되는 상태입니다.</li>
+            <li>전하는 선택한 쿼크 전하의 합으로 정해집니다.</li>
+          </ul>
+        </article>
+        <article class="learn-card pixel-box">
+          <h2>왜 같은 조합이 여러 입자일까?</h2>
+          <p>예를 들어 uud는 양성자이면서 들뜬 스핀 상태인 델타 플러스가 될 수 있습니다. QUARKDEX에서는 같은 재료를 다시 조합하면 아직 못 찾은 상태를 순서대로 발견합니다.</p>
+        </article>
+        <article class="learn-card pixel-box">
+          <h2>렙톤</h2>
+          <p>전자, 뮤온, 타우와 각 중성미자는 쿼크로 만들 수 없습니다. 그래서 실험실 왼쪽의 렙톤 관측 버튼으로 별도 등록합니다.</p>
+        </article>
+        <article class="learn-card pixel-box">
+          <h2>도감 목표 &amp; 확장 모드</h2>
+          <p>기본 도감은 메손 8종, 바리온 18종, 렙톤 6종으로 총 32종입니다. 모두 발견하면 <strong>확장 모드</strong>가 해금되어 참(c)·바닥(b) 쿼크와 함께 J/ψ, D, B 메손, 참·바닥 바리온 등 26종이 추가로 등장합니다. 최종 목표는 총 <strong>58종</strong> 완전 도감 달성입니다.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const quarks = [
+      { id: "u", label: "u", name: "업", charge: 2 / 3, chargeText: "+2/3", color: "u", anti: false },
+      { id: "d", label: "d", name: "다운", charge: -1 / 3, chargeText: "-1/3", color: "d", anti: false },
+      { id: "s", label: "s", name: "기묘", charge: -1 / 3, chargeText: "-1/3", color: "s", anti: false },
+      { id: "U", label: "u\u0305", name: "반 업", charge: -2 / 3, chargeText: "-2/3", color: "u", anti: true },
+      { id: "D", label: "d\u0305", name: "반 다운", charge: 1 / 3, chargeText: "+1/3", color: "d", anti: true },
+      { id: "S", label: "s\u0305", name: "반 기묘", charge: 1 / 3, chargeText: "+1/3", color: "s", anti: true }
+    ];
+
+    const leptons = [
+      { id: "e", no: 27, name: "전자", symbol: "e-", family: "lepton", charge: "-1", spin: "1/2", mass: "0.511 MeV", parts: ["e"], desc: "원자 껍질을 이루는 가장 친숙한 렙톤입니다." },
+      { id: "nue", no: 28, name: "전자 중성미자", symbol: "νe", family: "lepton", charge: "0", spin: "1/2", mass: "< 1 eV", parts: ["ν"], desc: "베타 붕괴에서 에너지와 운동량을 함께 가져갑니다." },
+      { id: "mu", no: 29, name: "뮤온", symbol: "μ-", family: "lepton", charge: "-1", spin: "1/2", mass: "105.7 MeV", parts: ["μ"], desc: "전자와 닮았지만 훨씬 무거운 두 번째 세대 렙톤입니다." },
+      { id: "numu", no: 30, name: "뮤온 중성미자", symbol: "νμ", family: "lepton", charge: "0", spin: "1/2", mass: "< 1 eV", parts: ["ν"], desc: "뮤온과 함께 약한 상호작용에서 등장하는 중성미자입니다." },
+      { id: "tau", no: 31, name: "타우", symbol: "τ-", family: "lepton", charge: "-1", spin: "1/2", mass: "1777 MeV", parts: ["τ"], desc: "세 번째 세대의 무거운 렙톤입니다." },
+      { id: "nutau", no: 32, name: "타우 중성미자", symbol: "ντ", family: "lepton", charge: "0", spin: "1/2", mass: "< 1 eV", parts: ["ν"], desc: "타우 붕괴에서 모습을 드러내는 매우 가벼운 입자입니다." }
+    ];
+
+    const particles = [
+      { id: "pi-plus", no: 1, name: "파이온 플러스", symbol: "π+", family: "meson", charge: "+1", spin: "0", mass: "139.6 MeV", parts: ["u", "D"], keys: ["Du"], desc: "가장 기본적인 메손 중 하나입니다. 핵력의 오래된 설명에도 등장해요." },
+      { id: "pi-minus", no: 2, name: "파이온 마이너스", symbol: "π-", family: "meson", charge: "-1", spin: "0", mass: "139.6 MeV", parts: ["U", "d"], keys: ["Ud"], desc: "파이온 플러스의 반입자 짝입니다." },
+      { id: "pi-zero", no: 3, name: "중성 파이온", symbol: "π0", family: "meson", charge: "0", spin: "0", mass: "135.0 MeV", parts: ["u", "U"], keys: ["Uu", "Dd"], desc: "전하가 0인 짧은 수명의 메손입니다." },
+      { id: "k-plus", no: 4, name: "케이온 플러스", symbol: "K+", family: "meson", charge: "+1", spin: "0", mass: "493.7 MeV", parts: ["u", "S"], keys: ["Su"], desc: "스트레인지 반쿼크가 들어간 메손입니다." },
+      { id: "k-minus", no: 5, name: "케이온 마이너스", symbol: "K-", family: "meson", charge: "-1", spin: "0", mass: "493.7 MeV", parts: ["U", "s"], keys: ["Us"], desc: "케이온 플러스의 반입자 짝입니다." },
+      { id: "k-zero", no: 6, name: "중성 케이온", symbol: "K0", family: "meson", charge: "0", spin: "0", mass: "497.6 MeV", parts: ["d", "S"], keys: ["Sd"], desc: "d 쿼크와 반스트레인지 쿼크가 만난 중성 메손입니다." },
+      { id: "anti-k-zero", no: 7, name: "반중성 케이온", symbol: "K\u03050", family: "meson", charge: "0", spin: "0", mass: "497.6 MeV", parts: ["D", "s"], keys: ["Ds"], desc: "중성 케이온과 반대 맛 조합을 가진 메손입니다." },
+      { id: "eta", no: 8, name: "에타", symbol: "η", family: "meson", charge: "0", spin: "0", mass: "547.9 MeV", parts: ["s", "S"], keys: ["Ss"], desc: "세 가벼운 쿼크 맛이 섞인 중성 메손입니다." },
+
+      { id: "proton", no: 9, name: "양성자", symbol: "p", family: "baryon", charge: "+1", spin: "1/2", mass: "938 MeV", parts: ["u", "u", "d"], keys: ["duu"], desc: "수소 원자핵이자 물질 세계의 대표 바리온입니다." },
+      { id: "neutron", no: 10, name: "중성자", symbol: "n", family: "baryon", charge: "0", spin: "1/2", mass: "940 MeV", parts: ["u", "d", "d"], keys: ["ddu"], desc: "양성자와 함께 원자핵을 구성합니다." },
+      { id: "lambda", no: 11, name: "람다", symbol: "Λ0", family: "baryon", charge: "0", spin: "1/2", mass: "1116 MeV", parts: ["u", "d", "s"], keys: ["dsu"], desc: "스트레인지 쿼크가 하나 들어간 중성 바리온입니다." },
+      { id: "sigma-plus", no: 12, name: "시그마 플러스", symbol: "Σ+", family: "baryon", charge: "+1", spin: "1/2", mass: "1189 MeV", parts: ["u", "u", "s"], keys: ["suu"], desc: "u 쿼크 두 개와 s 쿼크 하나로 만든 하이페론입니다." },
+      { id: "sigma-zero", no: 13, name: "시그마 제로", symbol: "Σ0", family: "baryon", charge: "0", spin: "1/2", mass: "1193 MeV", parts: ["u", "d", "s"], keys: ["dsu"], desc: "람다와 같은 재료지만 내부 상태가 다른 바리온입니다." },
+      { id: "sigma-minus", no: 14, name: "시그마 마이너스", symbol: "Σ-", family: "baryon", charge: "-1", spin: "1/2", mass: "1197 MeV", parts: ["d", "d", "s"], keys: ["dds"], desc: "음전하를 띠는 시그마 바리온입니다." },
+      { id: "xi-zero", no: 15, name: "크시 제로", symbol: "Ξ0", family: "baryon", charge: "0", spin: "1/2", mass: "1315 MeV", parts: ["u", "s", "s"], keys: ["ssu"], desc: "s 쿼크가 두 개 들어가 더 무거운 바리온입니다." },
+      { id: "xi-minus", no: 16, name: "크시 마이너스", symbol: "Ξ-", family: "baryon", charge: "-1", spin: "1/2", mass: "1322 MeV", parts: ["d", "s", "s"], keys: ["dss"], desc: "두 개의 스트레인지 쿼크가 들어간 음전하 바리온입니다." },
+
+      { id: "delta-pp", no: 17, name: "델타 더블플러스", symbol: "Δ++", family: "baryon", charge: "+2", spin: "3/2", mass: "1232 MeV", parts: ["u", "u", "u"], keys: ["uuu"], desc: "전하가 +2인 들뜬 바리온입니다." },
+      { id: "delta-plus", no: 18, name: "델타 플러스", symbol: "Δ+", family: "baryon", charge: "+1", spin: "3/2", mass: "1232 MeV", parts: ["u", "u", "d"], keys: ["duu"], desc: "양성자와 같은 재료지만 스핀이 더 큰 상태입니다." },
+      { id: "delta-zero", no: 19, name: "델타 제로", symbol: "Δ0", family: "baryon", charge: "0", spin: "3/2", mass: "1232 MeV", parts: ["u", "d", "d"], keys: ["ddu"], desc: "중성자와 같은 재료의 들뜬 바리온입니다." },
+      { id: "delta-minus", no: 20, name: "델타 마이너스", symbol: "Δ-", family: "baryon", charge: "-1", spin: "3/2", mass: "1232 MeV", parts: ["d", "d", "d"], keys: ["ddd"], desc: "d 쿼크 세 개로 이루어진 델타 바리온입니다." },
+      { id: "sigma-star-plus", no: 21, name: "시그마 스타 플러스", symbol: "Σ*+", family: "baryon", charge: "+1", spin: "3/2", mass: "1383 MeV", parts: ["u", "u", "s"], keys: ["suu"], desc: "시그마 플러스의 스핀 3/2 들뜬 상태입니다." },
+      { id: "sigma-star-zero", no: 22, name: "시그마 스타 제로", symbol: "Σ*0", family: "baryon", charge: "0", spin: "3/2", mass: "1384 MeV", parts: ["u", "d", "s"], keys: ["dsu"], desc: "u, d, s가 나란히 모인 들뜬 바리온입니다." },
+      { id: "sigma-star-minus", no: 23, name: "시그마 스타 마이너스", symbol: "Σ*-", family: "baryon", charge: "-1", spin: "3/2", mass: "1387 MeV", parts: ["d", "d", "s"], keys: ["dds"], desc: "시그마 마이너스의 스핀 3/2 상태입니다." },
+      { id: "xi-star-zero", no: 24, name: "크시 스타 제로", symbol: "Ξ*0", family: "baryon", charge: "0", spin: "3/2", mass: "1532 MeV", parts: ["u", "s", "s"], keys: ["ssu"], desc: "크시 제로의 들뜬 바리온 상태입니다." },
+      { id: "xi-star-minus", no: 25, name: "크시 스타 마이너스", symbol: "Ξ*-", family: "baryon", charge: "-1", spin: "3/2", mass: "1535 MeV", parts: ["d", "s", "s"], keys: ["dss"], desc: "크시 마이너스의 스핀 3/2 상태입니다." },
+      { id: "omega-minus", no: 26, name: "오메가 마이너스", symbol: "Ω-", family: "baryon", charge: "-1", spin: "3/2", mass: "1672 MeV", parts: ["s", "s", "s"], keys: ["sss"], desc: "s 쿼크 세 개가 모인 유명한 바리온입니다." },
+      ...leptons
+    ];
+
+    const quarksExt = [
+      { id: "c", label: "c",         name: "참",    charge:  2/3, chargeText: "+2/3", color: "c", anti: false },
+      { id: "b", label: "b",         name: "바닥",  charge: -1/3, chargeText: "-1/3", color: "b", anti: false },
+      { id: "C", label: "c̅",   name: "반 참", charge: -2/3, chargeText: "-2/3", color: "c", anti: true  },
+      { id: "B", label: "b̅",   name: "반 바닥",charge: 1/3, chargeText: "+1/3", color: "b", anti: true  }
+    ];
+
+    const particlesExt = [
+      /* ── 참·바닥 메손 13종 ── */
+      { id:"jpsi",       no:33, name:"J/프사이",         family:"meson", tier:"ext", charge:"0",  spin:"1",   mass:"3097 MeV", parts:["c","C"],     keys:["Cc"], desc:"참 쿼크 발견의 증거가 된 역사적인 메손입니다." },
+      { id:"upsilon",    no:34, name:"업실론",           family:"meson", tier:"ext", charge:"0",  spin:"1",   mass:"9460 MeV", parts:["b","B"],     keys:["Bb"], desc:"바닥 쿼크를 처음 드러낸 메손입니다." },
+      { id:"d-plus",     no:35, name:"D 플러스",         family:"meson", tier:"ext", charge:"+1", spin:"0",   mass:"1869 MeV", parts:["c","D"],     keys:["Dc"], desc:"참 쿼크와 반 다운 쿼크의 만남입니다." },
+      { id:"d-minus",    no:36, name:"D 마이너스",       family:"meson", tier:"ext", charge:"-1", spin:"0",   mass:"1869 MeV", parts:["C","d"],     keys:["Cd"], desc:"D 플러스의 반입자 짝입니다." },
+      { id:"d-zero",     no:37, name:"D 제로",           family:"meson", tier:"ext", charge:"0",  spin:"0",   mass:"1865 MeV", parts:["c","U"],     keys:["Uc"], desc:"참 쿼크와 반 업 쿼크로 이루어진 중성 메손입니다." },
+      { id:"d-zero-bar", no:38, name:"반 D 제로",        family:"meson", tier:"ext", charge:"0",  spin:"0",   mass:"1865 MeV", parts:["C","u"],     keys:["Cu"], desc:"D 제로의 반입자입니다." },
+      { id:"ds-plus",    no:39, name:"Ds 플러스",        family:"meson", tier:"ext", charge:"+1", spin:"0",   mass:"1968 MeV", parts:["c","S"],     keys:["Sc"], desc:"참과 반 기묘 쿼크가 만난 메손입니다." },
+      { id:"ds-minus",   no:40, name:"Ds 마이너스",      family:"meson", tier:"ext", charge:"-1", spin:"0",   mass:"1968 MeV", parts:["C","s"],     keys:["Cs"], desc:"Ds 플러스의 반입자입니다." },
+      { id:"b-plus",     no:41, name:"B 플러스",         family:"meson", tier:"ext", charge:"+1", spin:"0",   mass:"5279 MeV", parts:["u","B"],     keys:["Bu"], desc:"업 쿼크와 반 바닥 쿼크로 이루어진 메손입니다." },
+      { id:"b-minus",    no:42, name:"B 마이너스",       family:"meson", tier:"ext", charge:"-1", spin:"0",   mass:"5279 MeV", parts:["U","b"],     keys:["Ub"], desc:"B 플러스의 반입자입니다." },
+      { id:"b-zero",     no:43, name:"B 제로",           family:"meson", tier:"ext", charge:"0",  spin:"0",   mass:"5279 MeV", parts:["d","B"],     keys:["Bd"], desc:"다운 쿼크와 반 바닥 쿼크의 조합입니다." },
+      { id:"b-zero-bar", no:44, name:"반 B 제로",        family:"meson", tier:"ext", charge:"0",  spin:"0",   mass:"5279 MeV", parts:["D","b"],     keys:["Db"], desc:"B 제로의 반입자입니다." },
+      { id:"bs-zero",    no:45, name:"Bs 제로",          family:"meson", tier:"ext", charge:"0",  spin:"0",   mass:"5366 MeV", parts:["s","B"],     keys:["Bs"], desc:"기묘 쿼크와 반 바닥 쿼크가 만난 메손입니다." },
+      /* ── 참 바리온 7종 ── */
+      { id:"lambda-c",    no:46, name:"람다 참 플러스",         family:"baryon", tier:"ext", charge:"+1", spin:"1/2", mass:"2286 MeV", parts:["u","d","c"], keys:["cdu"], desc:"가장 가벼운 참 바리온입니다." },
+      { id:"sigma-c-pp",  no:47, name:"시그마 참 더블플러스",   family:"baryon", tier:"ext", charge:"+2", spin:"1/2", mass:"2454 MeV", parts:["u","u","c"], keys:["cuu"], desc:"참 쿼크가 포함된 +2 전하의 바리온입니다." },
+      { id:"sigma-c-p",   no:48, name:"시그마 참 플러스",       family:"baryon", tier:"ext", charge:"+1", spin:"1/2", mass:"2453 MeV", parts:["u","d","c"], keys:["cdu"], desc:"람다 참과 같은 재료의 다른 스핀 상태입니다." },
+      { id:"sigma-c-0",   no:49, name:"시그마 참 제로",         family:"baryon", tier:"ext", charge:"0",  spin:"1/2", mass:"2454 MeV", parts:["d","d","c"], keys:["cdd"], desc:"다운 쿼크 두 개와 참 쿼크의 조합입니다." },
+      { id:"xi-c-plus",   no:50, name:"크시 참 플러스",         family:"baryon", tier:"ext", charge:"+1", spin:"1/2", mass:"2468 MeV", parts:["u","s","c"], keys:["csu"], desc:"참과 기묘 쿼크가 함께 들어간 바리온입니다." },
+      { id:"xi-c-zero",   no:51, name:"크시 참 제로",           family:"baryon", tier:"ext", charge:"0",  spin:"1/2", mass:"2471 MeV", parts:["d","s","c"], keys:["cds"], desc:"다운, 기묘, 참 쿼크의 조합입니다." },
+      { id:"omega-c",     no:52, name:"오메가 참 제로",         family:"baryon", tier:"ext", charge:"0",  spin:"1/2", mass:"2695 MeV", parts:["s","s","c"], keys:["css"], desc:"기묘 쿼크 두 개와 참 쿼크로 이루어진 바리온입니다." },
+      /* ── 바닥 바리온 6종 ── */
+      { id:"lambda-b",    no:53, name:"람다 바텀 제로",         family:"baryon", tier:"ext", charge:"0",  spin:"1/2", mass:"5620 MeV", parts:["u","d","b"], keys:["bdu"], desc:"가장 가벼운 바닥 바리온입니다." },
+      { id:"sigma-b-p",   no:54, name:"시그마 바텀 플러스",     family:"baryon", tier:"ext", charge:"+1", spin:"1/2", mass:"5811 MeV", parts:["u","u","b"], keys:["buu"], desc:"업 쿼크 두 개와 바닥 쿼크의 조합입니다." },
+      { id:"sigma-b-m",   no:55, name:"시그마 바텀 마이너스",   family:"baryon", tier:"ext", charge:"-1", spin:"1/2", mass:"5816 MeV", parts:["d","d","b"], keys:["bdd"], desc:"다운 쿼크 두 개와 바닥 쿼크의 조합입니다." },
+      { id:"xi-b-zero",   no:56, name:"크시 바텀 제로",         family:"baryon", tier:"ext", charge:"0",  spin:"1/2", mass:"5792 MeV", parts:["u","s","b"], keys:["bsu"], desc:"업, 기묘, 바닥 쿼크의 조합입니다." },
+      { id:"xi-b-minus",  no:57, name:"크시 바텀 마이너스",     family:"baryon", tier:"ext", charge:"-1", spin:"1/2", mass:"5795 MeV", parts:["d","s","b"], keys:["bds"], desc:"다운, 기묘, 바닥 쿼크의 조합입니다." },
+      { id:"omega-b",     no:58, name:"오메가 바텀 마이너스",   family:"baryon", tier:"ext", charge:"-1", spin:"1/2", mass:"6046 MeV", parts:["s","s","b"], keys:["bss"], desc:"기묘 쿼크 두 개와 바닥 쿼크로 이루어진 바리온입니다." },
+    ];
+
+    const allKnownQuarks = [...quarks, ...quarksExt];
+
+    const state = {
+      selected: [],
+      discovered: new Set(JSON.parse(localStorage.getItem("quarkdex-discovered") || "[]")),
+      filter: "all",
+      multiplet: "all",
+      latest: null,
+      mode: localStorage.getItem("quarkdex-mode") || "basic",
+      completedDate: localStorage.getItem("quarkdex-completed") || null
+    };
+
+    const screens = document.querySelectorAll(".screen");
+    const navTabs = document.querySelectorAll(".nav .tab");
+    const quarkButtons = document.getElementById("quarkButtons");
+    const leptonButtons = document.getElementById("leptonButtons");
+    const slots = document.getElementById("slots");
+    const dexGrid = document.getElementById("dexGrid");
+    const message = document.getElementById("message");
+    const toast = document.getElementById("toast");
+    const particleArt = document.getElementById("particleArt");
+    const particleCluster = document.getElementById("particleCluster");
+    const foundCount = document.getElementById("foundCount");
+    const totalCount = document.getElementById("totalCount");
+    const foundPercent = document.getElementById("foundPercent");
+    const progressFill = document.getElementById("progressFill");
+    const chargeReadout = document.getElementById("chargeReadout");
+    const typeReadout = document.getElementById("typeReadout");
+    const hintReadout = document.getElementById("hintReadout");
+    const multipletPicker = document.getElementById("multipletPicker");
+    const multipletSelect = document.getElementById("multipletSelect");
+    const resetBtn = document.getElementById("resetBtn");
+    const resetModal = document.getElementById("resetModal");
+    const resetConfirm = document.getElementById("resetConfirm");
+    const resetCancel = document.getElementById("resetCancel");
+
+    let audioContext;
+
+    function playTone(kind) {
+      try {
+        audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+        const now = audioContext.currentTime;
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        const table = {
+          tap: [520, .05],
+          ok: [784, .12],
+          new: [1046, .18],
+          bad: [120, .16]
+        };
+        const [freq, len] = table[kind] || table.tap;
+        osc.type = kind === "bad" ? "sawtooth" : "square";
+        osc.frequency.setValueAtTime(freq, now);
+        if (kind === "new") osc.frequency.setValueAtTime(freq * 1.25, now + .08);
+        gain.gain.setValueAtTime(.001, now);
+        gain.gain.exponentialRampToValueAtTime(.08, now + .01);
+        gain.gain.exponentialRampToValueAtTime(.001, now + len);
+        osc.connect(gain).connect(audioContext.destination);
+        osc.start(now);
+        osc.stop(now + len + .02);
+      } catch (error) {
+        return false;
+      }
+      return true;
+    }
+
+    function save() {
+      localStorage.setItem("quarkdex-discovered", JSON.stringify([...state.discovered]));
+      localStorage.setItem("quarkdex-mode", state.mode);
+      if (state.completedDate) localStorage.setItem("quarkdex-completed", state.completedDate);
+    }
+
+    function setVersionBadge(text, cls) {
+      document.querySelectorAll("#logoVersion, .logo-version-title").forEach(el => {
+        el.textContent = text;
+        el.classList.remove("expanded", "complete");
+        if (cls) el.classList.add(cls);
+      });
+      const topbar = document.querySelector(".topbar");
+      if (topbar) {
+        topbar.classList.remove("mode-expanded", "mode-complete");
+        if (cls === "expanded") topbar.classList.add("mode-expanded");
+        if (cls === "complete") topbar.classList.add("mode-complete");
+      }
+    }
+
+    function applyCompletionBadge() {
+      setVersionBadge("완전판", "complete");
+    }
+
+    function buildHallParticles() {
+      const container = document.getElementById("hallParticles");
+      if (!container) return;
+      container.innerHTML = "";
+      [...particles, ...particlesExt].forEach(p => {
+        const chip = document.createElement("span");
+        chip.className = "hall-p-chip";
+        chip.innerHTML = particleSymbolHtml(p);
+        container.appendChild(chip);
+      });
+    }
+
+    function spawnHallStars() {
+      const box = document.getElementById("hallStars");
+      if (!box) return;
+      box.innerHTML = "";
+      for (let i = 0; i < 140; i++) {
+        const s = document.createElement("div");
+        s.className = "hall-star";
+        const sz = Math.random() < .2 ? 4 : 2;
+        s.style.cssText = `
+          left:${Math.random()*100}%;
+          top:${Math.random()*100}%;
+          width:${sz}px; height:${sz}px;
+          animation-delay:${(Math.random()*2).toFixed(2)}s;
+          animation-duration:${(1.2+Math.random()*1.8).toFixed(2)}s;
+        `;
+        box.appendChild(s);
+      }
+    }
+
+    function playVictoryTone() {
+      try {
+        audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = audioContext;
+        const now = ctx.currentTime;
+        // 8-bit victory fanfare
+        const melody = [
+          [659,0],[659,.14],[659,.28],[523,.42],[659,.56],[784,.7],[392,.84],
+          [523,1.1],[392,1.24],[330,1.38],[440,1.52],[494,1.66],[466,1.8],[440,1.94],[392,2.14],
+          [659,2.42],[784,2.56],[880,2.7],[698,2.84],[784,2.98],[659,3.12],[523,3.26],[587,3.4],[494,3.54]
+        ];
+        melody.forEach(([freq, t]) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "square";
+          osc.frequency.setValueAtTime(freq, now + t);
+          gain.gain.setValueAtTime(0.001, now + t);
+          gain.gain.exponentialRampToValueAtTime(0.06, now + t + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + t + 0.12);
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(now + t);
+          osc.stop(now + t + 0.15);
+        });
+      } catch(e) {}
+    }
+
+    function showHallOfFame() {
+      const overlay = document.getElementById("hallOverlay");
+      if (!overlay) return;
+      spawnHallStars();
+      buildHallParticles();
+      const dateEl = document.getElementById("hallDate");
+      if (dateEl && state.completedDate) {
+        const d = new Date(state.completedDate);
+        dateEl.textContent = `달성일: ${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
+      }
+      overlay.classList.add("open");
+      playVictoryTone();
+    }
+
+    function getActiveParticles() {
+      return state.mode === "advanced" ? [...particles, ...particlesExt] : particles;
+    }
+
+    function playUnlockTone() {
+      try {
+        audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = audioContext;
+        const now = ctx.currentTime;
+        const fanfare = [523, 659, 784, 1047, 1319];
+        fanfare.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "square";
+          osc.frequency.setValueAtTime(freq, now + i * 0.13);
+          gain.gain.setValueAtTime(0.001, now + i * 0.13);
+          gain.gain.exponentialRampToValueAtTime(0.07, now + i * 0.13 + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.13 + 0.18);
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(now + i * 0.13);
+          osc.stop(now + i * 0.13 + 0.22);
+        });
+      } catch(e) {}
+    }
+
+    function unlockAdvancedMode() {
+      state.mode = "advanced";
+      save();
+      playUnlockTone();
+      setVersionBadge("확장판", "expanded");
+      const panel = document.querySelector(".quark-panel");
+      if (panel) {
+        panel.classList.add("unlock-flash");
+        setTimeout(() => panel.classList.remove("unlock-flash"), 1200);
+      }
+      showToast("★ 기본 도감 완성! 확장 모드 해금! c(참)·b(바닥) 쿼크 등장! ★");
+      renderQuarkButtons();
+      renderProgress();
+      renderDex();
+    }
+
+    function fmtCharge(value) {
+      const rounded = Math.round(value * 3) / 3;
+      if (Math.abs(rounded) < .01) return "0";
+      if (Math.abs(rounded - 2 / 3) < .01) return "+2/3";
+      if (Math.abs(rounded + 2 / 3) < .01) return "-2/3";
+      if (Math.abs(rounded - 1 / 3) < .01) return "+1/3";
+      if (Math.abs(rounded + 1 / 3) < .01) return "-1/3";
+      if (Math.abs(rounded - 1) < .01) return "+1";
+      if (Math.abs(rounded + 1) < .01) return "-1";
+      if (Math.abs(rounded - 2) < .01) return "+2";
+      if (Math.abs(rounded + 2) < .01) return "-2";
+      return rounded > 0 ? `+${rounded}` : String(rounded);
+    }
+
+    function keyFor(parts) {
+      return [...parts].sort().join("");
+    }
+
+    function getQuark(id) {
+      return allKnownQuarks.find(q => q.id === id);
+    }
+
+    function partLabel(id) {
+      if (id === "e") return "e";
+      if (id === "ν") return "ν";
+      if (id === "μ") return "μ";
+      if (id === "τ") return "τ";
+      return getQuark(id)?.label || id;
+    }
+
+    function makeSymbol(id, small = false) {
+      const q = getQuark(id);
+      const node = document.createElement("span");
+      node.className = q
+        ? `q-symbol ${q.color} ${q.anti ? "anti" : ""}`
+        : "q-symbol lep";
+      node.textContent = q ? q.label : partLabel(id);
+      if (small) node.setAttribute("aria-hidden", "true");
+      return node;
+    }
+
+    function particleSymbolHtml(particle) {
+      const symbols = {
+        "pi-plus": "π<sup>+</sup>",
+        "pi-minus": "π<sup>-</sup>",
+        "pi-zero": "π<sup>0</sup>",
+        "k-plus": "K<sup>+</sup>",
+        "k-minus": "K<sup>-</sup>",
+        "k-zero": "K<sup>0</sup>",
+        "anti-k-zero": "K&#772;<sup>0</sup>",
+        "eta": "η",
+        "proton": "p",
+        "neutron": "n",
+        "lambda": "Λ<sup>0</sup>",
+        "sigma-plus": "Σ<sup>+</sup>",
+        "sigma-zero": "Σ<sup>0</sup>",
+        "sigma-minus": "Σ<sup>-</sup>",
+        "xi-zero": "Ξ<sup>0</sup>",
+        "xi-minus": "Ξ<sup>-</sup>",
+        "delta-pp": "Δ<sup>++</sup>",
+        "delta-plus": "Δ<sup>+</sup>",
+        "delta-zero": "Δ<sup>0</sup>",
+        "delta-minus": "Δ<sup>-</sup>",
+        "sigma-star-plus": "Σ<sup>*+</sup>",
+        "sigma-star-zero": "Σ<sup>*0</sup>",
+        "sigma-star-minus": "Σ<sup>*-</sup>",
+        "xi-star-zero": "Ξ<sup>*0</sup>",
+        "xi-star-minus": "Ξ<sup>*-</sup>",
+        "omega-minus": "Ω<sup>-</sup>",
+        "e": "e<sup>-</sup>",
+        "nue": "ν<sub>e</sub>",
+        "mu": "μ<sup>-</sup>",
+        "numu": "ν<sub>μ</sub>",
+        "tau": "τ<sup>-</sup>",
+        "nutau": "ν<sub>τ</sub>",
+        "jpsi":       "J/ψ",
+        "upsilon":    "Υ",
+        "d-plus":     "D<sup>+</sup>",
+        "d-minus":    "D<sup>-</sup>",
+        "d-zero":     "D<sup>0</sup>",
+        "d-zero-bar": "D&#772;<sup>0</sup>",
+        "ds-plus":    "D<sub>s</sub><sup>+</sup>",
+        "ds-minus":   "D<sub>s</sub><sup>-</sup>",
+        "b-plus":     "B<sup>+</sup>",
+        "b-minus":    "B<sup>-</sup>",
+        "b-zero":     "B<sup>0</sup>",
+        "b-zero-bar": "B&#772;<sup>0</sup>",
+        "bs-zero":    "B<sub>s</sub><sup>0</sup>",
+        "lambda-c":   "Λ<sub>c</sub><sup>+</sup>",
+        "sigma-c-pp": "Σ<sub>c</sub><sup>++</sup>",
+        "sigma-c-p":  "Σ<sub>c</sub><sup>+</sup>",
+        "sigma-c-0":  "Σ<sub>c</sub><sup>0</sup>",
+        "xi-c-plus":  "Ξ<sub>c</sub><sup>+</sup>",
+        "xi-c-zero":  "Ξ<sub>c</sub><sup>0</sup>",
+        "omega-c":    "Ω<sub>c</sub><sup>0</sup>",
+        "lambda-b":   "Λ<sub>b</sub><sup>0</sup>",
+        "sigma-b-p":  "Σ<sub>b</sub><sup>+</sup>",
+        "sigma-b-m":  "Σ<sub>b</sub><sup>-</sup>",
+        "xi-b-zero":  "Ξ<sub>b</sub><sup>0</sup>",
+        "xi-b-minus": "Ξ<sub>b</sub><sup>-</sup>",
+        "omega-b":    "Ω<sub>b</sub><sup>-</sup>"
+      };
+      return symbols[particle.id] || particle.symbol;
+    }
+
+    function renderQuarkButtons() {
+      quarkButtons.innerHTML = "";
+      const activeQuarks = state.mode === "advanced" ? [...quarks, ...quarksExt] : quarks;
+      activeQuarks.forEach(q => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `quark-btn ${q.anti ? "anti" : ""} ${quarksExt.includes(q) ? "quark-ext" : ""}`;
+        btn.innerHTML = `
+          <span class="q-symbol ${q.color} ${q.anti ? "anti" : ""}">${q.label}</span>
+          <span>${q.name}</span>
+          <span class="q-meta">전하 ${q.chargeText}</span>
+        `;
+        btn.addEventListener("click", () => addQuark(q.id));
+        quarkButtons.appendChild(btn);
+      });
+
+      leptonButtons.innerHTML = "";
+      leptons.forEach(p => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "lepton-btn";
+        btn.innerHTML = `
+          <span class="q-symbol lep">${partLabel(p.parts[0])}</span>
+          <span class="symbol-mark">${particleSymbolHtml(p)}</span>
+          <span class="q-meta">${p.name}</span>
+        `;
+        btn.addEventListener("click", () => discover(p, "lepton"));
+        leptonButtons.appendChild(btn);
+      });
+
+      const modeLabel = document.getElementById("quarkModeLabel");
+      if (modeLabel) modeLabel.textContent = state.mode === "advanced" ? "확장 모드" : "기본 모드";
+    }
+
+    function addQuark(id) {
+      if (state.selected.length >= 3) {
+        showToast("슬롯은 3개까지입니다. 비우고 다시 골라보세요.");
+        playTone("bad");
+        return;
+      }
+      state.selected.push(id);
+      playTone("tap");
+      renderSlots();
+    }
+
+    function renderSlots() {
+      slots.innerHTML = "";
+      for (let i = 0; i < 3; i += 1) {
+        const slot = document.createElement("button");
+        slot.type = "button";
+        slot.className = `slot ${state.selected[i] ? "" : "empty"}`;
+        if (state.selected[i]) {
+          slot.appendChild(makeSymbol(state.selected[i]));
+          const label = document.createElement("small");
+          label.textContent = getQuark(state.selected[i]).name;
+          slot.appendChild(label);
+          slot.addEventListener("click", () => {
+            state.selected.splice(i, 1);
+            playTone("tap");
+            renderSlots();
+          });
+        }
+        slots.appendChild(slot);
+      }
+
+      const selectedQuarks = state.selected.map(getQuark);
+      const charge = selectedQuarks.reduce((sum, q) => sum + q.charge, 0);
+      const antiCount = selectedQuarks.filter(q => q.anti).length;
+      chargeReadout.textContent = fmtCharge(charge);
+      typeReadout.textContent = !state.selected.length
+        ? "없음"
+        : antiCount === 0 ? "쿼크" : antiCount === state.selected.length ? "반쿼크" : "혼합";
+
+      if (state.selected.length === 2 && antiCount === 1) hintReadout.textContent = "메손";
+      else if (state.selected.length === 3 && antiCount === 0) hintReadout.textContent = "바리온";
+      else if (state.selected.length === 0) hintReadout.textContent = "?";
+      else hintReadout.textContent = "불안정";
+    }
+
+    function combine() {
+      const parts = [...state.selected];
+      const antiCount = parts.map(getQuark).filter(q => q.anti).length;
+      if (!((parts.length === 2 && antiCount === 1) || (parts.length === 3 && antiCount === 0))) {
+        fail("메손은 쿼크+반쿼크, 바리온은 쿼크 3개 조합만 안정적으로 발견됩니다.");
+        return;
+      }
+
+      const key = keyFor(parts);
+      const candidates = getActiveParticles()
+        .filter(p => p.keys && p.keys.includes(key))
+        .sort((a, b) => a.no - b.no);
+
+      if (!candidates.length) {
+        const hint = state.mode === "basic"
+          ? "이 조합에 해당하는 입자가 없습니다. 기본 도감을 완성하면 더 많은 쿼크가 해금됩니다!"
+          : "이 조합에 해당하는 입자가 없습니다.";
+        fail(hint);
+        return;
+      }
+
+      const particle = candidates.find(p => !state.discovered.has(p.id)) || candidates[0];
+      discover(particle, "combine");
+    }
+
+    function discover(particle, source) {
+      const isNew = !state.discovered.has(particle.id);
+      state.discovered.add(particle.id);
+      state.latest = particle;
+      save();
+      renderProgress();
+      renderDex();
+      renderParticle(particle);
+      particleArt.classList.remove("flash");
+      void particleArt.offsetWidth;
+      particleArt.classList.add("flash");
+      playTone(isNew ? "new" : "ok");
+
+      if (isNew) {
+        message.innerHTML = `<strong>새로운 입자를 발견했다!</strong><span>#${String(particle.no).padStart(3, "0")} ${particle.name} (${particleSymbolHtml(particle)}) 도감 등록 완료.</span>`;
+        showToast(`#${String(particle.no).padStart(3, "0")} ${particle.name} 발견!`);
+      } else if (source === "lepton") {
+        message.innerHTML = `<strong>이미 관측한 렙톤입니다.</strong><span>${particle.name}의 도감 카드를 다시 열었습니다.</span>`;
+      } else {
+        message.innerHTML = `<strong>이미 발견한 조합입니다.</strong><span>${particle.name}이(가) 다시 나타났습니다. 같은 재료에 숨은 다른 상태가 남아 있는지 도감을 확인해 보세요.</span>`;
+      }
+
+      if (isNew && state.mode === "basic") {
+        const basicComplete = particles.every(p => state.discovered.has(p.id));
+        if (basicComplete) {
+          setTimeout(() => unlockAdvancedMode(), 900);
+        }
+      } else if (isNew && state.mode === "advanced" && !state.completedDate) {
+        const allComplete = [...particles, ...particlesExt].every(p => state.discovered.has(p.id));
+        if (allComplete) {
+          state.completedDate = new Date().toISOString();
+          save();
+          applyCompletionBadge();
+          setTimeout(() => showHallOfFame(), 800);
+        }
+      }
+    }
+
+    function fail(text) {
+      playTone("bad");
+      message.innerHTML = `<strong>조합 실패</strong><span>${text}</span>`;
+      document.querySelector(".scene").classList.remove("shake");
+      void document.querySelector(".scene").offsetWidth;
+      document.querySelector(".scene").classList.add("shake");
+    }
+
+    function renderParticle(particle) {
+      document.getElementById("latestNumber").textContent = `#${String(particle.no).padStart(3, "0")}`;
+      document.getElementById("particleName").textContent = `${particle.name}`;
+      document.getElementById("particleSymbol").innerHTML = particleSymbolHtml(particle);
+      document.getElementById("particleCharge").textContent = particle.charge;
+      document.getElementById("particleFamily").textContent = particleGroupName(particle);
+      document.getElementById("particleDesc").textContent = particle.desc;
+
+      particleCluster.innerHTML = "";
+      particleCluster.className = `particle-cluster ${particle.parts.length === 2 ? "two" : ""}`;
+      particle.parts.forEach(part => particleCluster.appendChild(makeSymbol(part, true)));
+    }
+
+    function familyName(family) {
+      return { meson: "메손", baryon: "바리온", lepton: "렙톤" }[family] || family;
+    }
+
+    function multipletOf(particle) {
+      if (particle.tier === "ext") return "none";
+      if (particle.family === "meson") return "octet";
+      if (particle.family !== "baryon") return "none";
+      return particle.no <= 16 ? "octet" : "decuplet";
+    }
+
+    function multipletName(multiplet) {
+      return { all: "전체", octet: "팔중항", decuplet: "십중항" }[multiplet] || multiplet;
+    }
+
+    function particleGroupName(particle) {
+      if (particle.family === "lepton") return familyName(particle.family);
+      return `${familyName(particle.family)} ${multipletName(multipletOf(particle))}`;
+    }
+
+    function updateMultipletPicker() {
+      const options = state.filter === "meson"
+        ? [["all", "메손 전체"], ["octet", "팔중항"]]
+        : state.filter === "baryon"
+          ? [["all", "바리온 전체"], ["octet", "팔중항"], ["decuplet", "십중항"]]
+          : [];
+
+      multipletPicker.classList.toggle("active", options.length > 0);
+      multipletSelect.innerHTML = options
+        .map(([value, label]) => `<option value="${value}">${label}</option>`)
+        .join("");
+
+      if (!options.some(([value]) => value === state.multiplet)) {
+        state.multiplet = "all";
+      }
+      multipletSelect.value = state.multiplet;
+    }
+
+    function createDexCard(particle, compact = false) {
+      const found = state.discovered.has(particle.id);
+      const reveal = found || compact;
+      const infoText = compact
+        ? `전하량 ${particle.charge}<br>기묘도 ${formatSigned(strangenessOf(particle))}`
+        : `전하량 ${particle.charge} / 기묘도 ${formatSigned(strangenessOf(particle))} / 스핀량 ${particle.spin}`;
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = `dex-card ${compact ? "multiplet-card" : ""} ${found ? "" : "locked"} ${particle.tier === "ext" ? "ext-card" : ""}`;
+      card.innerHTML = `
+            <div class="dex-num">#${String(particle.no).padStart(3, "0")} ${particle.name}</div>
+            <div class="dex-sprite"></div>
+            <h3 class="dex-title">${reveal ? `<span class="dex-symbol">${particleSymbolHtml(particle)}</span><span class="dex-name">${particle.name}</span>` : `<span class="dex-symbol">???</span><span class="dex-name">미발견</span>`}</h3>
+            <p>${reveal ? infoText : "아직 발견하지 못했습니다."}</p>
+          `;
+      const sprite = card.querySelector(".dex-sprite");
+      if (reveal) particle.parts.forEach(part => sprite.appendChild(makeSymbol(part, true)));
+      else sprite.textContent = "???";
+      card.addEventListener("click", () => {
+        if (found) {
+          renderParticle(particle);
+          showScreen("lab");
+        } else {
+          showToast("조합 화면에서 먼저 발견해 보세요.");
+          playTone("bad");
+        }
+      });
+      return card;
+    }
+
+    function chargeNumber(charge) {
+      return Number(String(charge).replace("+", ""));
+    }
+
+    function formatSigned(value) {
+      if (value > 0) return `+${value}`;
+      return String(value);
+    }
+
+    function strangenessOf(particle) {
+      return particle.parts.reduce((sum, part) => {
+        if (part === "s") return sum - 1;
+        if (part === "S") return sum + 1;
+        return sum;
+      }, 0);
+    }
+
+    function uniqueValues(values) {
+      return [...new Set(values)];
+    }
+
+    function multipletMetrics(board) {
+      const isDecuplet = board.classList.contains("decuplet");
+      return {
+        colW: 168,
+        rowH: isDecuplet ? 128 : 136,
+        gap: 10,
+        padX: 16,
+        padTop: 30,
+        cols: isDecuplet ? 4 : 5,
+        rows: isDecuplet ? 4 : 3
+      };
+    }
+
+    function boardSize(metrics) {
+      return {
+        width: metrics.padX * 2 + metrics.cols * metrics.colW + (metrics.cols - 1) * metrics.gap,
+        height: metrics.padTop + 16 + metrics.rows * metrics.rowH + (metrics.rows - 1) * metrics.gap
+      };
+    }
+
+    function slotCenter(slot, metrics) {
+      const span = slot.span || 1;
+      const slotW = span * metrics.colW + (span - 1) * metrics.gap;
+      return {
+        x: metrics.padX + (slot.col - 1) * (metrics.colW + metrics.gap) + slotW / 2 + (slot.shift || 0),
+        y: metrics.padTop + (slot.row - 1) * (metrics.rowH + metrics.gap) + metrics.rowH / 2
+      };
+    }
+
+    function drawContourLine(layer, labelLayer, className, x1, y1, x2, y2, labelText, labelAt = .5, labelOffsetY = -14, minLabelX = 42, maxLabelX = Infinity) {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const length = Math.hypot(dx, dy);
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      const line = document.createElement("div");
+      line.className = `contour-line ${className}`;
+      line.style.left = `${x1}px`;
+      line.style.top = `${y1}px`;
+      line.style.width = `${length}px`;
+      line.style.transform = `rotate(${angle}deg)`;
+      layer.appendChild(line);
+
+      const label = document.createElement("span");
+      const rawLabelX = x1 + dx * labelAt;
+      label.className = `contour-label ${className}-label`;
+      label.style.left = `${Math.min(maxLabelX, Math.max(minLabelX, rawLabelX))}px`;
+      label.style.top = `${Math.max(6, y1 + dy * labelAt + labelOffsetY)}px`;
+      label.style.transform = "translateX(-50%)";
+      label.textContent = labelText;
+      labelLayer.appendChild(label);
+    }
+
+    function addMultipletContours(board, layout, byId) {
+      const layer = document.createElement("div");
+      layer.className = "multiplet-contours";
+      const labelLayer = document.createElement("div");
+      labelLayer.className = "multiplet-labels";
+      const metrics = multipletMetrics(board);
+      const size = boardSize(metrics);
+      const diagramParticles = layout
+        .flatMap(slot => slot.ids.map(id => {
+          const particle = byId.get(id);
+          return particle ? { particle, center: slotCenter(slot, metrics) } : null;
+        }))
+        .filter(Boolean);
+      const strangenessValues = uniqueValues(diagramParticles.map(item => strangenessOf(item.particle)))
+        .sort((a, b) => b - a);
+
+      strangenessValues.forEach((strangeness, index) => {
+        const rowPoints = diagramParticles
+          .filter(item => strangenessOf(item.particle) === strangeness)
+          .map(item => item.center);
+        const y = rowPoints.reduce((sum, point) => sum + point.y, 0) / rowPoints.length;
+        drawContourLine(layer, labelLayer, "strange", -80, y, size.width + 8, y, `기묘도 ${formatSigned(strangeness)}`, .035, -14, -30);
+      });
+
+      const chargeGroups = uniqueValues(diagramParticles.map(item => item.particle.charge))
+        .sort((a, b) => chargeNumber(a) - chargeNumber(b))
+        .map(charge => ({
+          charge,
+          points: diagramParticles
+            .filter(item => item.particle.charge === charge)
+            .map(item => item.center)
+            .sort((a, b) => a.y - b.y || a.x - b.x)
+        }));
+
+      const vectors = chargeGroups
+        .filter(group => group.points.length > 1)
+        .map(group => {
+          const first = group.points[0];
+          const last = group.points[group.points.length - 1];
+          const length = Math.hypot(last.x - first.x, last.y - first.y) || 1;
+          return { x: (last.x - first.x) / length, y: (last.y - first.y) / length };
+        });
+      const defaultVector = vectors.length
+        ? vectors.reduce((sum, vector) => ({ x: sum.x + vector.x, y: sum.y + vector.y }), { x: 0, y: 0 })
+        : { x: 1, y: .75 };
+      const defaultLength = Math.hypot(defaultVector.x, defaultVector.y) || 1;
+      const chargeVector = { x: defaultVector.x / defaultLength, y: defaultVector.y / defaultLength };
+
+      chargeGroups.forEach(group => {
+        const points = group.points;
+        const first = points[0];
+        const last = points[points.length - 1];
+        let vx = chargeVector.x;
+        let vy = chargeVector.y;
+        if (points.length > 1) {
+          const length = Math.hypot(last.x - first.x, last.y - first.y) || 1;
+          vx = (last.x - first.x) / length;
+          vy = (last.y - first.y) / length;
+        }
+        const extension = points.length > 1 ? 260 : 190;
+        const chargeLabelAt = .72;
+        drawContourLine(
+          layer,
+          labelLayer,
+          "charge",
+          first.x - vx * extension,
+          first.y - vy * extension,
+          last.x + vx * extension,
+          last.y + vy * extension,
+          `전하량 ${group.charge}`,
+          chargeLabelAt,
+          8,
+          42,
+          size.width - 42
+        );
+      });
+
+      board.appendChild(layer);
+      board.appendChild(labelLayer);
+    }
+
+    function renderMultipletDiagram() {
+      const byId = new Map(particles.map(particle => [particle.id, particle]));
+      const isMesonOctet = state.filter === "meson" && state.multiplet === "octet";
+      const isBaryonOctet = state.filter === "baryon" && state.multiplet === "octet";
+      const isBaryonDecuplet = state.filter === "baryon" && state.multiplet === "decuplet";
+
+      const board = document.createElement("div");
+      board.className = `multiplet-board ${isBaryonDecuplet ? "decuplet" : "octet"}`;
+      const axis = document.createElement("div");
+      axis.className = "multiplet-axis";
+      axis.textContent = "전하량 ↘ / 기묘도 ↑";
+      board.appendChild(axis);
+
+      const layout = isMesonOctet ? [
+        { ids: ["k-zero"], col: 2, row: 1 },
+        { ids: ["k-plus"], col: 4, row: 1 },
+        { ids: ["pi-minus"], col: 1, row: 2 },
+        { ids: ["pi-zero", "eta"], col: 3, row: 2 },
+        { ids: ["pi-plus"], col: 5, row: 2 },
+        { ids: ["k-minus"], col: 2, row: 3 },
+        { ids: ["anti-k-zero"], col: 4, row: 3 }
+      ] : isBaryonOctet ? [
+        { ids: ["neutron"], col: 2, row: 1 },
+        { ids: ["proton"], col: 4, row: 1 },
+        { ids: ["sigma-minus"], col: 1, row: 2 },
+        { ids: ["lambda", "sigma-zero"], col: 3, row: 2 },
+        { ids: ["sigma-plus"], col: 5, row: 2 },
+        { ids: ["xi-minus"], col: 2, row: 3 },
+        { ids: ["xi-zero"], col: 4, row: 3 }
+      ] : [
+        { ids: ["delta-minus"], col: 1, row: 1 },
+        { ids: ["delta-zero"], col: 2, row: 1 },
+        { ids: ["delta-plus"], col: 3, row: 1 },
+        { ids: ["delta-pp"], col: 4, row: 1 },
+        { ids: ["sigma-star-minus"], col: 1, row: 2, shift: 84 },
+        { ids: ["sigma-star-zero"], col: 2, row: 2, shift: 84 },
+        { ids: ["sigma-star-plus"], col: 3, row: 2, shift: 84 },
+        { ids: ["xi-star-minus"], col: 2, row: 3 },
+        { ids: ["xi-star-zero"], col: 3, row: 3 },
+        { ids: ["omega-minus"], col: 2, row: 4, span: 2 }
+      ];
+
+      addMultipletContours(board, layout, byId);
+
+      layout.forEach(slot => {
+        const cell = document.createElement("div");
+        cell.className = "multiplet-cell";
+        cell.style.gridColumn = slot.span ? `${slot.col} / span ${slot.span}` : String(slot.col);
+        cell.style.gridRow = String(slot.row);
+        if (slot.shift) cell.style.transform = `translateX(${slot.shift}px)`;
+        slot.ids.forEach(id => {
+          const particle = byId.get(id);
+          if (particle) cell.appendChild(createDexCard(particle, true));
+        });
+        board.appendChild(cell);
+      });
+
+      dexGrid.appendChild(board);
+    }
+
+    function renderDex() {
+      updateMultipletPicker();
+      dexGrid.innerHTML = "";
+      const isDiagram = state.multiplet !== "all" && (state.filter === "meson" || state.filter === "baryon");
+      dexGrid.classList.toggle("is-diagram", isDiagram);
+
+      if (isDiagram) {
+        renderMultipletDiagram();
+        return;
+      }
+
+      getActiveParticles()
+        .filter(p => state.filter === "all" || p.family === state.filter)
+        .sort((a, b) => a.no - b.no)
+        .forEach(p => {
+          dexGrid.appendChild(createDexCard(p));
+        });
+    }
+
+    function renderProgress() {
+      const active = getActiveParticles();
+      const total = active.length;
+      const found = active.filter(p => state.discovered.has(p.id)).length;
+      const percent = Math.round(found / total * 100);
+      totalCount.textContent = total;
+      foundCount.textContent = found;
+      foundPercent.textContent = `${percent}%`;
+      progressFill.style.width = `${percent}%`;
+    }
+
+    function clearSlots() {
+      state.selected = [];
+      renderSlots();
+      playTone("tap");
+    }
+
+    function scrollTopNow() {
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      window.scrollTo(0, 0);
+    }
+
+    function showScreen(id) {
+      screens.forEach(screen => screen.classList.toggle("active", screen.id === id));
+      navTabs.forEach(tab => tab.classList.toggle("active", tab.dataset.screen === id));
+      if (id === "dex") renderDex();
+      if (location.hash !== `#${id}`) history.replaceState(null, "", `#${id}`);
+      scrollTopNow();
+      setTimeout(scrollTopNow, 0);
+    }
+
+    function showToast(text) {
+      toast.textContent = text;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 1800);
+    }
+
+    document.getElementById("combineBtn").addEventListener("click", combine);
+    document.getElementById("clearBtn").addEventListener("click", clearSlots);
+
+    navTabs.forEach(tab => {
+      tab.addEventListener("click", () => showScreen(tab.dataset.screen));
+    });
+
+    document.querySelectorAll("[data-screen-jump]").forEach(btn => {
+      btn.addEventListener("click", () => showScreen(btn.dataset.screenJump));
+    });
+
+    document.querySelectorAll("[data-filter]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.filter = btn.dataset.filter;
+        state.multiplet = "all";
+        document.querySelectorAll("[data-filter]").forEach(item => item.classList.toggle("active", item === btn));
+        renderDex();
+      });
+    });
+
+    multipletSelect.addEventListener("change", () => {
+      state.multiplet = multipletSelect.value;
+      renderDex();
+    });
+
+    function resetGame() {
+      state.discovered = new Set();
+      state.mode = "basic";
+      state.selected = [];
+      state.latest = null;
+      state.completedDate = null;
+      localStorage.removeItem("quarkdex-discovered");
+      localStorage.removeItem("quarkdex-mode");
+      localStorage.removeItem("quarkdex-completed");
+      setVersionBadge("기본판", null);
+      renderQuarkButtons();
+      renderSlots();
+      renderProgress();
+      renderDex();
+      playTone("tap");
+      const msg = document.getElementById("message");
+      if (msg) msg.innerHTML = "<strong>다시 시작합니다!</strong><span>쿼크를 선택해 첫 번째 입자를 발견해 보세요.</span>";
+    }
+
+    resetBtn.addEventListener("click", () => {
+      resetModal.classList.add("open");
+    });
+    resetConfirm.addEventListener("click", () => {
+      resetModal.classList.remove("open");
+      resetGame();
+    });
+    resetCancel.addEventListener("click", () => {
+      resetModal.classList.remove("open");
+    });
+    resetModal.addEventListener("click", e => {
+      if (e.target === resetModal) resetModal.classList.remove("open");
+    });
+
+    document.getElementById("hallClose").addEventListener("click", () => {
+      document.getElementById("hallOverlay").classList.remove("open");
+    });
+
+    function initTitleScreen() {
+      const starContainer = document.getElementById("titleStars");
+      if (!starContainer) return;
+
+      for (let i = 0; i < 66; i++) {
+        const star = document.createElement("div");
+        star.className = "star";
+        const size = Math.random() < 0.22 ? 4 : 2;
+        const twinkle = Math.random() < 0.32;
+        star.style.cssText = [
+          `width:${size}px`,
+          `height:${size}px`,
+          `left:${(Math.random() * 100).toFixed(1)}%`,
+          `top:${(Math.random() * 100).toFixed(1)}%`,
+          `opacity:${(.3 + Math.random() * .7).toFixed(2)}`,
+          twinkle ? `animation:starTwinkle ${(1.1 + Math.random() * 2.4).toFixed(1)}s steps(2) ${(Math.random() * 2.5).toFixed(1)}s infinite` : ""
+        ].join(";");
+        starContainer.appendChild(star);
+      }
+
+      const bgContainer = document.getElementById("bgParticles");
+      if (bgContainer) {
+        const floaters = [
+          { html: "π<sup>+</sup>", fam: "meson" },
+          { html: "π<sup>-</sup>", fam: "meson" },
+          { html: "π<sup>0</sup>", fam: "meson" },
+          { html: "K<sup>+</sup>", fam: "meson" },
+          { html: "K<sup>0</sup>", fam: "meson" },
+          { html: "K<sup>-</sup>", fam: "meson" },
+          { html: "η",             fam: "meson" },
+          { html: "p",             fam: "baryon" },
+          { html: "n",             fam: "baryon" },
+          { html: "Λ<sup>0</sup>", fam: "baryon" },
+          { html: "Σ<sup>+</sup>", fam: "baryon" },
+          { html: "Σ<sup>-</sup>", fam: "baryon" },
+          { html: "Σ<sup>0</sup>", fam: "baryon" },
+          { html: "Δ<sup>++</sup>",fam: "baryon" },
+          { html: "Δ<sup>-</sup>", fam: "baryon" },
+          { html: "Ξ<sup>0</sup>", fam: "baryon" },
+          { html: "Ξ<sup>-</sup>", fam: "baryon" },
+          { html: "Ω<sup>-</sup>", fam: "baryon" },
+        ];
+        const shuffled = [...floaters].sort(() => Math.random() - 0.5).slice(0, 14);
+        shuffled.forEach(item => {
+          const el = document.createElement("div");
+          el.className = `bg-particle ${item.fam}`;
+          el.innerHTML = item.html;
+          const floatIdx = Math.floor(Math.random() * 5);
+          const dur = (4 + Math.random() * 5).toFixed(1);
+          const delay = (Math.random() * 6).toFixed(1);
+          el.style.cssText = [
+            `left:${(Math.random() * 90).toFixed(1)}%`,
+            `top:${(Math.random() * 85).toFixed(1)}%`,
+            `animation:bgFloat${floatIdx} ${dur}s steps(6) ${delay}s infinite`,
+            `font-size:${13 + Math.floor(Math.random() * 6)}px`
+          ].join(";");
+          bgContainer.appendChild(el);
+        });
+      }
+
+      setTimeout(() => {
+        const btn = document.getElementById("titlePress");
+        if (btn) btn.classList.add("visible");
+        const cursor = document.getElementById("dialogueCursor");
+        if (cursor) cursor.classList.add("visible");
+      }, 4400);
+    }
+
+    renderQuarkButtons();
+    renderSlots();
+    renderProgress();
+    renderDex();
+    initTitleScreen();
+
+    // 뱃지 상태 복원
+    if (state.completedDate) {
+      applyCompletionBadge();
+    } else if (state.mode === "advanced") {
+      setVersionBadge("확장판", "expanded");
+    }
+
+    const initialParams = new URLSearchParams(location.search);
+    const initialFilter = initialParams.get("filter");
+    const initialMultiplet = initialParams.get("multiplet");
+    if (["all", "meson", "baryon", "lepton"].includes(initialFilter)) {
+      state.filter = initialFilter;
+      document.querySelectorAll("[data-filter]").forEach(item => {
+        item.classList.toggle("active", item.dataset.filter === state.filter);
+      });
+    }
+    if (["all", "octet", "decuplet"].includes(initialMultiplet)) {
+      state.multiplet = initialMultiplet;
+    }
+
+    const initialScreen = location.hash.replace("#", "");
+    if (["home", "lab", "dex", "learn"].includes(initialScreen)) {
+      showScreen(initialScreen);
+    } else if (initialFilter) {
+      showScreen("dex");
+    }
+
+    window.addEventListener("load", scrollTopNow);
+  </script>
+</body>
+</html>
