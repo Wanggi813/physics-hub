@@ -132,6 +132,7 @@ const projects = [
   // ===== 기타 =====
   { title: "베타붕괴", category: "현대물리", desc: "베타붕괴 현상 알아보기", tags: ["베타붕괴", "입자물리"], emoji: "☢️", demo: "./simul/베타붕괴.html", curriculumId: " ", thumb: "./thumb_nail/베타붕괴.png" },
   { title: "입자가속기", category: "현대물리", desc: "입자가속기 속에서 생기는 표준모형 알아보기", tags: ["입자가속기", "입자물리"], emoji: "🌀", demo: "./simul/입자가속기.html", curriculumId: " ", thumb: "./thumb_nail/입자가속기.png" },
+  { title: "QUARKDEX", category: "현대물리", desc: "쿼크와 반쿼크를 조합해 메손, 바리온, 렙톤 32종을 발견하는 픽셀 도감 게임", tags: ["쿼크", "입자물리", "표준모형", "게임"], emoji: "🎮", demo: "./simul/QUARKDEX.html", curriculumId: " ", thumb: "./thumb_nail/QUARKDEX.svg" },
   { title: "음성 분석", category: "파동/광학", desc: "녹음한 음성을 주파수 성분으로 분석하고 복원하기", tags: ["소리", "FFT", "진동수", "파형"], emoji: "🎤", demo: "./simul/음성분석.html", curriculumId: " ", thumb: "./thumb_nail/음성분석.png" },
 
 ];
