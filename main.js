@@ -120,6 +120,7 @@ const projects = [
   { title: "RLC 공명", category: "전자/반도체", desc: "직렬 RLC 회로의 공명/위상·전류 변화 시각화하기", tags: ["회로", "공명"], emoji: "🔄", demo: "./simul/RLC 공명.html", curriculumId: "[12전자01-06]", thumb: "./thumb_nail/RLC회로.png" },
   { title: "러더퍼드 알파입자 산란실험", category: "시뮬레이션", desc: "러더퍼드의 알파입자 산란실험 확인하기", tags: ["산란", "쿨롱"], emoji: "🧪", demo: "./simul/러더퍼드 알파입자 산란실험.html", curriculumId: "[12전자01-06]", thumb: "./thumb_nail/러더퍼드_산란실험.png" },
   { title: "편광과 LCD", category: "파동/광학", desc: "편광의 원리와 LCD의 원리 알아보기", tags: ["편광", "LCD"], emoji: "🔭", demo: "./simul/편광과 LCD.html", curriculumId: "[12전자02-03]", thumb: "./thumb_nail/편광과 LCD.png" },
+  { title: "렌즈와 수차", category: "파동/광학", desc: "구면수차·색수차·코마/비점수차를 단계별 튜토리얼로 탐구하기", tags: ["렌즈", "수차", "광학기기"], emoji: "🔭", demo: "./simul/렌즈와 수차.html", curriculumId: "[12전자02-02]", thumb: "./thumb_nail/렌즈와_수차.svg" },
   { title: "광전효과", category: "전자/반도체", desc: "파장/세기에 따른 광전자 방출과 임계 주파수 확인하기", tags: ["광자", "금속"], emoji: "📸", demo: "./simul/광전효과.html", curriculumId: "[12전자02-04]", thumb: "./thumb_nail/광전효과.png" },
   { title: "발광 다이오드", category: "전자/반도체", desc: "파장별 전압·밴드갭과 발광.", tags: ["LED", "밴드갭"], emoji: "💡", demo: "./simul/발광 다이오드.html", curriculumId: "[12전자02-04]", thumb: "./thumb_nail/발광_다이오드.png" },
   { title: "LASER", category: "파동/광학, 전자/반도체", desc: "빛의 복제 공장! 유도 방출과 반전 분포로 만드는 강력한 빛", tags: ["레이저", "증폭", "유도방출"], emoji: "🔦", demo: "./simul/레이저.html", curriculumId: "[12전자02-05]", thumb: "./thumb_nail/레이저.png" },
