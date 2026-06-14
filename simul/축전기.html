@@ -1,0 +1,1257 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>축전기</title>
+  <meta name="description" content="전압, 극판 면적, 간격, 유전체에 따른 축전기의 전기용량과 전하량 변화를 확인하는 시뮬레이션입니다." />
+  <style>
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+
+    :root {
+      --glass: rgba(15,23,42,0.78);
+      --border: rgba(148,163,184,0.26);
+      --primary: #38bdf8;
+      --ink: #e2e8f0;
+      --muted: #94a3b8;
+      --plus: #ef4444;
+      --minus: #3b82f6;
+    }
+    html, body {
+      margin: 0; padding: 0; overflow: hidden;
+      width: 100%; height: 100%;
+      font-family: 'Pretendard', system-ui, sans-serif;
+      background: #050b16; color: var(--ink);
+      user-select: none; -webkit-user-select: none; touch-action: none;
+    }
+    header {
+      position: absolute; top: 0; left: 0; right: 0; height: 50px;
+      display: flex; align-items: center; padding: 0 18px;
+      z-index: 20; pointer-events: none;
+    }
+    .brand { font-size: 17px; font-weight: 800; color: #e2e8f0; }
+    .brand span { color: var(--primary); }
+
+    #scene { position: fixed; inset: 0; z-index: 0; }
+    #scene canvas { display: block; width: 100vw; height: 100vh; outline: none; }
+
+    /* ── 공통 패널 ── */
+    .panel {
+      position: fixed; background: var(--glass);
+      border: 1px solid var(--border); border-radius: 14px;
+      padding: 14px 16px; backdrop-filter: blur(12px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.07); z-index: 10;
+    }
+    .panel-title {
+      font-size: 10px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .07em; margin-bottom: 12px;
+    }
+
+    /* ── 슬라이더 HUD ── */
+    #hud { left: 14px; top: 56px; width: 260px; }
+    .sblock { margin-bottom: 11px; }
+    .sblock:last-child { margin-bottom: 0; }
+    .slabel {
+      display: flex; justify-content: space-between;
+      font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 3px;
+    }
+    .slabel .v { color: var(--primary); font-family: monospace; font-weight: 700; }
+    input[type=range] {
+      -webkit-appearance: none; width: 100%; height: 4px;
+      border-radius: 2px; background: #cbd5e1; outline: none; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+      background: #fff; border: 2px solid var(--primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,.15);
+    }
+
+    /* ── 정보 패널 ── */
+    #info { right: 14px; top: 56px; width: 210px; }
+    .irow {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 6px 0; border-bottom: 1px solid rgba(148,163,184,0.22); font-size: 12px;
+    }
+    .irow:last-child { border-bottom: none; }
+    .irow .lbl { color: var(--muted); font-weight: 600; }
+    .irow .val { font-family: monospace; font-weight: 700; font-size: 12px; }
+    .val.blue { color: var(--primary); }
+    .val.vc { color: #7c3aed; }
+    .energy-meter {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(148,163,184,0.22);
+    }
+    .energy-head {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .energy-shell {
+      height: 10px; border-radius: 999px; overflow: hidden;
+      background: rgba(15,23,42,0.95);
+      border: 1px solid rgba(148,163,184,0.25);
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.45);
+    }
+    .energy-fill {
+      width: 0%; height: 100%;
+      background: linear-gradient(90deg, #38bdf8 0%, #22c55e 45%, #facc15 100%);
+      box-shadow: 0 0 14px rgba(250,204,21,0.55);
+      transition: width .16s ease-out;
+    }
+    .energy-caption {
+      margin-top: 5px; font-size: 10px; color: #94a3b8;
+      display: flex; justify-content: space-between;
+    }
+
+    /* ── 실험 미션 ── */
+    #missions {
+      left: 14px; top: 290px; width: 260px;
+    }
+    .mission-list { display: grid; gap: 8px; }
+    .mission {
+      display: grid; grid-template-columns: 18px 1fr; gap: 8px;
+      align-items: start; color: #cbd5e1;
+      font-size: 12px; line-height: 1.35;
+      padding: 7px 8px; border-radius: 10px;
+      background: rgba(15,23,42,0.38);
+      border: 1px solid rgba(148,163,184,0.16);
+    }
+    .mission .mark {
+      width: 16px; height: 16px; border-radius: 50%;
+      display: grid; place-items: center;
+      color: #0f172a; background: #334155;
+      font-size: 10px; font-weight: 900;
+      margin-top: 1px;
+    }
+    .mission.done {
+      border-color: rgba(34,197,94,0.42);
+      background: rgba(22,101,52,0.24);
+    }
+    .mission.done .mark {
+      background: #86efac;
+    }
+    .mission small {
+      display: block; margin-top: 3px;
+      color: #94a3b8; font-size: 10px;
+      font-family: monospace;
+    }
+
+    /* ── 스위치 상태 표시 ── */
+    #swStatus {
+      position: fixed; left: 50%; top: 58px; transform: translateX(-50%);
+      background: var(--glass); border: 1px solid var(--border);
+      border-radius: 30px; padding: 8px 22px;
+      backdrop-filter: blur(10px); z-index: 10;
+      font-size: 13px; font-weight: 700; color: var(--muted);
+      pointer-events: auto; text-align: center; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, .08);
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+    #swStatus:hover { transform: translateX(-50%) translateY(-1px); }
+    #swStatus.on  { color: #16a34a; border-color: #86efac; background: rgba(220,252,231,.9); }
+    #swStatus.dis { color: #dc2626; border-color: #fca5a5; background: rgba(254,226,226,.9); }
+
+    /* ── RC 그래프 ── */
+    #graphBox { right: 14px; bottom: 58px; width: 230px; height: 140px; }
+    #graphBox h4 {
+      margin: 0 0 5px; font-size: 10px; font-weight: 700;
+      color: var(--muted); text-transform: uppercase;
+    }
+    #cvGraph { width: 100%; height: calc(100% - 20px); display: block; }
+
+    /* ── 조작 버튼 ── */
+    #actions {
+      position: fixed; left: 14px; bottom: 58px;
+      display: flex; gap: 8px; z-index: 10;
+    }
+    #actions button {
+      padding: 10px 22px; border: none; border-radius: 10px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      font-family: inherit; transition: .2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    #btnCharge {
+      background: #ecfdf5; border: 1px solid #86efac; color: #16a34a;
+    }
+    #btnCharge:hover { background: #16a34a; color: white; border-color: #16a34a; }
+    #btnDischarge {
+      background: #fff1f2; border: 1px solid #fecaca; color: #dc2626;
+    }
+    #btnDischarge:hover { background: #dc2626; color: white; border-color: #dc2626; }
+    #actions button:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* ── 힌트 ── */
+    #hint {
+      position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+      font-size: 11px; color: var(--muted); pointer-events: none; z-index: 5;
+      background: rgba(15,23,42,.72); padding: 4px 14px; border-radius: 20px;
+      color: #cbd5e1;
+    }
+
+    @media (max-width: 720px) {
+      header {
+        height: 42px;
+        padding: 0 14px;
+      }
+      .brand { font-size: 15px; }
+      .panel {
+        border-radius: 12px;
+        padding: 10px 12px;
+      }
+      .panel-title { margin-bottom: 8px; }
+      #swStatus {
+        top: 48px;
+        padding: 7px 16px;
+        font-size: 12px;
+        width: max-content;
+        max-width: calc(100vw - 32px);
+      }
+      #hud {
+        left: 12px;
+        right: 12px;
+        top: 88px;
+        width: auto;
+      }
+      .sblock { margin-bottom: 7px; }
+      .slabel { font-size: 11px; }
+      input[type=range] { height: 3px; }
+      input[type=range]::-webkit-slider-thumb {
+        width: 15px;
+        height: 15px;
+      }
+      #info {
+        left: 12px;
+        right: 12px;
+        top: 318px;
+        width: auto;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0 12px;
+      }
+      #info .panel-title {
+        grid-column: 1 / -1;
+      }
+      .irow {
+        padding: 5px 0;
+        font-size: 11px;
+      }
+      .irow .val { font-size: 11px; }
+      .energy-meter {
+        grid-column: 1 / -1;
+        margin-top: 6px;
+      }
+      #missions {
+        left: 12px;
+        right: 12px;
+        top: auto;
+        bottom: 220px;
+        width: auto;
+        display: none;
+      }
+      #graphBox {
+        left: 12px;
+        right: 12px;
+        bottom: 78px;
+        width: auto;
+        height: 132px;
+      }
+      #actions {
+        left: 12px;
+        bottom: 22px;
+      }
+      #actions button {
+        padding: 9px 18px;
+        font-size: 12px;
+      }
+      #hint {
+        right: 12px;
+        left: auto;
+        bottom: 24px;
+        transform: none;
+        max-width: 210px;
+        text-align: right;
+      }
+    }
+
+    @media (max-width: 430px) {
+      #info {
+        top: 304px;
+        grid-template-columns: 1fr;
+      }
+      #graphBox {
+        height: 120px;
+      }
+      #hint {
+        max-width: 180px;
+        font-size: 10px;
+      }
+    }
+  </style>
+
+  <script src="./libs/three.min.js"></script>
+  <script src="./libs/orbit-controls-lite.js"></script>
+</head>
+<body>
+
+<header><div class="brand">⚡ 축전기 <span>시뮬레이션</span></div></header>
+
+<div id="scene"></div>
+
+<!-- 슬라이더 -->
+<div class="panel" id="hud">
+  <div class="panel-title">조건 조절</div>
+
+  <div class="sblock">
+    <div class="slabel"><span>전압 V</span><span class="v" id="vV">6.0 V</span></div>
+    <input type="range" id="sV" min="1" max="12" step="0.5" value="6">
+  </div>
+  <div class="sblock">
+    <div class="slabel"><span>극판 면적 A</span><span class="v" id="vA">36 cm²</span></div>
+    <input type="range" id="sA" min="4" max="100" step="4" value="36">
+  </div>
+  <div class="sblock">
+    <div class="slabel"><span>극판 간격 d</span><span class="v" id="vD">2.5 cm</span></div>
+    <input type="range" id="sD" min="0.5" max="5" step="0.5" value="2.5">
+  </div>
+  <div class="sblock">
+    <div class="slabel"><span>유전체 εᵣ</span><span class="v" id="vEr">1.0</span></div>
+    <input type="range" id="sEr" min="1" max="10" step="0.5" value="1">
+  </div>
+</div>
+
+<!-- 물리량 -->
+<div class="panel" id="info">
+  <div class="panel-title">물리량</div>
+  <div class="irow"><span class="lbl">전기용량 C</span><span class="val blue" id="iC">—</span></div>
+  <div class="irow"><span class="lbl">전하량 Q</span><span class="val" id="iQ">—</span></div>
+  <div class="irow"><span class="lbl">전기장 E</span><span class="val" id="iE">—</span></div>
+  <div class="irow"><span class="lbl">저장에너지 U</span><span class="val" id="iU">—</span></div>
+  <div class="irow"><span class="lbl">시간상수 τ</span><span class="val" id="iTau">—</span></div>
+  <div class="irow"><span class="lbl">충전전압 Vc</span><span class="val vc" id="iVc">0.000 V</span></div>
+  <div class="energy-meter">
+    <div class="energy-head"><span>에너지 저장량</span><span id="energyPct">0%</span></div>
+    <div class="energy-shell"><div class="energy-fill" id="energyFill"></div></div>
+    <div class="energy-caption"><span>비어 있음</span><span>최대</span></div>
+  </div>
+</div>
+
+<!-- 실험 미션 -->
+<div class="panel" id="missions">
+  <div class="panel-title">실험 미션</div>
+  <div class="mission-list">
+    <div class="mission" id="missionCharge">
+      <span class="mark">1</span>
+      <span>축전기를 80% 이상 충전하기<small id="missionChargeMeta">0%</small></span>
+    </div>
+    <div class="mission" id="missionEnergy">
+      <span class="mark">2</span>
+      <span>저장에너지 1.0 nJ 넘기기<small id="missionEnergyMeta">0.00 nJ</small></span>
+    </div>
+    <div class="mission" id="missionLamp">
+      <span class="mark">3</span>
+      <span>전구가 켜졌다가 꺼지는 방전 관찰하기<small id="missionLampMeta">대기 중</small></span>
+    </div>
+  </div>
+</div>
+
+<!-- 스위치 상태 -->
+<div id="swStatus" role="button" tabindex="0" aria-label="충전과 방전 스위치 전환">스위치 중립 — 충전 선택</div>
+
+<!-- RC 그래프 -->
+<div class="panel" id="graphBox">
+  <h4>Vc(t) 충방전 곡선</h4>
+  <canvas id="cvGraph"></canvas>
+</div>
+
+<!-- 충방전 버튼 -->
+<div id="actions">
+  <button id="btnCharge" type="button">▶ 충전</button>
+  <button id="btnDischarge" type="button" disabled>⚡ 방전</button>
+</div>
+
+<!-- 힌트 -->
+<div id="hint">위쪽 전환 스위치가 전지 또는 전구 쪽으로 이어집니다</div>
+
+<script>
+(function () {
+
+  // ═══════════════════════════════════
+  //  상수 & 상태
+  // ═══════════════════════════════════
+  const EPS0 = 8.854e-12;
+  const SC   = 0.42;          // 1 cm = 0.42 three.js units
+  const PT   = 0.055;         // 극판 두께 (units)
+  const BULB_THRESHOLD = 0.42; // 전구가 켜지기 시작하는 축전기 전압 비율
+
+  // 상태 열거
+  const OPEN = 'open', CHARGING = 'charging', FULL = 'full', DISCHARGING = 'discharging';
+
+  const S = {
+    V: 6, A: 36, d: 2.5, er: 1,
+    Vc: 0, state: OPEN,
+    rcData: [], rcTime: 0,
+  };
+
+  // ── 물리 계산 ──
+  const getC   = () => S.er * EPS0 * (S.A * 1e-4) / (S.d * 1e-2);
+  const getE   = () => S.Vc / (S.d * 1e-2);
+  const getQ   = () => getC() * S.Vc;
+  const getU   = () => 0.5 * getC() * S.Vc * S.Vc;
+  const BASE_C = EPS0 * (36 * 1e-4) / (2.5 * 1e-2);
+  const getTau = () => Math.max(0.45, Math.min(5.0, 1.45 * getC() / BASE_C));
+  const getI   = () => {
+    if (S.state === CHARGING)    return (S.V - S.Vc) / Math.max(S.V, 0.01);
+    if (S.state === DISCHARGING) return -S.Vc / Math.max(S.V, 0.01);
+    return 0;
+  };
+
+  // ── 포맷 ──
+  const fC = v => v>=1e-9 ? (v*1e9).toFixed(2)+' nF' : (v*1e12).toFixed(2)+' pF';
+  const fQ = v => v>=1e-9 ? (v*1e9).toFixed(2)+' nC' : (v*1e12).toFixed(2)+' pC';
+  const fE = v => v>=1000  ? (v/1000).toFixed(1)+' kV/m' : v.toFixed(0)+' V/m';
+  const fU = v => v>=1e-6  ? (v*1e6).toFixed(2)+' μJ'    : (v*1e9).toFixed(2)+' nJ';
+  const fT = v => v>=1     ? v.toFixed(2)+' s'            : v>=1e-3 ? (v*1e3).toFixed(1)+' ms' : (v*1e6).toFixed(1)+' μs';
+  const clamp01 = v => Math.max(0, Math.min(1, v));
+
+  const missionState = {
+    charge: false,
+    energy: false,
+    lamp: false,
+    lampWasOn: false,
+  };
+
+  function setMission(id, done, meta) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('done', done);
+    const mark = el.querySelector('.mark');
+    if (mark) mark.textContent = done ? '✓' : id === 'missionCharge' ? '1' : id === 'missionEnergy' ? '2' : '3';
+    const metaEl = document.getElementById(id + 'Meta');
+    if (metaEl) metaEl.textContent = meta;
+  }
+
+  function updateMissions() {
+    const chargeRatio = clamp01(S.Vc / Math.max(S.V, 0.01));
+    const uNow = getU();
+    const uMax = 0.5 * getC() * S.V * S.V;
+    const energyRatio = uMax > 0 ? clamp01(uNow / uMax) : 0;
+    const energyPct = Math.round(energyRatio * 100);
+    document.getElementById('energyFill').style.width = energyPct + '%';
+    document.getElementById('energyPct').textContent = energyPct + '%';
+
+    if (chargeRatio >= 0.8) missionState.charge = true;
+    if (uNow >= 1e-9) missionState.energy = true;
+    const lampRatio = S.state === DISCHARGING ? Math.max(0, (chargeRatio - BULB_THRESHOLD) / (1 - BULB_THRESHOLD)) : 0;
+    if (lampRatio > 0.2) missionState.lampWasOn = true;
+    if (missionState.lampWasOn && (chargeRatio <= BULB_THRESHOLD || S.state === OPEN)) missionState.lamp = true;
+
+    setMission('missionCharge', missionState.charge, Math.round(chargeRatio * 100) + '%');
+    setMission('missionEnergy', missionState.energy, (uNow * 1e9).toFixed(2) + ' nJ');
+    const lampMeta = missionState.lamp
+      ? '관찰 완료'
+      : missionState.lampWasOn
+        ? '꺼지는 중'
+        : S.state === DISCHARGING
+          ? '점등 전압 확인 중'
+          : '방전 버튼으로 시작';
+    setMission('missionLamp', missionState.lamp, lampMeta);
+  }
+
+  function updateUI() {
+    document.getElementById('iC').textContent   = fC(getC());
+    document.getElementById('iQ').textContent   = fQ(Math.abs(getQ()));
+    document.getElementById('iE').textContent   = fE(getE());
+    document.getElementById('iU').textContent   = fU(getU());
+    document.getElementById('iTau').textContent = fT(getTau());
+    document.getElementById('iVc').textContent  = S.Vc.toFixed(3)+' V';
+    const btnCharge = document.getElementById('btnCharge');
+
+    const sw = document.getElementById('swStatus');
+    if (S.state === CHARGING) {
+      sw.className = 'on'; sw.textContent = '▶ 충전 중 — 전지와 축전기 연결';
+      btnCharge.textContent = '⏸ 정지';
+    } else if (S.state === FULL) {
+      sw.className = 'on'; sw.textContent = '✔ 충전 완료 — 방전 선택 가능';
+      btnCharge.textContent = '⏸ 열기';
+    } else if (S.state === DISCHARGING) {
+      sw.className = 'dis'; sw.textContent = '▶ 방전 중 — 전구로 에너지 방출';
+      btnCharge.textContent = '▶ 충전';
+    } else {
+      sw.className = ''; sw.textContent = '스위치 중립 — 충전 선택';
+      btnCharge.textContent = '▶ 충전';
+    }
+
+    document.getElementById('btnDischarge').disabled = (S.Vc < 0.01);
+    updateMissions();
+  }
+
+  // ═══════════════════════════════════
+  //  Three.js 씬 설정
+  // ═══════════════════════════════════
+  const scene    = new THREE.Scene();
+  scene.background = new THREE.Color(0x050b16);
+
+  const camera   = new THREE.PerspectiveCamera(42, innerWidth/innerHeight, 0.01, 200);
+  camera.position.set(5.5, 3.2, 7.0);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+  document.getElementById('scene').appendChild(renderer.domElement);
+
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.dampingFactor = 0.06;
+  controls.target.set(0, 0, 0);
+  controls.maxPolarAngle = Math.PI * 0.82; controls.minDistance = 1; controls.maxDistance = 25;
+
+  // 조명
+  scene.add(new THREE.AmbientLight(0x9fb8ff, 0.34));
+  const dirL = new THREE.DirectionalLight(0xffffff, 0.95);
+  dirL.position.set(5, 9, 7); dirL.castShadow = true; dirL.shadow.mapSize.set(1024,1024);
+  scene.add(dirL);
+  const fillL = new THREE.DirectionalLight(0x8faef5, 0.42);
+  fillL.position.set(-4, -2, -4); scene.add(fillL);
+  const frontL = new THREE.DirectionalLight(0xffffff, 0.36);
+  frontL.position.set(0, 2, 6); scene.add(frontL);
+
+  // 그리드
+  const grid = new THREE.GridHelper(30, 40, 0x1e3a5f, 0x102033);
+  grid.position.y = -3.2; scene.add(grid);
+
+  // ═══════════════════════════════════
+  //  머티리얼
+  // ═══════════════════════════════════
+  const metalTile = new THREE.TextureLoader().load('./image/metal_tile.png');
+  metalTile.wrapS = metalTile.wrapT = THREE.RepeatWrapping;
+  metalTile.repeat.set(2.2, 2.2);
+  metalTile.anisotropy = renderer.capabilities.getMaxAnisotropy?.() || 1;
+  if ('colorSpace' in metalTile && THREE.SRGBColorSpace) metalTile.colorSpace = THREE.SRGBColorSpace;
+  if ('encoding' in metalTile && THREE.sRGBEncoding) metalTile.encoding = THREE.sRGBEncoding;
+
+  const matPlateP = new THREE.MeshBasicMaterial({
+    color:0x8f98a6, map: metalTile,
+  });
+  const matPlateN = new THREE.MeshBasicMaterial({
+    color:0x8f98a6, map: metalTile,
+  });
+  const matDiel = new THREE.MeshPhysicalMaterial({
+    color:0x7c3aed, transparent:true, opacity:0.0, side:THREE.DoubleSide, roughness:0.3,
+  });
+  const matWire    = new THREE.MeshStandardMaterial({
+    color:0xcbd5e1, metalness:0.55, roughness:0.18,
+    emissive:0x23364f, emissiveIntensity:0.28,
+  });
+  const matBatBody = new THREE.MeshStandardMaterial({color:0x475569, metalness:0.5, roughness:0.3});
+  const matBatGold = new THREE.MeshStandardMaterial({color:0xf59e0b, metalness:0.85, roughness:0.22});
+  const matBatP    = new THREE.MeshStandardMaterial({color:0xef4444});
+  const matBatN    = new THREE.MeshStandardMaterial({color:0x3b82f6});
+  const matSwBody  = new THREE.MeshStandardMaterial({color:0x1e293b, roughness:0.4});
+  const matSwLever = new THREE.MeshStandardMaterial({color:0xfbbf24, emissive:0xf59e0b, emissiveIntensity:0.3, roughness:0.3});
+  const matBulbGlass = new THREE.MeshPhysicalMaterial({
+    color: 0xfff7c2, transparent: true, opacity: 0.34, roughness: 0.04,
+    transmission: 0.25, clearcoat: 1, clearcoatRoughness: 0.05,
+    emissive: 0xffcc55, emissiveIntensity: 0
+  });
+  function makeGlowTexture() {
+    const cvs = document.createElement('canvas');
+    cvs.width = cvs.height = 256;
+    const ctx = cvs.getContext('2d');
+    const g = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+    g.addColorStop(0.00, 'rgba(255,255,255,1.00)');
+    g.addColorStop(0.10, 'rgba(255,245,170,1.00)');
+    g.addColorStop(0.30, 'rgba(255,182,60,0.72)');
+    g.addColorStop(0.64, 'rgba(255,120,25,0.32)');
+    g.addColorStop(1.00, 'rgba(255,120,25,0.00)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 256, 256);
+    const tex = new THREE.CanvasTexture(cvs);
+    tex.needsUpdate = true;
+    return tex;
+  }
+  const bulbGlowTex = makeGlowTexture();
+  const matBulbAura = new THREE.SpriteMaterial({
+    map: bulbGlowTex, color: 0xffb34a, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false,
+  });
+  const matBulbCore = new THREE.SpriteMaterial({
+    map: bulbGlowTex, color: 0xfff4b0, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false,
+  });
+  const matBulbStreak = new THREE.SpriteMaterial({
+    map: bulbGlowTex, color: 0xffcf5a, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false,
+  });
+  const matBulbBase = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.75, roughness: 0.22 });
+  const matFilament = new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xf59e0b, emissiveIntensity: 0.15, roughness: 0.2 });
+
+  // ── 전하 머티리얼 ──
+  const matChrP = new THREE.MeshStandardMaterial({color:0xff4444, emissive:0xff2222, emissiveIntensity:0.8, roughness:0.3});
+  const matChrN = new THREE.MeshStandardMaterial({color:0x4488ff, emissive:0x2244ff, emissiveIntensity:0.8, roughness:0.3});
+
+  // ── 전류(전자) 머티리얼 ──
+  const matElec = new THREE.MeshStandardMaterial({color:0xfde68a, emissive:0xf59e0b, emissiveIntensity:1.2, roughness:0.2});
+
+  // ═══════════════════════════════════
+  //  씬 오브젝트 생성
+  // ═══════════════════════════════════
+  const root = new THREE.Group(); scene.add(root);
+
+  // ── 극판 (X축 방향으로 얇게: BoxGeometry(두께, 높이, 폭)) ──
+  const plateGeo = new THREE.BoxGeometry(PT, 1, 1);
+  const plateP = new THREE.Mesh(plateGeo, matPlateP);
+  const plateN = new THREE.Mesh(plateGeo, matPlateN);
+  plateP.castShadow = plateN.castShadow = true;
+  root.add(plateP); root.add(plateN);
+
+  // ── 극판 에지 ──
+  const edgeP = new THREE.LineSegments(new THREE.EdgesGeometry(plateGeo), new THREE.LineBasicMaterial({color:0xff6666, linewidth:1}));
+  const edgeN = new THREE.LineSegments(new THREE.EdgesGeometry(plateGeo), new THREE.LineBasicMaterial({color:0x6699ff, linewidth:1}));
+  root.add(edgeP); root.add(edgeN);
+
+  const matPlateFaceP = new THREE.MeshBasicMaterial({
+    color: 0xcaa5a5, map: metalTile, side: THREE.DoubleSide,
+  });
+  const matPlateFaceN = new THREE.MeshBasicMaterial({
+    color: 0xa8b7dc, map: metalTile, side: THREE.DoubleSide,
+  });
+  const plateFaceGeo = new THREE.PlaneGeometry(1, 1);
+  const plateFaceP = new THREE.Mesh(plateFaceGeo, matPlateFaceP);
+  const plateFaceN = new THREE.Mesh(plateFaceGeo, matPlateFaceN);
+  plateFaceP.rotation.y = plateFaceN.rotation.y = Math.PI / 2;
+  plateFaceP.renderOrder = plateFaceN.renderOrder = 1;
+  root.add(plateFaceP, plateFaceN);
+
+  // ── 유전체 ──
+  const dielMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), matDiel);
+  root.add(dielMesh);
+
+  // ── 전하 입자 (InstancedMesh) ──
+  const MAX_CHR = 196; // 14×14 max
+  const chrGeo  = new THREE.SphereGeometry(0.022, 7, 5);
+  const instP   = new THREE.InstancedMesh(chrGeo, matChrP, MAX_CHR);
+  const instN   = new THREE.InstancedMesh(chrGeo, matChrN, MAX_CHR);
+  instP.castShadow = instN.castShadow = false;
+  instP.renderOrder = instN.renderOrder = 3;
+  root.add(instP); root.add(instN);
+
+  // ── 전기장 화살표 그룹 ──
+  const arrowGrp = new THREE.Group(); root.add(arrowGrp);
+
+  // ── 도선 (재사용) ──
+  const wireGeo = new THREE.CylinderGeometry(0.016, 0.016, 1, 8);
+  const wires = Array.from({length:16}, () => { const m=new THREE.Mesh(wireGeo, matWire); root.add(m); return m; });
+
+  // ── 전지: 옴의 법칙 시뮬레이션의 원통형 전지를 축전기용으로 정리 ──
+  const batteryGroup = new THREE.Group();
+  const batBody  = new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.16,0.92,24), matBatBody);
+  const batCapP  = new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,0.12,24), matBatGold);
+  const batNubP  = new THREE.Mesh(new THREE.CylinderGeometry(0.085,0.085,0.08,16), matBatGold);
+  const batCapN  = new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,0.08,24), matBatN);
+  batBody.rotation.z = Math.PI / 2;
+  batCapP.rotation.z = Math.PI / 2;
+  batNubP.rotation.z = Math.PI / 2;
+  batCapN.rotation.z = Math.PI / 2;
+  batCapP.position.x = 0.52;
+  batNubP.position.x = 0.62;
+  batCapN.position.x = -0.50;
+  batteryGroup.add(batBody, batCapP, batNubP, batCapN);
+  root.add(batteryGroup);
+
+  // ── 전구: 전류가 흐르는 동안 밝아짐 ──
+  const bulbGroup = new THREE.Group();
+  const bulbGlass = new THREE.Mesh(new THREE.SphereGeometry(0.18, 24, 16), matBulbGlass);
+  const bulbAura = new THREE.Sprite(matBulbAura);
+  const bulbCore = new THREE.Sprite(matBulbCore);
+  const bulbStreak = new THREE.Sprite(matBulbStreak);
+  const bulbBase = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.095, 0.13, 18), matBulbBase);
+  const bulbTerminalA = new THREE.Mesh(new THREE.SphereGeometry(0.028, 10, 8), matBulbBase);
+  const bulbTerminalB = new THREE.Mesh(new THREE.SphereGeometry(0.028, 10, 8), matBulbBase);
+  const filament = new THREE.Mesh(new THREE.TorusGeometry(0.068, 0.008, 8, 24, Math.PI * 1.45), matFilament);
+  const bulbLight = new THREE.PointLight(0xffcc55, 0, 2.2, 2);
+  bulbGlass.scale.x = 1.12;
+  bulbGlass.position.x = 0.12;
+  bulbAura.position.x = bulbCore.position.x = bulbStreak.position.x = 0.12;
+  bulbAura.renderOrder = 7;
+  bulbCore.renderOrder = 8;
+  bulbStreak.renderOrder = 9;
+  bulbBase.rotation.z = Math.PI / 2;
+  bulbBase.position.x = -0.16;
+  bulbTerminalA.position.set(-0.30, 0.075, 0);
+  bulbTerminalB.position.set(-0.30, -0.075, 0);
+  filament.position.x = 0.10;
+  filament.position.y = -0.035;
+  filament.rotation.x = Math.PI / 2;
+  bulbLight.position.set(0.12, 0.02, 0);
+  bulbGroup.add(bulbAura, bulbStreak, bulbGlass, bulbBase, bulbTerminalA, bulbTerminalB, filament, bulbCore, bulbLight);
+  root.add(bulbGroup);
+
+  // ── 스위치 ──
+  const swBase  = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.035, 0.045), matSwBody);
+  const swContactL = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 8), matSwBody);
+  const swContactC = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 8), matSwBody);
+  const swContactR = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 8), matSwBody);
+  const swPivot = new THREE.Group(); // 레버의 피벗
+  const swLever = new THREE.Mesh(new THREE.CylinderGeometry(0.014,0.014,0.74,8), matSwLever);
+  swLever.position.y = 0.37; // 피벗에서 접점 방향으로
+  swPivot.add(swLever);
+  root.add(swBase, swContactL, swContactC, swContactR, swPivot);
+
+  // ── 전류 입자 (전자처럼 보이는 점) ──
+  const N_ELEC   = 28;
+  const elecGeo  = new THREE.SphereGeometry(0.018, 6, 4);
+  const elecInst = new THREE.InstancedMesh(elecGeo, matElec, N_ELEC);
+  elecInst.castShadow = false;
+  root.add(elecInst);
+
+  // 전류 입자 진행도
+  const elecProg = Array.from({length: N_ELEC}, (_, i) => i / N_ELEC);
+
+  // ── 레이캐스터 ──
+  const raycaster = new THREE.Raycaster();
+  const mouse     = new THREE.Vector2();
+
+  // ═══════════════════════════════════
+  //  씬 업데이트
+  // ═══════════════════════════════════
+  let animT = 0;
+
+  // 도선 배치 유틸
+  function placeWire(mesh, a, b) {
+    const dir = b.clone().sub(a);
+    const len = dir.length();
+    if (len < 0.001) { mesh.visible = false; return; }
+    mesh.visible = true;
+    mesh.position.copy(a.clone().add(b).multiplyScalar(0.5));
+    mesh.scale.set(1, len, 1);
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.normalize());
+  }
+
+  // 회로 경로 (전류 입자가 이동하는 waypoints)
+  // 충전은 전지-축전기-전구 직렬 경로, 방전은 축전기-전구 경로로 보여 준다.
+  let circuitPaths = [];
+
+  function rebuildScene() {
+    const side  = Math.sqrt(S.A) * SC;
+    const halfD = S.d * SC * 0.5;
+    const lx = -halfD - PT * 0.5;
+    const rx =  halfD + PT * 0.5;
+    const py0 = side * 0.5;
+    const py1 = -side * 0.5;
+    const switchY = py0 + 0.78;
+    const contactGap = 0.76;
+    const contactL = new THREE.Vector3(-contactGap, switchY, 0);
+    const contactC = new THREE.Vector3(0, switchY, 0);
+    const contactR = new THREE.Vector3(contactGap, switchY, 0);
+    const capPos = new THREE.Vector3(lx, py0, 0);
+    const capNeg = new THREE.Vector3(rx, py1, 0);
+    const batteryX = -Math.max(1.85, halfD + 1.35);
+    const batteryY = switchY - 0.38;
+    const batPos = new THREE.Vector3(batteryX + 0.68, batteryY, 0);
+    const batNeg = new THREE.Vector3(batteryX - 0.58, batteryY, 0);
+    const bulbX = Math.max(1.75, rx + 1.05);
+    const bulbY = py1 + 0.2;
+    const bulbTopTerminal = new THREE.Vector3(bulbX - 0.30, bulbY + 0.075, 0);
+    const bulbBottomTerminal = new THREE.Vector3(bulbX - 0.30, bulbY - 0.075, 0);
+    const bottomY = py1 - 0.48;
+
+    // ── 극판 ──
+    const ps = new THREE.Vector3(1, side, side);
+    plateP.scale.copy(ps); plateP.position.set(-halfD - PT*0.5, 0, 0);
+    plateN.scale.copy(ps); plateN.position.set( halfD + PT*0.5, 0, 0);
+    edgeP.scale.copy(ps); edgeP.position.copy(plateP.position);
+    edgeN.scale.copy(ps); edgeN.position.copy(plateN.position);
+    plateFaceP.scale.set(side, side, 1);
+    plateFaceN.scale.set(side, side, 1);
+    plateFaceP.position.set(-halfD + 0.012, 0, 0);
+    plateFaceN.position.set( halfD + PT + 0.012, 0, 0);
+
+    // 극판 발광
+    const glow = Math.min(0.55, (S.Vc/Math.max(S.V,0.01)) * 0.45 + 0.02);
+    matPlateP.emissiveIntensity = glow;
+    matPlateN.emissiveIntensity = glow;
+
+    // ── 유전체 ──
+    dielMesh.scale.set(S.d * SC, side, side);
+    dielMesh.position.set(0, 0, 0);
+    matDiel.opacity = Math.max(0, (S.er - 1) / 9 * 0.40);
+
+    // ── 전하 입자 ──
+    const nChr = Math.min(MAX_CHR, Math.round(4 + (S.Vc / S.V) * S.A / (100) * 168));
+    const nx   = Math.max(2, Math.round(Math.sqrt(nChr)));
+    const cnt  = nx * nx;
+    const step = side / (nx + 1);
+    const dummy = new THREE.Object3D();
+    const ixP = -halfD + 0.014, ixN = halfD - 0.014;
+
+    for (let ci = 0; ci < MAX_CHR; ci++) {
+      if (ci < cnt) {
+        const r  = Math.floor(ci / nx), c = ci % nx;
+        const py = -side*0.5 + step*(r+1) + Math.sin(animT*1.1+ci)*0.004;
+        const pz = -side*0.5 + step*(c+1) + Math.cos(animT*0.9+ci*1.4)*0.004;
+        dummy.position.set(ixP, py, pz); dummy.updateMatrix(); instP.setMatrixAt(ci, dummy.matrix);
+        dummy.position.set(ixN, py, pz); dummy.updateMatrix(); instN.setMatrixAt(ci, dummy.matrix);
+      } else {
+        dummy.position.set(0, 999, 0); dummy.updateMatrix();
+        instP.setMatrixAt(ci, dummy.matrix); instN.setMatrixAt(ci, dummy.matrix);
+      }
+    }
+    instP.count = instN.count = cnt;
+    instP.instanceMatrix.needsUpdate = instN.instanceMatrix.needsUpdate = true;
+
+    // ── 전기장 화살표 ──
+    while (arrowGrp.children.length) arrowGrp.remove(arrowGrp.children[0]);
+    if (S.Vc > 0.05) {
+      const fieldRatio = Math.max(0, Math.min(1, S.Vc / Math.max(S.V, 0.01)));
+      const areaFactor = Math.max(0, Math.min(1, (S.A - 4) / 96));
+      const na  = Math.max(2, Math.round(2 + areaFactor * 2 + fieldRatio * 3));
+      const aLen = S.d * SC * (0.25 + fieldRatio * 0.62);
+      const alpha = Math.min(1, 0.16 + fieldRatio * 0.84);
+      const col   = new THREE.Color(0xfef3c7).lerp(new THREE.Color(0xff8a00), Math.min(1, fieldRatio * 1.15));
+      const dir   = new THREE.Vector3(1, 0, 0);
+      const astp  = side / (na + 1);
+      for (let r=0; r<na; r++) for (let c=0; c<na; c++) {
+        const ay = -side*0.5 + astp*(r+1), az = -side*0.5 + astp*(c+1);
+        const orig = new THREE.Vector3(-halfD+0.02, ay, az);
+        const arr  = new THREE.ArrowHelper(dir, orig, aLen, col, aLen*(0.20 + fieldRatio * 0.12), aLen*(0.10 + fieldRatio * 0.07));
+        arr.line.material.transparent = arr.cone.material.transparent = true;
+        arr.line.material.opacity = arr.cone.material.opacity = alpha;
+        arr.line.material.depthTest = arr.cone.material.depthTest = false;
+        arr.line.material.linewidth = 2;
+        arr.renderOrder = 5;
+        arrowGrp.add(arr);
+      }
+    }
+
+    // ── 스위치 위치: 공통 접점이 축전기 +극판 위, 좌/우 접점이 전지/전구 경로 ──
+    swBase.position.copy(contactC);
+    swBase.rotation.set(0, 0, 0);
+    swContactL.position.copy(contactL);
+    swContactC.position.copy(contactC);
+    swContactR.position.copy(contactR);
+    swPivot.position.copy(contactC);
+    const targetAngle = S.state === CHARGING || S.state === FULL
+      ? Math.PI / 2
+      : S.state === DISCHARGING
+        ? -Math.PI / 2
+        : 0;
+    swPivot.rotation.z += (targetAngle - swPivot.rotation.z) * 0.12;
+
+    // ── 도선 배치 ──
+    placeWire(wires[0], batPos, contactL);                      // 전지 + → 충전 접점
+    placeWire(wires[1], contactC, capPos);                      // 공통 접점 → 축전기 +극판
+    placeWire(wires[2], contactR, bulbTopTerminal);             // 방전 접점 → 전구 위 단자
+    placeWire(wires[3], bulbBottomTerminal, capNeg);            // 전구 아래 단자 → 축전기 -극판
+    placeWire(wires[4], batNeg, new THREE.Vector3(batNeg.x, bottomY, 0));
+    placeWire(wires[5], new THREE.Vector3(batNeg.x, bottomY, 0), new THREE.Vector3(rx, bottomY, 0));
+    placeWire(wires[6], new THREE.Vector3(rx, bottomY, 0), capNeg);
+    placeWire(wires[7], new THREE.Vector3(rx, py1, 0), capNeg);
+    for (let i=8; i<wires.length; i++) wires[i].visible = false;
+
+    // ── 배터리 ──
+    batteryGroup.position.set(batteryX, batteryY, 0);
+    batteryGroup.scale.setScalar(Math.max(0.88, Math.min(1.05, side / 2.5)));
+
+    // ── 전구 ──
+    bulbGroup.position.set(bulbX, bulbY, 0);
+    const bulbRatio = S.state === DISCHARGING ? Math.max(0, (S.Vc / Math.max(S.V, 0.01) - BULB_THRESHOLD) / (1 - BULB_THRESHOLD)) : 0;
+    const currentGlow = Math.min(1, Math.pow(bulbRatio, 0.48));
+    const hotCore = Math.min(1, Math.pow(bulbRatio, 1.6));
+    const pulse = 0.78 + 0.22 * Math.sin(animT * (18 + hotCore * 12));
+    const glowPower = currentGlow * pulse;
+    matFilament.emissiveIntensity = glowPower > 0 ? 0.35 + glowPower * 11.0 : 0.01;
+    matBulbGlass.emissiveIntensity = glowPower * 4.0;
+    matBulbGlass.opacity = 0.18 + glowPower * 0.72;
+    matBulbGlass.color.setHex(glowPower > 0.55 ? 0xfff2a6 : 0xfff7c2);
+    matBulbAura.opacity = Math.min(1.0, glowPower * 1.75);
+    matBulbCore.opacity = Math.min(1.0, Math.pow(glowPower, 0.85) * 1.7);
+    matBulbStreak.opacity = Math.min(0.92, glowPower * 1.35);
+    bulbAura.scale.set(0.92 + glowPower * 4.20, 0.92 + glowPower * 4.20, 1);
+    bulbCore.scale.set(0.26 + glowPower * 0.82, 0.26 + glowPower * 0.82, 1);
+    bulbStreak.scale.set(1.10 + glowPower * 3.80, 0.20 + glowPower * 0.48, 1);
+    bulbLight.intensity = glowPower * 28.0;
+    bulbLight.distance = 1.8 + glowPower * 7.5;
+
+    // ── 회로 경로 정의 (전류 입자 이동용) ──
+    // 충전: 전지(+) → 스위치 → 축전기 → 전지(-)
+    // 방전: 축전기(+) → 스위치 → 전구 → 축전기(-)
+    if (S.state === CHARGING) {
+      circuitPaths = [
+        [batPos.clone(), contactL.clone(), contactC.clone(), capPos.clone()],
+        [capNeg.clone(), new THREE.Vector3(rx, bottomY, 0), new THREE.Vector3(batNeg.x, bottomY, 0), batNeg.clone()],
+      ];
+    } else if (S.state === DISCHARGING) {
+      circuitPaths = [
+        [capPos.clone(), contactC.clone(), contactR.clone(), bulbTopTerminal.clone(), bulbBottomTerminal.clone(), capNeg.clone()],
+      ];
+    } else {
+      circuitPaths = [];
+    }
+  }
+
+  // ═══════════════════════════════════
+  //  경로 길이 계산
+  // ═══════════════════════════════════
+  function pathLengths(path) {
+    const segs = [];
+    let total = 0;
+    for (let i=1; i<path.length; i++) {
+      const l = path[i].distanceTo(path[i-1]);
+      total += l; segs.push(total);
+    }
+    return { segs, total };
+  }
+
+  function pointOnPath(path, segs, t) {
+    // t: 0..1 따라 위치 반환
+    const dist = t * segs[segs.length - 1];
+    for (let i=0; i<segs.length; i++) {
+      if (dist <= segs[i]) {
+        const prev = i === 0 ? 0 : segs[i-1];
+        const segL = segs[i] - prev;
+        const frac = segL < 0.0001 ? 0 : (dist - prev) / segL;
+        return path[i].clone().lerp(path[i+1], frac);
+      }
+    }
+    return path[path.length-1].clone();
+  }
+
+  // ═══════════════════════════════════
+  //  전류 입자 업데이트
+  // ═══════════════════════════════════
+  function updateElectrons(dt) {
+    const I = Math.abs(getI());
+    const dummy = new THREE.Object3D();
+
+    const activePaths = circuitPaths.filter(path => path.length >= 2);
+    if (activePaths.length === 0 || I < 1e-10) {
+      for (let i=0; i<N_ELEC; i++) {
+        dummy.position.set(0, 999, 0); dummy.updateMatrix();
+        elecInst.setMatrixAt(i, dummy.matrix);
+      }
+      elecInst.count = 0;
+      elecInst.instanceMatrix.needsUpdate = true;
+      return;
+    }
+
+    elecInst.count = N_ELEC;
+    // 속도: 전류에 비례, 스케일 조정
+    const maxI = 1;
+    const speed = 0.08 + (I / maxI) * 0.40; // 0.08 ~ 0.48 (경로/초)
+
+    for (let i=0; i<N_ELEC; i++) {
+      elecProg[i] = (elecProg[i] + speed * dt) % 1.0;
+      const path = activePaths[i % activePaths.length];
+      const { segs } = pathLengths(path);
+      const pos = pointOnPath(path, segs, elecProg[i]);
+      dummy.position.copy(pos);
+      dummy.updateMatrix();
+      elecInst.setMatrixAt(i, dummy.matrix);
+    }
+    elecInst.instanceMatrix.needsUpdate = true;
+  }
+
+  // ═══════════════════════════════════
+  //  RC 충방전
+  // ═══════════════════════════════════
+  function stepRC(dt) {
+    const τ = getTau();
+    if (τ <= 0) return;
+
+    if (S.state === CHARGING) {
+      S.Vc += (S.V - S.Vc) * (1 - Math.exp(-dt / τ));
+      if (S.Vc >= S.V * 0.9997) { S.Vc = S.V; S.state = FULL; }
+    } else if (S.state === DISCHARGING) {
+      S.Vc *= Math.exp(-dt / τ);
+      if (S.Vc <= 0.001) { S.Vc = 0; S.state = OPEN; }
+    }
+
+    if (S.state === CHARGING || S.state === DISCHARGING) {
+      S.rcTime += dt;
+      S.rcData.push({t: S.rcTime, v: S.Vc});
+      if (S.rcData.length > 900) S.rcData.shift();
+    }
+  }
+
+  // ═══════════════════════════════════
+  //  RC 그래프
+  // ═══════════════════════════════════
+  const gcv  = document.getElementById('cvGraph');
+  const gctx = gcv.getContext('2d');
+
+  function drawGraph() {
+    const GW = gcv.clientWidth||220, GH = gcv.clientHeight||100;
+    if (gcv.width!==GW||gcv.height!==GH) { gcv.width=GW; gcv.height=GH; }
+    gctx.clearRect(0, 0, GW, GH);
+
+    const pL=28, pB=16, pR=6, pT=6;
+    const gw=GW-pL-pR, gh=GH-pT-pB;
+
+    // 축
+    gctx.strokeStyle='#cbd5e1'; gctx.lineWidth=1;
+    gctx.beginPath(); gctx.moveTo(pL,pT); gctx.lineTo(pL,pT+gh); gctx.lineTo(pL+gw,pT+gh); gctx.stroke();
+
+    // V₀ 기준선
+    gctx.setLineDash([3,3]); gctx.strokeStyle='#fca5a5'; gctx.lineWidth=1;
+    gctx.beginPath(); gctx.moveTo(pL,pT); gctx.lineTo(pL+gw,pT); gctx.stroke();
+    gctx.setLineDash([]);
+
+    gctx.fillStyle='#64748b'; gctx.font='9px sans-serif';
+    gctx.textAlign='right'; gctx.textBaseline='middle';
+    gctx.fillText(S.V.toFixed(0)+'V', pL-2, pT);
+    gctx.fillText('0', pL-2, pT+gh);
+
+    if (S.rcData.length > 1) {
+      const maxT = Math.max(S.rcData[S.rcData.length-1].t, getTau()*5, 0.001);
+
+      // τ 표시
+      const tauX = pL+(getTau()/maxT)*gw;
+      if (tauX < pL+gw) {
+        gctx.setLineDash([2,4]); gctx.strokeStyle='#a78bfa'; gctx.lineWidth=1;
+        gctx.beginPath(); gctx.moveTo(tauX,pT); gctx.lineTo(tauX,pT+gh); gctx.stroke();
+        gctx.setLineDash([]);
+        gctx.fillStyle='#7c3aed'; gctx.textAlign='center';
+        gctx.fillText('τ', tauX, pT+gh+12);
+      }
+
+      gctx.strokeStyle='#0284c7'; gctx.lineWidth=2;
+      gctx.beginPath();
+      S.rcData.forEach((p,i) => {
+        const x = pL + (p.t/maxT)*gw;
+        const y = pT + gh - (p.v/S.V)*gh;
+        i===0 ? gctx.moveTo(x,y) : gctx.lineTo(x,y);
+      });
+      gctx.stroke();
+
+      const last = S.rcData[S.rcData.length-1];
+      const lx = pL+(last.t/maxT)*gw, ly = pT+gh-(last.v/S.V)*gh;
+      gctx.fillStyle='#0284c7';
+      gctx.beginPath(); gctx.arc(lx,ly,3,0,Math.PI*2); gctx.fill();
+    }
+  }
+
+  // ═══════════════════════════════════
+  //  레이블 오버레이 캔버스
+  // ═══════════════════════════════════
+  const labCvs = document.createElement('canvas');
+  labCvs.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:5;';
+  document.body.appendChild(labCvs);
+  const lctx = labCvs.getContext('2d');
+
+  function resizeLab() { labCvs.width=innerWidth; labCvs.height=innerHeight; }
+  resizeLab();
+
+  function project3D(x,y,z) {
+    const v = new THREE.Vector3(x,y,z).project(camera);
+    return { x:(v.x*.5+.5)*labCvs.width, y:(-v.y*.5+.5)*labCvs.height };
+  }
+
+  function drawLabels() {
+    lctx.clearRect(0,0,labCvs.width,labCvs.height);
+    const side  = Math.sqrt(S.A) * SC;
+    const halfD = S.d * SC * 0.5;
+
+    // + / - 극판 레이블
+    lctx.font = 'bold 13px Pretendard, sans-serif';
+    lctx.textBaseline = 'middle';
+
+    const pP = project3D(-halfD-PT, side*0.5+0.12, 0);
+    lctx.fillStyle='#ef4444'; lctx.textAlign='right';
+    lctx.fillText('+ 극판', pP.x-4, pP.y);
+
+    const pN = project3D(halfD+PT, side*0.5+0.12, 0);
+    lctx.fillStyle='#3b82f6'; lctx.textAlign='left';
+    lctx.fillText('− 극판', pN.x+4, pN.y);
+
+    if (S.Vc > 0.05) {
+      const eP = project3D(0, 0, side * 0.18);
+      lctx.fillStyle = '#fbbf24';
+      lctx.textAlign = 'center';
+      lctx.font = 'bold 12px Pretendard, sans-serif';
+      lctx.fillText('전기장 E', eP.x, eP.y);
+    }
+
+    const lx = -halfD - PT * 0.5;
+    const rx =  halfD + PT * 0.5;
+    const py0 = side * 0.5;
+    const py1 = -side * 0.5;
+    const switchY = py0 + 0.78;
+    const contactGap = 0.76;
+    const batteryX = -Math.max(1.85, halfD + 1.35);
+    const batteryY = switchY - 0.38;
+    const bulbX = Math.max(1.75, rx + 1.05);
+    const bulbY = py1 + 0.2;
+
+    const bulbP = project3D(bulbX, bulbY + 0.38, 0);
+    lctx.fillStyle = S.state === DISCHARGING && Math.abs(getI()) > 1e-10 ? '#fbbf24' : '#94a3b8';
+    lctx.textAlign = 'center';
+    lctx.font = 'bold 12px Pretendard, sans-serif';
+    lctx.fillText('전구', bulbP.x, bulbP.y);
+
+    // 전지 레이블
+    const bName = project3D(batteryX, batteryY + 0.32, 0);
+    lctx.fillStyle='#334155'; lctx.textAlign='center';
+    lctx.font='bold 12px Pretendard, sans-serif';
+    lctx.fillText('전지', bName.x, bName.y);
+    const bP = project3D(batteryX + 0.68, batteryY + 0.16, 0);
+    lctx.fillStyle='#ef4444'; lctx.textAlign='right';
+    lctx.font='12px Pretendard, sans-serif';
+    lctx.fillText('+', bP.x-2, bP.y);
+    const bN = project3D(batteryX - 0.58, batteryY - 0.16, 0);
+    lctx.fillStyle='#3b82f6'; lctx.textAlign='left';
+    lctx.fillText('−', bN.x+2, bN.y);
+
+    // 수식 박스 (데스크톱 우하단)
+    if (labCvs.width > 720) {
+      const px = labCvs.width - 220, py = labCvs.height - 120;
+      lctx.fillStyle='rgba(15,23,42,0.72)';
+      lctx.strokeStyle='rgba(148,163,184,0.28)'; lctx.lineWidth=1;
+      // 수동 roundRect
+      (function roundRect(x,y,w,h,r) {
+        lctx.beginPath(); lctx.moveTo(x+r,y);
+        lctx.lineTo(x+w-r,y); lctx.arcTo(x+w,y,x+w,y+r,r);
+        lctx.lineTo(x+w,y+h-r); lctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+        lctx.lineTo(x+r,y+h); lctx.arcTo(x,y+h,x,y+h-r,r);
+        lctx.lineTo(x,y+r); lctx.arcTo(x,y,x+r,y,r); lctx.closePath();
+      })(px-6, py-6, 212, 90, 9);
+      lctx.fill(); lctx.stroke();
+
+      lctx.fillStyle='#cbd5e1'; lctx.font='bold 12px Pretendard, sans-serif'; lctx.textAlign='left';
+      ['C = εᵣε₀A / d', 'Q = C · V', 'E = V / d', 'U = ½CV²'].forEach((t,i) => {
+        lctx.fillText(t, px, py + i*18);
+      });
+    }
+
+    // 스위치 레이블
+    const swP = project3D(0, switchY + 0.18, 0);
+    lctx.fillStyle = (S.state===OPEN||S.state===DISCHARGING) ? '#64748b' : '#16a34a';
+    lctx.textAlign='center'; lctx.font='bold 11px Pretendard, sans-serif';
+    const swText = S.state === DISCHARGING ? '방전 접점' : S.state === CHARGING || S.state === FULL ? '충전 접점' : '전환 스위치';
+    lctx.fillText(swText, swP.x, swP.y);
+
+    const chargeP = project3D(-contactGap, switchY + 0.11, 0);
+    const dischargeP = project3D(contactGap, switchY + 0.11, 0);
+    lctx.fillStyle='#16a34a'; lctx.textAlign='center'; lctx.font='10px Pretendard, sans-serif';
+    lctx.fillText('충전', chargeP.x, chargeP.y);
+    lctx.fillStyle='#dc2626';
+    lctx.fillText('방전', dischargeP.x, dischargeP.y);
+  }
+
+  // ═══════════════════════════════════
+  //  애니메이션 루프
+  // ═══════════════════════════════════
+  let prevT = null;
+
+  function animate(ts) {
+    requestAnimationFrame(animate);
+    const dt = prevT ? Math.min((ts-prevT)/1000, 0.05) : 0.016;
+    prevT = ts;
+    animT += dt;
+
+    controls.update();
+    stepRC(dt);
+    rebuildScene();
+    updateElectrons(dt);
+    renderer.render(scene, camera);
+    drawLabels();
+    drawGraph();
+    updateUI();
+  }
+
+  requestAnimationFrame(animate);
+
+  // ═══════════════════════════════════
+  //  스위치 클릭 (레이캐스팅)
+  // ═══════════════════════════════════
+  function startCharge() {
+    if (S.state !== CHARGING) {
+      S.state = CHARGING;
+      S.rcTime = 0; S.rcData = [{t:0, v:S.Vc}];
+    }
+  }
+
+  function startDischarge() {
+    if (S.Vc < 0.01) return;
+    S.state = DISCHARGING;
+    S.rcTime = 0; S.rcData = [{t:0, v:S.Vc}];
+  }
+
+  function toggleCharge() {
+    if (S.state === CHARGING || S.state === FULL) {
+      S.state = OPEN;
+    } else {
+      startCharge();
+    }
+  }
+
+  function toggleSwitch() {
+    if (S.state === CHARGING || S.state === FULL) {
+      startDischarge();
+    } else {
+      startCharge();
+    }
+  }
+
+  renderer.domElement.addEventListener('click', e => {
+    mouse.x = (e.clientX / innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const hits = raycaster.intersectObjects([swBase, swLever, swContactL, swContactC, swContactR]);
+    if (hits.length > 0) toggleSwitch();
+  });
+
+  const swStatusEl = document.getElementById('swStatus');
+  swStatusEl.addEventListener('click', toggleSwitch);
+  swStatusEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleSwitch();
+    }
+  });
+
+  // ── 충전 버튼 ──
+  document.getElementById('btnCharge').addEventListener('click', toggleCharge);
+
+  // ── 방전 버튼 ──
+  document.getElementById('btnDischarge').addEventListener('click', startDischarge);
+
+  // ── 슬라이더 ──
+  function bind(id, key, dispId, fmt) {
+    document.getElementById(id).addEventListener('input', e => {
+      S[key] = parseFloat(e.target.value);
+      document.getElementById(dispId).textContent = fmt(S[key]);
+      if (S.state === FULL || S.state === CHARGING) {
+        // 조건 변경 시 충전 중단, Vc 유지
+        S.state = OPEN;
+      }
+    });
+  }
+  bind('sV',  'V',  'vV',  v => v.toFixed(1)+' V');
+  bind('sA',  'A',  'vA',  v => v+' cm²');
+  bind('sD',  'd',  'vD',  v => v.toFixed(1)+' cm');
+  bind('sEr', 'er', 'vEr', v => v.toFixed(1));
+
+  const params = new URLSearchParams(location.search);
+  if (params.has('discharge')) {
+    S.Vc = S.V;
+    setTimeout(startDischarge, 250);
+  } else if (params.has('charge')) {
+    setTimeout(startCharge, 250);
+  }
+
+  // ── 리사이즈 ──
+  window.addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+    resizeLab();
+  });
+
+})();
+</script>
+</body>
+</html>
