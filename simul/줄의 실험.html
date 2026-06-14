@@ -1,698 +1,1652 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>줄의 실험</title>
-  <style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>줄의 실험 – 열의 일당량</title>
+<style>
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
-    :root {
-      --bg: #f0f4f8;
-      --card: #fff;
-      --accent: #007bff;
-      --muted: #6c757d;
-      --rope: #6d6d6d;
-    }
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;
+  font-family:"Pretendard",-apple-system,sans-serif;font-size:14px;color:#1e293b;
+  user-select:none;background:#f8fafc;}
 
-    * {
-      box-sizing: border-box
-    }
+/* ── 전체 래퍼 ── */
+#wrap{position:fixed;inset:0;display:flex;flex-direction:column;}
 
-    body {
-      font-family: "Pretendard", Inter, 'Segoe UI', Tahoma, Arial;
-      margin: 0;
-      min-height: 100vh;
-      background: var(--bg);
-      color: #222;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px
-    }
+/* ── 상단 바 ── */
+#topbar{
+  height:54px;flex-shrink:0;
+  background:#fff;border-bottom:1px solid #e2e8f0;
+  display:flex;align-items:center;gap:12px;padding:0 20px;
+  box-shadow:0 1px 8px rgba(0,0,0,.06);z-index:100;
+}
+#topbar h1{font-size:15px;font-weight:800;letter-spacing:-.3px;color:#1e293b;}
+.badge{font-size:10px;padding:3px 9px;border-radius:999px;
+  background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-weight:700;}
+.sp{flex:1;}
+#modeBadge{font-size:11px;font-weight:700;padding:5px 12px;border-radius:999px;
+  background:#fef9c3;border:1px solid #fde047;color:#a16207;transition:all .3s;}
+#modeBadge.free{background:#dcfce7;border-color:#86efac;color:#15803d;}
 
-    .container {
-      width: 100%;
-      max-width: 1200px;
-      display: grid;
-      grid-template-columns: 1fr 380px;
-      gap: 28px;
-      background: var(--card);
-      padding: 24px;
-      border-radius: 14px;
-      box-shadow: 0 10px 30px rgba(9, 30, 66, 0.08)
-    }
+/* ── 본문 ── */
+#main{flex:1;display:flex;min-height:0;}
+#simArea{flex:1;position:relative;min-width:0;overflow:hidden;}
+#simArea canvas{position:absolute;inset:0;width:100%;height:100%;}
 
-    /* Simulation area */
-    .sim-area {
-      position: relative;
-      border-radius: 10px;
-      background: linear-gradient(180deg, #e9eef6 0%, #f7fafc 100%);
-      min-height: 680px;
-      overflow: hidden;
-      padding: 20px
-    }
+/* ══════════════════════════════════
+   튜토리얼 오버레이
+══════════════════════════════════ */
+#tutOverlay{
+  position:fixed;inset:0;z-index:200;
+  display:flex;flex-direction:column;
+  background:rgba(15,23,42,.55);backdrop-filter:blur(3px);
+}
 
-    .status {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      top: 10px;
-      background: rgba(255, 255, 255, 0.9);
-      padding: 6px 12px;
-      border-radius: 12px;
-      font-weight: 700;
-      color: var(--accent);
-      box-shadow: 0 4px 12px rgba(11, 20, 40, 0.06);
-      z-index: 20
-    }
+/* 진행 단계 헤더 */
+#tutHeader{
+  flex-shrink:0;
+  background:#fff;
+  padding:14px 24px;
+  display:flex;align-items:center;gap:14px;
+  border-bottom:1px solid #e2e8f0;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+#tutStepNum{
+  width:38px;height:38px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,#2563eb,#1d4ed8);
+  color:#fff;font-size:15px;font-weight:900;
+  display:flex;align-items:center;justify-content:center;
+}
+#tutTitle{font-size:15px;font-weight:800;color:#1e293b;}
+#tutSubtitle{font-size:12px;color:#64748b;margin-top:2px;}
+.sp2{flex:1;}
+#tutProgressWrap{display:flex;gap:5px;align-items:center;}
+.tpip{width:10px;height:10px;border-radius:50%;background:#e2e8f0;transition:all .3s;}
+.tpip.done{background:#10b981;}
+.tpip.on{background:#2563eb;width:26px;border-radius:5px;}
 
-    /* pulleys, weights */
-    .pulley {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: linear-gradient(180deg, #bdbdbd, #8f8f8f);
-      border: 3px solid #555;
-      position: absolute;
-      top: 52px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: inset 0 -6px 10px rgba(0, 0, 0, 0.12)
-    }
+/* 하단 인스트럭션 박스 */
+#tutBox{
+  position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
+  width:min(560px,92vw);
+  background:#fff;border-radius:18px;
+  box-shadow:0 12px 40px rgba(0,0,0,.22);
+  padding:22px 26px;
+  display:flex;flex-direction:column;gap:14px;
+}
+#tutIcon{font-size:30px;text-align:center;}
+#tutInstruct{font-size:13.5px;line-height:1.75;color:#334155;text-align:center;}
+#tutInstruct strong{color:#2563eb;}
+#tutInstruct em{color:#7c3aed;font-style:normal;font-weight:700;}
+#tutAction{
+  display:flex;justify-content:center;gap:10px;
+}
+.tutBtn{
+  padding:10px 22px;border:none;border-radius:10px;
+  font-size:13px;font-weight:700;cursor:pointer;
+  transition:all .15s;
+}
+.tutBtn.primary{
+  background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;
+  box-shadow:0 4px 12px rgba(37,99,235,.35);
+}
+.tutBtn.primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(37,99,235,.45);}
+.tutBtn.primary:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.tutBtn.skip{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;font-size:11px;}
+.tutBtn.skip:hover{background:#e2e8f0;}
 
-    .pulley::after {
-      content: '';
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: #777;
-      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2)
-    }
+/* 하이라이트 링 */
+#hlRing{
+  position:absolute;pointer-events:none;
+  border:3px solid #2563eb;border-radius:999px;
+  box-shadow:0 0 0 4px rgba(37,99,235,.2);
+  transition:all .4s cubic-bezier(.4,0,.2,1);
+  display:none;animation:pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(37,99,235,.2);}
+  50%{box-shadow:0 0 0 12px rgba(37,99,235,.07);}}
 
-    .pulley.left {
-      left: 80px
-    }
+/* ══════════════════════════════════
+   자유 실험 패널
+══════════════════════════════════ */
+#panel{
+  width:300px;flex-shrink:0;
+  background:#f8fafc;border-left:1px solid #e2e8f0;
+  display:flex;flex-direction:column;overflow:hidden;
+  transition:transform .35s cubic-bezier(.4,0,.2,1);
+}
 
-    .pulley.right {
-      right: 80px
-    }
+/* 탭 — pill 방식 */
+#tabs{
+  display:flex;flex-shrink:0;
+  padding:10px 12px;gap:6px;
+  background:#f1f5f9;
+  border-bottom:1px solid #e2e8f0;
+}
+.tab{
+  flex:1;padding:8px 6px;font-size:12px;font-weight:700;
+  border:none;border-radius:8px;cursor:pointer;
+  color:#64748b;background:transparent;transition:all .18s;
+}
+.tab.on{
+  color:#2563eb;background:#fff;
+  box-shadow:0 1px 6px rgba(0,0,0,.08);
+}
 
-    .weight {
-      width: 72px;
-      height: 84px;
-      border-radius: 8px;
-      background: linear-gradient(180deg, #6a6a6a, #3f3f3f);
-      color: #fff;
-      position: absolute;
-      top: 110px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      font-weight: 700;
-      z-index: 12;
-      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18)
-    }
+.tpanel{display:none;flex:1;overflow-y:auto;padding:10px;flex-direction:column;gap:8px;}
+.tpanel.on{display:flex;}
+.tpanel::-webkit-scrollbar{width:4px;}
+.tpanel::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:2px;}
 
-    .weight .kg {
-      font-size: 18px
-    }
+/* 카드 */
+.card{
+  background:#fff;border:1px solid #e2e8f0;border-radius:12px;
+  padding:12px;flex-shrink:0;
+  box-shadow:0 1px 4px rgba(0,0,0,.04);
+}
+.ct{
+  font-size:10px;font-weight:800;color:#94a3b8;
+  letter-spacing:.9px;text-transform:uppercase;margin-bottom:10px;
+}
 
-    .weight.left {
-      left: 60px
-    }
+/* 슬라이더 */
+.sr{margin-bottom:9px;}
+.sr label{
+  font-size:12px;color:#475569;
+  display:flex;justify-content:space-between;margin-bottom:4px;
+}
+.sr label b{color:#2563eb;font-weight:700;font-size:13px;}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:6px;
+  background:#e2e8f0;border-radius:3px;outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:18px;height:18px;
+  border-radius:50%;background:#2563eb;cursor:pointer;
+  box-shadow:0 1px 4px rgba(37,99,235,.35);
+  transition:transform .1s;
+}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+#sN::-webkit-slider-thumb{background:#7c3aed;box-shadow:0 1px 4px rgba(124,58,237,.35);}
 
-    .weight.right {
-      right: 60px
-    }
+/* n회 행 */
+.nrow{
+  display:flex;align-items:center;gap:7px;
+  background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;
+  padding:6px 10px;margin-bottom:8px;
+}
+.nrow label{font-size:12px;color:#475569;white-space:nowrap;}
+.nval{font-size:13px;font-weight:700;color:#7c3aed;min-width:32px;text-align:right;}
 
-    /* rope as svg path */
-    svg.rope-svg {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 6
-    }
+/* 버튼 */
+.brow{display:flex;gap:6px;margin-top:4px;}
+.btn{
+  flex:1;padding:0 3px;height:36px;border:none;border-radius:10px;
+  font-size:13px;font-weight:700;cursor:pointer;transition:all .13s;
+}
+.btn:disabled{opacity:.35;cursor:not-allowed;}
+.btn:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.12);}
+.bp{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;}
+.bn{background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;}
+.bs{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;}
 
-    svg.rope-svg path {
-      stroke: var(--rope);
-      stroke-width: 5;
-      fill: none;
-      stroke-linecap: round
-    }
+/* 실시간 측정 — 2×2 그리드 */
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.ri{
+  background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;
+  padding:8px 9px;display:flex;flex-direction:column;gap:3px;
+}
+.ri-icon{font-size:14px;line-height:1;}
+.rl{font-size:11px;color:#64748b;font-weight:600;}
+.rv{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:1px;}
 
-    /* calorimeter */
-    .calorimeter {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 18px;
-      width: 260px;
-      height: 300px;
-      background: #f8f9fa;
-      border-radius: 12px;
-      border: 6px solid #8a9198;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      overflow: hidden;
-      z-index: 14
-    }
+/* 열의 일당량 박스 */
+.jbox{
+  background:linear-gradient(135deg,#eff6ff,#dbeafe);
+  border:1.5px solid #93c5fd;border-radius:14px;
+  padding:14px 12px;text-align:center;margin-top:4px;
+  box-shadow:0 2px 10px rgba(37,99,235,.1);
+}
+.jbadge{
+  display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.6px;
+  background:#2563eb;color:#fff;border-radius:999px;
+  padding:2px 10px;margin-bottom:8px;
+}
+.jeq{font-size:22px;font-weight:900;color:#1d4ed8;letter-spacing:.5px;margin-bottom:5px;}
+.jconst{font-size:12px;color:#1e40af;font-weight:700;margin-bottom:8px;}
+.jresult{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  background:rgba(255,255,255,.7);border-radius:9px;
+  padding:7px 10px;margin-top:2px;
+}
+.jrlabel{font-size:11px;color:#1e40af;font-weight:600;}
+.jrval{font-size:14px;font-weight:900;color:#1d4ed8;font-variant-numeric:tabular-nums;}
+#jerr{font-size:9.5px;color:#1e40af;margin-top:5px;}
 
-    .calorimeter .lid {
-      position: absolute;
-      top: 0;
-      width: 100%;
-      height: 22px;
-      background: #d3d3d3;
-      border-bottom: 3px solid #868e96
-    }
+/* 그래프 영역 */
+.gcwrap{flex:1;min-height:160px;display:flex;flex-direction:column;}
+.gcwrap canvas{
+  flex:1;width:100%;display:block;min-height:0;
+  background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;
+}
 
-    .water {
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      height: 64%;
-      background: linear-gradient(180deg, #63a4ff, #8abfff);
-      transition: height 400ms linear;
-      z-index: 2
-    }
+/* 결과 수식 */
+.fbox{background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:9px;}
+.frow{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px dashed #e2e8f0;font-size:12px;}
+.frow:last-child{border:none;}
+.fsym{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0;}
+.feq{flex:1;color:#475569;line-height:1.4;}
+.fval{font-weight:700;font-size:12px;min-width:60px;text-align:right;font-variant-numeric:tabular-nums;}
 
-    .water::before {
-      content: '';
-      position: absolute;
-      left: -50%;
-      top: -8px;
-      width: 200%;
-      height: 40px;
-      background: radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.18) 0, rgba(255, 255, 255, 0) 20%), radial-gradient(circle at 80% 40%, rgba(255, 255, 255, 0.08) 0, rgba(255, 255, 255, 0) 25%);
-      transform: translateY(0);
-      animation: wave 1.2s linear infinite
-    }
+.hrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;
+  padding:3px 0;border-bottom:1px solid #f1f5f9;font-size:11px;}
 
-    @keyframes wave {
-      from {
-        transform: translateX(0)
-      }
+/* 진행바 */
+#prog{position:fixed;bottom:0;left:0;right:300px;height:3px;background:#e2e8f0;display:none;z-index:20;}
+#progf{height:100%;background:linear-gradient(90deg,#2563eb,#10b981);width:0;transition:width .1s;}
 
-      to {
-        transform: translateX(50%)
-      }
-    }
+/* 하단 힌트 */
+#hint{position:fixed;bottom:16px;left:0;right:300px;
+  display:flex;justify-content:center;pointer-events:none;z-index:10;}
+#hintInner{
+  background:rgba(255,255,255,.94);backdrop-filter:blur(6px);
+  border:1px solid #e2e8f0;border-radius:999px;
+  padding:7px 18px;font-size:12px;color:#475569;
+  box-shadow:0 3px 14px rgba(0,0,0,.08);transition:opacity .3s;
+}
 
-    .paddle-shaft {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      top: 22px;
-      width: 12px;
-      height: 245px;
-      background: #bfbfbf;
-      z-index: 16
-    }
+/* 심화실험 액체 버튼 — 선택 카드 형태 */
+#liquidList{display:flex;flex-direction:column;gap:6px;}
+.liq-btn{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:10px;
+  cursor:pointer;text-align:left;width:100%;
+  transition:all .15s;font-size:12px;font-weight:700;
+}
 
-    .paddle-wheel {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 52px;
-      width: 110px;
-      height: 110px;
-      z-index: 18
-    }
+body.dragging{cursor:grabbing!important;}
+body.candrag{cursor:grab!important;}
 
-    .paddle-blades {
-      width: 100%;
-      height: 100%;
-      position: relative;
-      transform-origin: center center
-    }
-
-    .paddle-wheel.spinning .paddle-blades {
-      animation: spin 0.15s linear infinite
-    }
-
-    @keyframes spin {
-      from {
-        transform: rotate(0)
-      }
-
-      to {
-        transform: rotate(360deg)
-      }
-    }
-
-    .paddle-blade {
-      position: absolute;
-      left: 50%;
-      top: 10px;
-      width: 18px;
-      height: 80px;
-      background: #495057;
-      border-radius: 6px;
-      transform-origin: center
-    }
-
-    .paddle-blade:nth-child(1) {
-      transform: translateX(-50%) rotate(0deg)
-    }
-
-    .paddle-blade:nth-child(2) {
-      transform: translateX(-50%) rotate(90deg)
-    }
-
-    .paddle-blade:nth-child(3) {
-      transform: translateX(-50%) rotate(180deg)
-    }
-
-    .paddle-blade:nth-child(4) {
-      transform: translateX(-50%) rotate(270deg)
-    }
-
-    /* thermometer */
-    .thermo {
-      position: absolute;
-      right: 22px;
-      bottom: 86px;
-      width: 28px;
-      height: 220px;
-      background: #fff;
-      border-radius: 10px;
-      border: 2px solid #343a4b;
-      display: flex;
-      align-items: flex-end;
-      padding: 4px;
-      z-index: 22
-    }
-
-    .mercury {
-      width: 100%;
-      height: 20%;
-      background: #e5383b;
-      border-radius: 8px 8px 0 0;
-      transition: height 300ms linear
-    }
-
-    /* controls */
-    .controls {
-      padding: 6px 8px
-    }
-
-    h2 {
-      margin: 0 0 14px 0;
-      color: var(--accent)
-    }
-
-    .group {
-      background: #f8f9fa;
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid #e6e9ee;
-      margin-bottom: 12px
-    }
-
-    .grid {
-      display: grid;
-      gap: 10px
-    }
-
-    .row {
-      display: flex;
-      gap: 10px;
-      align-items: center
-    }
-
-    label {
-      font-weight: 700;
-      color: #495057
-    }
-
-    .value {
-      font-family: 'Courier New', monospace;
-      color: var(--accent);
-      font-weight: 700
-    }
-
-    input[type=range] {
-      width: 100%
-    }
-
-    button {
-      background: var(--accent);
-      color: #fff;
-      padding: 12px 16px;
-      border-radius: 10px;
-      border: none;
-      font-weight: 700;
-      cursor: pointer
-    }
-
-    button.secondary {
-      background: #6c757d
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed
-    }
-
-    /* results */
-    .results {
-      display: grid;
-      gap: 8px;
-      margin-top: 6px
-    }
-
-    .result-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px;
-      border-radius: 8px;
-      background: #fff;
-      border: 1px solid #e6e9ee
-    }
-
-    /* small screen */
-    @media(max-width:980px) {
-      .container {
-        grid-template-columns: 1fr;
-        padding: 16px
-      }
-
-      .thermo {
-        display: none
-      }
-    }
-  </style>
+/* ── 플로팅 그래프 카드 ── */
+#graphCard{
+  position:absolute;
+  top:12px;right:100px;
+  width:fit-content;
+  background:#fff;
+  border:1px solid #e2e8f0;
+  border-radius:16px;
+  box-shadow:0 4px 20px rgba(0,0,0,.10);
+  z-index:50;
+  display:none;
+  flex-direction:column;
+}
+#graphCard.visible{display:flex;}
+#graphCardHeader{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px 8px;
+  border-bottom:1px solid #f1f5f9;
+  cursor:move;
+  user-select:none;
+}
+#graphCardHeader .gc-title{
+  font-size:12px;font-weight:800;color:#1e293b;flex:1;
+}
+#graphCardHeader .gc-legend{
+  display:flex;gap:8px;
+}
+.gc-leg-item{display:flex;align-items:center;gap:3px;font-size:10px;color:#64748b;font-weight:600;}
+.gc-leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+#graphCardBody{padding:8px 10px 10px;}
+#graphCardCanvas{
+  display:block;
+  border-radius:8px;background:#f8fafc;
+  border:1px solid #f1f5f9;
+}
+</style>
 </head>
-
 <body>
-  <div class="container">
-    <div class="sim-area" id="sim-area">
-      <div class="status" id="status">실험 준비 완료</div>
-
-      <svg class="rope-svg" id="ropeSvg" viewBox="0 0 800 700" preserveAspectRatio="none">
-        <path id="rope-left" d=""></path>
-        <path id="rope-right" d=""></path>
-      </svg>
-
-      <div class="pulley left" id="pulleyLeft"></div>
-      <div class="pulley right" id="pulleyRight"></div>
-
-      <div class="weight left" id="weightLeft">
-        <div class="kg" id="leftKg">10.0</div>
-        <div style="font-size:12px">kg</div>
-      </div>
-      <div class="weight right" id="weightRight">
-        <div class="kg" id="rightKg">10.0</div>
-        <div style="font-size:12px">kg</div>
-      </div>
-
-      <div class="calorimeter" id="calorimeter">
-        <div class="lid"></div>
-        <div class="water" id="water"></div>
-        <div class="paddle-shaft"></div>
-        <div class="paddle-wheel" id="paddleWheel">
-          <div class="paddle-blades">
-            <div class="paddle-blade"></div>
-            <div class="paddle-blade"></div>
-            <div class="paddle-blade"></div>
-            <div class="paddle-blade"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="thermo" id="thermo">
-        <div class="mercury" id="mercury"></div>
-      </div>
-
-    </div>
-
-    <div class="controls">
-      <h2>줄(Joule)의 실험 — 최종판</h2>
-
-      <div class="group">
-        <div class="grid">
-          <div>
-            <label>추 1개 질량 <span class="value" id="dispMass">10.0 kg</span></label>
-            <input type="range" id="mass" min="1" max="20" step="0.1" value="10">
-          </div>
-          <div>
-            <label>낙하 높이 (m) <span class="value" id="dispHeight">5.0 m</span></label>
-            <input type="range" id="height" min="0.5" max="10" step="0.1" value="5">
-          </div>
-          <div>
-            <label>물의 양 (L) <span class="value" id="dispWater">2.0 L</span></label>
-            <input type="range" id="waterVol" min="0.5" max="5" step="0.1" value="2">
-          </div>
-          <div>
-            <label>낙하 반복 횟수 <span class="value" id="dispDrops">20</span></label>
-            <input type="range" id="drops" min="1" max="200" step="1" value="20">
-          </div>
-        </div>
-      </div>
-
-      <div class="group results">
-        <div class="result-item">
-          <div>초기 온도</div>
-          <div class="value" id="rInit">20.000 °C</div>
-        </div>
-        <div class="result-item">
-          <div>최종 온도</div>
-          <div class="value" id="rFinal">---</div>
-        </div>
-        <div class="result-item">
-          <div>온도 변화 ΔT</div>
-          <div class="value" id="rDelta">---</div>
-        </div>
-        <div class="result-item">
-          <div>총 역학적 일 W</div>
-          <div class="value" id="rWork">---</div>
-        </div>
-        <div class="result-item">
-          <div>발생 열량 Q</div>
-          <div class="value" id="rHeat">---</div>
-        </div>
-      </div>
-
-      <div style="display:flex; gap:10px; margin-top:10px">
-        <button id="startBtn">실험 시작</button>
-        <button id="resetBtn" class="secondary" disabled>초기화</button>
-        <button id="downloadBtn" class="secondary">HTML 다운로드</button>
-      </div>
-
-      <div style="font-size:12px; color:var(--muted); margin-top:10px">개선: JS 애니메이션, 부드러운 easing, 곡선 로프, 물결 애니메이션, 합성
-        오디오 효과, 계산 로직 수정 포함</div>
-    </div>
+<div id="wrap">
+  <div id="topbar">
+    <h1>🔥 줄(Joule)의 실험</h1>
+    <span class="badge">열역학</span>
+    <div class="sp"></div>
+    <div id="modeBadge">📚 튜토리얼 진행 중</div>
   </div>
 
-  <script>
-    // ------------------ 상수 및 DOM ------------------
-    const g = 9.8;
-    const JOULE_PER_CAL = 4.186; // 열의 일당량 (J/cal)
-    const SPECIFIC_HEAT_WATER_CAL = 1; // 물의 비열 (cal/g·°C)
-    const INITIAL_TEMP = 20.0;
+  <div id="main">
+    <div id="simArea">
+      <canvas id="cv"></canvas>
+      <!-- 플로팅 그래프 카드 -->
+      <div id="graphCard">
+        <div id="graphCardHeader">
+          <span class="gc-title">📈 온도 변화 그래프</span>
+          <div class="gc-legend">
+            <div class="gc-leg-item"><div class="gc-leg-dot" style="background:#2563eb"></div>온도</div>
+          </div>
+        </div>
+        <div id="graphCardBody">
+          <canvas id="graphCardCanvas"></canvas>
+        </div>
+      </div>
+    </div>
 
-    const simArea = document.getElementById('sim-area');
-    const pulleyLeft = document.getElementById('pulleyLeft');
-    const pulleyRight = document.getElementById('pulleyRight');
-    const weightLeft = document.getElementById('weightLeft');
-    const weightRight = document.getElementById('weightRight');
-    const leftKg = document.getElementById('leftKg');
-    const rightKg = document.getElementById('rightKg');
-    const ropeLeft = document.getElementById('rope-left');
-    const ropeRight = document.getElementById('rope-right');
-    const paddleWheel = document.getElementById('paddleWheel');
-    const mercury = document.getElementById('mercury');
-    const water = document.getElementById('water');
-    const status = document.getElementById('status');
+    <!-- 자유 실험 패널 (튜토리얼 중엔 숨김) -->
+    <div id="panel" style="display:none;">
+      <div id="tabs">
+        <button class="tab on" data-t="exp">실험</button>
+        <button class="tab" data-t="adv">심화 실험</button>
+      </div>
 
-    // controls
-    const massInput = document.getElementById('mass');
-    const heightInput = document.getElementById('height');
-    const waterInput = document.getElementById('waterVol');
-    const dropsInput = document.getElementById('drops');
-    const startBtn = document.getElementById('startBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
+      <div class="tpanel on" id="tp-exp">
+        <div class="card">
+          <div class="ct">실험 조건</div>
+          <div class="sr">
+            <label>추 질량 <b id="dM">10.0 kg</b></label>
+            <input type="range" id="sM" min="1" max="20" step="0.5" value="10">
+          </div>
+          <div class="sr">
+            <label>낙하 높이 <b id="dH">1.00 m</b></label>
+            <input type="range" id="sH" min="0.2" max="3" step="0.05" value="1">
+          </div>
+          <div class="sr">
+            <label>물의 질량 <b id="dW">1.0 kg</b></label>
+            <input type="range" id="sW" min="0.2" max="5" step="0.1" value="1">
+          </div>
+          <div class="nrow">
+            <label>반복</label>
+            <input type="range" id="sN" min="1" max="100" step="1" value="10">
+            <span class="nval" id="dN">10회</span>
+          </div>
+          <div class="brow">
+            <button class="btn bp" id="btnDrop">⬇ 1회</button>
+            <button class="btn bn" id="btnN">▶ n회</button>
+          </div>
+          <div class="brow" style="margin-top:5px;">
+            <button class="btn bs" id="btnReset">↺ 초기화</button>
+          </div>
+        </div>
 
-    // displays
-    const dispMass = document.getElementById('dispMass');
-    const dispHeight = document.getElementById('dispHeight');
-    const dispWater = document.getElementById('dispWater');
-    const dispDrops = document.getElementById('dispDrops');
+        <div class="card">
+          <div class="ct">실시간 측정</div>
+          <div class="rg">
+            <div class="ri">
+              <div class="ri-icon">🌡️</div>
+              <div class="rl">현재 온도</div>
+              <div class="rv" style="color:#f59e0b" id="mT">20.000 °C</div>
+            </div>
+            <div class="ri">
+              <div class="ri-icon">📈</div>
+              <div class="rl">온도 변화 ΔT</div>
+              <div class="rv" style="color:#ef4444" id="mDT">+0.000 °C</div>
+            </div>
+            <div class="ri">
+              <div class="ri-icon">⚡</div>
+              <div class="rl">누적 일 W</div>
+              <div class="rv" style="color:#2563eb" id="mW">0.0 J</div>
+            </div>
+            <div class="ri">
+              <div class="ri-icon">🔢</div>
+              <div class="rl">낙하 횟수</div>
+              <div class="rv" style="color:#10b981" id="mN">0 회</div>
+            </div>
+          </div>
+        </div>
 
-    const rInit = document.getElementById('rInit');
-    const rFinal = document.getElementById('rFinal');
-    const rDelta = document.getElementById('rDelta');
-    const rWork = document.getElementById('rWork');
-    const rHeat = document.getElementById('rHeat');
+        <div class="card">
+          <div class="ct">열의 일당량</div>
+          <div class="jbox">
+            <div class="jbadge">열의 일당량 공식</div>
+            <div class="jeq">W = J · Q</div>
+            <div class="jconst">J = 4.2 J/cal</div>
+            <div class="jresult">
+              <span class="jrlabel">W =</span>
+              <span class="jrval" id="jeqW">— J</span>
+              <span class="jrlabel" style="margin-left:10px;">Q =</span>
+              <span class="jrval" id="jeqJQ">— cal</span>
+            </div>
+          </div>
+        </div>
 
-    // state
-    let isRunning = false;
+        <!-- 그래프는 플로팅 카드로 이동 -->
+        <canvas id="gcv" style="display:none"></canvas>
+      </div>
 
-    // initialize UI
-    function setDisplayValues() {
-      dispMass.textContent = parseFloat(massInput.value).toFixed(1) + ' kg';
-      dispHeight.textContent = parseFloat(heightInput.value).toFixed(1) + ' m';
-      dispWater.textContent = parseFloat(waterInput.value).toFixed(1) + ' L';
-      dispDrops.textContent = dropsInput.value;
-      leftKg.textContent = parseFloat(massInput.value).toFixed(1);
-      rightKg.textContent = parseFloat(massInput.value).toFixed(1);
-      const waterVol = parseFloat(waterInput.value);
-      const h = 15 + (waterVol / 5) * 65;
-      water.style.height = h + '%';
-    }
+      <div class="tpanel" id="tp-adv">
+        <div class="card">
+          <div class="ct">심화 실험 — 액체 종류 선택</div>
+          <div style="font-size:12px;color:#64748b;margin-bottom:10px;line-height:1.6;">
+            비열이 다른 액체를 사용하면 같은 일에도 온도 변화가 달라집니다.<br>
+            <span style="color:#2563eb;font-weight:700;">W = J·Q = J·m·c·ΔT</span>
+          </div>
+          <div id="liquidList"></div>
+        </div>
+        <div class="card" id="advCondCard">
+          <div class="ct">현재 액체</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div id="advLiqIcon" style="font-size:24px;">💧</div>
+            <div>
+              <div id="advLiqName" style="font-size:14px;font-weight:800;color:#1e293b;">물</div>
+              <div id="advLiqSpec" style="font-size:11px;color:#64748b;margin-top:1px;">비열 c = 1.000 cal/(g·°C)</div>
+            </div>
+          </div>
+          <div class="sr">
+            <label>액체 질량 <b id="advdW">1.0 kg</b></label>
+            <input type="range" id="advsW" min="0.2" max="5" step="0.1" value="1">
+          </div>
+          <div class="sr">
+            <label>낙하 높이 <b id="advdH">1.00 m</b></label>
+            <input type="range" id="advsH" min="0.2" max="3" step="0.05" value="1">
+          </div>
+          <div class="nrow">
+            <label>반복</label>
+            <input type="range" id="advsN" min="1" max="100" step="1" value="20">
+            <span class="nval" id="advdN">20회</span>
+          </div>
+          <div class="brow">
+            <button class="btn bn" id="advBtnN">▶ 실험 시작</button>
+            <button class="btn bs" id="advBtnReset">↺ 초기화</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ct">실험 결과</div>
+          <div class="rg" style="margin-bottom:8px;">
+            <div class="ri">
+              <div class="ri-icon">📈</div>
+              <div class="rl">온도 변화 ΔT</div>
+              <div class="rv" style="color:#ef4444" id="advDT">+0.000 °C</div>
+            </div>
+            <div class="ri">
+              <div class="ri-icon">🌡️</div>
+              <div class="rl">흡수 열량 Q</div>
+              <div class="rv" style="color:#10b981" id="advQ">— cal</div>
+            </div>
+            <div class="ri">
+              <div class="ri-icon">⚡</div>
+              <div class="rl">역학적 일 W</div>
+              <div class="rv" style="color:#2563eb" id="advW">— J</div>
+            </div>
+            <div class="ri">
+              <div class="ri-icon">🔢</div>
+              <div class="rl">낙하 횟수</div>
+              <div class="rv" style="color:#7c3aed" id="advN2">0 회</div>
+            </div>
+          </div>
+          <div id="advResultBox" style="font-size:12px;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:9px;line-height:1.7;">
+            실험 후 결과가 표시됩니다.
+          </div>
+        </div>
+        <div class="card" id="advCompCard" style="display:none;">
+          <div class="ct">액체별 비교</div>
+          <canvas id="advChart" style="width:100%;height:150px;display:block;border-radius:9px;background:#f8fafc;border:1px solid #e2e8f0;"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-    massInput.addEventListener('input', setDisplayValues);
-    heightInput.addEventListener('input', setDisplayValues);
-    waterInput.addEventListener('input', setDisplayValues);
-    dropsInput.addEventListener('input', setDisplayValues);
+<!-- 튜토리얼 오버레이 -->
+<div id="tutOverlay">
+  <div id="tutHeader">
+    <div id="tutStepNum">1</div>
+    <div>
+      <div id="tutTitle">장치 살펴보기</div>
+      <div id="tutSubtitle">줄의 실험 장치를 눈으로 확인하세요</div>
+    </div>
+    <div class="sp2"></div>
+    <div id="tutProgressWrap"></div>
+  </div>
 
-    function getPositions() {
-      const simRect = simArea.getBoundingClientRect();
-      const pulleyLRect = pulleyLeft.getBoundingClientRect();
-      const pulleyRRect = pulleyRight.getBoundingClientRect();
-      const wlRect = weightLeft.getBoundingClientRect();
-      const wrRect = weightRight.getBoundingClientRect();
-      const toSvgX = x => (x - simRect.left) / simRect.width * 800;
-      const toSvgY = y => (y - simRect.top) / simRect.height * 700;
-      return {
-        pulleyLX: toSvgX(pulleyLRect.left + pulleyLRect.width / 2),
-        pulleyLY: toSvgY(pulleyLRect.top + pulleyLRect.height / 2),
-        pulleyRX: toSvgX(pulleyRRect.left + pulleyRRect.width / 2),
-        pulleyRY: toSvgY(pulleyRRect.top + pulleyRRect.height / 2),
-        weightLX: toSvgX(wlRect.left + wlRect.width / 2),
-        weightLY: toSvgY(wlRect.top + wlRect.height / 2),
-        weightRX: toSvgX(wrRect.left + wrRect.width / 2),
-        weightRY: toSvgY(wrRect.top + wrRect.height / 2)
-      };
-    }
+  <div id="hlRing"></div>
 
-    function updateRopes() {
-      const p = getPositions();
-      const leftPath = `M ${p.weightLX} ${p.weightLY} Q ${p.weightLX} ${p.pulleyLY - 50} ${p.pulleyLX} ${p.pulleyLY}`;
-      const rightPath = `M ${p.weightRX} ${p.weightRY} Q ${p.weightRX} ${p.pulleyRY - 50} ${p.pulleyRX} ${p.pulleyRY}`;
-      ropeLeft.setAttribute('d', leftPath);
-      ropeRight.setAttribute('d', rightPath);
-    }
+  <div id="tutBox">
+    <div id="tutIcon">👀</div>
+    <div id="tutInstruct"></div>
+    <div id="tutAction">
+      <button class="tutBtn skip" id="btnSkipTut">건너뛰기</button>
+      <button class="tutBtn primary" id="btnTutNext">다음 →</button>
+    </div>
+  </div>
+</div>
 
-    function easeInOutQuad(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
+<!-- 진행바 -->
+<div id="prog"><div id="progf"></div></div>
+<!-- 힌트 -->
+<div id="hint"><div id="hintInner">추를 드래그하거나 버튼으로 낙하시키세요</div></div>
 
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playDropSound() {
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.type = 'sawtooth'; o.frequency.value = 220; g.gain.value = 0.0001;
-      o.connect(g); g.connect(audioCtx.destination); o.start();
-      g.gain.exponentialRampToValueAtTime(0.12, audioCtx.currentTime + 0.02);
-      o.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.25);
-      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
-      setTimeout(() => { o.stop(); }, 500);
-    }
-    function startPaddleTone() {
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.type = 'sine'; o.frequency.value = 400; g.gain.value = 0.0001;
-      o.connect(g); g.connect(audioCtx.destination); o.start();
-      g.gain.exponentialRampToValueAtTime(0.02, audioCtx.currentTime + 0.05);
-      return { osc: o, gain: g };
-    }
+<script>
+'use strict';
+const G=9.8, J0=4.2, T0=20.0;
 
-    async function runExperiment() {
-      if (isRunning) return; isRunning = true;
-      if (audioCtx.state === 'suspended') await audioCtx.resume();
+// ── DOM ──
+const cv=document.getElementById('cv');
+const ctx=cv.getContext('2d');
+const gcv=document.getElementById('gcv'); // 숨김 (호환 유지)
+const gctx=gcv.getContext('2d');
+const graphCard=document.getElementById('graphCard');
+const gcv2=document.getElementById('graphCardCanvas');
+const gctx2=gcv2.getContext('2d');
+const panel=document.getElementById('panel');
+const tutOverlay=document.getElementById('tutOverlay');
+const tutStepNum=document.getElementById('tutStepNum');
+const tutTitle=document.getElementById('tutTitle');
+const tutSubtitle=document.getElementById('tutSubtitle');
+const tutInstruct=document.getElementById('tutInstruct');
+const tutIcon=document.getElementById('tutIcon');
+const btnTutNext=document.getElementById('btnTutNext');
+const btnSkipTut=document.getElementById('btnSkipTut');
+const tutProgressWrap=document.getElementById('tutProgressWrap');
+const hlRing=document.getElementById('hlRing');
+const modeBadge=document.getElementById('modeBadge');
 
-      startBtn.disabled = true; resetBtn.disabled = true; massInput.disabled = true; heightInput.disabled = true; waterInput.disabled = true; dropsInput.disabled = true;
-      status.textContent = '실험 진행 중...'; status.style.color = '#e44d26';
+const sM=document.getElementById('sM');
+const sH=document.getElementById('sH');
+const sW=document.getElementById('sW');
+const sN=document.getElementById('sN');
+const dM=document.getElementById('dM');
+const dH=document.getElementById('dH');
+const dW=document.getElementById('dW');
+const dN=document.getElementById('dN');
+const btnDrop=document.getElementById('btnDrop');
+const btnNBtn=document.getElementById('btnN');
+const btnReset=document.getElementById('btnReset');
+const mT=document.getElementById('mT');
+const mDT=document.getElementById('mDT');
+const mWel=document.getElementById('mW');
+const mN=document.getElementById('mN');
+const jeqW=document.getElementById('jeqW');
+const jeqJQ=document.getElementById('jeqJQ');
+const prog=document.getElementById('prog');
+const progf=document.getElementById('progf');
+const hintInner=document.getElementById('hintInner');
 
-      const MASS = parseFloat(massInput.value);
-      const HEIGHT = parseFloat(heightInput.value);
-      const WATER_L = parseFloat(waterInput.value);
-      const WATER_G = WATER_L * 1000; // 물의 질량을 그램(g)으로 변환
-      const DROPS = parseInt(dropsInput.value, 10);
+// ── 상태 ──
+let CW=0, CH=0;
+let L={};
+let S={
+  dropCount:0, totalWork:0, curTemp:T0, hist:[],
+  anim:false, animT:0, phase:'fall',
+  wStartY:0, wEndY:0, axAngle:0,
+  wY:0, wRestY:0,
+  drag:false, dragOff:0, dragH:null,
+  nTarget:0, nDone:0, nRun:false, nDoneOnce:false,
+  nFallSpd:1.2, nRiseSpd:2.0, _last:false,
+};
+let tutMode=true; // 튜토리얼 진행 중 여부
 
-      // --- 🔬 계산 로직 수정 ---
-      // 1. 총 역학적 일(J) 계산
-      const totalWork = 2 * MASS * g * HEIGHT * DROPS;
+// ══════════════════════════════════
+//  튜토리얼 시스템
+// ══════════════════════════════════
+/*
+  단계별 구조:
+  0: 장치 관찰 → "다음" 버튼으로 진행
+  1: 추 드래그로 높이 설정 → 드래그 완료 시 자동 진행
+  2: 1회 낙하 → dropCount≥1 시 자동 진행
+  3: n회 낙하 → dropCount≥10 시 자동 진행
+  4: 결과 화면 → "완료" 버튼으로 자유 실험 모드
+*/
+const TUT_STEPS=[
+  {
+    icon:'🔬',
+    title:'장치 살펴보기',
+    sub:'줄의 실험 장치 구조를 파악하세요',
+    instruct:`왼쪽의 실험 장치를 살펴보세요.<br><br>
+      <strong>추</strong>가 낙하하면 줄이 당겨지고,<br>
+      <strong>패들</strong>이 회전하면서 물을 저어 열을 발생시킵니다.<br>
+      이 실험으로 <em>역학적 에너지 → 열에너지</em> 전환을 측정합니다.`,
+    btnText:'이해했어요 →',
+    auto:false,
+    check:null,
+    highlight:null,
+  },
+  {
+    icon:'☝️',
+    title:'추를 위로 드래그하세요',
+    sub:'마우스로 추를 끌어 올려 높이를 설정하세요',
+    instruct:`<strong>추</strong>를 마우스로 위로 드래그해서<br>
+      원하는 높이에 놓아보세요.<br><br>
+      높이가 높을수록 더 많은 일을 할 수 있습니다!<br>
+      <em>드래그를 완료하면 자동으로 다음 단계로 넘어갑니다.</em>`,
+    btnText:null, // 자동
+    auto:true,
+    check:()=>S.dragH!==null && S.dragH>0.05,
+    highlight:'weight',
+  },
+  {
+    icon:'⬇️',
+    title:'1회 낙하시키기',
+    sub:'추를 놓아 낙하 실험을 진행하세요',
+    instruct:`이제 추를 낙하시켜 보세요!<br><br>
+      <strong>추를 다시 드래그 후 놓거나</strong>, 추를 클릭하면 낙하합니다.<br>
+      패들이 돌아가고 온도가 올라가는 것을 확인하세요.<br>
+      <em>낙하가 완료되면 자동으로 다음 단계로 넘어갑니다.</em>`,
+    btnText:null,
+    auto:true,
+    check:()=>S.dropCount>=1,
+    highlight:'weight',
+  },
+  {
+    icon:'🔁',
+    title:'n회 반복 낙하',
+    sub:'여러 번 반복해서 온도 변화를 측정하세요',
+    instruct:`1회 낙하로는 온도 변화가 작습니다.<br><br>
+      우상단 슬라이더로 <strong>n = 20~50회</strong>로 설정하고<br>
+      <strong>▶ 시작</strong> 버튼을 누르세요.<br>
+      <em>n회 낙하가 끝나면 자동으로 다음 단계로 넘어갑니다.</em>`,
+    btnText:null,
+    auto:true,
+    check:()=>S.nDoneOnce,
+    highlight:null,
+  },
+  {
+    icon:'🎉',
+    title:'열의 일당량 확인!',
+    sub:'계산 결과를 확인하고 자유롭게 실험하세요',
+    instruct:`수고했어요! 실험 결과를 확인하세요.<br><br>
+      <strong>W = J × Q</strong> (J = 4.2 J/cal)<br>
+      측정된 W와 J×Q가 일치할수록 실험이 정확합니다.<br><br>
+      <em>"자유 실험 시작"을 누르면 조건을 바꿔가며<br>마음껏 실험할 수 있습니다!</em>`,
+    btnText:'자유 실험 시작 🚀',
+    auto:false,
+    check:null,
+    highlight:null,
+  },
+];
 
-      // 2. 일을 열량(cal)으로 변환 (열의 일당량 적용)
-      const totalHeatCal = totalWork / JOULE_PER_CAL;
+let tutStep=0;
+let tutWatchTimer=null;
 
-      // 3. 열량(cal) 기준으로 온도 변화 계산 (Q = mcΔT -> ΔT = Q / mc)
-      const deltaT = totalHeatCal / (WATER_G * SPECIFIC_HEAT_WATER_CAL);
-      const finalTemp = INITIAL_TEMP + deltaT;
-      // --- 수정 끝 ---
+function buildTutPips(){
+  tutProgressWrap.innerHTML='';
+  TUT_STEPS.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='tpip'+(i<tutStep?' done':i===tutStep?' on':'');
+    tutProgressWrap.appendChild(d);
+  });
+}
 
-      const startTop = weightLeft.offsetTop;
-      const endTop = startTop + Math.min(520, HEIGHT * 80);
-      const duration = Math.min(4000, 400 + DROPS * 40);
+function applyTutStep(){
+  const s=TUT_STEPS[tutStep];
+  tutStepNum.textContent=tutStep+1;
+  tutTitle.textContent=s.title;
+  tutSubtitle.textContent=s.sub;
+  tutIcon.textContent=s.icon;
+  tutInstruct.innerHTML=s.instruct;
+  buildTutPips();
 
-      const paddleTone = startPaddleTone();
-      paddleWheel.classList.add('spinning');
-      playDropSound();
+  if(s.btnText){
+    btnTutNext.textContent=s.btnText;
+    btnTutNext.disabled=false;
+    btnTutNext.style.display='';
+  } else {
+    btnTutNext.style.display='none';
+  }
 
-      const t0 = performance.now();
-      function step(t) {
-        const elapsed = t - t0; const p = Math.min(1, elapsed / duration); const e = easeInOutQuad(p);
-        const newTop = startTop + (endTop - startTop) * e;
-        weightLeft.style.top = newTop + 'px';
-        weightRight.style.top = newTop + 'px';
+  // 하이라이트 링
+  if(s.highlight==='weight'){
+    hlRing.style.display='block';
+    positionHlRing();
+  } else {
+    hlRing.style.display='none';
+  }
 
-        updateRopes();
-
-        const mercuryPct = Math.min(100, 20 + e * Math.min(80, (finalTemp - INITIAL_TEMP) / 2 * 80));
-        mercury.style.height = mercuryPct + '%';
-        water.style.height = (15 + (WATER_L / 5) * 65 + e * 2) + '%';
-
-        if (p < 1) requestAnimationFrame(step);
-        else {
-          paddleWheel.classList.remove('spinning');
-          paddleTone.gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
-          paddleTone.osc.stop(audioCtx.currentTime + 0.25);
-
-          rInit.textContent = INITIAL_TEMP.toFixed(3) + ' °C';
-          rFinal.textContent = finalTemp.toFixed(3) + ' °C';
-          rDelta.textContent = deltaT.toFixed(3) + ' °C';
-          rWork.textContent = totalWork.toFixed(0) + ' J';
-          rHeat.textContent = totalHeatCal.toFixed(0) + ' cal'; // 발생 열량을 칼로리로 표시
-
-          status.textContent = '실험 완료!'; status.style.color = '#28a745';
-          startBtn.textContent = '실험 완료';
-          resetBtn.disabled = false;
-          isRunning = false;
-        }
+  // 자동 진행 감시
+  clearInterval(tutWatchTimer);
+  if(s.auto && s.check){
+    tutWatchTimer=setInterval(()=>{
+      if(s.check()){
+        clearInterval(tutWatchTimer);
+        setTimeout(advanceTut, 600);
       }
-      requestAnimationFrame(step);
-    }
+    }, 200);
+  }
 
-    function resetAll() {
-      if (isRunning) return;
-      startBtn.disabled = false; massInput.disabled = false; heightInput.disabled = false; waterInput.disabled = false; dropsInput.disabled = false;
-      resetBtn.disabled = true; startBtn.textContent = '실험 시작'; status.textContent = '실험 준비 완료'; status.style.color = '#007bff';
-      weightLeft.style.top = '110px'; weightRight.style.top = '110px';
-      mercury.style.height = '20%'; setDisplayValues();
-      rFinal.textContent = '---'; rDelta.textContent = '---'; rWork.textContent = '---'; rHeat.textContent = '---';
-      updateRopes();
-    }
+  // 단계별 특별 조치
+  if(tutStep===2){
+    // 추를 위로 올려둔 상태 → 클릭하면 낙하
+    cv.style.pointerEvents='auto';
+    tutOverlay.style.pointerEvents='none'; // 클릭 통과
+    document.getElementById('tutBox').style.pointerEvents='auto';
+    tutHeader.style.pointerEvents='auto';
+  } else if(tutStep===1){
+    cv.style.pointerEvents='auto';
+    tutOverlay.style.pointerEvents='none';
+    document.getElementById('tutBox').style.pointerEvents='auto';
+    document.getElementById('tutHeader').style.pointerEvents='auto';
+  } else if(tutStep===3){
+    cv.style.pointerEvents='auto';
+    tutOverlay.style.pointerEvents='none';
+    document.getElementById('tutBox').style.pointerEvents='auto';
+    document.getElementById('tutHeader').style.pointerEvents='auto';
+    // 이전 단계에서 쌓인 nDoneOnce 리셋 — 이 단계에서 직접 n회 실행해야 통과
+    S.nDoneOnce=false;
+    showTutNControl();
+  } else {
+    cv.style.pointerEvents='none';
+    tutOverlay.style.pointerEvents='auto';
+  }
+}
 
-    downloadBtn.addEventListener('click', () => {
-      const html = '<!doctype html>\n' + document.documentElement.outerHTML;
-      const blob = new Blob([html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'joule_simulation_final.html'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+// 단계 3: 임시 n회 컨트롤
+let tutNDiv=null;
+function showTutNControl(){
+  if(tutNDiv) return;
+  tutNDiv=document.createElement('div');
+  tutNDiv.style.cssText='position:fixed;top:64px;right:16px;z-index:300;'+
+    'background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:10px 14px;'+
+    'display:flex;align-items:center;gap:10px;box-shadow:0 4px 16px rgba(0,0,0,.1);font-size:13px;font-weight:700;';
+  tutNDiv.innerHTML=`<span style="color:#7c3aed">반복: <span id="tutNVal">20</span>회</span>
+    <input id="tutNSlider" type="range" min="1" max="100" value="20" style="width:80px;">
+    <button id="tutNBtn" style="padding:7px 14px;border:none;border-radius:8px;
+      background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">
+      ▶ 시작
+    </button>`;
+  document.body.appendChild(tutNDiv);
+  const sl=document.getElementById('tutNSlider');
+  const nv=document.getElementById('tutNVal');
+  sl.addEventListener('input',()=>nv.textContent=sl.value);
+  document.getElementById('tutNBtn').addEventListener('click',()=>{
+    if(S.anim||S.nRun) return;
+    const n=+sl.value;
+    S.nTarget=n; S.nDone=0; S.nRun=true;
+    S.nFallSpd=Math.max(1.2,2*n/5);
+    S.nRiseSpd=Math.max(2.0,3*n/5);
+    prog.style.display='block'; progf.style.width='0%';
+    // 추가 이미 올라와 있으면 바로 낙하, 아니면 syncWPos 후 낙하
+    if(L.wRestY - S.wY > 10){
+      dropW();
+    } else {
+      syncWPos();
+      dropW();
+    }
+  });
+}
+function removeTutNControl(){
+  if(tutNDiv){tutNDiv.remove();tutNDiv=null;}
+}
+
+function advanceTut(){
+  clearInterval(tutWatchTimer);
+  removeTutNControl();
+  tutStep++;
+  if(tutStep>=TUT_STEPS.length){
+    endTutorial();
+  } else {
+    applyTutStep();
+  }
+}
+
+function endTutorial(){
+  clearInterval(tutWatchTimer);
+  removeTutNControl();
+  tutMode=false;
+  tutOverlay.style.display='none';
+  panel.style.display='flex';
+  cv.style.pointerEvents='auto';
+  modeBadge.textContent='🧪 자유 실험 모드';
+  modeBadge.classList.add('free');
+  hintInner.textContent='추를 드래그하거나 버튼으로 낙하시키세요';
+  hlRing.style.display='none';
+  // 패널이 나타난 후 DOM이 레이아웃 재계산을 끝낸 다음 resize 호출
+  requestAnimationFrame(()=>{
+    resize();
+    syncSliders();
+    syncWPos();
+    buildLiquidList();
+    updateAdvLiqDisplay();
+    graphCard.classList.add('visible');
+    resizeGraphs();
+    drawG();
+  });
+}
+
+function positionHlRing(){
+  if(!L.pullX) return;
+  const{wW,wH}=wDim();
+  const simArea=document.getElementById('simArea');
+  const sr=simArea.getBoundingClientRect();
+  const wx=sr.left+L.pullX-wW/2-10;
+  const wy=sr.top+S.wY-10;
+  const ww=wW+20, wh=wH+20;
+  hlRing.style.left=wx+'px'; hlRing.style.top=wy+'px';
+  hlRing.style.width=ww+'px'; hlRing.style.height=wh+'px';
+}
+
+btnTutNext.addEventListener('click',advanceTut);
+btnSkipTut.addEventListener('click',()=>{
+  if(confirm('튜토리얼을 건너뛰고 자유 실험 모드로 이동할까요?')) endTutorial();
+});
+
+// ── 탭 ──
+let advTabActive=false;
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.tpanel').forEach(x=>x.classList.remove('on'));
+    t.classList.add('on');
+    document.getElementById('tp-'+t.dataset.t).classList.add('on');
+    advTabActive=(t.dataset.t==='adv');
+    if(advTabActive) setTimeout(resizeAdvChart,30);
+    setTimeout(resizeGraphs,30);
+  });
+});
+
+// ── 슬라이더 ──
+function syncSliders(){
+  dM.textContent=parseFloat(sM.value).toFixed(1)+' kg';
+  dH.textContent=parseFloat(sH.value).toFixed(2)+' m';
+  dW.textContent=parseFloat(sW.value).toFixed(1)+' kg';
+  dN.textContent=parseInt(sN.value)+'회';
+}
+sM.addEventListener('input',syncSliders);
+sH.addEventListener('input',()=>{S.dragH=null;syncSliders();syncWPos();});
+sW.addEventListener('input',syncSliders);
+sN.addEventListener('input',syncSliders);
+syncSliders();
+
+// ── 레이아웃 ──
+function calcLayout(){
+  const simArea=document.getElementById('simArea');
+  CW=simArea.clientWidth; CH=simArea.clientHeight;
+  if(CW<10||CH<10) return;
+  const cx=CW/2;
+  const calW=Math.round(CW*.28), calH=Math.round(CH*.34);
+  const calX=cx-calW/2, calY=CH-calH-CH*.06;
+  const pullR=20, pullX=calX-CW*.14, pullY=CH*.12+pullR;
+  const pullR2=15, pull2X=calX+calW/2, pull2Y=pullY;
+  const wRestY=calY-12;
+  L={cx,calX,calY,calW,calH,pullX,pullY,pullR,pull2X,pull2Y,pullR2,
+    frameTopY:CH*.03,wRestY,
+    axisX:calX+calW/2,axisTopY:calY+14,paddleCY:calY+calH*.55};
+}
+function syncWPos(){
+  if(S.anim||S.drag) return;
+  if(!L.wRestY) return;
+  const h=S.dragH!==null?S.dragH:+sH.value;
+  const maxPx=L.wRestY-(L.pullY+L.pullR+20);
+  const dropPx=Math.min(maxPx, h/3.0*maxPx);
+  S.wY=Math.max(L.pullY+L.pullR+20, L.wRestY-dropPx);
+}
+
+// ── 리사이즈 ──
+function resize(){
+  const dpr=window.devicePixelRatio||1;
+  const simArea=document.getElementById('simArea');
+  CW=simArea.clientWidth; CH=simArea.clientHeight;
+  cv.width=Math.round(CW*dpr); cv.height=Math.round(CH*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  calcLayout();
+  if(!S.anim&&!S.drag){S.wRestY=L.wRestY; syncWPos();}
+  resizeGraphs();
+  if(tutMode && TUT_STEPS[tutStep].highlight==='weight') positionHlRing();
+}
+const GRAPH_SIZE=250; // 논리 픽셀 (정사각형)
+function resizeGraphs(){
+  const dpr=window.devicePixelRatio||1;
+  gcv2.setAttribute('width', Math.round(GRAPH_SIZE*dpr));
+  gcv2.setAttribute('height', Math.round(GRAPH_SIZE*dpr));
+  gcv2.style.width=GRAPH_SIZE+'px';
+  gcv2.style.height=GRAPH_SIZE+'px';
+  gctx2.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize',resize);
+
+// ── 드래그 ──
+function wDim(){
+  const m=+sM.value;
+  return{wW:Math.round(30+(m/20)*36), wH:Math.round(40+(m/20)*44)};
+}
+function wRect(){
+  const{wW,wH}=wDim();
+  return{x:L.pullX-wW/2,y:S.wY,w:wW,h:wH};
+}
+function hitW(px,py){
+  // 추 중심(pullX) 기준으로 히트박스 계산 — 좌우 대칭
+  const{wW,wH}=wDim();
+  const cx=L.pullX, cy=S.wY+wH/2;
+  const hw=wW/2+18, hh=wH/2+18;
+  return px>=cx-hw&&px<=cx+hw&&py>=cy-hh&&py<=cy+hh;
+}
+function px2m(pxH){
+  const maxPx=L.wRestY-(L.pullY+L.pullR+20);
+  return maxPx>0?pxH/maxPx*3.0:0;
+}
+function px2m_inv(){
+  const h=S.dragH!==null?S.dragH:+sH.value;
+  const maxPx=L.wRestY-(L.pullY+L.pullR+20);
+  return Math.min(maxPx, h/3.0*maxPx);
+}
+function getCPos(e){
+  const r=document.getElementById('simArea').getBoundingClientRect();
+  return{x:e.clientX-r.left, y:e.clientY-r.top};
+}
+function getCPosT(t){
+  const r=document.getElementById('simArea').getBoundingClientRect();
+  return{x:t.clientX-r.left, y:t.clientY-r.top};
+}
+
+cv.addEventListener('mousedown',e=>{
+  if(S.anim) return;
+  const{x,y}=getCPos(e);
+  if(hitW(x,y)){
+    S.drag=true;S.dragOff=y-S.wY;
+    document.body.classList.add('dragging');
+  }
+});
+cv.addEventListener('mousemove',e=>{
+  if(S.anim) return;
+  const{x,y}=getCPos(e);
+  if(S.drag){
+    const minY=L.pullY+L.pullR+20;
+    S.wY=Math.min(L.wRestY,Math.max(minY,y-S.dragOff));
+    const pxH=L.wRestY-S.wY;
+    S.dragH=px2m(pxH);
+    if(!tutMode) dH.textContent=Math.max(0,S.dragH).toFixed(2)+' m';
+    if(tutMode && TUT_STEPS[tutStep].highlight==='weight') positionHlRing();
+  }
+  document.body.classList.toggle('candrag',!S.drag&&hitW(x,y));
+});
+cv.addEventListener('mouseup',()=>{
+  if(!S.drag) return;
+  S.drag=false;document.body.classList.remove('dragging');
+  if(S.wY<S.wRestY-10) dropW();
+  else S.dragH=null;
+});
+cv.addEventListener('mouseleave',()=>{
+  if(S.drag){S.drag=false;document.body.classList.remove('dragging');}
+});
+cv.addEventListener('touchstart',e=>{
+  if(S.anim) return;
+  const t=e.touches[0],{x,y}=getCPosT(t);
+  if(hitW(x,y)){S.drag=true;S.dragOff=y-S.wY;e.preventDefault();}
+},{passive:false});
+cv.addEventListener('touchmove',e=>{
+  if(!S.drag) return;
+  const t=e.touches[0],{x,y}=getCPosT(t);
+  const minY=L.pullY+L.pullR+20;
+  S.wY=Math.min(L.wRestY,Math.max(minY,y-S.dragOff));
+  const pxH=L.wRestY-S.wY;
+  S.dragH=px2m(pxH);
+  e.preventDefault();
+},{passive:false});
+cv.addEventListener('touchend',()=>{
+  if(!S.drag) return;
+  S.drag=false;
+  if(S.wY<S.wRestY-10) dropW(); else S.dragH=null;
+});
+
+// ── 버튼 (자유 실험 패널) ──
+btnDrop.addEventListener('click',()=>{
+  if(S.anim) return;
+  S.dragH=null; syncWPos();
+  if(S.wY<S.wRestY-5) dropW();
+});
+btnNBtn.addEventListener('click',()=>{
+  if(S.anim||S.nRun) return;
+  const n=+sN.value;
+  S.nTarget=n;S.nDone=0;S.nRun=true;S.dragH=null;
+  S.nFallSpd=Math.max(1.2,2*n/5);S.nRiseSpd=Math.max(2.0,3*n/5);
+  prog.style.display='block';progf.style.width='0%';
+  syncWPos();dropW();
+});
+btnReset.addEventListener('click',()=>{
+  if(S.anim) return;
+  S={...S,dropCount:0,totalWork:0,curTemp:T0,hist:[],
+    anim:false,animT:0,axAngle:0,dragH:null,boiling:false,
+    nRun:false,nDone:0,nTarget:0,nDoneOnce:false,wY:L.wRestY,wRestY:L.wRestY};
+  document.getElementById('boilAlert')?.remove();
+  btnDrop.disabled=false;btnNBtn.disabled=false;
+  mT.textContent='20.000 °C';mDT.textContent='+0.000 °C';
+  mWel.textContent='0.0 J';mN.textContent='0 회';
+  jeqW.textContent='— J'; jeqJQ.textContent='— cal';
+  prog.style.display='none';
+  S._advLiq=null;
+  syncSliders();drawG();
+});
+
+// ── 낙하 ──
+function dropW(){
+  if(S.anim||S.boiling) return;
+  const fromY=S.wY,toY=L.wRestY;
+  const dpx=toY-fromY;
+  if(dpx<5){finishN();return;}
+  const dropM=px2m(dpx);
+  const mass=+sM.value;
+  // 심화 실험이면 액체 파라미터 사용, 아니면 기본 슬라이더
+  const liq=S._advLiq||null;
+  const fluidKg=liq?S._advMass:+sW.value;
+  const c=liq?liq.c:1.0; // cal/(g·°C)
+  const work=mass*G*dropM;
+  const dT=work/J0/(fluidKg*1000*c);
+  S.anim=true;S.phase='fall';S.animT=0;
+  S.wStartY=fromY;S.wEndY=toY;
+  S._dm=dropM;S._work=work;S._dT=dT;S._fromT=S.curTemp;
+  btnDrop.disabled=true;btnNBtn.disabled=true;
+}
+function onFallDone(){
+  S.dropCount++;S.totalWork+=S._work;S.curTemp+=S._dT;
+  S.hist.push({n:S.dropCount,t:S.curTemp,h:S._dm,w:S._work});
+  const waterKg=+sW.value;
+  const Q=(S.curTemp-T0)*waterKg*1000;
+  if(!tutMode){
+    const Q2=S.totalWork/J0;
+    const W=S.totalWork;
+    jeqW.textContent=W>=1000?(W/1000).toFixed(1)+' kJ':Math.round(W)+' J';
+    jeqJQ.textContent=Q2>=1000?(Q2/1000).toFixed(1)+' kcal':Math.round(Q2)+' cal';
+  }
+  // 끓는점 도달 체크 (심화: 액체별 끓는점, 기본: 물 100°C)
+  const bp=S._advLiq?S._advLiq.bp:100;
+  if(S.curTemp>=bp){
+    S.curTemp=bp;
+    S.boiling=true;
+    showBoilAlert(S._advLiq);
+    doRise(true);
+    return;
+  }
+  if(S.nRun){
+    S.nDone++;progf.style.width=(S.nDone/S.nTarget*100)+'%';
+    doRise(S.nDone>=S.nTarget);
+  } else {doRise(true);}
+}
+function showBoilAlert(liq){
+  document.getElementById('boilAlert')?.remove();
+  const name=liq?`${liq.icon} ${liq.name}`:'💧 물';
+  const bp=liq?liq.bp:100;
+  const el=document.createElement('div');
+  el.id='boilAlert';
+  el.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);'+
+    'background:rgba(255,255,255,.97);border:2px solid #ef4444;border-radius:16px;'+
+    'padding:18px 28px;text-align:center;z-index:300;box-shadow:0 8px 32px rgba(239,68,68,.25);'+
+    'font-family:Pretendard,sans-serif;min-width:220px;';
+  el.innerHTML=`<div style="font-size:28px;margin-bottom:6px;">♨️</div>`+
+    `<div style="font-size:15px;font-weight:700;color:#ef4444;margin-bottom:4px;">${name}이(가) 끓기 시작했습니다!</div>`+
+    `<div style="font-size:12px;color:#64748b;margin-bottom:12px;">끓는점 ${bp}°C 도달 — 실험이 자동 종료되었습니다</div>`+
+    `<button onclick="document.getElementById('boilAlert').remove()" `+
+    `style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:6px 18px;font-size:13px;cursor:pointer;">확인</button>`;
+  document.getElementById('simArea').appendChild(el);
+}
+function doRise(last){
+  S._last=last;
+  if(last){
+    // 마지막 낙하 후: 바닥에 그대로 → 애니메이션 없이 즉시 완료
+    S.anim=false;
+    finishN();
+    updateRes();
+    return;
+  }
+  // n회 중간: 다음 낙하를 위해 원래 높이로 복귀
+  S.phase='rise'; S.animT=0;
+  const savedY=S.wY;
+  const h=S.dragH!==null?S.dragH:+sH.value;
+  const maxPx=L.wRestY-(L.pullY+L.pullR+20);
+  const dropPx=Math.min(maxPx, h/3.0*maxPx);
+  const targetY=Math.max(L.pullY+L.pullR+20, L.wRestY-dropPx);
+  S.wStartY=savedY; S.wEndY=targetY;
+}
+function onRiseDone(){
+  S.wY=S.wEndY; S.anim=false;
+  if(S.nRun&&!S._last){
+    dropW();
+  }
+  // last=true 케이스는 doRise 안에서 이미 처리됨
+}
+function finishN(){
+  S.nRun=false; S.nDoneOnce=true; prog.style.display='none';
+  btnDrop.disabled=false; btnNBtn.disabled=false;
+  if(!tutMode) hintInner.style.opacity='0';
+  if(S._advLiq) onAdvExpDone();
+}
+
+function updateRes(){} // 더 이상 결과분석 탭 없음
+
+// ══════════════════════════════════
+//  심화 실험 — 다양한 액체
+// ══════════════════════════════════
+const LIQUIDS=[
+  {id:'water',   icon:'💧', name:'물',      c:1.000, color:'#3b82f6', bp:100},
+  {id:'ethanol', icon:'🍶', name:'에탄올',  c:0.581, color:'#8b5cf6', bp:78 },
+  {id:'glycerin',icon:'🫙', name:'글리세린',c:0.581, color:'#10b981', bp:290},
+  {id:'olive',   icon:'🫒', name:'올리브유',c:0.470, color:'#f59e0b', bp:300},
+  {id:'mercury', icon:'⚗️', name:'수은',    c:0.033, color:'#94a3b8', bp:357},
+];
+let advLiqIdx=0;
+let advS={dropCount:0,totalWork:0,curTemp:T0,hist:[],nRun:false,nDone:0,nTarget:0,nDoneOnce:false};
+let advResults=[]; // {liq, dT, W, Q}
+
+const advsW=document.getElementById('advsW');
+const advsH=document.getElementById('advsH');
+const advsN=document.getElementById('advsN');
+const advdW=document.getElementById('advdW');
+const advdH=document.getElementById('advdH');
+const advdN=document.getElementById('advdN');
+const advBtnN=document.getElementById('advBtnN');
+const advBtnReset=document.getElementById('advBtnReset');
+const advDT=document.getElementById('advDT');
+const advQ=document.getElementById('advQ');
+const advW2=document.getElementById('advW');
+const advN2=document.getElementById('advN2');
+const advResultBox=document.getElementById('advResultBox');
+const advCompCard=document.getElementById('advCompCard');
+const advChart=document.getElementById('advChart');
+const advChartCtx=advChart.getContext('2d');
+const advLiqIcon=document.getElementById('advLiqIcon');
+const advLiqName=document.getElementById('advLiqName');
+const advLiqSpec=document.getElementById('advLiqSpec');
+
+function buildLiquidList(){
+  const el=document.getElementById('liquidList');
+  el.innerHTML='';
+  LIQUIDS.forEach((liq,i)=>{
+    const btn=document.createElement('button');
+    const isActive=i===advLiqIdx;
+    const isDone=!!advResults.find(r=>r.id===liq.id);
+    btn.className='liq-btn';
+    btn.style.cssText=`border:1.5px solid ${isActive?liq.color:'#e2e8f0'};`+
+      `background:${isActive?liq.color+'15':'#fff'};`+
+      `color:${isActive?liq.color:'#475569'};`;
+    btn.innerHTML=
+      `<span style="font-size:18px">${liq.icon}</span>`+
+      `<span style="flex:1;font-size:13px;font-weight:700;">${liq.name}</span>`+
+      `<span style="font-size:11px;color:#94a3b8;">c = ${liq.c.toFixed(3)}</span>`+
+      (isDone?`<span style="color:#10b981;font-size:11px;font-weight:700;">✓</span>`:'');
+    btn.addEventListener('click',()=>{
+      advLiqIdx=i; buildLiquidList(); updateAdvLiqDisplay();
     });
+    el.appendChild(btn);
+  });
+}
 
-    startBtn.addEventListener('click', runExperiment);
-    resetBtn.addEventListener('click', resetAll);
+function updateAdvLiqDisplay(){
+  const liq=LIQUIDS[advLiqIdx];
+  advLiqIcon.textContent=liq.icon;
+  advLiqName.textContent=liq.name;
+  advLiqSpec.textContent=`비열 c = ${liq.c.toFixed(3)} cal/(g·°C)`;
+  // 현재 액체로 실험 상태 반영
+  const r=advResults.find(x=>x.id===liq.id);
+  if(r){
+    advDT.textContent='+'+(r.dT).toFixed(3)+' °C';
+    advQ.textContent=r.Q.toFixed(2)+' cal';
+    advW2.textContent=r.W.toFixed(1)+' J';
+    advN2.textContent=r.n+' 회';
+    showAdvResult(r);
+  } else {
+    advDT.textContent='+0.000 °C';
+    advQ.textContent='— cal'; advW2.textContent='— J'; advN2.textContent='0 회';
+    advResultBox.textContent='실험 후 결과가 표시됩니다.';
+  }
+}
 
-    window.addEventListener('load', () => { setDisplayValues(); updateRopes(); resetAll(); });
-    window.addEventListener('resize', updateRopes);
-  </script>
+function showAdvResult(r){
+  advResultBox.innerHTML=
+    `<b>${r.name}</b> 실험 결과<br>`+
+    `W = <b>${r.W.toFixed(1)} J</b><br>`+
+    `Q = m × c × ΔT = ${(+advsW.value*1000).toFixed(0)} × ${r.c.toFixed(3)} × ${r.dT.toFixed(3)}`+
+    ` = <b>${r.Q.toFixed(2)} cal</b><br>`+
+    `W / Q = <b>${(r.W/r.Q).toFixed(2)} J/cal</b> (이론: 4.2)`;
+}
+
+advsW.addEventListener('input',()=>{
+  advdW.textContent=parseFloat(advsW.value).toFixed(1)+' kg';
+  if(S._advLiq) S._advMass=+advsW.value;
+});
+advsH.addEventListener('input',()=>advdH.textContent=parseFloat(advsH.value).toFixed(2)+' m');
+advsN.addEventListener('input',()=>advdN.textContent=parseInt(advsN.value)+'회');
+
+advBtnN.addEventListener('click',()=>{
+  if(S.anim||S.nRun) return;
+  const n=+advsN.value;
+  const liq=LIQUIDS[advLiqIdx];
+  // 심화 실험은 메인 S 상태를 빌려 씀 (같은 캔버스)
+  // 비열만 다르게 적용하기 위해 임시로 액체 파라미터 오버라이드
+  S._advLiq=liq; S._advMass=+advsW.value; S.curTemp=T0; S.totalWork=0; S.dropCount=0; S.hist=[];
+  // sH를 심화 슬라이더값으로 임시 설정
+  S.dragH=+advsH.value;
+  S.nTarget=n; S.nDone=0; S.nRun=true; S.nDoneOnce=false;
+  S.nFallSpd=Math.max(1.2,2*n/5); S.nRiseSpd=Math.max(2.0,3*n/5);
+  prog.style.display='block'; progf.style.width='0%';
+  advBtnN.disabled=true;
+  syncWPos();
+  dropW();
+});
+
+advBtnReset.addEventListener('click',()=>{
+  if(S.anim) return;
+  advResults=[];
+  advS={dropCount:0,totalWork:0,curTemp:T0,hist:[],nRun:false,nDone:0,nTarget:0,nDoneOnce:false};
+  S={...S,dropCount:0,totalWork:0,curTemp:T0,hist:[],axAngle:0,dragH:null,boiling:false,
+    nRun:false,nDone:0,nTarget:0,nDoneOnce:false,wY:L.wRestY};
+  S._advLiq=null;
+  document.getElementById('boilAlert')?.remove();
+  advDT.textContent='+0.000 °C'; advQ.textContent='— cal';
+  advW2.textContent='— J'; advN2.textContent='0 회';
+  advResultBox.textContent='실험 후 결과가 표시됩니다.';
+  advCompCard.style.display='none';
+  buildLiquidList();
+  prog.style.display='none';
+  advBtnN.disabled=false;
+  jeqW.textContent='— J'; jeqJQ.textContent='— cal';
+  syncWPos();
+});
+
+function onAdvExpDone(){
+  const liq=LIQUIDS[advLiqIdx];
+  const massG=+advsW.value*1000;
+  const dT=S.curTemp-T0;
+  const Q=massG*liq.c*dT;
+  const W=S.totalWork;
+  // 이미 있으면 덮어쓰기
+  advResults=advResults.filter(r=>r.id!==liq.id);
+  advResults.push({id:liq.id,name:liq.name,icon:liq.icon,c:liq.c,color:liq.color,dT,Q,W,n:S.dropCount});
+  advDT.textContent='+'+(dT).toFixed(3)+' °C';
+  advQ.textContent=Q.toFixed(2)+' cal';
+  advW2.textContent=W.toFixed(1)+' J';
+  advN2.textContent=S.dropCount+' 회';
+  showAdvResult({...liq,dT,Q,W,n:S.dropCount});
+  buildLiquidList();
+  if(advResults.length>1){advCompCard.style.display='';resizeAdvChart();drawAdvChart();}
+  advBtnN.disabled=false;
+  S._advLiq=null;
+}
+
+function resizeAdvChart(){
+  const dpr=window.devicePixelRatio||1;
+  const w=advChart.clientWidth, h=advChart.clientHeight;
+  if(w<1||h<1) return;
+  advChart.width=Math.round(w*dpr); advChart.height=Math.round(h*dpr);
+  advChartCtx.setTransform(dpr,0,0,dpr,0,0);
+  drawAdvChart();
+}
+
+function drawAdvChart(){
+  const GW=advChart.clientWidth||230, GH=advChart.clientHeight||140;
+  advChartCtx.clearRect(0,0,GW,GH);
+  advChartCtx.fillStyle='#f8fafc'; advChartCtx.fillRect(0,0,GW,GH);
+  if(advResults.length<1) return;
+  const p={t:10,r:8,b:32,l:8};
+  const gw=GW-p.l-p.r, gh=GH-p.t-p.b;
+  const maxDT=Math.max(...advResults.map(r=>r.dT))*1.15||1;
+  const bw=Math.min(36, gw/advResults.length-8);
+  advResults.forEach((r,i)=>{
+    const x=p.l+gw*(i+0.5)/advResults.length-bw/2;
+    const bh=gh*(r.dT/maxDT);
+    const y=p.t+gh-bh;
+    advChartCtx.fillStyle=r.color+'cc';
+    advChartCtx.beginPath();
+    advChartCtx.roundRect(x,y,bw,bh,4);
+    advChartCtx.fill();
+    advChartCtx.fillStyle=r.color;
+    advChartCtx.font='bold 9px Pretendard,sans-serif';
+    advChartCtx.textAlign='center';
+    advChartCtx.fillText(r.dT.toFixed(2)+'°',x+bw/2,y-3);
+    advChartCtx.fillText(r.icon,x+bw/2,p.t+gh+12);
+    advChartCtx.fillStyle='#64748b';
+    advChartCtx.font='8px Pretendard,sans-serif';
+    advChartCtx.fillText(r.name,x+bw/2,p.t+gh+23);
+  });
+  advChartCtx.fillStyle='#94a3b8'; advChartCtx.font='8px Pretendard,sans-serif';
+  advChartCtx.textAlign='left';
+  advChartCtx.fillText('ΔT 비교 (같은 W에서)',p.l,p.t+8);
+}
+
+// ── 메인 루프 ──
+let lastTs=0;
+function loop(ts){
+  const dt=Math.min((ts-lastTs)/1000,.05);lastTs=ts;
+  if(S.anim){
+    const spd=S.phase==='fall'?(S.nRun?S.nFallSpd:1.2):(S.nRun?S.nRiseSpd:2.0);
+    S.animT=Math.min(1,S.animT+spd*dt);
+    if(S.phase==='fall'){
+      const e=S.animT<.5?2*S.animT*S.animT:-1+(4-2*S.animT)*S.animT;
+      S.wY=S.wStartY+(S.wEndY-S.wStartY)*e;
+      const rotSpd=S.nRun?S.nFallSpd*5:5;
+      S.axAngle+=dt*rotSpd*(0.5+S.animT);
+      const ct=S._fromT+S._dT*S.animT;
+      updateMeters(ct,S.totalWork+S._work*S.animT,S.dropCount);
+      if(S.animT>=1) onFallDone();
+    } else {
+      const e=1-(1-S.animT)*(1-S.animT);
+      S.wY=S.wStartY+(S.wEndY-S.wStartY)*e;
+      if(S.animT>=1) onRiseDone();
+    }
+  } else {
+    updateMeters(S.curTemp,S.totalWork,S.dropCount);
+  }
+  drawG();
+  draw();
+  if(tutMode && TUT_STEPS[tutStep].highlight==='weight') positionHlRing();
+  requestAnimationFrame(loop);
+}
+
+function updateMeters(temp,work,n){
+  const dt2=temp-T0;
+  mT.textContent=temp.toFixed(3)+' °C';
+  mDT.textContent=(dt2>=0?'+':'')+dt2.toFixed(3)+' °C';
+  mWel.textContent=work.toFixed(1)+' J';
+  mN.textContent=n+' 회';
+}
+
+// ══════════════════════════════════
+//  렌더링
+// ══════════════════════════════════
+function draw(){
+  if(CW<10||CH<10) return;
+  ctx.clearRect(0,0,CW,CH);
+  const bg=ctx.createLinearGradient(0,0,0,CH);
+  bg.addColorStop(0,'#e8f4fd');bg.addColorStop(1,'#eef2f7');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,CW,CH);
+
+  const{wW,wH}=wDim();
+  drawFrame();
+  drawRope(S.wY,wW,wH);
+  drawPulley(L.pullX,L.pullY,L.pullR,S.axAngle);
+  drawPulley(L.pull2X,L.pull2Y,L.pullR2,S.axAngle*.5);
+
+  const dpx=L.wRestY-S.wY;
+  // 화살표: 추 중심 → 최하단 추 중심
+  if(dpx>10) drawArrow(L.pullX-wW/2-38,S.wY+wH/2,L.wRestY+wH/2,px2m(dpx));
+
+  const isAdv=advTabActive;
+  const fluidKg=isAdv?+advsW.value:+sW.value;
+  const advLiq=LIQUIDS[advLiqIdx];
+  const fluidLabel=isAdv?`${advLiq.icon} ${advLiq.name} ${fluidKg.toFixed(1)} kg`:`물 ${fluidKg.toFixed(1)} kg`;
+  drawWeight(L.pullX-wW/2,S.wY,wW,wH,+sM.value,S.drag);
+  drawCal(L.calX,L.calY,L.calW,L.calH,fluidKg,S.curTemp,fluidLabel);
+  drawPaddle(L.axisX,L.axisTopY,L.paddleCY,L.calW*.46,S.axAngle);
+  const curBp=S._advLiq?S._advLiq.bp:100;
+  drawThermo(L.calX+L.calW+12,L.calY+L.calH*.06,20,L.calH*.78,S.curTemp,curBp);
+}
+
+function rr(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
+}
+
+function drawFrame(){
+  ctx.lineCap='round';
+  ctx.strokeStyle='#94a3b8';ctx.lineWidth=7;
+  ctx.beginPath();ctx.moveTo(L.pullX,L.frameTopY);ctx.lineTo(L.pullX,L.calY+12);ctx.stroke();
+  ctx.lineWidth=6;
+  ctx.beginPath();ctx.moveTo(L.pullX-30,L.frameTopY);ctx.lineTo(L.pullX+30,L.frameTopY);ctx.stroke();
+  ctx.lineWidth=4;ctx.strokeStyle='#cbd5e1';
+  ctx.beginPath();ctx.moveTo(L.pullX-18,L.frameTopY+18);ctx.lineTo(L.pullX+8,L.frameTopY+58);ctx.stroke();
+  ctx.lineWidth=8;ctx.strokeStyle='#94a3b8';
+  ctx.beginPath();ctx.moveTo(L.pullX-40,L.calY+12);ctx.lineTo(L.pullX+40,L.calY+12);ctx.stroke();
+  ctx.lineWidth=5;ctx.strokeStyle='#cbd5e1';
+  ctx.beginPath();ctx.moveTo(L.pullX,L.calY-8);ctx.lineTo(L.calX,L.calY-8);ctx.stroke();
+  ctx.lineWidth=6;ctx.strokeStyle='#94a3b8';
+  ctx.beginPath();ctx.moveTo(L.pullX,L.pullY);ctx.lineTo(L.pull2X,L.pull2Y);ctx.stroke();
+}
+
+function drawRope(wy,wW,wH){
+  ctx.setLineDash([]);ctx.lineWidth=2.5;ctx.strokeStyle='#78716c';ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(L.pullX,wy);ctx.lineTo(L.pullX,L.pullY+L.pullR);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(L.pullX+L.pullR,L.pullY);ctx.lineTo(L.pull2X-L.pullR2,L.pull2Y);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(L.pull2X,L.pull2Y+L.pullR2);ctx.lineTo(L.axisX,L.axisTopY+4);ctx.stroke();
+  ctx.beginPath();ctx.arc(L.pullX,wy,4,0,Math.PI*2);ctx.fillStyle='#9ca3af';ctx.fill();
+  for(let i=0;i<3;i++){
+    const r=7+i*2.5;
+    ctx.beginPath();ctx.arc(L.axisX,L.axisTopY+8,r,-0.9+S.axAngle*.2,0.9+S.axAngle*.2);
+    ctx.strokeStyle=`rgba(120,113,108,${.6-i*.15})`;ctx.lineWidth=2;ctx.stroke();
+  }
+}
+
+function drawPulley(x,y,r,angle){
+  const gd=ctx.createRadialGradient(x-r*.3,y-r*.3,r*.05,x,y,r);
+  gd.addColorStop(0,'#d1d5db');gd.addColorStop(1,'#6b7280');
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=gd;ctx.fill();
+  ctx.strokeStyle='#9ca3af';ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.arc(x,y,r*.78,0,Math.PI*2);
+  ctx.strokeStyle='rgba(0,0,0,.18)';ctx.lineWidth=3;ctx.stroke();
+  ctx.save();ctx.translate(x,y);ctx.rotate(angle*.35);
+  for(let i=0;i<5;i++){
+    ctx.save();ctx.rotate(i/5*Math.PI*2);
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-r*.65);
+    ctx.strokeStyle='#9ca3af';ctx.lineWidth=1.5;ctx.stroke();ctx.restore();
+  }
+  ctx.restore();
+  ctx.beginPath();ctx.arc(x,y,r*.2,0,Math.PI*2);ctx.fillStyle='#374151';ctx.fill();
+}
+
+function drawWeight(x,y,w,h,mass,drag){
+  ctx.save();
+  if(drag){ctx.shadowColor='rgba(245,158,11,.4)';ctx.shadowBlur=18;}
+  const gd=ctx.createLinearGradient(x,y,x+w,y+h);
+  gd.addColorStop(0,'#d1d5db');gd.addColorStop(.2,'#e5e7eb');gd.addColorStop(.8,'#9ca3af');gd.addColorStop(1,'#6b7280');
+  rr(x,y,w,h,6);ctx.fillStyle=gd;ctx.fill();
+  ctx.strokeStyle=drag?'#f59e0b':'#9ca3af';ctx.lineWidth=drag?2.5:1.5;ctx.stroke();
+  const hl=ctx.createLinearGradient(x,y,x,y+h*.2);
+  hl.addColorStop(0,'rgba(255,255,255,.5)');hl.addColorStop(1,'rgba(255,255,255,0)');
+  rr(x+2,y+2,w-4,h*.2,4);ctx.fillStyle=hl;ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.07)';
+  for(let i=0;i<3;i++){const cy=y+h*.28+i*h*.22;ctx.beginPath();ctx.ellipse(x+w/2,cy,w*.28,2.5,0,0,Math.PI*2);ctx.fill();}
+  const fs=Math.max(10,Math.min(14,w*.27));
+  ctx.fillStyle='#1e293b';ctx.font=`bold ${fs}px Pretendard,sans-serif`;ctx.textAlign='center';
+  ctx.fillText(mass.toFixed(1),x+w/2,y+h*.58);
+  ctx.font=`${fs-2}px Pretendard,sans-serif`;ctx.fillStyle='#4b5563';
+  ctx.fillText('kg',x+w/2,y+h*.75);ctx.textAlign='left';ctx.restore();
+}
+
+function drawArrow(x,fromY,toY,hm){
+  if(toY<=fromY+10) return;
+  ctx.save();ctx.strokeStyle='rgba(59,130,246,.7)';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);
+  ctx.beginPath();ctx.moveTo(x-6,fromY);ctx.lineTo(x+6,fromY);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x-6,toY);ctx.lineTo(x+6,toY);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x,fromY+8);ctx.lineTo(x,toY-8);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath();ctx.moveTo(x-5,fromY+13);ctx.lineTo(x,fromY);ctx.lineTo(x+5,fromY+13);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x-5,toY-13);ctx.lineTo(x,toY);ctx.lineTo(x+5,toY-13);ctx.stroke();
+  ctx.fillStyle='#2563eb';ctx.font='bold 12px Pretendard,sans-serif';ctx.textAlign='center';
+  ctx.fillText(`h = ${hm.toFixed(2)} m`,x,(fromY+toY)/2-7);
+  ctx.font='10px Pretendard,sans-serif';ctx.fillStyle='#3b82f6';
+  ctx.fillText(`W = ${(+sM.value*G*hm).toFixed(1)} J`,x,(fromY+toY)/2+7);
+  ctx.textAlign='left';ctx.restore();
+}
+
+function drawCal(x,y,w,h,waterKg,temp,label){
+  const ow=ctx.createLinearGradient(x,y,x+w,y);
+  ow.addColorStop(0,'#92400e');ow.addColorStop(.1,'#b45309');ow.addColorStop(.5,'#d97706');ow.addColorStop(.9,'#b45309');ow.addColorStop(1,'#92400e');
+  rr(x,y,w,h,10);ctx.fillStyle=ow;ctx.fill();ctx.strokeStyle='#fbbf24';ctx.lineWidth=1.5;ctx.stroke();
+  const im=9,ix=x+im,iy=y+im,iw=w-im*2,ih=h-im*2;
+  rr(ix,iy,iw,ih,5);ctx.fillStyle='#1e3a5f';ctx.fill();
+  const wRatio=Math.min(.88,.3+(waterKg/5)*.52);
+  const wH2=ih*wRatio,wY2=iy+ih-wH2;
+  const boiling=temp>=100;
+  const t2=Math.min(1,(temp-T0)/80);
+  const cr=Math.round(30+t2*200),cg2=Math.round(100-t2*50),cb=Math.round(220-t2*210);
+  ctx.save();rr(ix,iy,iw,ih,5);ctx.clip();
+  const wgd=ctx.createLinearGradient(ix,wY2,ix,iy+ih);
+  wgd.addColorStop(0,`rgba(${cr},${cg2},${cb},.5)`);wgd.addColorStop(1,`rgba(${cr},${cg2},${cb},.85)`);
+  ctx.fillStyle=wgd;ctx.fillRect(ix,wY2,iw,wH2);
+  const wt=performance.now()/1100;
+  const waveAmp=boiling?5:2.2;
+  ctx.beginPath();ctx.moveTo(ix,wY2+4);
+  for(let i=0;i<=iw;i+=4) ctx.lineTo(ix+i,wY2+Math.sin(i/9+wt*( boiling?3:1))*waveAmp+Math.sin(i/5.5+wt*1.4)*waveAmp*.5);
+  ctx.lineTo(ix+iw,wY2+4);ctx.lineTo(ix,wY2+4);
+  ctx.fillStyle=`rgba(${cr},${cg2},${cb},.25)`;ctx.fill();
+  // 기포 효과 (끓는 중)
+  if(boiling){
+    const bt=performance.now()/400;
+    const bubbles=[
+      {x:iw*.2,phase:0,r:3},{x:iw*.45,phase:1.3,r:4},{x:iw*.7,phase:2.6,r:2.5},
+      {x:iw*.3,phase:0.7,r:2},{x:iw*.6,phase:2.0,r:3.5}
+    ];
+    bubbles.forEach(b=>{
+      const prog=(Math.sin(bt+b.phase)*0.5+0.5);
+      const by=wY2+wH2*(0.9-prog*0.85);
+      if(by>wY2){
+        ctx.beginPath();ctx.arc(ix+b.x,by,b.r,0,Math.PI*2);
+        ctx.fillStyle=`rgba(255,255,255,${0.5*prog})`;ctx.fill();
+        ctx.strokeStyle=`rgba(255,255,255,${0.6*prog})`;ctx.lineWidth=.8;ctx.stroke();
+      }
+    });
+    // 수증기 (물 위)
+    for(let i=0;i<3;i++){
+      const sp=(performance.now()/1000+i*1.1)%2;
+      const sx=ix+iw*(0.25+i*0.25);
+      const sy=wY2-sp*22;
+      const alpha=Math.max(0,0.4*(1-sp/2));
+      ctx.beginPath();ctx.arc(sx,sy,4+sp*3,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${alpha})`;ctx.fill();
+    }
+  }
+  ctx.restore();
+  const lid=ctx.createLinearGradient(x,y,x,y+16);
+  lid.addColorStop(0,'#e5e7eb');lid.addColorStop(1,'#9ca3af');
+  rr(x-2,y,w+4,16,6);ctx.fillStyle=lid;ctx.fill();ctx.strokeStyle='#d1d5db';ctx.lineWidth=1;ctx.stroke();
+  ctx.fillStyle='#64748b';ctx.font='10px Pretendard,sans-serif';ctx.textAlign='center';
+  ctx.fillText(label||`물 ${waterKg.toFixed(1)} kg`,x+w/2,y+h+14);ctx.textAlign='left';
+}
+
+function drawPaddle(cx,topY,cY,d,angle){
+  const r=d/2;
+  const axG=ctx.createLinearGradient(cx-3,0,cx+3,0);
+  axG.addColorStop(0,'#6b7280');axG.addColorStop(.5,'#d1d5db');axG.addColorStop(1,'#6b7280');
+  ctx.fillStyle=axG;ctx.fillRect(cx-3,topY,6,cY-topY+r*.3);
+  ctx.save();ctx.translate(cx,cY);ctx.rotate(angle);
+  for(let i=0;i<4;i++){
+    ctx.save();ctx.rotate(i*.5*Math.PI);
+    const bg=ctx.createLinearGradient(0,-r,0,r);
+    bg.addColorStop(0,'#92400e');bg.addColorStop(.5,'#b45309');bg.addColorStop(1,'#92400e');
+    rr(-4,-r,8,r*2,3);ctx.fillStyle=bg;ctx.fill();ctx.strokeStyle='#fbbf24';ctx.lineWidth=.5;ctx.stroke();
+    rr(-11,-r-3,22,7,2);ctx.fillStyle='#78350f';ctx.fill();
+    ctx.restore();
+  }
+  ctx.beginPath();ctx.arc(0,0,9,0,Math.PI*2);ctx.fillStyle='#374151';ctx.fill();ctx.restore();
+}
+
+function drawThermo(x,y,w,h,temp,bp=100){
+  const bR=w*.65,tW=w*.4,tH=h-bR*.5,tX=x+w/2-tW/2;
+  const maxT=bp, ratio=Math.min(1,Math.max(0,(temp-T0)/(maxT-T0))),mh=tH*ratio;
+  rr(tX,y,tW,tH,tW/2);ctx.fillStyle='rgba(255,255,255,.5)';ctx.fill();
+  ctx.strokeStyle='#cbd5e1';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.save();rr(tX,y,tW,tH,tW/2);ctx.clip();
+  const mg=ctx.createLinearGradient(tX,y+tH-mh,tX+tW,y+tH);
+  mg.addColorStop(0,'#fca5a5');mg.addColorStop(1,'#ef4444');
+  ctx.fillStyle=mg;ctx.fillRect(tX,y+tH-mh,tW,mh);ctx.restore();
+  // 눈금: T0~bp, 적절한 간격으로
+  const tRange=maxT-T0;
+  const step=tRange<=80?10:tRange<=200?20:50;
+  const labelStep=tRange<=80?20:tRange<=200?40:100;
+  for(let t=T0;t<=maxT;t+=step){
+    const gy=y+tH*(1-(t-T0)/tRange),ll=t%labelStep===0?9:4;
+    ctx.beginPath();ctx.moveTo(tX+tW,gy);ctx.lineTo(tX+tW+ll,gy);
+    ctx.strokeStyle='#94a3b8';ctx.lineWidth=1;ctx.stroke();
+    if(t%labelStep===0){ctx.fillStyle='#64748b';ctx.font='8px Pretendard,sans-serif';ctx.fillText(t+'°',tX+tW+12,gy+3);}
+  }
+  // 끓는점 표시선
+  ctx.beginPath();ctx.moveTo(tX,y);ctx.lineTo(tX+tW,y);
+  ctx.strokeStyle='#ef4444';ctx.lineWidth=1;ctx.setLineDash([2,2]);ctx.stroke();ctx.setLineDash([]);
+  if(temp>T0+.01){ctx.fillStyle='#ef4444';ctx.font='bold 9px Pretendard,sans-serif';ctx.fillText(temp.toFixed(1)+'°C',tX+tW+12,y+tH-mh-4);}
+  ctx.beginPath();ctx.arc(x+w/2,y+tH+bR*.45,bR,0,Math.PI*2);
+  const bg2=ctx.createRadialGradient(x+w/2-bR*.2,y+tH+bR*.2,bR*.1,x+w/2,y+tH+bR*.45,bR);
+  bg2.addColorStop(0,'#fca5a5');bg2.addColorStop(1,'#dc2626');
+  ctx.fillStyle=bg2;ctx.fill();
+}
+
+// ── 그래프 ──
+function drawGOn(g,gc2){
+  const GW=GRAPH_SIZE,GH=GRAPH_SIZE;
+  gc2.clearRect(0,0,GW,GH);
+  gc2.fillStyle='#f8fafc';gc2.fillRect(0,0,GW,GH);
+  const hist=S.hist;
+  if(hist.length<1){
+    gc2.fillStyle='#94a3b8';gc2.font='11px Pretendard,sans-serif';gc2.textAlign='center';
+    gc2.fillText('낙하 후 표시',GW/2,GH/2);gc2.textAlign='left';return;
+  }
+  const p={t:14,r:14,b:28,l:44};
+  const gw=GW-p.l-p.r,gh=GH-p.t-p.b;
+  const temps=[T0,...hist.map(h=>h.t)];
+  const minT=T0,maxT=Math.max(T0+.5,Math.max(...temps)*1.05);
+  // 격자 + Y축 눈금 (5줄)
+  gc2.strokeStyle='#e2e8f0';gc2.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const gy=p.t+gh*i/4;
+    gc2.beginPath();gc2.moveTo(p.l,gy);gc2.lineTo(p.l+gw,gy);gc2.stroke();
+    const tv=maxT-(maxT-minT)*i/4;
+    gc2.fillStyle='#94a3b8';gc2.font='10px Pretendard,sans-serif';gc2.textAlign='right';
+    gc2.fillText(tv.toFixed(1)+'°',p.l-4,gy+3.5);
+  }
+  // X축 레이블
+  gc2.textAlign='center';gc2.fillStyle='#94a3b8';gc2.font='10px Pretendard,sans-serif';
+  gc2.fillText('낙하 횟수',p.l+gw/2,GH-6);gc2.textAlign='left';
+  const total=Math.max(hist.length,1);
+  const pts=[[0,T0],...hist.map((h,i)=>[i+1,h.t])];
+  gc2.beginPath();
+  pts.forEach(([n,t],i)=>{
+    const x2=p.l+gw*n/total,y2=p.t+gh*(1-(t-minT)/(maxT-minT));
+    i===0?gc2.moveTo(x2,y2):gc2.lineTo(x2,y2);
+  });
+  gc2.lineTo(p.l+gw,p.t+gh);gc2.lineTo(p.l,p.t+gh);gc2.closePath();
+  const ag=gc2.createLinearGradient(0,p.t,0,p.t+gh);
+  ag.addColorStop(0,'rgba(245,158,11,.2)');ag.addColorStop(1,'rgba(245,158,11,0)');
+  gc2.fillStyle=ag;gc2.fill();
+  gc2.beginPath();
+  pts.forEach(([n,t],i)=>{
+    const x2=p.l+gw*n/total,y2=p.t+gh*(1-(t-minT)/(maxT-minT));
+    i===0?gc2.moveTo(x2,y2):gc2.lineTo(x2,y2);
+  });
+  const lg=gc2.createLinearGradient(p.l,0,p.l+gw,0);
+  lg.addColorStop(0,'#3b82f6');lg.addColorStop(1,'#f59e0b');
+  gc2.strokeStyle=lg;gc2.lineWidth=2.5;gc2.lineJoin='round';gc2.stroke();
+  pts.forEach(([n,t],i)=>{
+    if(i===0) return;
+    const x2=p.l+gw*n/total,y2=p.t+gh*(1-(t-minT)/(maxT-minT));
+    gc2.beginPath();gc2.arc(x2,y2,3.5,0,Math.PI*2);
+    gc2.fillStyle='#f59e0b';gc2.fill();gc2.strokeStyle='#fff';gc2.lineWidth=1;gc2.stroke();
+  });
+  const last=hist[hist.length-1];
+  const lx=p.l+gw*last.n/total,ly=p.t+gh*(1-(last.t-minT)/(maxT-minT));
+  gc2.fillStyle='#ef4444';gc2.font='bold 11px Pretendard,sans-serif';
+  gc2.fillText(last.t.toFixed(1)+'°C',Math.min(lx+4,GW-52),ly-6);
+}
+function drawG(){
+  if(graphCard.classList.contains('visible')){
+    drawGOn(gcv2,gctx2);
+  }
+}
+function drawG2(){}
+
+// ── 플로팅 그래프 카드 드래그 ──
+(()=>{
+  const card=document.getElementById('graphCard');
+  const hdr=document.getElementById('graphCardHeader');
+  let dx=0,dy=0,dragging=false;
+  hdr.addEventListener('mousedown',e=>{
+    dragging=true;
+    dx=e.clientX-card.getBoundingClientRect().left;
+    dy=e.clientY-card.getBoundingClientRect().top;
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove',e=>{
+    if(!dragging) return;
+    const sa=document.getElementById('simArea').getBoundingClientRect();
+    let nx=e.clientX-sa.left-dx;
+    let ny=e.clientY-sa.top-dy;
+    nx=Math.max(0,Math.min(nx,sa.width-card.offsetWidth));
+    ny=Math.max(0,Math.min(ny,sa.height-card.offsetHeight));
+    card.style.right='auto'; card.style.left=nx+'px'; card.style.top=ny+'px';
+  });
+  window.addEventListener('mouseup',()=>{ dragging=false; });
+})();
+
+// ── 시작 ──
+// tutHeader 참조 수정
+const tutHeader=document.getElementById('tutHeader');
+
+window.addEventListener('load',()=>{
+  requestAnimationFrame(()=>{
+    resize();
+    S.wY=L.wRestY||400;
+    S.wRestY=L.wRestY||400;
+    syncWPos();
+    applyTutStep();
+    drawG();
+    requestAnimationFrame(loop);
+  });
+});
+</script>
 </body>
-
 </html>
