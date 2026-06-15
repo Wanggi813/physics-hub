@@ -88,6 +88,7 @@ const projects = [
   { title: "토크와 평형", category: "역학", desc: "여러 물체를 이용해 토크평형 만들기", tags: ["토크", "평형"], emoji: "🧗‍♀️", demo: "./simul/토크와 평형.html", curriculumId: "[12물리01-01]", thumb: "./thumb_nail/토크와_평형.png" },
   { title: "위치와 변위", category: "역학", desc: "선을 그려 이동거리와 변위의 차이를 눈으로 확인하기 (직선 그리기 도전!)", tags: ["이동거리", "변위", "벡터"], emoji: "📏", demo: "./simul/위치와 변위.html", curriculumId: "[12물리01-02]", thumb: "./thumb_nail/위치와 변위.png" },
   { title: "우주 미아 생존기", category: "역학", desc: "공구를 던져 장애물을 피하고 귀환하라! 운동량 보존 법칙 퍼즐 게임", tags: ["운동량보존", "작용반작용", "벡터", "게임"], emoji: "👨‍🚀", demo: "./simul/우주 미아.html", curriculumId: "[12물리01-03]", thumb: "./thumb_nail/우주 미아.png" },
+  { title: "운동량과 충돌", category: "역학", desc: "당구공으로 배우는 운동량 보존과 충돌", tags: ["운동량", "충돌", "작용반작용", "당구"], emoji: "🎱", demo: "./simul/운동량과 충돌.html", curriculumId: "[12물리01-03]", thumb: "./thumb_nail/운동량과 충돌.svg" },
   { title: "일과 운동에너지", category: "역학", desc: "용수철을 이용해 일과 운동에너지 비교하기", tags: ["일", "운동에너지"], emoji: "🧗‍♀️", demo: "./simul/일과 운동에너지.html", curriculumId: "[12물리01-04]", thumb: "./thumb_nail/일과_운동에너지.png" },
   { title: "마찰과 에너지", category: "역학", desc: "스톤을 투구하고 스위핑하며 운동에너지와 마찰 손실에너지의 합이 일정함을 확인하기", tags: ["일", "운동에너지", "마찰", "에너지전환", "게임"], emoji: "🥌", demo: "./simul/마찰과 에너지.html", curriculumId: "[12물리01-04], [12물리01-05]", thumb: "./thumb_nail/마찰과 에너지.png" },
   { title: "줄의 실험", category: "열", desc: "줄의 일의 열당량을 알아보기", tags: ["줄", "일의 열당량"], emoji: "🧗‍♀️", demo: "./simul/줄의 실험.html", curriculumId: "[12물리01-05]", thumb: "./thumb_nail/줄의_실험.png" },
