@@ -18,9 +18,17 @@
       min-height: 100vh;
       font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
       color: #fff; overflow: hidden; user-select: none;
+      touch-action: manipulation;
     }
     #gameWrapper { display: flex; gap: 14px; align-items: flex-start; }
-    #gameCanvas { cursor: crosshair; display: block; border-radius: 4px; }
+    #gameCanvas {
+      cursor: crosshair;
+      display: block;
+      border-radius: 4px;
+      touch-action: none;
+      max-width: 100%;
+      height: auto;
+    }
     /* ── 왼쪽 입자 목록 패널 ── */
     #listPanel {
       width: 185px; flex-shrink: 0;
@@ -171,6 +179,195 @@
       pointer-events: none;
     }
     #disclaimer .icon { color: rgba(255,195,80,0.45); }
+
+    @media (max-width: 860px) {
+      body {
+        display: block;
+        min-height: 100svh;
+        overflow: auto;
+        padding: 56px 10px 20px;
+      }
+      #gameTitle {
+        top: 8px;
+        width: 100%;
+      }
+      #gameTitle .main {
+        font-size: clamp(19px, 5.7vw, 25px);
+        letter-spacing: clamp(2px, 1.2vw, 5px);
+      }
+      #gameTitle .atom {
+        font-size: clamp(22px, 6vw, 28px);
+        margin-right: 6px;
+      }
+      #gameTitle .sub {
+        font-size: 8px;
+        letter-spacing: 2.4px;
+      }
+      #gameWrapper {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+          "side"
+          "game"
+          "list"
+          "hall";
+        gap: 9px;
+        width: 100%;
+        max-width: 430px;
+        margin: 0 auto;
+        align-items: stretch;
+      }
+      #gameCanvas {
+        grid-area: game;
+        width: min(420px, calc(100vw - 20px));
+        margin: 0 auto;
+        border: 1px solid rgba(135,172,255,0.22);
+        border-radius: 14px;
+        box-shadow: 0 16px 36px rgba(0,0,0,0.38), 0 0 0 1px rgba(255,255,255,0.04) inset;
+      }
+      #sidebar {
+        grid-area: side;
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 7px;
+      }
+      .panel {
+        border-radius: 10px;
+        padding: 8px 7px;
+        min-width: 0;
+        min-height: 58px;
+      }
+      .panel-label {
+        font-size: 8px;
+        letter-spacing: 1.3px;
+        margin-bottom: 5px;
+        white-space: nowrap;
+      }
+      #scoreValue { font-size: 22px; }
+      #bestValue { font-size: 15px; }
+      #nextCanvas, #nextCanvas2 {
+        width: 100%;
+        max-width: 70px;
+        height: auto;
+        margin: -4px auto -7px;
+      }
+      #listPanel {
+        grid-area: list;
+        width: 100%;
+        padding: 8px;
+        border-radius: 12px;
+      }
+      .list-label {
+        margin-bottom: 7px;
+      }
+      #particleList {
+        display: flex;
+        gap: 7px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 2px;
+        scroll-snap-type: x proximity;
+      }
+      .p-entry {
+        flex: 0 0 78px;
+        display: grid;
+        grid-template-columns: 24px minmax(0, 1fr);
+        gap: 4px;
+        align-items: center;
+        padding: 5px;
+        border: 1px solid rgba(140,170,255,0.08);
+        border-radius: 9px;
+        background: rgba(255,255,255,0.025);
+        scroll-snap-align: start;
+      }
+      .p-num { display: none; }
+      .p-img {
+        width: 24px;
+        height: 24px;
+      }
+      .p-name {
+        font-size: 9px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .p-mass { font-size: 8px; }
+      #hallPanel {
+        grid-area: hall;
+        width: 100%;
+        padding: 8px;
+        border-radius: 12px;
+      }
+      #hallPanel .hall-trophy,
+      #hallPanel .hall-title {
+        display: none;
+      }
+      #sideLeaderboard {
+        display: flex;
+        gap: 5px;
+        overflow-x: auto;
+      }
+      .hall-entry {
+        flex: 0 0 76px;
+        padding: 5px;
+        border-top: 0;
+        border-left: 0;
+        border: 1px solid rgba(140,170,255,0.08);
+        border-radius: 9px;
+        background: rgba(255,255,255,0.025);
+      }
+      .hall-rank-row {
+        gap: 3px;
+      }
+      .hall-medal { font-size: 12px; }
+      .hall-name { font-size: 10px; }
+      .hall-score {
+        font-size: 9px;
+        padding-left: 15px;
+      }
+      .hall-empty {
+        width: 100%;
+        padding: 4px 0;
+      }
+      #hint {
+        position: static;
+        transform: none;
+        margin: 8px auto 0;
+        width: min(100%, 520px);
+        text-align: center;
+        font-size: 10px;
+        color: rgba(190,210,255,0.35);
+      }
+      #disclaimer {
+        position: static;
+        margin: 9px auto 0;
+        max-width: 520px;
+        text-align: center;
+        font-size: 9px;
+      }
+      #overlay {
+        padding: 18px;
+      }
+      #overlay h2 {
+        font-size: 30px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      body { padding-inline: 8px; }
+      #sidebar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      #gameCanvas {
+        width: min(420px, calc(100vw - 16px));
+      }
+      .panel {
+        min-height: 52px;
+      }
+      #nextCanvas, #nextCanvas2 {
+        max-width: 58px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -225,7 +422,7 @@
   <div id="leaderboard"></div>
   <button id="restartBtn">다시 시작</button>
 </div>
-<div id="hint">클릭 또는 Space · Enter 로 입자 투하</div>
+<div id="hint">클릭/터치 후 떼기 또는 Space · Enter 로 입자 투하</div>
 <div id="disclaimer">
   <span class="icon">⚠</span> 이 게임은 수박게임 형식의 입자물리 테마 퍼즐입니다.<br>
   실제 입자의 합성·붕괴 반응과는 다르며,<br>
@@ -1141,11 +1338,38 @@ function loop() {
 // ═══════════════════════════════════════════════
 // 입력
 // ═══════════════════════════════════════════════
-canvas.addEventListener('mousemove', e => {
+function setAimFromClientX(clientX) {
   const rect = canvas.getBoundingClientRect();
-  mouseX = (e.clientX - rect.left) * (CW / rect.width);
+  mouseX = (clientX - rect.left) * (CW / rect.width);
+}
+
+let aimingPointerId = null;
+
+canvas.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  aimingPointerId = e.pointerId;
+  canvas.setPointerCapture?.(e.pointerId);
+  setAimFromClientX(e.clientX);
 });
-canvas.addEventListener('click', drop);
+
+canvas.addEventListener('pointermove', e => {
+  if (aimingPointerId !== null && e.pointerId !== aimingPointerId) return;
+  setAimFromClientX(e.clientX);
+});
+
+canvas.addEventListener('pointerup', e => {
+  if (aimingPointerId !== null && e.pointerId !== aimingPointerId) return;
+  e.preventDefault();
+  setAimFromClientX(e.clientX);
+  aimingPointerId = null;
+  canvas.releasePointerCapture?.(e.pointerId);
+  drop();
+});
+
+canvas.addEventListener('pointercancel', e => {
+  if (aimingPointerId === e.pointerId) aimingPointerId = null;
+});
+
 document.addEventListener('keydown', e => {
   if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); drop(); }
 });
