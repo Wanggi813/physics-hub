@@ -41,6 +41,14 @@
     .p-name { font-size: 10.5px; color: rgba(200,215,245,0.82); white-space: nowrap; }
     .p-mass { font-size: 9px; color: rgba(130,175,235,0.52); letter-spacing: 0.3px; }
     .p-mass.unk { color: rgba(155,135,210,0.40); letter-spacing: 1.5px; }
+    .list-divider { height: 1px; background: rgba(140,170,255,0.10); margin: 8px 0 6px; }
+    #sideLeaderboard .empty { font-size: 10px; color: rgba(155,175,220,0.28); text-align: center; padding: 7px 0; }
+    #sideLeaderboard table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    #sideLeaderboard th { color: rgba(155,180,235,0.38); font-weight: 400; font-size: 9px; letter-spacing: 1px; padding: 2px 3px; }
+    #sideLeaderboard td { padding: 4px 3px; color: rgba(200,218,252,0.72); border-top: 1px solid rgba(140,170,255,0.07); }
+    #sideLeaderboard td:first-child { width: 22px; text-align: center; font-size: 10px; }
+    #sideLeaderboard td:nth-child(2) { max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #sideLeaderboard td:last-child { text-align: right; font-variant-numeric: tabular-nums; color: rgba(175,205,255,0.60); }
     /* ── 오른쪽 사이드바 ── */
     #sidebar { width: 148px; display: flex; flex-direction: column; gap: 11px; }
     .panel {
@@ -51,6 +59,7 @@
     }
     .panel-label { font-size: 9px; color: rgba(170,195,255,0.5); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
     #scoreValue { font-size: 28px; font-weight: 700; color: #e8f0ff; line-height: 1; }
+    #bestValue  { font-size: 18px; font-weight: 700; color: #ffd060; line-height: 1; }
     #nextCanvas, #nextCanvas2 { display: block; width: 100%; }
     #overlay {
       position: fixed; inset: 0;
@@ -150,6 +159,9 @@
   <div id="listPanel">
     <div class="list-label">입자 목록</div>
     <div id="particleList"></div>
+    <div class="list-divider"></div>
+    <div class="list-label">🏆 명예의 전당</div>
+    <div id="sideLeaderboard"><div class="empty">기록 없음</div></div>
   </div>
   <!-- 중앙: 게임 -->
   <canvas id="gameCanvas"></canvas>
@@ -158,6 +170,10 @@
     <div class="panel">
       <div class="panel-label">점수</div>
       <div id="scoreValue">0</div>
+    </div>
+    <div class="panel">
+      <div class="panel-label">최고</div>
+      <div id="bestValue">—</div>
     </div>
     <div class="panel">
       <div class="panel-label">다음</div>
@@ -349,13 +365,13 @@ function buildParticleSVGs() {
     <circle cx="50" cy="50" r="46" fill="url(#g)"/>
     <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(138,222,175,0.42)" stroke-width="1.2"/>
     <ellipse cx="37" cy="33" rx="11" ry="6.5" fill="rgba(255,255,255,0.16)" transform="rotate(-22 37 33)"/>
-    <!-- 핵자 두 개 (겹침) -->
-    <circle cx="37" cy="52" r="20" fill="url(#np)" opacity="0.92"/>
-    <circle cx="63" cy="52" r="20" fill="url(#nn)" opacity="0.92"/>
-    <circle cx="37" cy="52" r="20" fill="none" stroke="rgba(150,255,190,0.35)" stroke-width="1"/>
-    <circle cx="63" cy="52" r="20" fill="none" stroke="rgba(150,185,255,0.35)" stroke-width="1"/>
-    <text x="37" y="57" text-anchor="middle" dominant-baseline="middle" fill="rgba(225,255,235,0.96)" font-size="20" font-family="sans-serif" font-weight="bold">p</text>
-    <text x="63" y="57" text-anchor="middle" dominant-baseline="middle" fill="rgba(208,222,255,0.96)" font-size="20" font-family="sans-serif" font-weight="bold">n</text>
+    <!-- 핵자 두 개 (p·n 나란히) -->
+    <circle cx="31" cy="54" r="18" fill="url(#np)" opacity="0.92"/>
+    <circle cx="69" cy="54" r="18" fill="url(#nn)" opacity="0.92"/>
+    <circle cx="31" cy="54" r="18" fill="none" stroke="rgba(150,255,190,0.35)" stroke-width="1"/>
+    <circle cx="69" cy="54" r="18" fill="none" stroke="rgba(150,185,255,0.35)" stroke-width="1"/>
+    <text x="31" y="59" text-anchor="middle" dominant-baseline="middle" fill="rgba(225,255,235,0.96)" font-size="16" font-family="sans-serif" font-weight="bold">p</text>
+    <text x="69" y="59" text-anchor="middle" dominant-baseline="middle" fill="rgba(208,222,255,0.96)" font-size="16" font-family="sans-serif" font-weight="bold">n</text>
   </svg>`,
 
   // ─── 7. 알파입자 ─────────────────────────────
@@ -618,6 +634,8 @@ function init() {
   curLevel = rndLevel(); nxtLevel = rndLevel(); nxt2Level = rndLevel();
   document.getElementById('scoreValue').textContent = '0';
   document.getElementById('overlay').classList.remove('show');
+  updateBestScore();
+  renderSideLeaderboard();
   buildList();
 }
 
@@ -763,6 +781,11 @@ function physics() {
 function getScores() {
   try { return JSON.parse(localStorage.getItem(SCORE_KEY)) || []; } catch { return []; }
 }
+function updateBestScore() {
+  const arr = getScores();
+  const best = arr.length ? arr[0].score : null;
+  document.getElementById('bestValue').textContent = best !== null ? best.toLocaleString() : '—';
+}
 function saveScore(name, s) {
   const arr = getScores();
   arr.push({ name: name || '익명', score: s });
@@ -773,6 +796,17 @@ function isTop5(s) {
   const arr = getScores();
   return arr.length < 5 || s > arr[arr.length - 1].score;
 }
+function renderSideLeaderboard() {
+  const el = document.getElementById('sideLeaderboard');
+  const arr = getScores();
+  if (!arr.length) { el.innerHTML = '<div class="empty">기록 없음</div>'; return; }
+  const medals = ['🥇','🥈','🥉','4','5'];
+  const rows = arr.map((e, i) =>
+    `<tr><td>${medals[i]}</td><td>${e.name}</td><td>${e.score.toLocaleString()}</td></tr>`
+  ).join('');
+  el.innerHTML = `<table><tr><th></th><th>이름</th><th>점수</th></tr>${rows}</table>`;
+}
+
 function renderLeaderboard(highlightScore) {
   const arr = getScores();
   if (!arr.length) { document.getElementById('leaderboard').innerHTML = ''; return; }
@@ -998,6 +1032,8 @@ function doSubmitScore() {
   saveScore(name, score);
   document.getElementById('nameSection').style.display = 'none';
   renderLeaderboard(score);
+  updateBestScore();
+  renderSideLeaderboard();
 }
 document.getElementById('submitScore').addEventListener('click', doSubmitScore);
 document.getElementById('playerName').addEventListener('keydown', e => {
