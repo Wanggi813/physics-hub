@@ -41,14 +41,38 @@
     .p-name { font-size: 10.5px; color: rgba(200,215,245,0.82); white-space: nowrap; }
     .p-mass { font-size: 9px; color: rgba(130,175,235,0.52); letter-spacing: 0.3px; }
     .p-mass.unk { color: rgba(155,135,210,0.40); letter-spacing: 1.5px; }
-    .list-divider { height: 1px; background: rgba(140,170,255,0.10); margin: 8px 0 6px; }
-    #sideLeaderboard .empty { font-size: 10px; color: rgba(155,175,220,0.28); text-align: center; padding: 7px 0; }
-    #sideLeaderboard table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    #sideLeaderboard th { color: rgba(155,180,235,0.38); font-weight: 400; font-size: 9px; letter-spacing: 1px; padding: 2px 3px; }
-    #sideLeaderboard td { padding: 4px 3px; color: rgba(200,218,252,0.72); border-top: 1px solid rgba(140,170,255,0.07); }
-    #sideLeaderboard td:first-child { width: 22px; text-align: center; font-size: 10px; }
-    #sideLeaderboard td:nth-child(2) { max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    #sideLeaderboard td:last-child { text-align: right; font-variant-numeric: tabular-nums; color: rgba(175,205,255,0.60); }
+    /* ── 명예의 전당 패널 ── */
+    #hallPanel {
+      width: 150px; flex-shrink: 0;
+      background: rgba(8,16,38,0.55);
+      border: 1px solid rgba(140,170,255,0.10);
+      border-radius: 12px; padding: 14px 12px;
+      display: flex; flex-direction: column; gap: 0;
+      backdrop-filter: blur(6px);
+    }
+    #hallPanel .hall-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 2px;
+      color: rgba(255,208,80,0.82); text-align: center;
+      margin-bottom: 4px;
+    }
+    #hallPanel .hall-trophy {
+      font-size: 30px; text-align: center; line-height: 1;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 0 8px rgba(255,200,60,0.45));
+    }
+    .hall-entry {
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 8px 4px; border-top: 1px solid rgba(140,170,255,0.08);
+    }
+    .hall-entry:first-of-type { border-top: none; }
+    .hall-rank-row { display: flex; align-items: baseline; gap: 6px; }
+    .hall-medal { font-size: 16px; line-height: 1; flex-shrink: 0; }
+    .hall-name  { font-size: 13px; font-weight: 600; color: rgba(215,228,255,0.88); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .hall-score { font-size: 12px; color: rgba(175,205,255,0.58); font-variant-numeric: tabular-nums; padding-left: 22px; letter-spacing: 0.3px; }
+    .hall-empty { font-size: 11px; color: rgba(155,175,220,0.28); text-align: center; padding: 24px 0; line-height: 1.8; }
+    .hall-entry.rank1 .hall-name { color: #ffd060; }
+    .hall-entry.rank2 .hall-name { color: #d8d8e0; }
+    .hall-entry.rank3 .hall-name { color: #d4976a; }
     /* ── 오른쪽 사이드바 ── */
     #sidebar { width: 148px; display: flex; flex-direction: column; gap: 11px; }
     .panel {
@@ -155,13 +179,16 @@
   <div class="sub">PARTICLE PHYSICS SUIKA GAME</div>
 </div>
 <div id="gameWrapper">
+  <!-- 맨 왼쪽: 명예의 전당 -->
+  <div id="hallPanel">
+    <div class="hall-trophy">🏆</div>
+    <div class="hall-title">명예의 전당</div>
+    <div id="sideLeaderboard"><div class="hall-empty">아직<br>기록이<br>없습니다</div></div>
+  </div>
   <!-- 왼쪽: 입자 목록 -->
   <div id="listPanel">
     <div class="list-label">입자 목록</div>
     <div id="particleList"></div>
-    <div class="list-divider"></div>
-    <div class="list-label">🏆 명예의 전당</div>
-    <div id="sideLeaderboard"><div class="empty">기록 없음</div></div>
   </div>
   <!-- 중앙: 게임 -->
   <canvas id="gameCanvas"></canvas>
@@ -545,7 +572,7 @@ const CORR       = 0.48;    // 위치보정 계수 (과보정 방지)
 const ITERS      = 18;      // 반복 횟수 (CORR 줄인 만큼 늘림)
 const SLEEP_V2   = 0.09;    // speed²<0.09 → 속도 0으로 (≈0.3 px/f)
 const COOLDOWN_F = 42;
-const DANGER_LIMIT = 100;
+const DANGER_LIMIT = 180;
 
 // ═══════════════════════════════════════════════
 // 캔버스
@@ -799,12 +826,18 @@ function isTop5(s) {
 function renderSideLeaderboard() {
   const el = document.getElementById('sideLeaderboard');
   const arr = getScores();
-  if (!arr.length) { el.innerHTML = '<div class="empty">기록 없음</div>'; return; }
-  const medals = ['🥇','🥈','🥉','4','5'];
-  const rows = arr.map((e, i) =>
-    `<tr><td>${medals[i]}</td><td>${e.name}</td><td>${e.score.toLocaleString()}</td></tr>`
+  if (!arr.length) { el.innerHTML = '<div class="hall-empty">아직<br>기록이<br>없습니다</div>'; return; }
+  const medals = ['🥇','🥈','🥉','④','⑤'];
+  const rankCls = ['rank1','rank2','rank3','',''];
+  el.innerHTML = arr.map((e, i) =>
+    `<div class="hall-entry ${rankCls[i]}">
+      <div class="hall-rank-row">
+        <span class="hall-medal">${medals[i]}</span>
+        <span class="hall-name">${e.name}</span>
+      </div>
+      <div class="hall-score">${e.score.toLocaleString()}</div>
+    </div>`
   ).join('');
-  el.innerHTML = `<table><tr><th></th><th>이름</th><th>점수</th></tr>${rows}</table>`;
 }
 
 function renderLeaderboard(highlightScore) {
@@ -915,6 +948,20 @@ function render() {
   ctx.lineWidth = 1.5; ctx.setLineDash([7, 5]);
   ctx.beginPath(); ctx.moveTo(WT, DANGER_Y); ctx.lineTo(CW - WT, DANGER_Y); ctx.stroke();
   ctx.setLineDash([]);
+
+  // 카운트다운
+  if (dangerTimer > 0) {
+    const secsLeft = Math.ceil((DANGER_LIMIT - dangerTimer) / 60);
+    const pulse = 0.62 + 0.38 * Math.sin(dangerTimer * 0.18);
+    ctx.save();
+    ctx.globalAlpha = da * pulse;
+    ctx.font = 'bold 15px sans-serif';
+    ctx.fillStyle = `rgba(255,90,90,1)`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`⚠ ${secsLeft}초`, CW - WT - 6, DANGER_Y);
+    ctx.restore();
+  }
 
   // 합체 이펙트
   flashes = flashes.filter(f => f.t < 1);
