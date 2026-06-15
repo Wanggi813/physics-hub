@@ -379,7 +379,7 @@
   <!-- 맨 왼쪽: 명예의 전당 -->
   <div id="hallPanel">
     <div class="hall-trophy">🏆</div>
-    <div class="hall-title">명예의 전당</div>
+    <div class="hall-title">이번 주 TOP 5</div>
     <div id="sideLeaderboard"><div class="hall-empty">아직<br>기록이<br>없습니다</div></div>
   </div>
   <!-- 왼쪽: 입자 목록 -->
@@ -450,7 +450,7 @@ async function getFirebase() {
   try {
     const [
       { initializeApp, getApps, getApp },
-      { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp },
+      { getFirestore, collection, addDoc, getDocs, query, orderBy, where, limit, serverTimestamp },
       { getAuth, signInAnonymously }
     ] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js'),
@@ -461,7 +461,7 @@ async function getFirebase() {
     const db  = getFirestore(app);
     const auth = getAuth(app);
     try { await signInAnonymously(auth); } catch(e) {}
-    _fb = { db, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp };
+    _fb = { db, collection, addDoc, getDocs, query, orderBy, where, limit, serverTimestamp };
     return _fb;
   } catch(e) {
     console.warn('Firebase 초기화 실패:', e);
@@ -1040,6 +1040,27 @@ function physics() {
   if (dangerTimer > DANGER_LIMIT) triggerOver();
 }
 
+// 이번 주 월요일 날짜를 주차 ID로 사용 (예: "2026-06-15")
+function getWeekId() {
+  const now = new Date();
+  const diff = now.getDay() === 0 ? -6 : 1 - now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diff);
+  monday.setHours(0, 0, 0, 0);
+  return monday.toISOString().slice(0, 10);
+}
+
+function getWeekRange() {
+  const now = new Date();
+  const diff = now.getDay() === 0 ? -6 : 1 - now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diff);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const fmt = d => `${d.getMonth() + 1}/${d.getDate()}`;
+  return `${fmt(monday)} ~ ${fmt(sunday)}`;
+}
+
 // ── 점수 관리 (Firebase + localStorage 혼용)
 let cachedScores = [];   // Firestore에서 불러온 Top5 캐시
 
@@ -1068,11 +1089,12 @@ async function fetchTop5() {
   try {
     const q = fb.query(
       fb.collection(fb.db, SUIKA_COL),
-      fb.orderBy('score', 'desc'),
-      fb.limit(5)
+      fb.where('weekId', '==', getWeekId())
     );
     const snap = await fb.getDocs(q);
-    return snap.docs.map(d => d.data());
+    const all = snap.docs.map(d => d.data());
+    all.sort((a, b) => b.score - a.score);
+    return all.slice(0, 5);
   } catch(e) { console.warn('Firestore 읽기 실패:', e); return []; }
 }
 async function saveScoreFirebase(name, s) {
@@ -1082,6 +1104,7 @@ async function saveScoreFirebase(name, s) {
     await fb.addDoc(fb.collection(fb.db, SUIKA_COL), {
       name: name || '익명',
       score: s,
+      weekId: getWeekId(),
       timestamp: fb.serverTimestamp()
     });
   } catch(e) { console.warn('Firestore 저장 실패:', e); }
@@ -1095,19 +1118,22 @@ const RANK_CLS = ['rank1','rank2','rank3','',''];
 
 function renderSideLeaderboard() {
   const el = document.getElementById('sideLeaderboard');
+  const weekRange = getWeekRange();
   if (!cachedScores.length) {
-    el.innerHTML = '<div class="hall-empty">아직<br>기록이<br>없습니다</div>';
+    el.innerHTML = `<div class="hall-empty" style="font-size:9px;opacity:0.5;margin-bottom:4px">${weekRange}</div><div class="hall-empty">아직<br>기록이<br>없습니다</div>`;
     return;
   }
-  el.innerHTML = cachedScores.map((e, i) =>
-    `<div class="hall-entry ${RANK_CLS[i]}">
-      <div class="hall-rank-row">
-        <span class="hall-medal">${MEDALS[i]}</span>
-        <span class="hall-name">${e.name}</span>
-      </div>
-      <div class="hall-score">${e.score.toLocaleString()}</div>
-    </div>`
-  ).join('');
+  el.innerHTML =
+    `<div style="font-size:9px;color:rgba(200,220,255,0.32);text-align:center;padding:2px 0 6px;letter-spacing:0.5px">${weekRange}</div>` +
+    cachedScores.map((e, i) =>
+      `<div class="hall-entry ${RANK_CLS[i]}">
+        <div class="hall-rank-row">
+          <span class="hall-medal">${MEDALS[i]}</span>
+          <span class="hall-name">${e.name}</span>
+        </div>
+        <div class="hall-score">${e.score.toLocaleString()}</div>
+      </div>`
+    ).join('');
 }
 
 function renderLeaderboard(highlightScore) {
