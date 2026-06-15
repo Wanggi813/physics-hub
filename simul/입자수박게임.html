@@ -34,9 +34,13 @@
     #particleList { display: flex; flex-direction: column; gap: 5px; overflow-y: auto; }
     #particleList::-webkit-scrollbar { width: 3px; }
     #particleList::-webkit-scrollbar-thumb { background: rgba(140,170,255,0.18); border-radius: 2px; }
-    .p-entry { display: flex; align-items: center; gap: 8px; font-size: 11px; color: rgba(200,215,245,0.78); }
-    .p-num { font-size: 9px; color: rgba(155,180,225,0.42); width: 14px; text-align: right; flex-shrink: 0; }
-    .p-img { width: 44px; height: 44px; flex-shrink: 0; }
+    .p-entry { display: flex; align-items: center; gap: 7px; }
+    .p-num { font-size: 9px; color: rgba(155,180,225,0.38); width: 14px; text-align: right; flex-shrink: 0; }
+    .p-img { width: 36px; height: 36px; flex-shrink: 0; }
+    .p-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .p-name { font-size: 10.5px; color: rgba(200,215,245,0.82); white-space: nowrap; }
+    .p-mass { font-size: 9px; color: rgba(130,175,235,0.52); letter-spacing: 0.3px; }
+    .p-mass.unk { color: rgba(155,135,210,0.40); letter-spacing: 1.5px; }
     /* ── 오른쪽 사이드바 ── */
     #sidebar { width: 148px; display: flex; flex-direction: column; gap: 11px; }
     .panel {
@@ -57,12 +61,28 @@
     #overlay.show { display: flex; }
     #overlay h2 { font-size: 36px; color: #e04444; letter-spacing: 3px; }
     #finalScore { color: rgba(195,210,240,0.7); font-size: 15px; }
-    #restartBtn {
+    #newRecordMsg { color: #ffd060; font-size: 13px; letter-spacing: 1px; }
+    #nameSection { display: none; flex-direction: column; align-items: center; gap: 8px; }
+    #nameRow { display: flex; gap: 8px; }
+    #playerName {
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(140,170,255,0.28);
+      border-radius: 7px; color: #e8f0ff; padding: 7px 13px; font-size: 13px;
+      outline: none; width: 130px;
+      font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+    }
+    #submitScore, #restartBtn {
       background: rgba(90,130,220,0.14); border: 1px solid rgba(110,155,255,0.3);
-      color: #c8d8ff; padding: 10px 36px; border-radius: 8px; font-size: 15px;
+      color: #c8d8ff; padding: 7px 22px; border-radius: 8px; font-size: 14px;
       cursor: pointer; transition: background 0.2s;
     }
-    #restartBtn:hover { background: rgba(90,130,220,0.3); }
+    #submitScore:hover, #restartBtn:hover { background: rgba(90,130,220,0.3); }
+    #leaderboard { width: 100%; max-width: 260px; }
+    #leaderboard table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    #leaderboard th { color: rgba(160,190,240,0.5); font-weight: 400; padding: 3px 8px; letter-spacing: 1px; font-size: 10px; }
+    #leaderboard td { padding: 5px 8px; color: rgba(210,225,255,0.80); border-top: 1px solid rgba(140,170,255,0.08); }
+    #leaderboard tr.me td { color: #ffd060; }
+    #leaderboard td:first-child { color: rgba(170,195,245,0.45); text-align: center; width: 24px; }
+    #leaderboard td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
     #hint {
       position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
       font-size: 10px; color: rgba(170,190,255,0.22); letter-spacing: 1px; pointer-events: none;
@@ -152,6 +172,14 @@
 <div id="overlay">
   <h2>GAME OVER</h2>
   <div id="finalScore"></div>
+  <div id="nameSection">
+    <div id="newRecordMsg">🏆 TOP 5 진입!</div>
+    <div id="nameRow">
+      <input id="playerName" type="text" maxlength="8" placeholder="이름 (최대 8자)">
+      <button id="submitScore">등록</button>
+    </div>
+  </div>
+  <div id="leaderboard"></div>
   <button id="restartBtn">다시 시작</button>
 </div>
 <div id="hint">클릭 또는 Space · Enter 로 입자 투하</div>
@@ -166,18 +194,18 @@
 // 입자 정의
 // ═══════════════════════════════════════════════
 const DEFS = [
-  { name: '전자 뉴트리노', r: 11,  glow: 'rgba(150,220,252,0.28)', dot: '#90D8F0' },
-  { name: '전자',          r: 16,  glow: 'rgba(65,125,220,0.42)',  dot: '#4E96E0' },
-  { name: '뮤온',          r: 22,  glow: 'rgba(108,58,200,0.40)',  dot: '#8660D0' },
-  { name: '업 쿼크',       r: 29,  glow: 'rgba(158,38,38,0.40)',   dot: '#C04848' },
-  { name: '파이온',         r: 37,  glow: 'rgba(158,86,28,0.40)',   dot: '#C07438' },
-  { name: '양성자',         r: 46,  glow: 'rgba(158,138,30,0.40)',  dot: '#C8A828' },
-  { name: '중수소핵',       r: 56,  glow: 'rgba(28,128,85,0.40)',   dot: '#3EB86E' },
-  { name: '알파입자',       r: 67,  glow: 'rgba(22,135,135,0.40)', dot: '#2EB8B8' },
-  { name: '헬륨 원자',      r: 79,  glow: 'rgba(175,50,110,0.40)', dot: '#CE5E92' },
-  { name: '산소 원자',      r: 92,  glow: 'rgba(172,48,35,0.40)',   dot: '#CE4838' },
-  { name: '탄소 원자',      r: 106, glow: 'rgba(72,85,110,0.36)',   dot: '#5A6878' },
-  { name: '철 원자',        r: 121, glow: 'rgba(128,98,38,0.40)',   dot: '#A07838' },
+  { name: '전자 뉴트리노', r: 11,  glow: 'rgba(150,220,252,0.28)', dot: '#90D8F0', mev: '< 0.1 eV/c²'   },
+  { name: '전자',          r: 16,  glow: 'rgba(65,125,220,0.42)',  dot: '#4E96E0', mev: '0.511 MeV/c²'  },
+  { name: '뮤온',          r: 22,  glow: 'rgba(108,58,200,0.40)',  dot: '#8660D0', mev: '105.7 MeV/c²'  },
+  { name: '업 쿼크',       r: 29,  glow: 'rgba(158,38,38,0.40)',   dot: '#C04848', mev: '2.2 MeV/c²'    },
+  { name: '파이온',         r: 37,  glow: 'rgba(158,86,28,0.40)',   dot: '#C07438', mev: '135 MeV/c²'    },
+  { name: '양성자',         r: 46,  glow: 'rgba(158,138,30,0.40)',  dot: '#C8A828', mev: '938.3 MeV/c²'  },
+  { name: '중수소핵',       r: 56,  glow: 'rgba(28,128,85,0.40)',   dot: '#3EB86E', mev: '1,876 MeV/c²'  },
+  { name: '알파입자',       r: 67,  glow: 'rgba(22,135,135,0.40)', dot: '#2EB8B8',  mev: '3,727 MeV/c²'  },
+  { name: '헬륨 원자',      r: 79,  glow: 'rgba(175,50,110,0.40)', dot: '#CE5E92',  mev: '3,728 MeV/c²'  },
+  { name: '산소 원자',      r: 92,  glow: 'rgba(172,48,35,0.40)',   dot: '#CE4838', mev: '14.9 GeV/c²'   },
+  { name: '탄소 원자',      r: 106, glow: 'rgba(72,85,110,0.36)',   dot: '#5A6878', mev: '11.2 GeV/c²'   },
+  { name: '철 원자',        r: 121, glow: 'rgba(128,98,38,0.40)',   dot: '#A07838', mev: '52.1 GeV/c²'   },
 ];
 
 // ═══════════════════════════════════════════════
@@ -555,10 +583,28 @@ const DUST = Array.from({ length: 50 }, () => ({
 // ═══════════════════════════════════════════════
 // 게임 상태
 // ═══════════════════════════════════════════════
-let particles = [], flashes = [];
+let particles = [], flashes = [], labels = [];
 let curLevel = 0, nxtLevel = 0, nxt2Level = 0;
 let score = 0, over = false, cooldown = 0, dangerTimer = 0;
+let combo = 0, lastMergeMs = 0;
 let mouseX = CW / 2, idCnt = 0;
+const COMBO_WINDOW = 1800;
+const SCORE_KEY   = 'psuika_scores';
+const DISC_KEY    = 'psuika_disc';
+
+// 발견된 입자 레벨 집합 (localStorage 영속)
+function loadDiscovered() {
+  try { return new Set(JSON.parse(localStorage.getItem(DISC_KEY)) || [0,1,2,3,4]); }
+  catch { return new Set([0,1,2,3,4]); }
+}
+let discovered = loadDiscovered();
+
+function markDiscovered(level) {
+  if (discovered.has(level)) return;
+  discovered.add(level);
+  localStorage.setItem(DISC_KEY, JSON.stringify([...discovered]));
+  buildList(); // 목록 즉시 갱신
+}
 
 function rndLevel() { return Math.floor(Math.random() * 5); }
 
@@ -566,23 +612,35 @@ function rndLevel() { return Math.floor(Math.random() * 5); }
 // 초기화
 // ═══════════════════════════════════════════════
 function init() {
-  particles = []; flashes = [];
+  particles = []; flashes = []; labels = [];
   score = 0; over = false; cooldown = 0; dangerTimer = 0;
+  combo = 0; lastMergeMs = 0;
   curLevel = rndLevel(); nxtLevel = rndLevel(); nxt2Level = rndLevel();
   document.getElementById('scoreValue').textContent = '0';
   document.getElementById('overlay').classList.remove('show');
   buildList();
 }
 
+const _listSVGSrcs = (() => {
+  const svgs = buildParticleSVGs();
+  return svgs.map(s => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s));
+})();
+
 function buildList() {
   const el = document.getElementById('particleList');
   el.innerHTML = '';
-  const svgs = buildParticleSVGs();
   DEFS.forEach((d, i) => {
-    const src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgs[i]);
+    const known = discovered.has(i);
     const div = document.createElement('div');
     div.className = 'p-entry';
-    div.innerHTML = `<span class="p-num">${i + 1}</span><img class="p-img" src="${src}" alt="${d.name}"><span>${d.name}</span>`;
+    div.dataset.level = i;
+    div.innerHTML =
+      `<span class="p-num">${i + 1}</span>` +
+      `<img class="p-img" src="${_listSVGSrcs[i]}" alt="${d.name}">` +
+      `<div class="p-info">` +
+        `<span class="p-name">${d.name}</span>` +
+        `<span class="p-mass ${known ? '' : 'unk'}">${known ? d.mev : '???'}</span>` +
+      `</div>`;
     el.appendChild(div);
   });
 }
@@ -676,12 +734,24 @@ function physics() {
     flashes.push({ x: mx, y: my, maxR: DEFS[a.level].r * 3.5, t: 0 });
     const hi = Math.max(ia, ib), lo = Math.min(ia, ib);
     particles.splice(hi, 1); particles.splice(lo, 1);
-    score += (nl + 1) * 12;
+    // 콤보
+    const nowMs = performance.now();
+    if (combo > 0 && nowMs - lastMergeMs < COMBO_WINDOW) { combo++; }
+    else { combo = 1; }
+    lastMergeMs = nowMs;
+    const mult = 1 + Math.min(combo - 1, 9) * 0.3;
+    const gained = Math.round((nl + 1) * 12 * mult);
+    score += gained;
     document.getElementById('scoreValue').textContent = score;
     if (nl < DEFS.length) {
       const np = mkParticle(mx, my, nl);
       np.born = now; np.vy = -3;
       particles.push(np);
+      markDiscovered(nl);
+      // 질량 라벨 팝업
+      const def = DEFS[nl];
+      labels.push({ x: mx, y: my - def.r - 8, name: def.name, mev: def.mev,
+                    gained, alpha: 1.0, vy: 0.85 });
     }
   }
   const danger = particles.some(p => p.y - p.r < DANGER_Y && (now - p.born) > 800);
@@ -689,10 +759,45 @@ function physics() {
   if (dangerTimer > DANGER_LIMIT) triggerOver();
 }
 
+// ── 최고점수 관리
+function getScores() {
+  try { return JSON.parse(localStorage.getItem(SCORE_KEY)) || []; } catch { return []; }
+}
+function saveScore(name, s) {
+  const arr = getScores();
+  arr.push({ name: name || '익명', score: s });
+  arr.sort((a, b) => b.score - a.score);
+  localStorage.setItem(SCORE_KEY, JSON.stringify(arr.slice(0, 5)));
+}
+function isTop5(s) {
+  const arr = getScores();
+  return arr.length < 5 || s > arr[arr.length - 1].score;
+}
+function renderLeaderboard(highlightScore) {
+  const arr = getScores();
+  if (!arr.length) { document.getElementById('leaderboard').innerHTML = ''; return; }
+  const medals = ['🥇','🥈','🥉','4','5'];
+  const rows = arr.map((e, i) => {
+    const cls = e.score === highlightScore ? ' class="me"' : '';
+    return `<tr${cls}><td>${medals[i]}</td><td>${e.name}</td><td>${e.score.toLocaleString()}</td></tr>`;
+  }).join('');
+  document.getElementById('leaderboard').innerHTML =
+    `<table><tr><th></th><th>이름</th><th>점수</th></tr>${rows}</table>`;
+}
+
 function triggerOver() {
   over = true;
-  document.getElementById('finalScore').textContent = `최종 점수: ${score}`;
+  document.getElementById('finalScore').textContent = `최종 점수: ${score.toLocaleString()}`;
   document.getElementById('overlay').classList.add('show');
+  if (isTop5(score)) {
+    const ns = document.getElementById('nameSection');
+    ns.style.display = 'flex';
+    document.getElementById('playerName').focus();
+    renderLeaderboard(null);
+  } else {
+    document.getElementById('nameSection').style.display = 'none';
+    renderLeaderboard(null);
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -789,6 +894,58 @@ function render() {
   // 입자들
   for (const p of particles) drawParticle(ctx, p.x, p.y, p.r, p.level);
 
+  // ── 질량 라벨 팝업 (합체 시 새 입자 정보)
+  labels = labels.filter(l => l.alpha > 0.02);
+  for (const l of labels) {
+    l.y -= l.vy; l.vy *= 0.95;
+    l.alpha -= 0.013;
+    const a = Math.min(l.alpha, 1);
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.textAlign = 'center';
+    // 입자 이름
+    ctx.font = 'bold 13px sans-serif';
+    ctx.shadowColor = 'rgba(100,165,255,0.9)'; ctx.shadowBlur = 10;
+    ctx.fillStyle = '#e8f4ff';
+    ctx.fillText(l.name, l.x, l.y);
+    // 질량
+    ctx.font = '11px sans-serif';
+    ctx.shadowBlur = 6;
+    ctx.fillStyle = '#90c8ff';
+    ctx.fillText(`질량 ${l.mev}`, l.x, l.y + 14);
+    // 획득 점수
+    if (combo >= 2) {
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillStyle = '#ffd060';
+      ctx.shadowColor = 'rgba(255,190,40,0.8)';
+      ctx.fillText(`+${l.gained} (×${(1 + Math.min(combo-1,9)*0.3).toFixed(1)})`, l.x, l.y + 27);
+    } else {
+      ctx.font = '11px sans-serif';
+      ctx.fillStyle = 'rgba(200,225,255,0.6)';
+      ctx.shadowBlur = 0;
+      ctx.fillText(`+${l.gained}`, l.x, l.y + 27);
+    }
+    ctx.restore();
+  }
+
+  // ── 콤보 카운터
+  const elapsed = performance.now() - lastMergeMs;
+  if (combo >= 2 && elapsed < COMBO_WINDOW) {
+    const fade = Math.max(0, 1 - (elapsed - COMBO_WINDOW * 0.6) / (COMBO_WINDOW * 0.4));
+    const size = Math.min(32, 18 + combo * 1.8);
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, fade * 1.4);
+    ctx.textAlign = 'center';
+    ctx.font = `900 ${size}px sans-serif`;
+    ctx.shadowColor = combo >= 5 ? 'rgba(255,130,20,0.9)' : 'rgba(255,215,40,0.85)';
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = combo >= 5 ? '#ffaa30' : '#ffe040';
+    ctx.fillText(`COMBO ×${combo}`, CW / 2, 128);
+    ctx.restore();
+  } else if (elapsed >= COMBO_WINDOW) {
+    combo = 0;
+  }
+
   // 투하 가이드
   if (!over && cooldown === 0) {
     const def = DEFS[curLevel];
@@ -835,6 +992,17 @@ document.addEventListener('keydown', e => {
   if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); drop(); }
 });
 document.getElementById('restartBtn').addEventListener('click', init);
+
+function doSubmitScore() {
+  const name = document.getElementById('playerName').value.trim() || '익명';
+  saveScore(name, score);
+  document.getElementById('nameSection').style.display = 'none';
+  renderLeaderboard(score);
+}
+document.getElementById('submitScore').addEventListener('click', doSubmitScore);
+document.getElementById('playerName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSubmitScore();
+});
 
 // ═══════════════════════════════════════════════
 // 시작
