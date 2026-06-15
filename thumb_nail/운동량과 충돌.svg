@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="400" height="240">
+  <defs>
+    <!-- 배경 그라디언트 -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#0f3460"/>
+    </linearGradient>
+    <!-- 펠트 그라디언트 -->
+    <radialGradient id="felt" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" style="stop-color:#1d6b42"/>
+      <stop offset="100%" style="stop-color:#145230"/>
+    </radialGradient>
+    <!-- 흰공 -->
+    <radialGradient id="ballW" cx="35%" cy="30%" r="60%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="60%" style="stop-color:#e8e8e8"/>
+      <stop offset="100%" style="stop-color:#b0b0b0"/>
+    </radialGradient>
+    <!-- 빨간공 -->
+    <radialGradient id="ballR" cx="35%" cy="30%" r="60%">
+      <stop offset="0%" style="stop-color:#ff6666"/>
+      <stop offset="50%" style="stop-color:#cc0000"/>
+      <stop offset="100%" style="stop-color:#7a0000"/>
+    </radialGradient>
+    <!-- 힘 화살표 글로우 -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <!-- 충돌 플래시 -->
+    <radialGradient id="flash" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#fff7aa;stop-opacity:0.9"/>
+      <stop offset="100%" style="stop-color:#f5a623;stop-opacity:0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 배경 -->
+  <rect width="400" height="240" fill="url(#bg)" rx="12"/>
+
+  <!-- 당구대 펠트 -->
+  <rect x="24" y="28" width="352" height="184" fill="url(#felt)" rx="4"/>
+
+  <!-- 펠트 미세 줄 -->
+  <g stroke="rgba(255,255,255,0.04)" stroke-width="1">
+    <line x1="60" y1="28" x2="60" y2="212"/>
+    <line x1="96" y1="28" x2="96" y2="212"/>
+    <line x1="132" y1="28" x2="132" y2="212"/>
+    <line x1="168" y1="28" x2="168" y2="212"/>
+    <line x1="204" y1="28" x2="204" y2="212"/>
+    <line x1="240" y1="28" x2="240" y2="212"/>
+    <line x1="276" y1="28" x2="276" y2="212"/>
+    <line x1="312" y1="28" x2="312" y2="212"/>
+    <line x1="348" y1="28" x2="348" y2="212"/>
+  </g>
+
+  <!-- 쿠션 테두리 -->
+  <rect x="24" y="28" width="352" height="184" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="2" rx="4"/>
+
+  <!-- 포켓 -->
+  <circle cx="24" cy="28" r="10" fill="#111"/>
+  <circle cx="376" cy="28" r="10" fill="#111"/>
+  <circle cx="24" cy="212" r="10" fill="#111"/>
+  <circle cx="376" cy="212" r="10" fill="#111"/>
+  <circle cx="200" cy="28" r="8" fill="#111"/>
+  <circle cx="200" cy="212" r="8" fill="#111"/>
+
+  <!-- 충돌 플래시 -->
+  <circle cx="218" cy="120" r="32" fill="url(#flash)"/>
+
+  <!-- 흰공 궤적 잔상 -->
+  <circle cx="100" cy="120" r="18" fill="rgba(96,165,250,0.08)"/>
+  <circle cx="120" cy="120" r="18" fill="rgba(96,165,250,0.13)"/>
+  <circle cx="140" cy="120" r="18" fill="rgba(96,165,250,0.18)"/>
+  <circle cx="160" cy="120" r="18" fill="rgba(96,165,250,0.23)"/>
+
+  <!-- 흰공 -->
+  <circle cx="185" cy="120" r="22" fill="rgba(0,0,0,0.3)" transform="translate(3,3)"/>
+  <circle cx="185" cy="120" r="22" fill="url(#ballW)"/>
+  <circle cx="178" cy="113" r="5" fill="rgba(255,255,255,0.7)"/>
+
+  <!-- 빨간공 -->
+  <circle cx="251" cy="120" r="22" fill="rgba(0,0,0,0.3)" transform="translate(3,3)"/>
+  <circle cx="251" cy="120" r="22" fill="url(#ballR)"/>
+  <circle cx="244" cy="113" r="5" fill="rgba(255,255,255,0.5)"/>
+  <!-- 번호 원 -->
+  <circle cx="251" cy="120" r="11" fill="white"/>
+  <text x="251" y="125" font-family="system-ui" font-size="12" font-weight="bold" fill="#222" text-anchor="middle">1</text>
+
+  <!-- 힘 화살표: 흰공 → 오른쪽 (B가 받는 힘) -->
+  <g filter="url(#glow)">
+    <line x1="207" y1="120" x2="238" y2="120" stroke="#f97316" stroke-width="3" stroke-linecap="round"/>
+    <polygon points="238,120 230,115 230,125" fill="#f97316"/>
+  </g>
+  <!-- 힘 화살표: 빨간공 → 왼쪽 (반작용) -->
+  <g filter="url(#glow)">
+    <line x1="229" y1="120" x2="198" y2="120" stroke="#f97316" stroke-width="3" stroke-linecap="round"/>
+    <polygon points="198,120 206,115 206,125" fill="#f97316"/>
+  </g>
+
+  <!-- 운동량 벡터: 흰공 -->
+  <line x1="185" y1="120" x2="230" y2="120" stroke="#60a5fa" stroke-width="2.5" stroke-dasharray="4,3" opacity="0.7"/>
+  <polygon points="230,120 222,116 222,124" fill="#60a5fa" opacity="0.7"/>
+
+  <!-- 작용·반작용 라벨 -->
+  <text x="222" y="105" font-family="system-ui" font-size="9" fill="#f97316" text-anchor="middle" opacity="0.9">작용</text>
+  <text x="212" y="140" font-family="system-ui" font-size="9" fill="#f97316" text-anchor="middle" opacity="0.9">반작용</text>
+
+  <!-- 확대 원형 뷰 -->
+  <circle cx="330" cy="80" r="46" fill="#1d6b42" stroke="#e94560" stroke-width="2"/>
+  <clipPath id="zoomClip"><circle cx="330" cy="80" r="44"/></clipPath>
+  <g clip-path="url(#zoomClip)">
+    <!-- 확대된 두 공 -->
+    <circle cx="312" cy="80" r="28" fill="url(#ballW)"/>
+    <circle cx="312" cy="72" r="6" fill="rgba(255,255,255,0.6)"/>
+    <circle cx="350" cy="80" r="28" fill="url(#ballR)"/>
+    <circle cx="350" cy="72" r="6" fill="rgba(255,255,255,0.4)"/>
+    <circle cx="350" cy="80" r="14" fill="white"/>
+    <text x="350" y="85" font-family="system-ui" font-size="14" font-weight="bold" fill="#222" text-anchor="middle">1</text>
+    <!-- 힘 화살표 확대 -->
+    <line x1="326" y1="80" x2="344" y2="80" stroke="#f97316" stroke-width="3"/>
+    <polygon points="344,80 338,76 338,84" fill="#f97316"/>
+    <line x1="336" y1="80" x2="318" y2="80" stroke="#f97316" stroke-width="3"/>
+    <polygon points="318,80 324,76 324,84" fill="#f97316"/>
+  </g>
+  <!-- 확대 라벨 -->
+  <text x="330" y="134" font-family="system-ui" font-size="9" font-weight="bold" fill="rgba(233,69,96,0.9)" text-anchor="middle">⚡ 충돌 확대</text>
+
+  <!-- 제목 -->
+  <text x="20" y="232" font-family="system-ui" font-size="13" font-weight="700" fill="rgba(255,255,255,0.9)">운동량과 충돌</text>
+  <text x="380" y="232" font-family="system-ui" font-size="10" fill="rgba(255,255,255,0.4)" text-anchor="end">작용·반작용 · 운동량 보존</text>
+</svg>
