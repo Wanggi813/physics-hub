@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>입자 물리 수박게임</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background-color: #090f1e;
+      background-image:
+        radial-gradient(ellipse 55% 42% at 12% 18%, rgba(90,20,155,0.28) 0%, transparent 100%),
+        radial-gradient(ellipse 50% 38% at 88% 72%, rgba(12,62,155,0.26) 0%, transparent 100%),
+        radial-gradient(ellipse 40% 52% at 70% 8%,  rgba(12,118,105,0.18) 0%, transparent 100%),
+        radial-gradient(ellipse 44% 40% at 22% 88%, rgba(148,16,70,0.20)  0%, transparent 100%),
+        radial-gradient(ellipse 35% 35% at 55% 55%, rgba(18,40,100,0.22)  0%, transparent 100%);
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh;
+      font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+      color: #fff; overflow: hidden; user-select: none;
+    }
+    #gameWrapper { display: flex; gap: 14px; align-items: flex-start; }
+    #gameCanvas { cursor: crosshair; display: block; border-radius: 4px; }
+    /* ── 왼쪽 입자 목록 패널 ── */
+    #listPanel {
+      width: 185px; flex-shrink: 0;
+      background: rgba(8,16,38,0.55);
+      border: 1px solid rgba(140,170,255,0.10);
+      border-radius: 12px; padding: 12px 10px;
+      display: flex; flex-direction: column; gap: 6px;
+      backdrop-filter: blur(6px);
+    }
+    .list-label { font-size: 9px; color: rgba(170,195,255,0.5); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 2px; }
+    #particleList { display: flex; flex-direction: column; gap: 5px; overflow-y: auto; }
+    #particleList::-webkit-scrollbar { width: 3px; }
+    #particleList::-webkit-scrollbar-thumb { background: rgba(140,170,255,0.18); border-radius: 2px; }
+    .p-entry { display: flex; align-items: center; gap: 8px; font-size: 11px; color: rgba(200,215,245,0.78); }
+    .p-num { font-size: 9px; color: rgba(155,180,225,0.42); width: 14px; text-align: right; flex-shrink: 0; }
+    .p-img { width: 44px; height: 44px; flex-shrink: 0; }
+    /* ── 오른쪽 사이드바 ── */
+    #sidebar { width: 148px; display: flex; flex-direction: column; gap: 11px; }
+    .panel {
+      background: rgba(8,16,38,0.55);
+      border: 1px solid rgba(140,170,255,0.10);
+      border-radius: 12px; padding: 13px;
+      backdrop-filter: blur(6px);
+    }
+    .panel-label { font-size: 9px; color: rgba(170,195,255,0.5); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+    #scoreValue { font-size: 28px; font-weight: 700; color: #e8f0ff; line-height: 1; }
+    #nextCanvas, #nextCanvas2 { display: block; width: 100%; }
+    #overlay {
+      position: fixed; inset: 0;
+      background: rgba(10,22,44,0.86); backdrop-filter: blur(6px);
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      gap: 18px; z-index: 100;
+    }
+    #overlay.show { display: flex; }
+    #overlay h2 { font-size: 36px; color: #e04444; letter-spacing: 3px; }
+    #finalScore { color: rgba(195,210,240,0.7); font-size: 15px; }
+    #restartBtn {
+      background: rgba(90,130,220,0.14); border: 1px solid rgba(110,155,255,0.3);
+      color: #c8d8ff; padding: 10px 36px; border-radius: 8px; font-size: 15px;
+      cursor: pointer; transition: background 0.2s;
+    }
+    #restartBtn:hover { background: rgba(90,130,220,0.3); }
+    #hint {
+      position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+      font-size: 10px; color: rgba(170,190,255,0.22); letter-spacing: 1px; pointer-events: none;
+    }
+    @keyframes titlePulse {
+      0%, 100% {
+        filter: drop-shadow(0 0 6px rgba(130,182,255,0.55))
+                drop-shadow(0 0 20px rgba(105,152,255,0.30))
+                drop-shadow(0 0 42px rgba(88,130,245,0.14));
+      }
+      50% {
+        filter: drop-shadow(0 0 14px rgba(162,210,255,0.80))
+                drop-shadow(0 0 34px rgba(128,176,255,0.50))
+                drop-shadow(0 0 62px rgba(108,158,255,0.26));
+      }
+    }
+    @keyframes atomFloat {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50%       { transform: translateY(-2px) rotate(8deg); }
+    }
+    #gameTitle {
+      position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      pointer-events: none; white-space: nowrap;
+      animation: titlePulse 4s ease-in-out infinite;
+    }
+    #gameTitle .main {
+      font-size: 28px; font-weight: 900; letter-spacing: 7px;
+      background: linear-gradient(120deg,
+        #6e9ef5 0%, #a8ceff 22%, #e8f2ff 44%,
+        #ffffff 50%, #d0e6ff 58%, #9abeff 78%, #6892f0 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    #gameTitle .atom {
+      display: inline-block; margin-right: 10px;
+      font-size: 32px;
+      background: linear-gradient(135deg, #48d8f8 0%, #6e98ff 45%, #b462ff 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: atomFloat 4s ease-in-out infinite;
+    }
+    #gameTitle .sub {
+      font-size: 9.5px; letter-spacing: 5.5px; font-weight: 400;
+      -webkit-text-fill-color: rgba(152,188,242,0.36);
+      color: rgba(152,188,242,0.36);
+    }
+    #disclaimer {
+      position: fixed; bottom: 14px; right: 22px;
+      max-width: 270px; text-align: right;
+      font-size: 10px; line-height: 1.72;
+      color: rgba(165,188,232,0.38);
+      pointer-events: none;
+    }
+    #disclaimer .icon { color: rgba(255,195,80,0.45); }
+  </style>
+</head>
+<body>
+<div id="gameTitle">
+  <div class="main"><span class="atom">⚛</span>입자 물리 수박게임</div>
+  <div class="sub">PARTICLE PHYSICS SUIKA GAME</div>
+</div>
+<div id="gameWrapper">
+  <!-- 왼쪽: 입자 목록 -->
+  <div id="listPanel">
+    <div class="list-label">입자 목록</div>
+    <div id="particleList"></div>
+  </div>
+  <!-- 중앙: 게임 -->
+  <canvas id="gameCanvas"></canvas>
+  <!-- 오른쪽: 점수 + 다음 입자 2개 -->
+  <div id="sidebar">
+    <div class="panel">
+      <div class="panel-label">점수</div>
+      <div id="scoreValue">0</div>
+    </div>
+    <div class="panel">
+      <div class="panel-label">다음</div>
+      <canvas id="nextCanvas" width="120" height="84"></canvas>
+    </div>
+    <div class="panel">
+      <div class="panel-label">그 다음</div>
+      <canvas id="nextCanvas2" width="120" height="74"></canvas>
+    </div>
+  </div>
+</div>
+<div id="overlay">
+  <h2>GAME OVER</h2>
+  <div id="finalScore"></div>
+  <button id="restartBtn">다시 시작</button>
+</div>
+<div id="hint">클릭 또는 Space · Enter 로 입자 투하</div>
+<div id="disclaimer">
+  <span class="icon">⚠</span> 이 게임은 수박게임 형식의 입자물리 테마 퍼즐입니다.<br>
+  실제 입자의 합성·붕괴 반응과는 다르며,<br>
+  게임 내 합성 순서는 물리적 사실을 묘사하지 않습니다.
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// 입자 정의
+// ═══════════════════════════════════════════════
+const DEFS = [
+  { name: '전자 뉴트리노', r: 11,  glow: 'rgba(150,220,252,0.28)', dot: '#90D8F0' },
+  { name: '전자',          r: 16,  glow: 'rgba(65,125,220,0.42)',  dot: '#4E96E0' },
+  { name: '뮤온',          r: 22,  glow: 'rgba(108,58,200,0.40)',  dot: '#8660D0' },
+  { name: '업 쿼크',       r: 29,  glow: 'rgba(158,38,38,0.40)',   dot: '#C04848' },
+  { name: '파이온',         r: 37,  glow: 'rgba(158,86,28,0.40)',   dot: '#C07438' },
+  { name: '양성자',         r: 46,  glow: 'rgba(158,138,30,0.40)',  dot: '#C8A828' },
+  { name: '중수소핵',       r: 56,  glow: 'rgba(28,128,85,0.40)',   dot: '#3EB86E' },
+  { name: '알파입자',       r: 67,  glow: 'rgba(22,135,135,0.40)', dot: '#2EB8B8' },
+  { name: '헬륨 원자',      r: 79,  glow: 'rgba(175,50,110,0.40)', dot: '#CE5E92' },
+  { name: '산소 원자',      r: 92,  glow: 'rgba(172,48,35,0.40)',   dot: '#CE4838' },
+  { name: '탄소 원자',      r: 106, glow: 'rgba(72,85,110,0.36)',   dot: '#5A6878' },
+  { name: '철 원자',        r: 121, glow: 'rgba(128,98,38,0.40)',   dot: '#A07838' },
+];
+
+// ═══════════════════════════════════════════════
+// 입자 SVG 정의 — 12종
+// ═══════════════════════════════════════════════
+function buildParticleSVGs() {
+  return [
+
+  // ─── 0. 전자 뉴트리노 ───────────────────────
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <defs>
+      <radialGradient id="g" cx="36%" cy="28%" r="68%">
+        <stop offset="0%"   stop-color="rgba(215,245,255,0.52)"/>
+        <stop offset="58%"  stop-color="rgba(138,205,242,0.20)"/>
+        <stop offset="100%" stop-color="rgba(88,170,218,0.06)"/>
+      </radialGradient>
+    </defs>
+    <circle cx="50" cy="50" r="46" fill="url(#g)"/>
+    <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(185,232,255,0.52)" stroke-width="1" stroke-dasharray="4 3"/>
+    <circle cx="50" cy="50" r="30" fill="none" stroke="rgba(185,232,255,0.22)" stroke-width="0.8" stroke-dasharray="3 3"/>
+    <circle cx="50" cy="50" r="16" fill="none" stroke="rgba(185,232,255,0.14)" stroke-width="0.6" stroke-dasharray="2 3"/>
+    <text x="50" y="56" text-anchor="middle" dominant-baseline="middle"
+          fill="rgba(205,242,255,0.88)" font-size="42" font-family="Georgia,serif" font-style="italic" font-weight="bold">ν</text>
+  </svg>`,
+
+  // ─── 1. 전자 ────────────────────────────────
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <defs>
+      <radialGradient id="g" cx="34%" cy="26%" r="72%">
+        <stop offset="0%"   stop-color="#b4d8ff"/>
+        <stop offset="52%"  stop-color="#2858c4"/>
+        <stop offset="100%" stop-color="#0e1e58"/>
+      </radialGradient>
+    </defs>
+    <circle cx="50" cy="50" r="46" fill="url(#g)"/>
+    <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(155,198,255,0.42)" stroke-width="1.2"/>
+    <ellipse cx="37" cy="33" rx="11" ry="6.5" fill="rgba(255,255,255,0.18)" transform="rotate(-22 37 33)"/>
+    <text x="50" y="56" text-anchor="middle" dominant-baseline="middle"
+          fill="rgba(212,232,255,0.92)" font-size="34" font-family="Georgia,serif" font-weight="bold">e⁻</text>
+  </svg>`,
+
+  // ─── 2. 뮤온 ────────────────────────────────
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <defs>
+      <radialGradient id="g" cx="34%" cy="26%" r="72%">
+        <stop offset="0%"   stop-color="#c4a4ff"/>
+        <stop offset="52%"  stop-color="#5a30a8"/>
+        <stop offset="100%" stop-color="#221048"/>
+      </radialGradient>
+    </defs>
+    <circle cx="50" cy="50" r="46" fill="url(#g)"/>
+    <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(188,158,255,0.42)" stroke-width="1.2"/>
+    <ellipse cx="37" cy="33" rx="11" ry="6.5" fill="rgba(255,255,255,0.16)" transform="rotate(-22 37 33)"/>
+    <text x="51" y="56" text-anchor="middle" dominant-baseline="middle"
+          fill="rgba(224,206,255,0.92)" font-size="42" font-family="Georgia,serif" font-style="italic" font-weight="bold">μ</text>
+  </svg>`,
+
+  // ─── 3. 업 쿼크 ─────────────────────────────
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <defs>
+      <radialGradient id="g" cx="34%" cy="26%" r="72%">
+        <stop offset="0%"   stop-color="#eca0a0"/>
+        <stop offset="52%"  stop-color="#8c2020"/>
+        <stop offset="100%" stop-color="#3c0c0c"/>
+      </radialGradient>
+      <linearGradient id="cg" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%"   stop-color="#ff4444"/>
+        <stop offset="33%"  stop-color="#44cc44"/>
+        <stop offset="66%"  stop-color="#4466ff"/>
+        <stop offset="100%" stop-color="#ff4444"/>
+      </linearGradient>
+    </defs>
+    <circle cx="50" cy="50" r="46" fill="url(#g)"/>
+    <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(228,152,152,0.42)" stroke-width="1.2"/>
+    <ellipse cx="37" cy="33" rx="11" ry="6.5" fill="rgba(255,255,255,0.16)" transform="rotate(-22 37 33)"/>
+    <!-- 색전하 링: R/G/B는 내부 구조가 아닌 QCD 양자수 -->
+    <circle cx="50" cy="50" r="30" fill="none" stroke="url(#cg)" stroke-width="4.5" opacity="0.46" stroke-dasharray="13 7"/>
+    <text x="50" y="55" text-anchor="middle" dominant-baseline="middle"
+          fill="rgba(255,215,205,0.94)" font-size="42" font-family="Georgia,serif" font-weight="bold" font-style="italic">u</text>
+  </svg>`,
+
+  // ─── 4. 파이온 ──────────────────────────────
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <defs>
+      <radialGradient id="g" cx="34%" cy="26%" r="72%">
+        <stop offset="0%"   stop-color="#eeb87a"/>
+        <stop offset="52%"  stop-color="#8c4a18"/>
+        <stop offset="100%" stop-color="#3c1c06"/>
+      </radialGradient>
+      <radialGradient id="qr" cx="34%" cy="30%" r="68%"><stop offset="0%" stop-color="#ff9070"/><stop offset="100%" stop-color="#cc3810"/></radialGradient>
+      <radialGradient id="qb" cx="34%" cy="30%" r="68%"><stop offset="0%" stop-color="#7094ff"/><stop offset="100%" stop-color="#1838cc"/></radialGradient>
+    </defs>
+    <circle cx="50" cy="50" r="46" fill="url(#g)"/>
+    <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(228,188,130,0.42)" stroke-width="1.2"/>
+    <ellipse cx="37" cy="33" rx="11" ry="6.5" fill="rgba(255,255,255,0.16)" transform="rotate(-22 37 33)"/>
+    <!-- q-qbar 쌍 -->
+    <circle cx="31" cy="54" r="14" fill="url(#qr)"/>
+    <circle cx="69" cy="54" r="14" fill="url(#qb)"/>
+    <!-- 결합 스프링 -->
+    <path d="M45,51 Q47.5,45 50,51 Q52.5,57 55,51" fill="none" stroke="rgba(255,232,172,0.55)" stroke-width="1.4" stroke-linecap="round"/>
+    <text x="31" y="58" text-anchor="middle" dominant-baseline="middle" fill="rgba(255,255,255,0.90)" font-size="16" font-family="Georgia,serif" font-weight="bold">q</text>
+    <text x="69" y="58" text-anchor="middle" dominant-baseline="middle" fill="rgba(255,255,255,0.90)" font-size="16" font-family="Georgia,serif" font-weight="bold">q̄</text>
+    <text x="50" y="82" text-anchor="middle" dominant-baseline="middle" fill="rgba(255,230,180,0.90)" font-size="22" font-family="Georgia,serif" font-style="italic" font-weight="bold">π</text>
+  </svg>`,
+
+  // ─── 5. 양성자 ──────────────────────────────
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <defs>
+      <radialGradient id="g" cx="34%" cy="26%" r="72%">
+        <stop offset="0%"   stop-color="#f0da7a"/>
+        <stop offset="52%"  stop-color="#90720a"/>
+        <stop offset="100%" stop-color="#3c2c04"/>
+      </radialGradient>
+      <radialGradient id="qu" cx="34%" cy="30%" r="68%"><stop offset="0%" stop-color="#ff8888"/><stop offset="100%" stop-color="#bb2020"/></radialGradient>
+      <radialGradient id="qd" cx="34%" cy="30%" r="68%"><stop offset="0%" stop-color="#7898ff"/><stop offset="100%" stop-color="#1e3ecc"/></radialGradient>
+    </defs>
+    <circle cx="50" cy="50" r="46" fill="url(#g)"/>
+    <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(235,215,125,0.42)" stroke-width="1.2"/>
+    <ellipse cx="37" cy="33" rx="11" ry="6.5" fill="rgba(255,255,255,0.16)" transform="rotate(-22 37 33)"/>
+    <!-- uud 글루온 삼각형 -->
+    <polygon points="50,23 33,60 67,60" fill="none" stroke="rgba(255,242,168,0.28)" stroke-width="0.8"/>
+    <circle cx="50" cy="25"  r="13" fill="url(#qu)"/>
+    <circle cx="33" cy="63"  r="13" fill="url(#qu)"/>
+    <circle cx="67" cy="63"  r="13" fill="url(#qd)"/>
+    <text x="50" y="29"  text-anchor="middle" dominant-baseline="middle" fill="rgba(255,255,255,0.94)" font-size="16" font-family="sans-serif" font-weight="bold">u</text>
+    <text x="33" y="67"  text-anchor="middle" dominant-baseline="middle" fill="rgba(255,255,255,0.94)" font-size="16" font-family="sans-serif" font-weight="bold">u</text>
+    <text x="67" y="67"  text-anchor="middle" dominant-baseline="middle" fill="rgba(255,255,255,0.94)" font-size="16" font-family="sans-serif" font-weight="bold">d</text>
+  </svg>`,
+
+  // ─── 6. 중수소핵 ─────────────────────────────
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <defs>
+      <radialGradient id="g" cx="34%" cy="26%" r="72%">
+        <stop offset="0%"   stop-color="#88daa8"/>
+        <stop offset="52%"  stop-color="#1a6840"/>
+        <stop offset="100%" stop-color="#072a18"/>
+      </radialGradient>
+      <radialGradient id="np" cx="34%" cy="30%" r="68%"><stop offset="0%" stop-color="#80e8a8"/><stop offset="100%" stop-color="#0c5230"/></radialGradient>
+      <radialGradient id="nn" cx="34%" cy="30%" r="68%"><stop offset="0%" stop-color="#88aae8"/><stop offset="100%" stop-color="#1c3ea8"/></radialGradient>
+    </defs>
+    <circle cx="50" cy="50" r="46" fill="url(#g)"/>
+    <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(138,222,175,0.42)" stroke-width="1.2"/>
+    <ellipse cx="37" cy="33" rx="11" ry="6.5" fill="rgba(255,255,255,0.16)" transform="rotate(-22 37 33)"/>
+    <!-- 핵자 두 개 (겹침) -->
+    <circle cx="37" cy="52" r="20" fill="url(#np)" opacity="0.92"/>
+    <circle cx="63" cy="52" r="20" fill="url(#nn)" opacity="0.92"/>
+    <circle cx="37" cy="52" r="20" fill="none" stroke="rgba(150,255,190,0.35)" stroke-width="1"/>
+    <circle cx="63" cy="52" r="20" fill="none" stroke="rgba(150,185,255,0.35)" stroke-width="1"/>
+    <text x="37" y="57" text-anchor="middle" dominant-baseline="middle" fill="rgba(225,255,235,0.96)" font-size="20" font-family="sans-serif" font-weight="bold">p</text>
+    <text x="63" y="57" text-anchor="middle" dominant-baseline="middle" fill="rgba(208,222,255,0.96)" font-size="20" font-family="sans-serif" font-weight="bold">n</text>
+  </svg>`,
+
+  // ─── 7. 알파입자 ─────────────────────────────
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <defs>
+      <radialGradient id="g" cx="34%" cy="26%" r="72%">
+        <stop offset="0%"   stop-color="#74d8d8"/>
+        <stop offset="52%"  stop-color="#156868"/>
+        <stop offset="100%" stop-color="#062828"/>
+      </radialGradient>
+      <radialGradient id="ap" cx="34%" cy="30%" r="68%"><stop offset="0%" stop-color="#88eaaa"/><stop offset="100%" stop-color="#0e5e30"/></radialGradient>
+      <radialGradient id="an" cx="34%" cy="30%" r="68%"><stop offset="0%" stop-color="#8aaae8"/><stop offset="100%" stop-color="#1c3ea8"/></radialGradient>
+    </defs>
+    <circle cx="50" cy="50" r="46" fill="url(#g)"/>
+    <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(128,222,222,0.42)" stroke-width="1.2"/>
+    <ellipse cx="37" cy="33" rx="11" ry="6.5" fill="rgba(255,255,255,0.16)" transform="rotate(-22 37 33)"/>
+    <!-- 2×2 핵자 -->
+    <circle cx="33" cy="36" r="15" fill="url(#ap)"/>
+    <circle cx="67" cy="36" r="15" fill="url(#ap)"/>
+    <circle cx="33" cy="66" r="15" fill="url(#an)"/>
+    <circle cx="67" cy="66" r="15" fill="url(#an)"/>
+    <text x="33" y="41"  text-anchor="middle" dominant-baseline="middle" fill="rgba(218,255,230,0.94)" font-size="16" font-family="sans-serif" font-weight="bold">p</text>
+    <text x="67" y="41"  text-anchor="middle" dominant-baseline="middle" fill="rgba(218,255,230,0.94)" font-size="16" font-family="sans-serif" font-weight="bold">p</text>
+    <text x="33" y="71"  text-anchor="middle" dominant-baseline="middle" fill="rgba(205,218,255,0.94)" font-size="16" font-family="sans-serif" font-weight="bold">n</text>
+    <text x="67" y="71"  text-anchor="middle" dominant-baseline="middle" fill="rgba(205,218,255,0.94)" font-size="16" font-family="sans-serif" font-weight="bold">n</text>
+  </svg>`,
+
+  // ─── 8. 헬륨 원자 ───────────────────────────
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <defs>
+      <radialGradient id="g" cx="34%" cy="26%" r="72%">
+        <stop offset="0%"   stop-color="#eca0c0"/>
+        <stop offset="52%"  stop-color="#a03568"/>
+        <stop offset="100%" stop-color="#401428"/>
+      </radialGradient>
+    </defs>
+    <circle cx="50" cy="50" r="46" fill="url(#g)"/>
+    <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(240,170,205,0.42)" stroke-width="1.2"/>
+    <ellipse cx="37" cy="33" rx="11" ry="6.5" fill="rgba(255,255,255,0.16)" transform="rotate(-22 37 33)"/>
+    <!-- 핵 -->
+    <circle cx="50" cy="50" r="7" fill="rgba(255,215,232,0.82)"/>
+    <!-- 1s 궤도 -->
+    <ellipse cx="50" cy="50" rx="34" ry="13" fill="none" stroke="rgba(255,195,222,0.42)" stroke-width="1.4"/>
+    <!-- 전자 2개 (대칭) -->
+    <circle cx="84" cy="50" r="5" fill="rgba(255,215,235,0.94)"/>
+    <circle cx="16" cy="50" r="5" fill="rgba(255,215,235,0.94)"/>
+    <!-- He 라벨 -->
+    <text x="50" y="54" text-anchor="middle" dominant-baseline="middle"
+          fill="rgba(255,218,238,0.92)" font-size="18" font-family="sans-serif" font-weight="bold">He</text>
+  </svg>`,
+
+  // ─── 9. 산소 원자 ───────────────────────────
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <defs>
+      <radialGradient id="g" cx="34%" cy="26%" r="72%">
+        <stop offset="0%"   stop-color="#ec8070"/>
+        <stop offset="52%"  stop-color="#902820"/>
+        <stop offset="100%" stop-color="#3c0e0a"/>
+      </radialGradient>
+    </defs>
+    <circle cx="50" cy="50" r="46" fill="url(#g)"/>
+    <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(238,158,140,0.42)" stroke-width="1.2"/>
+    <ellipse cx="37" cy="33" rx="11" ry="6.5" fill="rgba(255,255,255,0.16)" transform="rotate(-22 37 33)"/>
+    <!-- 핵 -->
+    <circle cx="50" cy="50" r="6" fill="rgba(255,205,195,0.82)"/>
+    <!-- 내각 1s (작은 타원, 기울어짐) -->
+    <ellipse cx="50" cy="50" rx="17" ry="6.5" fill="none" stroke="rgba(245,178,162,0.38)" stroke-width="1.1" transform="rotate(35 50 50)"/>
+    <circle cx="65" cy="42" r="3.5" fill="rgba(255,208,198,0.88)"/>
+    <circle cx="35" cy="58" r="3.5" fill="rgba(255,208,198,0.88)"/>
+    <!-- 외각 2p (세 타원, 60° 간격) -->
+    <ellipse cx="50" cy="50" rx="34" ry="12.5" fill="none" stroke="rgba(245,168,152,0.36)" stroke-width="1.1"/>
+    <ellipse cx="50" cy="50" rx="34" ry="12.5" fill="none" stroke="rgba(245,168,152,0.30)" stroke-width="1.1" transform="rotate(60 50 50)"/>
+    <ellipse cx="50" cy="50" rx="34" ry="12.5" fill="none" stroke="rgba(245,168,152,0.24)" stroke-width="1.1" transform="rotate(120 50 50)"/>
+    <!-- 외각 전자 6개 -->
+    <circle cx="84"   cy="50"   r="4" fill="rgba(255,205,195,0.88)"/>
+    <circle cx="16"   cy="50"   r="4" fill="rgba(255,205,195,0.88)"/>
+    <circle cx="67.5" cy="79.5" r="4" fill="rgba(255,205,195,0.88)"/>
+    <circle cx="32.5" cy="20.5" r="4" fill="rgba(255,205,195,0.88)"/>
+    <circle cx="32.5" cy="79.5" r="4" fill="rgba(255,205,195,0.88)"/>
+    <circle cx="67.5" cy="20.5" r="4" fill="rgba(255,205,195,0.88)"/>
+    <text x="50" y="54" text-anchor="middle" dominant-baseline="middle"
+          fill="rgba(255,210,200,0.92)" font-size="18" font-family="sans-serif" font-weight="bold">O</text>
+  </svg>`,
+
+  // ─── 10. 탄소 원자 ──────────────────────────
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <defs>
+      <radialGradient id="g" cx="34%" cy="26%" r="72%">
+        <stop offset="0%"   stop-color="#9098a8"/>
+        <stop offset="52%"  stop-color="#38404e"/>
+        <stop offset="100%" stop-color="#14181e"/>
+      </radialGradient>
+    </defs>
+    <circle cx="50" cy="50" r="46" fill="url(#g)"/>
+    <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(162,178,200,0.42)" stroke-width="1.2"/>
+    <ellipse cx="37" cy="33" rx="11" ry="6.5" fill="rgba(255,255,255,0.14)" transform="rotate(-22 37 33)"/>
+    <!-- 핵 (Z=6) -->
+    <circle cx="50" cy="50" r="7" fill="rgba(198,212,228,0.84)"/>
+    <!-- K 껍질 (1s²: 전자 2개) -->
+    <ellipse cx="50" cy="50" rx="18" ry="7" fill="none" stroke="rgba(175,192,215,0.44)" stroke-width="1.2" transform="rotate(40 50 50)"/>
+    <circle cx="67.5" cy="43.5" r="4" fill="rgba(200,215,232,0.92)"/>
+    <circle cx="32.5" cy="56.5" r="4" fill="rgba(200,215,232,0.92)"/>
+    <!-- L 껍질 (2s²2p²: 전자 4개) -->
+    <circle cx="50" cy="50" r="33" fill="none" stroke="rgba(175,192,215,0.32)" stroke-width="1.2"/>
+    <circle cx="83" cy="50" r="4" fill="rgba(200,215,232,0.86)"/>
+    <circle cx="50" cy="17" r="4" fill="rgba(200,215,232,0.86)"/>
+    <circle cx="17" cy="50" r="4" fill="rgba(200,215,232,0.86)"/>
+    <circle cx="50" cy="83" r="4" fill="rgba(200,215,232,0.86)"/>
+    <!-- C 라벨 -->
+    <text x="50" y="54" text-anchor="middle" dominant-baseline="middle"
+          fill="rgba(205,215,230,0.92)" font-size="16" font-family="sans-serif" font-weight="bold">C</text>
+  </svg>`,
+
+  // ─── 11. 철 원자 ────────────────────────────
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <defs>
+      <radialGradient id="g" cx="34%" cy="26%" r="72%">
+        <stop offset="0%"   stop-color="#caa462"/>
+        <stop offset="52%"  stop-color="#604820"/>
+        <stop offset="100%" stop-color="#281806"/>
+      </radialGradient>
+    </defs>
+    <circle cx="50" cy="50" r="46" fill="url(#g)"/>
+    <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(218,180,112,0.42)" stroke-width="1.2"/>
+    <ellipse cx="37" cy="33" rx="11" ry="6.5" fill="rgba(255,255,255,0.18)" transform="rotate(-22 37 33)"/>
+    <!-- 전자 껍질 4개 (K:2, L:8, M:14, N:2) -->
+    <circle cx="50" cy="50" r="10" fill="none" stroke="rgba(218,180,98,0.38)" stroke-width="1.1"/>
+    <circle cx="50" cy="50" r="21" fill="none" stroke="rgba(218,180,98,0.30)" stroke-width="1.1"/>
+    <circle cx="50" cy="50" r="33" fill="none" stroke="rgba(218,180,98,0.22)" stroke-width="1.1"/>
+    <circle cx="50" cy="50" r="43" fill="none" stroke="rgba(218,180,98,0.16)" stroke-width="1.1"/>
+    <!-- 전자 수 라벨 (각 껍질) -->
+    <text x="50" y="38"  text-anchor="middle" fill="rgba(240,208,125,0.72)" font-size="7" font-family="sans-serif">2</text>
+    <text x="50" y="27"  text-anchor="middle" fill="rgba(240,208,125,0.66)" font-size="7" font-family="sans-serif">8</text>
+    <text x="50" y="15"  text-anchor="middle" fill="rgba(240,208,125,0.60)" font-size="7" font-family="sans-serif">14</text>
+    <text x="50" y="5"   text-anchor="middle" fill="rgba(240,208,125,0.54)" font-size="7" font-family="sans-serif">2</text>
+    <!-- Fe 라벨 (전자 껍질 중심) -->
+    <text x="50" y="53" text-anchor="middle" dominant-baseline="middle"
+          fill="rgba(248,225,148,0.96)" font-size="20" font-family="sans-serif" font-weight="bold">Fe</text>
+  </svg>`,
+
+  ];
+}
+
+// ═══════════════════════════════════════════════
+// SVG → Image 프리로드
+// ═══════════════════════════════════════════════
+let particleImages = new Array(DEFS.length).fill(null);
+
+function preloadImages() {
+  const svgs = buildParticleSVGs();
+  return Promise.all(svgs.map((svg, i) => new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => { particleImages[i] = img; resolve(); };
+    img.onerror = () => resolve();
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  })));
+}
+
+// ═══════════════════════════════════════════════
+// 상수
+// ═══════════════════════════════════════════════
+const CW = 420, CH = 660;
+const WT = 14;
+const DROP_Y = 55;
+const DANGER_Y = 95;
+const GRAVITY = 0.38;
+const RESTITUTION = 0.15;   // 입자끼리 충돌 반발력
+const WALL_REST  = 0.05;    // 바닥·벽 반발력 (거의 안 튀김)
+const FRICTION   = 0.972;
+const CORR       = 0.48;    // 위치보정 계수 (과보정 방지)
+const ITERS      = 18;      // 반복 횟수 (CORR 줄인 만큼 늘림)
+const SLEEP_V2   = 0.09;    // speed²<0.09 → 속도 0으로 (≈0.3 px/f)
+const COOLDOWN_F = 42;
+const DANGER_LIMIT = 100;
+
+// ═══════════════════════════════════════════════
+// 캔버스
+// ═══════════════════════════════════════════════
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = CW; canvas.height = CH;
+
+const nc = document.getElementById('nextCanvas');
+const nctx = nc.getContext('2d');
+const nc2 = document.getElementById('nextCanvas2');
+const nctx2 = nc2.getContext('2d');
+
+// ═══════════════════════════════════════════════
+// 우주 배경 데이터 (정적)
+// ═══════════════════════════════════════════════
+// 성운 (nebula) — 위치·색 고정, 매 프레임 radialGradient로 그림
+const NEBULAS = [
+  { x: 310, y: 160, r: 230, c: '80,28,145' },
+  { x:  75, y: 400, r: 195, c: '18,75,148' },
+  { x: 200, y: 560, r: 170, c: '140,25,75' },
+  { x: 130, y:  90, r: 155, c: '18,120,105' },
+];
+// 소형 별
+const STARS_SM = Array.from({ length: 90 }, () => ({
+  x: Math.random() * CW, y: Math.random() * CH,
+  s: Math.random() * 0.65 + 0.18, a: Math.random() * 0.18 + 0.06,
+}));
+// 중형 별
+const STARS_MD = Array.from({ length: 32 }, () => ({
+  x: Math.random() * CW, y: Math.random() * CH,
+  s: Math.random() * 0.75 + 0.85, a: Math.random() * 0.20 + 0.15,
+}));
+// 대형 별 (반짝임)
+const STARS_LG = Array.from({ length: 9 }, () => ({
+  x: Math.random() * CW, y: Math.random() * CH,
+  s: Math.random() * 0.65 + 1.35, a: Math.random() * 0.22 + 0.38,
+  ph: Math.random() * Math.PI * 2,
+}));
+
+// 우주 먼지 (drifting particles) — 위치·속도 동적
+const DUST = Array.from({ length: 50 }, () => ({
+  x:  Math.random() * CW,
+  y:  Math.random() * CH,
+  s:  Math.random() * 0.72 + 0.22,
+  a:  Math.random() * 0.10 + 0.04,
+  vx: (Math.random() - 0.5) * 0.07,
+  vy: Math.random() * 0.15 + 0.05,
+}));
+
+// ═══════════════════════════════════════════════
+// 게임 상태
+// ═══════════════════════════════════════════════
+let particles = [], flashes = [];
+let curLevel = 0, nxtLevel = 0, nxt2Level = 0;
+let score = 0, over = false, cooldown = 0, dangerTimer = 0;
+let mouseX = CW / 2, idCnt = 0;
+
+function rndLevel() { return Math.floor(Math.random() * 5); }
+
+// ═══════════════════════════════════════════════
+// 초기화
+// ═══════════════════════════════════════════════
+function init() {
+  particles = []; flashes = [];
+  score = 0; over = false; cooldown = 0; dangerTimer = 0;
+  curLevel = rndLevel(); nxtLevel = rndLevel(); nxt2Level = rndLevel();
+  document.getElementById('scoreValue').textContent = '0';
+  document.getElementById('overlay').classList.remove('show');
+  buildList();
+}
+
+function buildList() {
+  const el = document.getElementById('particleList');
+  el.innerHTML = '';
+  const svgs = buildParticleSVGs();
+  DEFS.forEach((d, i) => {
+    const src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgs[i]);
+    const div = document.createElement('div');
+    div.className = 'p-entry';
+    div.innerHTML = `<span class="p-num">${i + 1}</span><img class="p-img" src="${src}" alt="${d.name}"><span>${d.name}</span>`;
+    el.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// 입자 생성 / 투하
+// ═══════════════════════════════════════════════
+function mkParticle(x, y, level) {
+  const r = DEFS[level].r;
+  return { id: idCnt++, x, y, vx: 0, vy: 0, r, level, merging: false, born: 0,
+    mass: r * r };  // 질량 ∝ r² — 큰 입자가 훨씬 무거움
+}
+
+function drop() {
+  if (over || cooldown > 0) return;
+  const d = DEFS[curLevel];
+  const cx = Math.max(WT + d.r + 2, Math.min(CW - WT - d.r - 2, mouseX));
+  const p = mkParticle(cx, DROP_Y, curLevel);
+  p.vy = 3;
+  particles.push(p);
+  curLevel = nxtLevel; nxtLevel = nxt2Level; nxt2Level = rndLevel();
+  cooldown = COOLDOWN_F;
+}
+
+// ═══════════════════════════════════════════════
+// 물리
+// ═══════════════════════════════════════════════
+function physics() {
+  const now = performance.now();
+  for (const p of particles) {
+    p.vy += GRAVITY;
+    p.x += p.vx; p.y += p.vy;
+    p.vx *= FRICTION;
+  }
+  // 바닥·벽 충돌 — WALL_REST 사용으로 거의 안 튀김
+  for (const p of particles) {
+    if (p.x - p.r < WT)      { p.x = WT + p.r;      p.vx =  Math.abs(p.vx) * WALL_REST; }
+    if (p.x + p.r > CW - WT) { p.x = CW - WT - p.r; p.vx = -Math.abs(p.vx) * WALL_REST; }
+    if (p.y + p.r > CH - WT) { p.y = CH - WT - p.r; p.vy = -Math.abs(p.vy) * WALL_REST; p.vx *= FRICTION; }
+  }
+  const toMerge = [];
+  for (let it = 0; it < ITERS; it++) {
+    for (let i = 0; i < particles.length - 1; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const a = particles[i], b = particles[j];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const d2 = dx * dx + dy * dy;
+        const minD = a.r + b.r;
+        if (d2 >= minD * minD) continue;
+        const dist = Math.sqrt(d2) || 0.0001;
+        const nx = dx / dist, ny = dy / dist;
+        const ov = minD - dist;
+        const totalM = a.mass + b.mass;
+        // CORR 계수로 점진 보정 → 과보정 방지
+        a.x -= nx * ov * CORR * (b.mass / totalM);
+        a.y -= ny * ov * CORR * (b.mass / totalM);
+        b.x += nx * ov * CORR * (a.mass / totalM);
+        b.y += ny * ov * CORR * (a.mass / totalM);
+        const dvx = b.vx - a.vx, dvy = b.vy - a.vy;
+        const vn = dvx * nx + dvy * ny;
+        if (vn < 0) {
+          const imp = vn * (1 + RESTITUTION) / (1 / a.mass + 1 / b.mass);
+          a.vx += (imp / a.mass) * nx; a.vy += (imp / a.mass) * ny;
+          b.vx -= (imp / b.mass) * nx; b.vy -= (imp / b.mass) * ny;
+        }
+        if (it === 0 && a.level === b.level && !a.merging && !b.merging
+            && (now - a.born) > 300 && (now - b.born) > 300) {
+          toMerge.push([a.id, b.id]);
+          a.merging = true; b.merging = true;
+        }
+      }
+    }
+    // 이터레이션 후 벽 클램프
+    for (const p of particles) {
+      if (p.x - p.r < WT)      p.x = WT + p.r;
+      if (p.x + p.r > CW - WT) p.x = CW - WT - p.r;
+      if (p.y + p.r > CH - WT) p.y = CH - WT - p.r;
+    }
+  }
+  // Sleep: 거의 멈춘 입자 속도 완전히 0으로 (떨림 방지)
+  for (const p of particles) {
+    if (p.vx * p.vx + p.vy * p.vy < SLEEP_V2) { p.vx = 0; p.vy = 0; }
+  }
+  for (const [idA, idB] of toMerge) {
+    const ia = particles.findIndex(p => p.id === idA);
+    const ib = particles.findIndex(p => p.id === idB);
+    if (ia < 0 || ib < 0) continue;
+    const a = particles[ia], b = particles[ib];
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    const nl = a.level + 1;
+    flashes.push({ x: mx, y: my, maxR: DEFS[a.level].r * 3.5, t: 0 });
+    const hi = Math.max(ia, ib), lo = Math.min(ia, ib);
+    particles.splice(hi, 1); particles.splice(lo, 1);
+    score += (nl + 1) * 12;
+    document.getElementById('scoreValue').textContent = score;
+    if (nl < DEFS.length) {
+      const np = mkParticle(mx, my, nl);
+      np.born = now; np.vy = -3;
+      particles.push(np);
+    }
+  }
+  const danger = particles.some(p => p.y - p.r < DANGER_Y && (now - p.born) > 800);
+  dangerTimer = danger ? dangerTimer + 1 : 0;
+  if (dangerTimer > DANGER_LIMIT) triggerOver();
+}
+
+function triggerOver() {
+  over = true;
+  document.getElementById('finalScore').textContent = `최종 점수: ${score}`;
+  document.getElementById('overlay').classList.add('show');
+}
+
+// ═══════════════════════════════════════════════
+// 렌더링
+// ═══════════════════════════════════════════════
+function drawParticle(c, x, y, r, level, alpha = 1) {
+  const img = particleImages[level];
+  if (!img) return;
+  const def = DEFS[level];
+  c.save();
+  c.globalAlpha = alpha;
+  c.shadowColor = def.glow;
+  c.shadowBlur = r * 0.45;
+  c.drawImage(img, x - r, y - r, r * 2, r * 2);
+  c.restore();
+}
+
+function render() {
+  // ── 배경 그라디언트
+  const bg = ctx.createLinearGradient(0, 0, 0, CH);
+  bg.addColorStop(0, '#111e3a'); bg.addColorStop(1, '#0e1a32');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, CW, CH);
+
+  // ── 성운 (nebula blobs)
+  for (const n of NEBULAS) {
+    const ng = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+    ng.addColorStop(0,   `rgba(${n.c},0.072)`);
+    ng.addColorStop(0.5, `rgba(${n.c},0.030)`);
+    ng.addColorStop(1,   `rgba(${n.c},0)`);
+    ctx.fillStyle = ng; ctx.fillRect(0, 0, CW, CH);
+  }
+
+  // ── 소형 별
+  for (const s of STARS_SM) {
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(210,224,255,${s.a})`; ctx.fill();
+  }
+  // ── 중형 별
+  for (const s of STARS_MD) {
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(235,244,255,${s.a})`; ctx.fill();
+  }
+  // ── 대형 별 (반짝임 + 십자 광선)
+  const now_t = performance.now() / 1000;
+  for (const s of STARS_LG) {
+    const tw = s.a + Math.sin(now_t * 1.7 + s.ph) * 0.13;
+    const ta = Math.max(0, tw);
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,248,230,${ta})`; ctx.fill();
+    ctx.strokeStyle = `rgba(255,248,230,${ta * 0.38})`;
+    ctx.lineWidth = 0.6;
+    ctx.beginPath();
+    ctx.moveTo(s.x - s.s * 3.5, s.y); ctx.lineTo(s.x + s.s * 3.5, s.y);
+    ctx.moveTo(s.x, s.y - s.s * 3.5); ctx.lineTo(s.x, s.y + s.s * 3.5);
+    ctx.stroke();
+  }
+
+  // ── 우주 먼지 (위에서 아래로 천천히 흘러 내림)
+  for (const d of DUST) {
+    d.x += d.vx; d.y += d.vy;
+    if (d.y > CH + 2) { d.y = -2; d.x = Math.random() * CW; }
+    if (d.x < -2) d.x = CW + 2;
+    else if (d.x > CW + 2) d.x = -2;
+    ctx.beginPath(); ctx.arc(d.x, d.y, d.s, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(208,224,255,${d.a})`; ctx.fill();
+  }
+
+  // 벽
+  ctx.fillStyle = 'rgba(105,148,225,0.08)';
+  ctx.fillRect(0, 0, WT, CH); ctx.fillRect(CW - WT, 0, WT, CH); ctx.fillRect(0, CH - WT, CW, WT);
+  ctx.strokeStyle = 'rgba(135,172,255,0.20)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(WT, 0); ctx.lineTo(WT, CH);
+  ctx.moveTo(CW - WT, 0); ctx.lineTo(CW - WT, CH);
+  ctx.moveTo(0, CH - WT); ctx.lineTo(CW, CH - WT);
+  ctx.stroke();
+
+  // 위험선
+  const da = Math.min(1, 0.22 + (dangerTimer / DANGER_LIMIT) * 0.78);
+  ctx.strokeStyle = `rgba(210,62,62,${da})`;
+  ctx.lineWidth = 1.5; ctx.setLineDash([7, 5]);
+  ctx.beginPath(); ctx.moveTo(WT, DANGER_Y); ctx.lineTo(CW - WT, DANGER_Y); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 합체 이펙트
+  flashes = flashes.filter(f => f.t < 1);
+  for (const f of flashes) {
+    const fa = (1 - f.t) * 0.42;
+    ctx.beginPath(); ctx.arc(f.x, f.y, f.maxR * f.t, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(242,232,168,${fa})`; ctx.fill();
+    f.t += 0.07;
+  }
+
+  // 입자들
+  for (const p of particles) drawParticle(ctx, p.x, p.y, p.r, p.level);
+
+  // 투하 가이드
+  if (!over && cooldown === 0) {
+    const def = DEFS[curLevel];
+    const gx = Math.max(WT + def.r + 2, Math.min(CW - WT - def.r - 2, mouseX));
+    ctx.strokeStyle = 'rgba(175,198,255,0.11)'; ctx.lineWidth = 1; ctx.setLineDash([5, 5]);
+    ctx.beginPath(); ctx.moveTo(gx, DROP_Y + def.r); ctx.lineTo(gx, CH - WT); ctx.stroke();
+    ctx.setLineDash([]);
+    drawParticle(ctx, gx, DROP_Y, def.r, curLevel, 0.52);
+  }
+
+  // 다음 입자 미리보기 1
+  const nbg = nctx.createLinearGradient(0, 0, 0, nc.height);
+  nbg.addColorStop(0, '#111e3a'); nbg.addColorStop(1, '#0e1a32');
+  nctx.fillStyle = nbg; nctx.fillRect(0, 0, nc.width, nc.height);
+  const nr = Math.min(DEFS[nxtLevel].r, 34);
+  drawParticle(nctx, nc.width / 2, nc.height / 2, nr, nxtLevel);
+
+  // 다음 입자 미리보기 2
+  const nbg2 = nctx2.createLinearGradient(0, 0, 0, nc2.height);
+  nbg2.addColorStop(0, '#111e3a'); nbg2.addColorStop(1, '#0e1a32');
+  nctx2.fillStyle = nbg2; nctx2.fillRect(0, 0, nc2.width, nc2.height);
+  const nr2 = Math.min(DEFS[nxt2Level].r, 28);
+  drawParticle(nctx2, nc2.width / 2, nc2.height / 2, nr2, nxt2Level, 0.75);
+}
+
+// ═══════════════════════════════════════════════
+// 게임 루프
+// ═══════════════════════════════════════════════
+function loop() {
+  if (!over) { if (cooldown > 0) cooldown--; physics(); }
+  render();
+  requestAnimationFrame(loop);
+}
+
+// ═══════════════════════════════════════════════
+// 입력
+// ═══════════════════════════════════════════════
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - rect.left) * (CW / rect.width);
+});
+canvas.addEventListener('click', drop);
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); drop(); }
+});
+document.getElementById('restartBtn').addEventListener('click', init);
+
+// ═══════════════════════════════════════════════
+// 시작
+// ═══════════════════════════════════════════════
+preloadImages().then(() => { init(); loop(); });
+</script>
+</body>
+</html>
