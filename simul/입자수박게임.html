@@ -234,6 +234,45 @@
 
 <script>
 // ═══════════════════════════════════════════════
+// Firebase (modular SDK — 동적 import)
+// ═══════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
+  authDomain:        "simulation-67cd3.firebaseapp.com",
+  projectId:         "simulation-67cd3",
+  storageBucket:     "simulation-67cd3.appspot.com",
+  messagingSenderId: "615983461615",
+  appId:             "1:615983461615:web:002e07bcea878eb6d5571a"
+};
+const SUIKA_COL = 'suika_scores';   // Firestore 컬렉션 이름
+
+let _fb = null;  // Firebase 모듈 캐시
+
+async function getFirebase() {
+  if (_fb) return _fb;
+  try {
+    const [
+      { initializeApp, getApps, getApp },
+      { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp },
+      { getAuth, signInAnonymously }
+    ] = await Promise.all([
+      import('https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js'),
+      import('https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js'),
+      import('https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js'),
+    ]);
+    const app = getApps().find(a => a.name === 'suika') || initializeApp(FIREBASE_CONFIG, 'suika');
+    const db  = getFirestore(app);
+    const auth = getAuth(app);
+    try { await signInAnonymously(auth); } catch(e) {}
+    _fb = { db, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp };
+    return _fb;
+  } catch(e) {
+    console.warn('Firebase 초기화 실패:', e);
+    return null;
+  }
+}
+
+// ═══════════════════════════════════════════════
 // 입자 정의
 // ═══════════════════════════════════════════════
 const DEFS = [
@@ -246,8 +285,8 @@ const DEFS = [
   { name: '중수소핵',       r: 56,  glow: 'rgba(28,128,85,0.40)',   dot: '#3EB86E', mev: '1,876 MeV/c²'  },
   { name: '알파입자',       r: 67,  glow: 'rgba(22,135,135,0.40)', dot: '#2EB8B8',  mev: '3,727 MeV/c²'  },
   { name: '헬륨 원자',      r: 79,  glow: 'rgba(175,50,110,0.40)', dot: '#CE5E92',  mev: '3,728 MeV/c²'  },
-  { name: '산소 원자',      r: 92,  glow: 'rgba(172,48,35,0.40)',   dot: '#CE4838', mev: '14.9 GeV/c²'   },
-  { name: '탄소 원자',      r: 106, glow: 'rgba(72,85,110,0.36)',   dot: '#5A6878', mev: '11.2 GeV/c²'   },
+  { name: '탄소 원자',      r: 92,  glow: 'rgba(72,85,110,0.36)',   dot: '#5A6878', mev: '11.2 GeV/c²'   },
+  { name: '산소 원자',      r: 106, glow: 'rgba(172,48,35,0.40)',   dot: '#CE4838', mev: '14.9 GeV/c²'   },
   { name: '철 원자',        r: 121, glow: 'rgba(128,98,38,0.40)',   dot: '#A07838', mev: '52.1 GeV/c²'   },
 ];
 
@@ -450,7 +489,36 @@ function buildParticleSVGs() {
           fill="rgba(255,218,238,0.92)" font-size="18" font-family="sans-serif" font-weight="bold">He</text>
   </svg>`,
 
-  // ─── 9. 산소 원자 ───────────────────────────
+  // ─── 9. 탄소 원자 ───────────────────────────
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <defs>
+      <radialGradient id="g" cx="34%" cy="26%" r="72%">
+        <stop offset="0%"   stop-color="#9098a8"/>
+        <stop offset="52%"  stop-color="#38404e"/>
+        <stop offset="100%" stop-color="#14181e"/>
+      </radialGradient>
+    </defs>
+    <circle cx="50" cy="50" r="46" fill="url(#g)"/>
+    <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(162,178,200,0.42)" stroke-width="1.2"/>
+    <ellipse cx="37" cy="33" rx="11" ry="6.5" fill="rgba(255,255,255,0.14)" transform="rotate(-22 37 33)"/>
+    <!-- 핵 (Z=6) -->
+    <circle cx="50" cy="50" r="7" fill="rgba(198,212,228,0.84)"/>
+    <!-- K 껍질 (1s²: 전자 2개) -->
+    <ellipse cx="50" cy="50" rx="18" ry="7" fill="none" stroke="rgba(175,192,215,0.44)" stroke-width="1.2" transform="rotate(40 50 50)"/>
+    <circle cx="67.5" cy="43.5" r="4" fill="rgba(200,215,232,0.92)"/>
+    <circle cx="32.5" cy="56.5" r="4" fill="rgba(200,215,232,0.92)"/>
+    <!-- L 껍질 (2s²2p²: 전자 4개) -->
+    <circle cx="50" cy="50" r="33" fill="none" stroke="rgba(175,192,215,0.32)" stroke-width="1.2"/>
+    <circle cx="83" cy="50" r="4" fill="rgba(200,215,232,0.86)"/>
+    <circle cx="50" cy="17" r="4" fill="rgba(200,215,232,0.86)"/>
+    <circle cx="17" cy="50" r="4" fill="rgba(200,215,232,0.86)"/>
+    <circle cx="50" cy="83" r="4" fill="rgba(200,215,232,0.86)"/>
+    <!-- C 라벨 -->
+    <text x="50" y="54" text-anchor="middle" dominant-baseline="middle"
+          fill="rgba(205,215,230,0.92)" font-size="16" font-family="sans-serif" font-weight="bold">C</text>
+  </svg>`,
+
+  // ─── 10. 산소 원자 ──────────────────────────
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
     <defs>
       <radialGradient id="g" cx="34%" cy="26%" r="72%">
@@ -481,35 +549,6 @@ function buildParticleSVGs() {
     <circle cx="67.5" cy="20.5" r="4" fill="rgba(255,205,195,0.88)"/>
     <text x="50" y="54" text-anchor="middle" dominant-baseline="middle"
           fill="rgba(255,210,200,0.92)" font-size="18" font-family="sans-serif" font-weight="bold">O</text>
-  </svg>`,
-
-  // ─── 10. 탄소 원자 ──────────────────────────
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-    <defs>
-      <radialGradient id="g" cx="34%" cy="26%" r="72%">
-        <stop offset="0%"   stop-color="#9098a8"/>
-        <stop offset="52%"  stop-color="#38404e"/>
-        <stop offset="100%" stop-color="#14181e"/>
-      </radialGradient>
-    </defs>
-    <circle cx="50" cy="50" r="46" fill="url(#g)"/>
-    <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(162,178,200,0.42)" stroke-width="1.2"/>
-    <ellipse cx="37" cy="33" rx="11" ry="6.5" fill="rgba(255,255,255,0.14)" transform="rotate(-22 37 33)"/>
-    <!-- 핵 (Z=6) -->
-    <circle cx="50" cy="50" r="7" fill="rgba(198,212,228,0.84)"/>
-    <!-- K 껍질 (1s²: 전자 2개) -->
-    <ellipse cx="50" cy="50" rx="18" ry="7" fill="none" stroke="rgba(175,192,215,0.44)" stroke-width="1.2" transform="rotate(40 50 50)"/>
-    <circle cx="67.5" cy="43.5" r="4" fill="rgba(200,215,232,0.92)"/>
-    <circle cx="32.5" cy="56.5" r="4" fill="rgba(200,215,232,0.92)"/>
-    <!-- L 껍질 (2s²2p²: 전자 4개) -->
-    <circle cx="50" cy="50" r="33" fill="none" stroke="rgba(175,192,215,0.32)" stroke-width="1.2"/>
-    <circle cx="83" cy="50" r="4" fill="rgba(200,215,232,0.86)"/>
-    <circle cx="50" cy="17" r="4" fill="rgba(200,215,232,0.86)"/>
-    <circle cx="17" cy="50" r="4" fill="rgba(200,215,232,0.86)"/>
-    <circle cx="50" cy="83" r="4" fill="rgba(200,215,232,0.86)"/>
-    <!-- C 라벨 -->
-    <text x="50" y="54" text-anchor="middle" dominant-baseline="middle"
-          fill="rgba(205,215,230,0.92)" font-size="16" font-family="sans-serif" font-weight="bold">C</text>
   </svg>`,
 
   // ─── 11. 철 원자 ────────────────────────────
@@ -662,8 +701,8 @@ function init() {
   document.getElementById('scoreValue').textContent = '0';
   document.getElementById('overlay').classList.remove('show');
   updateBestScore();
-  renderSideLeaderboard();
   buildList();
+  fetchTop5().then(arr => { cachedScores = arr; renderSideLeaderboard(); });
 }
 
 const _listSVGSrcs = (() => {
@@ -804,35 +843,69 @@ function physics() {
   if (dangerTimer > DANGER_LIMIT) triggerOver();
 }
 
-// ── 최고점수 관리
-function getScores() {
-  try { return JSON.parse(localStorage.getItem(SCORE_KEY)) || []; } catch { return []; }
+// ── 점수 관리 (Firebase + localStorage 혼용)
+let cachedScores = [];   // Firestore에서 불러온 Top5 캐시
+
+function getLocalBest() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(SCORE_KEY)) || [];
+    return arr.length ? arr[0].score : null;
+  } catch { return null; }
+}
+function saveLocalBest(s) {
+  try {
+    const arr = JSON.parse(localStorage.getItem(SCORE_KEY)) || [];
+    arr.push({ score: s });
+    arr.sort((a, b) => b.score - a.score);
+    localStorage.setItem(SCORE_KEY, JSON.stringify(arr.slice(0, 1)));
+  } catch {}
 }
 function updateBestScore() {
-  const arr = getScores();
-  const best = arr.length ? arr[0].score : null;
+  const best = getLocalBest();
   document.getElementById('bestValue').textContent = best !== null ? best.toLocaleString() : '—';
 }
-function saveScore(name, s) {
-  const arr = getScores();
-  arr.push({ name: name || '익명', score: s });
-  arr.sort((a, b) => b.score - a.score);
-  localStorage.setItem(SCORE_KEY, JSON.stringify(arr.slice(0, 5)));
+
+async function fetchTop5() {
+  const fb = await getFirebase();
+  if (!fb) return [];
+  try {
+    const q = fb.query(
+      fb.collection(fb.db, SUIKA_COL),
+      fb.orderBy('score', 'desc'),
+      fb.limit(5)
+    );
+    const snap = await fb.getDocs(q);
+    return snap.docs.map(d => d.data());
+  } catch(e) { console.warn('Firestore 읽기 실패:', e); return []; }
+}
+async function saveScoreFirebase(name, s) {
+  const fb = await getFirebase();
+  if (!fb) return;
+  try {
+    await fb.addDoc(fb.collection(fb.db, SUIKA_COL), {
+      name: name || '익명',
+      score: s,
+      timestamp: fb.serverTimestamp()
+    });
+  } catch(e) { console.warn('Firestore 저장 실패:', e); }
 }
 function isTop5(s) {
-  const arr = getScores();
-  return arr.length < 5 || s > arr[arr.length - 1].score;
+  return cachedScores.length < 5 || s > cachedScores[cachedScores.length - 1].score;
 }
+
+const MEDALS   = ['🥇','🥈','🥉','④','⑤'];
+const RANK_CLS = ['rank1','rank2','rank3','',''];
+
 function renderSideLeaderboard() {
   const el = document.getElementById('sideLeaderboard');
-  const arr = getScores();
-  if (!arr.length) { el.innerHTML = '<div class="hall-empty">아직<br>기록이<br>없습니다</div>'; return; }
-  const medals = ['🥇','🥈','🥉','④','⑤'];
-  const rankCls = ['rank1','rank2','rank3','',''];
-  el.innerHTML = arr.map((e, i) =>
-    `<div class="hall-entry ${rankCls[i]}">
+  if (!cachedScores.length) {
+    el.innerHTML = '<div class="hall-empty">아직<br>기록이<br>없습니다</div>';
+    return;
+  }
+  el.innerHTML = cachedScores.map((e, i) =>
+    `<div class="hall-entry ${RANK_CLS[i]}">
       <div class="hall-rank-row">
-        <span class="hall-medal">${medals[i]}</span>
+        <span class="hall-medal">${MEDALS[i]}</span>
         <span class="hall-name">${e.name}</span>
       </div>
       <div class="hall-score">${e.score.toLocaleString()}</div>
@@ -841,28 +914,32 @@ function renderSideLeaderboard() {
 }
 
 function renderLeaderboard(highlightScore) {
-  const arr = getScores();
-  if (!arr.length) { document.getElementById('leaderboard').innerHTML = ''; return; }
-  const medals = ['🥇','🥈','🥉','4','5'];
-  const rows = arr.map((e, i) => {
+  if (!cachedScores.length) { document.getElementById('leaderboard').innerHTML = ''; return; }
+  const rows = cachedScores.map((e, i) => {
     const cls = e.score === highlightScore ? ' class="me"' : '';
-    return `<tr${cls}><td>${medals[i]}</td><td>${e.name}</td><td>${e.score.toLocaleString()}</td></tr>`;
+    return `<tr${cls}><td>${MEDALS[i]}</td><td>${e.name}</td><td>${e.score.toLocaleString()}</td></tr>`;
   }).join('');
   document.getElementById('leaderboard').innerHTML =
     `<table><tr><th></th><th>이름</th><th>점수</th></tr>${rows}</table>`;
 }
 
-function triggerOver() {
+async function triggerOver() {
   over = true;
   document.getElementById('finalScore').textContent = `최종 점수: ${score.toLocaleString()}`;
   document.getElementById('overlay').classList.add('show');
+  document.getElementById('nameSection').style.display = 'none';
+  document.getElementById('leaderboard').innerHTML =
+    '<div style="color:rgba(180,200,255,0.4);font-size:12px;text-align:center;padding:12px">불러오는 중...</div>';
+
+  cachedScores = await fetchTop5();
+  saveLocalBest(score);
+  updateBestScore();
+
   if (isTop5(score)) {
-    const ns = document.getElementById('nameSection');
-    ns.style.display = 'flex';
+    document.getElementById('nameSection').style.display = 'flex';
     document.getElementById('playerName').focus();
     renderLeaderboard(null);
   } else {
-    document.getElementById('nameSection').style.display = 'none';
     renderLeaderboard(null);
   }
 }
@@ -1074,13 +1151,16 @@ document.addEventListener('keydown', e => {
 });
 document.getElementById('restartBtn').addEventListener('click', init);
 
-function doSubmitScore() {
+async function doSubmitScore() {
   const name = document.getElementById('playerName').value.trim() || '익명';
-  saveScore(name, score);
+  const btn = document.getElementById('submitScore');
+  btn.disabled = true; btn.textContent = '저장 중...';
+  await saveScoreFirebase(name, score);
+  cachedScores = await fetchTop5();
   document.getElementById('nameSection').style.display = 'none';
   renderLeaderboard(score);
-  updateBestScore();
   renderSideLeaderboard();
+  btn.disabled = false; btn.textContent = '등록';
 }
 document.getElementById('submitScore').addEventListener('click', doSubmitScore);
 document.getElementById('playerName').addEventListener('keydown', e => {
