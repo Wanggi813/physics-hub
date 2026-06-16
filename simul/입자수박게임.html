@@ -822,6 +822,33 @@ const nctx = nc.getContext('2d');
 const nc2 = document.getElementById('nextCanvas2');
 const nctx2 = nc2.getContext('2d');
 
+// 정적 배경 오프스크린 캔버스 (성운·별 — 한 번만 그림)
+const bgCanvas = document.createElement('canvas');
+bgCanvas.width = CW; bgCanvas.height = CH;
+const bgCtx = bgCanvas.getContext('2d');
+
+function drawStaticBackground() {
+  const bg = bgCtx.createLinearGradient(0, 0, 0, CH);
+  bg.addColorStop(0, '#111e3a'); bg.addColorStop(1, '#0e1a32');
+  bgCtx.fillStyle = bg; bgCtx.fillRect(0, 0, CW, CH);
+
+  for (const n of NEBULAS) {
+    const ng = bgCtx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+    ng.addColorStop(0,   `rgba(${n.c},0.072)`);
+    ng.addColorStop(0.5, `rgba(${n.c},0.030)`);
+    ng.addColorStop(1,   `rgba(${n.c},0)`);
+    bgCtx.fillStyle = ng; bgCtx.fillRect(0, 0, CW, CH);
+  }
+  for (const s of STARS_SM) {
+    bgCtx.beginPath(); bgCtx.arc(s.x, s.y, s.s, 0, Math.PI * 2);
+    bgCtx.fillStyle = `rgba(210,224,255,${s.a})`; bgCtx.fill();
+  }
+  for (const s of STARS_MD) {
+    bgCtx.beginPath(); bgCtx.arc(s.x, s.y, s.s, 0, Math.PI * 2);
+    bgCtx.fillStyle = `rgba(235,244,255,${s.a})`; bgCtx.fill();
+  }
+}
+
 // ═══════════════════════════════════════════════
 // 우주 배경 데이터 (정적)
 // ═══════════════════════════════════════════════
@@ -1176,37 +1203,18 @@ function drawParticle(c, x, y, r, level, alpha = 1) {
   const def = DEFS[level];
   c.save();
   c.globalAlpha = alpha;
-  c.shadowColor = def.glow;
-  c.shadowBlur = r * 0.45;
+  if (r >= 29) {  // 업 쿼크 이상 크기만 glow 적용
+    c.shadowColor = def.glow;
+    c.shadowBlur = r * 0.28;
+  }
   c.drawImage(img, x - r, y - r, r * 2, r * 2);
   c.restore();
 }
 
 function render() {
-  // ── 배경 그라디언트
-  const bg = ctx.createLinearGradient(0, 0, 0, CH);
-  bg.addColorStop(0, '#111e3a'); bg.addColorStop(1, '#0e1a32');
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, CW, CH);
+  // ── 정적 배경 (오프스크린에서 복사 — 성운·소형·중형 별 포함)
+  ctx.drawImage(bgCanvas, 0, 0);
 
-  // ── 성운 (nebula blobs)
-  for (const n of NEBULAS) {
-    const ng = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
-    ng.addColorStop(0,   `rgba(${n.c},0.072)`);
-    ng.addColorStop(0.5, `rgba(${n.c},0.030)`);
-    ng.addColorStop(1,   `rgba(${n.c},0)`);
-    ctx.fillStyle = ng; ctx.fillRect(0, 0, CW, CH);
-  }
-
-  // ── 소형 별
-  for (const s of STARS_SM) {
-    ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(210,224,255,${s.a})`; ctx.fill();
-  }
-  // ── 중형 별
-  for (const s of STARS_MD) {
-    ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(235,244,255,${s.a})`; ctx.fill();
-  }
   // ── 대형 별 (반짝임 + 십자 광선)
   const now_t = performance.now() / 1000;
   for (const s of STARS_LG) {
@@ -1355,10 +1363,13 @@ function render() {
 // ═══════════════════════════════════════════════
 // 게임 루프
 // ═══════════════════════════════════════════════
-function loop() {
+let _lastFrameTs = 0;
+function loop(ts) {
+  requestAnimationFrame(loop);
+  if (ts - _lastFrameTs < 15.5) return;  // 60fps 캡 (1000/60 ≈ 16.7ms)
+  _lastFrameTs = ts;
   if (!over) { if (cooldown > 0) cooldown--; physics(); }
   render();
-  requestAnimationFrame(loop);
 }
 
 // ═══════════════════════════════════════════════
@@ -1420,7 +1431,7 @@ document.getElementById('playerName').addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════
 // 시작
 // ═══════════════════════════════════════════════
-preloadImages().then(() => { init(); loop(); });
+preloadImages().then(() => { drawStaticBackground(); init(); requestAnimationFrame(loop); });
 </script>
 </body>
 </html>
