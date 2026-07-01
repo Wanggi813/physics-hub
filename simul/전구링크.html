@@ -22,6 +22,7 @@
 
     * {
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
     html,
@@ -38,6 +39,9 @@
       color: var(--text);
       font-family: "Pretendard", "Noto Sans KR", "Segoe UI", Arial, sans-serif;
       touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
 
     body::before {
@@ -59,7 +63,7 @@
       flex-direction: column;
       align-items: center;
       gap: 14px;
-      width: min(100%, 980px);
+      width: min(100%, 1160px);
       min-height: 100svh;
       margin: 0 auto;
       padding: 16px;
@@ -76,6 +80,7 @@
     .brand,
     .scoreboard,
     .help,
+    .leaderboard,
     .overlay-card {
       border: 1px solid rgba(166, 242, 250, 0.34);
       background: linear-gradient(160deg, var(--panel), rgba(13, 42, 62, 0.76));
@@ -137,7 +142,7 @@
     .game-wrap {
       position: relative;
       display: grid;
-      grid-template-columns: minmax(0, auto) minmax(210px, 250px);
+      grid-template-columns: minmax(190px, 230px) minmax(0, auto) minmax(210px, 250px);
       gap: 14px;
       align-items: start;
       width: 100%;
@@ -165,6 +170,9 @@
       background: #12304a;
       cursor: pointer;
       touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
 
     .controls {
@@ -184,6 +192,8 @@
       letter-spacing: 0;
       cursor: pointer;
       box-shadow: inset 0 0 14px rgba(93, 232, 244, 0.18), 0 10px 22px rgba(0, 0, 0, 0.24);
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     button:hover,
@@ -217,6 +227,162 @@
 
     .help p:last-child {
       margin-bottom: 0;
+    }
+
+    .leaderboard {
+      width: 100%;
+      padding: 14px;
+      border-radius: 8px;
+    }
+
+    .leaderboard h2 {
+      margin: 0 0 10px;
+      color: var(--text);
+      font-size: 1.02rem;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .leaderboard-list {
+      display: grid;
+      gap: 7px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .leaderboard-item {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 8px;
+      align-items: center;
+      min-height: 42px;
+      padding: 8px;
+      border: 1px solid rgba(145, 236, 246, 0.18);
+      border-radius: 6px;
+      background: rgba(11, 39, 58, 0.72);
+    }
+
+    .leaderboard-rank {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      color: #103047;
+      background: linear-gradient(180deg, #ffe66b, #ffb52e);
+      font-weight: 900;
+      font-size: 0.82rem;
+    }
+
+    .leaderboard-score {
+      display: block;
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 900;
+      line-height: 1.05;
+    }
+
+    .leaderboard-name {
+      display: block;
+      margin-bottom: 2px;
+      color: #fff8cc;
+      font-size: 0.78rem;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .leaderboard-date {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 0.72rem;
+      line-height: 1.1;
+    }
+
+    .leaderboard-empty {
+      margin: 0;
+      padding: 12px;
+      border: 1px dashed rgba(145, 236, 246, 0.28);
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.35;
+    }
+
+    .leaderboard-item.rank-1 {
+      border-color: rgba(255, 230, 107, 0.72);
+      background: linear-gradient(135deg, rgba(93, 65, 16, 0.78), rgba(18, 58, 77, 0.78));
+      box-shadow: 0 0 18px rgba(255, 213, 75, 0.18);
+    }
+
+    .leaderboard-item.rank-2 {
+      border-color: rgba(220, 238, 245, 0.56);
+      background: linear-gradient(135deg, rgba(82, 101, 111, 0.58), rgba(14, 54, 76, 0.76));
+    }
+
+    .leaderboard-item.rank-3 {
+      border-color: rgba(255, 178, 92, 0.52);
+      background: linear-gradient(135deg, rgba(102, 58, 23, 0.56), rgba(14, 54, 76, 0.76));
+    }
+
+    .leaderboard-item.rank-4,
+    .leaderboard-item.rank-5 {
+      border-color: rgba(142, 239, 255, 0.34);
+      background: rgba(16, 58, 78, 0.78);
+    }
+
+    .leaderboard-item.rank-1 .leaderboard-rank {
+      background: linear-gradient(180deg, #fff4a3, #ffb52e);
+    }
+
+    .leaderboard-item.rank-2 .leaderboard-rank {
+      background: linear-gradient(180deg, #f4fbff, #9fb7c7);
+    }
+
+    .leaderboard-item.rank-3 .leaderboard-rank {
+      background: linear-gradient(180deg, #ffd0a0, #c56d25);
+    }
+
+    .leaderboard-item.rank-4 .leaderboard-rank,
+    .leaderboard-item.rank-5 .leaderboard-rank {
+      color: #073040;
+      background: linear-gradient(180deg, #a8f5ff, #55cde5);
+    }
+
+    .name-entry {
+      display: grid;
+      gap: 7px;
+      margin: 12px 0 10px;
+    }
+
+    .name-entry.hidden {
+      display: none;
+    }
+
+    .name-entry label {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      text-align: left;
+    }
+
+    .name-entry input {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid rgba(145, 236, 246, 0.34);
+      border-radius: 6px;
+      background: rgba(5, 22, 34, 0.82);
+      color: var(--text);
+      font: inherit;
+      font-weight: 800;
+      padding: 8px 10px;
+      outline: none;
+    }
+
+    .name-entry input:focus {
+      border-color: rgba(255, 230, 107, 0.78);
+      box-shadow: 0 0 0 3px rgba(255, 230, 107, 0.14);
     }
 
     .overlay {
@@ -314,6 +480,7 @@
         justify-self: center;
       }
 
+      .leaderboard,
       .side {
         width: min(96vw, 430px);
         justify-self: center;
@@ -351,6 +518,11 @@
     </section>
 
     <section class="game-wrap">
+      <aside class="leaderboard" aria-label="최고 점수 기록">
+        <h2>월간 랭킹</h2>
+        <ol id="leaderboardList" class="leaderboard-list"></ol>
+      </aside>
+
       <div class="board-shell">
         <canvas id="gameCanvas" aria-label="전구링크 게임 보드"></canvas>
         <div id="floatingText" class="floating-text"></div>
@@ -359,6 +531,10 @@
             <h2 id="overlayTitle">Circuit Spark</h2>
             <p id="overlayMessage">시작하면 아래에서 회로 부품이 올라옵니다. 칸을 눌러 부품을 돌리고, 양옆 전류 레일과 이어지는 전구 연결망을 만드세요.</p>
             <p id="overlayScore" class="big-score"></p>
+            <div id="nameEntry" class="name-entry hidden">
+              <label for="playerNameInput">닉네임</label>
+              <input id="playerNameInput" type="text" maxlength="12" autocomplete="nickname" placeholder="예: king T">
+            </div>
             <button id="overlayButton" type="button">게임 시작</button>
           </div>
         </div>
@@ -414,13 +590,22 @@
         this.overlayMessage = document.getElementById("overlayMessage");
         this.overlayScore = document.getElementById("overlayScore");
         this.overlayButton = document.getElementById("overlayButton");
+        this.nameEntry = document.getElementById("nameEntry");
+        this.playerNameInput = document.getElementById("playerNameInput");
         this.floatingTextEl = document.getElementById("floatingText");
+        this.leaderboardList = document.getElementById("leaderboardList");
         this.startButton = document.getElementById("startButton");
         this.pauseButton = document.getElementById("pauseButton");
         this.resetButton = document.getElementById("resetButton");
 
         this.bestScoreKey = "circuitSparkBestScore";
-        this.bestScore = Number(localStorage.getItem(this.bestScoreKey) || 0);
+        this.scoreRecordsKey = "circuitSparkScoreRecords";
+        this.scoreRecordsMonthKey = "circuitSparkScoreRecordsMonth";
+        this.oldScoreRecordsWeekKey = "circuitSparkScoreRecordsWeekStart";
+        this.scoreRecordSalt = "CircuitSparkLocalGuard:v3";
+        this.maxScoreRecords = 10;
+        this.scoreRecords = this.loadScoreRecords();
+        this.bestScore = this.scoreRecords[0]?.score || 0;
         this.grid = [];
         this.sparks = [];
         this.score = 0;
@@ -441,9 +626,14 @@
         this.sparkTimer = 0;
         this.sparkSides = ["left", "right"];
         this.clearingKeys = new Set();
+        this.pendingGameOverScore = null;
+        this.scoreEvents = [];
+        this.runStartedAt = 0;
+        this.suspiciousRun = false;
 
         this.bindEvents();
         this.resetGame(false);
+        this.renderLeaderboard();
         requestAnimationFrame((time) => this.loop(time));
       }
 
@@ -459,14 +649,236 @@
           const cell = this.getCellFromPointer(event);
           if (cell) this.rotatePiece(cell.row, cell.col);
         });
+        this.canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+        this.canvas.addEventListener("dragstart", (event) => event.preventDefault());
+        this.canvas.addEventListener("selectstart", (event) => event.preventDefault());
 
         this.startButton.addEventListener("click", () => this.startGame());
         this.overlayButton.addEventListener("click", () => {
-          if (this.gameOver) this.resetGame(true);
-          else this.startGame();
+          if (this.gameOver && this.pendingGameOverScore !== null) {
+            this.submitGameOverScore();
+          } else if (this.gameOver) {
+            this.resetGame(true);
+          } else {
+            this.startGame();
+          }
+        });
+        this.playerNameInput.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" && this.gameOver && this.pendingGameOverScore !== null) {
+            this.submitGameOverScore();
+          }
         });
         this.pauseButton.addEventListener("click", () => this.togglePause());
         this.resetButton.addEventListener("click", () => this.resetGame(true));
+      }
+
+      loadScoreRecords() {
+        let records = [];
+        try {
+          const currentMonth = this.getCurrentScoreMonth();
+          const storedMonth = localStorage.getItem(this.scoreRecordsMonthKey);
+          if (storedMonth && storedMonth !== currentMonth) {
+            localStorage.removeItem(this.scoreRecordsKey);
+            localStorage.removeItem(this.bestScoreKey);
+            localStorage.removeItem(this.oldScoreRecordsWeekKey);
+            localStorage.setItem(this.scoreRecordsMonthKey, currentMonth);
+            return [];
+          }
+          if (!storedMonth) {
+            localStorage.setItem(this.scoreRecordsMonthKey, currentMonth);
+          }
+          localStorage.removeItem(this.oldScoreRecordsWeekKey);
+
+          const rawRecords = localStorage.getItem(this.scoreRecordsKey);
+          if (rawRecords) {
+            records = JSON.parse(rawRecords)
+              .filter((record) => Number.isFinite(record.score) && record.score > 0)
+              .map((record) => ({
+                score: Math.floor(record.score),
+                name: this.cleanPlayerName(record.name),
+                date: record.date || new Date().toISOString(),
+                sig: record.sig || "",
+                legacy: record.legacy === true
+              }))
+              .filter((record) => this.isLegacyRecord(record) || this.verifyScoreRecord(record));
+          }
+
+          const legacyBest = Number(localStorage.getItem(this.bestScoreKey) || 0);
+          if (legacyBest > 0 && !records.some((record) => record.score === legacyBest)) {
+            records.push({ score: Math.floor(legacyBest), name: "익명", date: new Date().toISOString(), legacy: true });
+          }
+        } catch (error) {
+          records = [];
+        }
+
+        return records
+          .sort((a, b) => b.score - a.score || new Date(a.date) - new Date(b.date))
+          .slice(0, this.maxScoreRecords)
+          .map((record) => this.signScoreRecord(record));
+      }
+
+      isLegacyRecord(record) {
+        return !record.sig && record.legacy === true;
+      }
+
+      getCurrentScoreMonth() {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      }
+
+      cleanPlayerName(name) {
+        const cleaned = String(name || "").trim().replace(/\s+/g, " ").slice(0, 12);
+        return cleaned || "익명";
+      }
+
+      saveScoreRecord(score, name = "익명") {
+        if (!Number.isFinite(score) || score <= 0) return false;
+        const safeScore = Math.floor(score);
+        const validation = this.validateScoreSubmission(safeScore);
+        if (!validation.ok) {
+          this.pendingGameOverScore = null;
+          this.showOverlay(
+            "기록 보류",
+            "점수 기록이 비정상적으로 보여 월간 랭킹에는 저장하지 않았습니다.",
+            "다시 시작",
+            `점수 ${safeScore.toLocaleString()} / ${validation.reason}`,
+            false
+          );
+          return false;
+        }
+
+        this.scoreRecords.push(this.signScoreRecord({
+          name: this.cleanPlayerName(name),
+          score: safeScore,
+          date: new Date().toISOString()
+        }));
+        this.scoreRecords = this.scoreRecords
+          .sort((a, b) => b.score - a.score || new Date(a.date) - new Date(b.date))
+          .slice(0, this.maxScoreRecords);
+        this.bestScore = this.scoreRecords[0]?.score || 0;
+
+        try {
+          localStorage.setItem(this.scoreRecordsKey, JSON.stringify(this.scoreRecords));
+          localStorage.setItem(this.scoreRecordsMonthKey, this.getCurrentScoreMonth());
+          localStorage.setItem(this.bestScoreKey, String(this.bestScore));
+        } catch (error) {
+          // Storage can fail in private modes; the game should keep playing.
+        }
+        this.renderLeaderboard();
+        return true;
+      }
+
+      signScoreRecord(record) {
+        const signed = {
+          name: this.cleanPlayerName(record.name),
+          score: Math.floor(record.score),
+          date: record.date || new Date().toISOString()
+        };
+        signed.sig = this.makeScoreSignature(signed);
+        return signed;
+      }
+
+      verifyScoreRecord(record) {
+        return record.sig === this.makeScoreSignature(record);
+      }
+
+      makeScoreSignature(record) {
+        const payload = `${this.scoreRecordSalt}|${this.getCurrentScoreMonth()}|${record.name}|${record.score}|${record.date}`;
+        let hash = 2166136261;
+        for (let i = 0; i < payload.length; i += 1) {
+          hash ^= payload.charCodeAt(i);
+          hash = Math.imul(hash, 16777619);
+        }
+        return (hash >>> 0).toString(36);
+      }
+
+      validateScoreSubmission(score) {
+        if (this.suspiciousRun) return { ok: false, reason: "이상 이벤트 감지" };
+
+        const eventTotal = this.scoreEvents.reduce((sum, event) => sum + event.points, 0);
+        if (eventTotal !== score) return { ok: false, reason: "점수 합계 불일치" };
+
+        const playSeconds = Math.max(1, (performance.now() - (this.runStartedAt || performance.now())) / 1000);
+        if (score > playSeconds * 2800 + 6000) {
+          return { ok: false, reason: "시간 대비 과도한 점수" };
+        }
+
+        if (this.scoreEvents.length > 0 && playSeconds < 4) {
+          return { ok: false, reason: "플레이 시간이 너무 짧음" };
+        }
+
+        return { ok: true, reason: "" };
+      }
+
+      submitGameOverScore() {
+        const score = this.pendingGameOverScore;
+        const name = this.cleanPlayerName(this.playerNameInput.value);
+        const saved = this.saveScoreRecord(score, name);
+        if (!saved) return;
+        try {
+          localStorage.setItem("circuitSparkLastPlayerName", name);
+        } catch (error) {
+          // Optional convenience only.
+        }
+        this.pendingGameOverScore = null;
+        this.updateHud();
+        this.showOverlay(
+          "기록 저장 완료",
+          `${name}님의 점수가 월간 랭킹에 저장되었습니다.`,
+          "다시 시작",
+          `점수 ${score.toLocaleString()} / 최고점 ${this.bestScore.toLocaleString()}`,
+          false
+        );
+      }
+
+      renderLeaderboard() {
+        if (!this.leaderboardList) return;
+        this.leaderboardList.innerHTML = "";
+
+        if (this.scoreRecords.length === 0) {
+          const empty = document.createElement("li");
+          empty.className = "leaderboard-empty";
+          empty.textContent = "아직 저장된 점수가 없습니다. 첫 점등 기록을 만들어 보세요.";
+          this.leaderboardList.appendChild(empty);
+          return;
+        }
+
+        this.scoreRecords.slice(0, this.maxScoreRecords).forEach((record, index) => {
+          const item = document.createElement("li");
+          item.className = `leaderboard-item rank-${index + 1}`;
+
+          const rank = document.createElement("span");
+          rank.className = "leaderboard-rank";
+          rank.textContent = index + 1;
+
+          const body = document.createElement("span");
+          const name = document.createElement("span");
+          name.className = "leaderboard-name";
+          name.textContent = this.cleanPlayerName(record.name);
+
+          const score = document.createElement("span");
+          score.className = "leaderboard-score";
+          score.textContent = record.score.toLocaleString();
+
+          const date = document.createElement("span");
+          date.className = "leaderboard-date";
+          date.textContent = this.formatRecordDate(record.date);
+
+          body.append(name, score, date);
+          item.append(rank, body);
+          this.leaderboardList.appendChild(item);
+        });
+      }
+
+      formatRecordDate(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "기록";
+        return date.toLocaleDateString("ko-KR", {
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
       }
 
       initGame() {
@@ -474,6 +886,9 @@
         this.score = 0;
         this.combo = 1;
         this.lastSuccessAt = 0;
+        this.scoreEvents = [];
+        this.runStartedAt = 0;
+        this.suspiciousRun = false;
         this.rowTimer = 0;
         this.sparkTimer = 0;
         this.sparks = this.sparkSides.map((side, index) => ({
@@ -498,6 +913,7 @@
         this.paused = false;
         this.hideOverlay();
         this.pauseButton.textContent = "일시정지";
+        if (!this.runStartedAt) this.runStartedAt = performance.now();
         this.lastFrame = performance.now();
       }
 
@@ -505,6 +921,7 @@
         this.started = autostart;
         this.paused = false;
         this.gameOver = false;
+        this.pendingGameOverScore = null;
         this.initGame();
         this.resizeCanvas();
         this.updateHud();
@@ -701,6 +1118,7 @@
         if (bulbCount > 0) {
           const gained = this.calculateScore(network);
           this.score += gained;
+          this.recordScoreEvent(network.length, bulbCount, gained, spansBothEdges);
           this.lastSuccessAt = performance.now();
           this.clearNetwork(network);
           this.showFloatingText(this.makeSuccessText(network.length, bulbCount, gained, spansBothEdges));
@@ -711,6 +1129,30 @@
         }
 
         this.updateHud();
+      }
+
+      recordScoreEvent(length, bulbs, points, spansBothEdges) {
+        const event = {
+          t: Math.round(performance.now() - (this.runStartedAt || performance.now())),
+          length,
+          bulbs,
+          points,
+          combo: this.combo,
+          edge: spansBothEdges
+        };
+        this.scoreEvents.push(event);
+
+        if (
+          length < 1 ||
+          length > this.rows * this.cols ||
+          bulbs < 1 ||
+          bulbs > length ||
+          this.combo < 1 ||
+          this.combo > 5 ||
+          points > 25000
+        ) {
+          this.suspiciousRun = true;
+        }
       }
 
       calculateScore(network) {
@@ -821,16 +1263,14 @@
         this.gameOver = true;
         this.started = false;
         this.paused = false;
-        if (this.score > this.bestScore) {
-          this.bestScore = this.score;
-          localStorage.setItem(this.bestScoreKey, String(this.bestScore));
-        }
+        this.pendingGameOverScore = this.score;
         this.updateHud();
         this.showOverlay(
           "게임 오버",
-          "회로판이 가득 찼습니다. 전선이 길게 연결될수록 실제 회로에서는 저항이 커질 수 있다는 점도 기억해 보세요.",
-          "다시 시작",
-          `최종 점수 ${this.score.toLocaleString()} / 최고점 ${this.bestScore.toLocaleString()}`
+          "닉네임을 입력하면 이번 점수가 월간 랭킹에 저장됩니다.",
+          "기록 저장",
+          `최종 점수 ${this.score.toLocaleString()}`,
+          true
         );
       }
 
@@ -1244,15 +1684,21 @@
         this.speedEl.textContent = speed.toFixed(1);
       }
 
-      showOverlay(title, message, buttonText, scoreText) {
+      showOverlay(title, message, buttonText, scoreText, askName = false) {
         this.overlayTitle.textContent = title;
         this.overlayMessage.textContent = message;
         this.overlayButton.textContent = buttonText;
         this.overlayScore.textContent = scoreText;
+        this.nameEntry.classList.toggle("hidden", !askName);
+        if (askName) {
+          this.playerNameInput.value = localStorage.getItem("circuitSparkLastPlayerName") || "";
+          window.setTimeout(() => this.playerNameInput.focus(), 50);
+        }
         this.overlay.classList.remove("hidden");
       }
 
       hideOverlay() {
+        this.nameEntry.classList.add("hidden");
         this.overlay.classList.add("hidden");
       }
 
