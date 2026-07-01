@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>전구링크: Circuit Spark</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #12314a;
+      --panel: rgba(18, 48, 70, 0.86);
+      --panel-2: rgba(25, 72, 96, 0.72);
+      --line: rgba(112, 231, 239, 0.34);
+      --cyan: #54e8f2;
+      --cyan-soft: #8ff8ff;
+      --yellow: #ffe66b;
+      --amber: #ffb52e;
+      --red: #ff6074;
+      --text: #f2fbff;
+      --muted: #bfd6df;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 18% 14%, rgba(98, 219, 242, 0.34), transparent 28%),
+        radial-gradient(circle at 82% 16%, rgba(255, 215, 112, 0.22), transparent 26%),
+        radial-gradient(circle at 48% 90%, rgba(70, 170, 208, 0.18), transparent 38%),
+        linear-gradient(145deg, #102945 0%, var(--bg) 48%, #1b4963 100%);
+      color: var(--text);
+      font-family: "Pretendard", "Noto Sans KR", "Segoe UI", Arial, sans-serif;
+      touch-action: manipulation;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.48;
+      background-image:
+        linear-gradient(rgba(150, 245, 255, 0.11) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(150, 245, 255, 0.11) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent 90%);
+    }
+
+    .app {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      width: min(100%, 980px);
+      min-height: 100svh;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      width: 100%;
+      align-items: stretch;
+    }
+
+    .brand,
+    .scoreboard,
+    .help,
+    .overlay-card {
+      border: 1px solid rgba(166, 242, 250, 0.34);
+      background: linear-gradient(160deg, var(--panel), rgba(13, 42, 62, 0.76));
+      box-shadow: 0 20px 60px rgba(8, 27, 42, 0.24), inset 0 0 24px rgba(126, 238, 248, 0.08);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      min-width: 0;
+      padding: 14px 16px;
+      border-radius: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 4vw, 2.1rem);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .scoreboard {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(70px, 1fr));
+      gap: 8px;
+      min-width: min(440px, 100%);
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .stat {
+      min-width: 0;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: rgba(11, 39, 58, 0.82);
+      border: 1px solid rgba(145, 236, 246, 0.22);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--text);
+      font-size: clamp(1rem, 2.2vw, 1.35rem);
+      line-height: 1.1;
+    }
+
+    .game-wrap {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, auto) minmax(210px, 250px);
+      gap: 14px;
+      align-items: start;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .board-shell {
+      position: relative;
+      width: min(94vw, 560px);
+      border-radius: 8px;
+      padding: 10px;
+      background:
+        linear-gradient(180deg, rgba(85, 232, 242, 0.12), transparent 12%),
+        rgba(14, 43, 64, 0.84);
+      border: 1px solid rgba(163, 244, 250, 0.36);
+      box-shadow: 0 18px 50px rgba(8, 28, 45, 0.28), 0 0 36px rgba(95, 231, 245, 0.18);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 7 / 10.3;
+      border-radius: 6px;
+      background: #12304a;
+      cursor: pointer;
+      touch-action: none;
+    }
+
+    .controls {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    button {
+      min-height: 44px;
+      border: 1px solid rgba(116, 236, 245, 0.42);
+      border-radius: 6px;
+      background: linear-gradient(180deg, rgba(25, 77, 96, 0.96), rgba(8, 40, 58, 0.98));
+      color: var(--text);
+      font: inherit;
+      font-weight: 800;
+      letter-spacing: 0;
+      cursor: pointer;
+      box-shadow: inset 0 0 14px rgba(93, 232, 244, 0.18), 0 10px 22px rgba(0, 0, 0, 0.24);
+    }
+
+    button:hover,
+    button:focus-visible {
+      border-color: rgba(255, 230, 107, 0.78);
+      outline: none;
+      color: #fff9d7;
+    }
+
+    .secondary {
+      background: rgba(8, 29, 45, 0.9);
+      font-weight: 700;
+    }
+
+    .help {
+      padding: 14px;
+      border-radius: 8px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.92rem;
+    }
+
+    .help b {
+      color: var(--cyan-soft);
+      font-weight: 800;
+    }
+
+    .help p {
+      margin: 0 0 10px;
+    }
+
+    .help p:last-child {
+      margin-bottom: 0;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 10px;
+      display: grid;
+      place-items: center;
+      padding: 14px;
+      pointer-events: none;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .overlay-card {
+      width: min(92%, 380px);
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      pointer-events: auto;
+    }
+
+    .overlay-card h2 {
+      margin: 0 0 8px;
+      font-size: clamp(1.45rem, 5vw, 2.15rem);
+      letter-spacing: 0;
+    }
+
+    .overlay-card p {
+      margin: 8px 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .overlay-card .big-score {
+      color: var(--yellow);
+      font-size: 1.35rem;
+      font-weight: 900;
+    }
+
+    .floating-text {
+      position: absolute;
+      left: 50%;
+      top: 46%;
+      transform: translate(-50%, -50%) scale(0.96);
+      width: min(92%, 390px);
+      text-align: center;
+      color: var(--yellow);
+      text-shadow: 0 0 12px rgba(255, 230, 107, 0.9), 0 0 24px rgba(79, 234, 247, 0.48);
+      font-size: clamp(1.4rem, 6vw, 2.6rem);
+      font-weight: 950;
+      line-height: 1.12;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .floating-text.show {
+      animation: floatPop 900ms ease-out both;
+    }
+
+    @keyframes floatPop {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -44%) scale(0.9);
+      }
+      16% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -72%) scale(1.04);
+      }
+    }
+
+    @media (max-width: 820px) {
+      .app {
+        padding: 10px;
+        gap: 10px;
+      }
+
+      .topbar,
+      .game-wrap {
+        grid-template-columns: 1fr;
+      }
+
+      .scoreboard {
+        min-width: 0;
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .board-shell {
+        width: min(96vw, 430px);
+        justify-self: center;
+      }
+
+      .side {
+        width: min(96vw, 430px);
+        justify-self: center;
+      }
+
+      .help {
+        font-size: 0.84rem;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .scoreboard {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .subtitle {
+        font-size: 0.85rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="topbar" aria-label="게임 정보">
+      <div class="brand">
+        <h1>전구링크: Circuit Spark</h1>
+        <div class="subtitle">전선을 회전시켜 양옆 전류 레일에서 시작되는 긴 점등 회로를 만드세요.</div>
+      </div>
+      <div class="scoreboard">
+        <div class="stat"><span>점수</span><strong id="score">0</strong></div>
+        <div class="stat"><span>최고점</span><strong id="bestScore">0</strong></div>
+        <div class="stat"><span>콤보</span><strong id="combo">x1</strong></div>
+        <div class="stat"><span>속도</span><strong id="speed">1.0</strong></div>
+      </div>
+    </section>
+
+    <section class="game-wrap">
+      <div class="board-shell">
+        <canvas id="gameCanvas" aria-label="전구링크 게임 보드"></canvas>
+        <div id="floatingText" class="floating-text"></div>
+        <div id="overlay" class="overlay">
+          <div class="overlay-card">
+            <h2 id="overlayTitle">Circuit Spark</h2>
+            <p id="overlayMessage">시작하면 아래에서 회로 부품이 올라옵니다. 칸을 눌러 부품을 돌리고, 양옆 전류 레일과 이어지는 전구 연결망을 만드세요.</p>
+            <p id="overlayScore" class="big-score"></p>
+            <button id="overlayButton" type="button">게임 시작</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="side">
+        <div class="controls">
+          <button id="startButton" type="button">게임 시작</button>
+          <button id="pauseButton" class="secondary" type="button">일시정지</button>
+          <button id="resetButton" class="secondary" type="button">다시 시작</button>
+        </div>
+        <div class="help">
+          <p><b>조작</b> 칸을 클릭하거나 터치하면 부품이 90도 회전합니다.</p>
+          <p><b>핵심</b> 닫힌 연결 경로처럼 이어진 전선을 따라 전류가 흐르고, 전구는 전기 에너지를 빛 에너지로 바꿉니다.</p>
+          <p><b>주의</b> 전구 없이 전선만 이어지면 합선에 가까운 방전이라 점수가 거의 없습니다.</p>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const DIRECTIONS = ["up", "right", "down", "left"];
+    const DIR_VECTORS = {
+      up: { row: -1, col: 0 },
+      right: { row: 0, col: 1 },
+      down: { row: 1, col: 0 },
+      left: { row: 0, col: -1 }
+    };
+    const OPPOSITE = { up: "down", right: "left", down: "up", left: "right" };
+
+    const PIECE_BASES = {
+      straight: ["left", "right"],
+      corner: ["up", "right"],
+      tee: ["up", "left", "right"],
+      cross: ["up", "right", "down", "left"],
+      bulbStraight: ["left", "right"],
+      bulbCorner: ["up", "right"],
+      block: []
+    };
+
+    class Game {
+      constructor() {
+        this.rows = 10;
+        this.cols = 6;
+        this.canvas = document.getElementById("gameCanvas");
+        this.ctx = this.canvas.getContext("2d");
+        this.scoreEl = document.getElementById("score");
+        this.bestScoreEl = document.getElementById("bestScore");
+        this.comboEl = document.getElementById("combo");
+        this.speedEl = document.getElementById("speed");
+        this.overlay = document.getElementById("overlay");
+        this.overlayTitle = document.getElementById("overlayTitle");
+        this.overlayMessage = document.getElementById("overlayMessage");
+        this.overlayScore = document.getElementById("overlayScore");
+        this.overlayButton = document.getElementById("overlayButton");
+        this.floatingTextEl = document.getElementById("floatingText");
+        this.startButton = document.getElementById("startButton");
+        this.pauseButton = document.getElementById("pauseButton");
+        this.resetButton = document.getElementById("resetButton");
+
+        this.bestScoreKey = "circuitSparkBestScore";
+        this.bestScore = Number(localStorage.getItem(this.bestScoreKey) || 0);
+        this.grid = [];
+        this.sparks = [];
+        this.score = 0;
+        this.combo = 1;
+        this.lastSuccessAt = 0;
+        this.started = false;
+        this.paused = false;
+        this.gameOver = false;
+        this.cellSize = 64;
+        this.sparkTop = 0;
+        this.boardTop = 38;
+        this.boardLeft = 34;
+        this.boardWidth = 360;
+        this.width = 360;
+        this.height = 680;
+        this.lastFrame = 0;
+        this.rowTimer = 0;
+        this.sparkTimer = 0;
+        this.sparkSides = ["left", "right"];
+        this.clearingKeys = new Set();
+
+        this.bindEvents();
+        this.resetGame(false);
+        requestAnimationFrame((time) => this.loop(time));
+      }
+
+      bindEvents() {
+        window.addEventListener("resize", () => {
+          this.resizeCanvas();
+          this.drawGrid();
+        });
+
+        this.canvas.addEventListener("pointerdown", (event) => {
+          event.preventDefault();
+          if (!this.started || this.paused || this.gameOver) return;
+          const cell = this.getCellFromPointer(event);
+          if (cell) this.rotatePiece(cell.row, cell.col);
+        });
+
+        this.startButton.addEventListener("click", () => this.startGame());
+        this.overlayButton.addEventListener("click", () => {
+          if (this.gameOver) this.resetGame(true);
+          else this.startGame();
+        });
+        this.pauseButton.addEventListener("click", () => this.togglePause());
+        this.resetButton.addEventListener("click", () => this.resetGame(true));
+      }
+
+      initGame() {
+        this.grid = Array.from({ length: this.rows }, () => Array(this.cols).fill(null));
+        this.score = 0;
+        this.combo = 1;
+        this.lastSuccessAt = 0;
+        this.rowTimer = 0;
+        this.sparkTimer = 0;
+        this.sparks = this.sparkSides.map((side, index) => ({
+          side,
+          row: -1 - index * 3,
+          glow: 0,
+          color: index === 0 ? "#ffe66b" : "#70f4ff"
+        }));
+        this.clearingKeys.clear();
+
+        for (let i = 0; i < 4; i += 1) {
+          this.generateNewRow(false);
+        }
+      }
+
+      startGame() {
+        if (this.gameOver) {
+          this.resetGame(true);
+          return;
+        }
+        this.started = true;
+        this.paused = false;
+        this.hideOverlay();
+        this.pauseButton.textContent = "일시정지";
+        this.lastFrame = performance.now();
+      }
+
+      resetGame(autostart = false) {
+        this.started = autostart;
+        this.paused = false;
+        this.gameOver = false;
+        this.initGame();
+        this.resizeCanvas();
+        this.updateHud();
+        this.pauseButton.textContent = "일시정지";
+
+        if (autostart) {
+          this.hideOverlay();
+          this.lastFrame = performance.now();
+        } else {
+          this.showOverlay(
+            "전구링크",
+            "칸을 눌러 회로 부품을 돌리세요. 양옆 전류 레일이 전구가 포함된 연결망에 닿으면 점수가 올라갑니다.",
+            "게임 시작",
+            ""
+          );
+        }
+        this.drawGrid();
+      }
+
+      togglePause() {
+        if (!this.started || this.gameOver) return;
+        this.paused = !this.paused;
+        this.pauseButton.textContent = this.paused ? "계속하기" : "일시정지";
+        if (this.paused) {
+          this.showOverlay("일시정지", "회로판이 잠시 멈췄습니다.", "계속하기", "");
+        } else {
+          this.hideOverlay();
+          this.lastFrame = performance.now();
+        }
+      }
+
+      generateNewRow(checkGameOver = true) {
+        if (checkGameOver && this.grid[0].some(Boolean)) {
+          this.endGame();
+          return;
+        }
+
+        for (let row = 0; row < this.rows - 1; row += 1) {
+          this.grid[row] = this.grid[row + 1];
+        }
+        const newRow = Array.from({ length: this.cols }, () => this.createRandomPiece());
+        this.nudgeEdgeEntrances(newRow);
+        this.grid[this.rows - 1] = newRow;
+      }
+
+      nudgeEdgeEntrances(rowPieces) {
+        if (Math.random() < 0.72) {
+          rowPieces[0] = this.createEdgePiece("left");
+          while (!rowPieces[0].connections.includes("left")) {
+            rowPieces[0].rotation = (rowPieces[0].rotation + 1) % 4;
+            rowPieces[0].connections = this.getConnections(rowPieces[0].type, rowPieces[0].rotation);
+          }
+        }
+
+        if (Math.random() < 0.72) {
+          const last = this.cols - 1;
+          rowPieces[last] = this.createEdgePiece("right");
+          while (!rowPieces[last].connections.includes("right")) {
+            rowPieces[last].rotation = (rowPieces[last].rotation + 1) % 4;
+            rowPieces[last].connections = this.getConnections(rowPieces[last].type, rowPieces[last].rotation);
+          }
+        }
+      }
+
+      createEdgePiece(requiredDirection) {
+        const roll = Math.random();
+        let type = "corner";
+        if (roll < 0.18) type = "tee";
+        else if (roll < 0.3) type = "bulbCorner";
+        else if (roll < 0.38) type = "cross";
+        else if (roll > 0.86) type = "straight";
+
+        const piece = this.createPiece(type, Math.floor(Math.random() * 4));
+        while (!piece.connections.includes(requiredDirection)) {
+          piece.rotation = (piece.rotation + 1) % 4;
+          piece.connections = this.getConnections(piece.type, piece.rotation);
+        }
+        return piece;
+      }
+
+      createRandomPiece() {
+        const difficulty = Math.min(1, this.score / 8000);
+        const roll = Math.random();
+        const blockChance = 0.03 + difficulty * 0.03;
+        const bulbChance = 0.16 + difficulty * 0.03;
+        const crossChance = 0.08 + difficulty * 0.04;
+        const teeChance = 0.2 + difficulty * 0.03;
+        const cornerChance = 0.35 - difficulty * 0.03;
+
+        let cursor = blockChance;
+        let type = "straight";
+        if (roll < cursor) type = "block";
+        else if (roll < (cursor += bulbChance * 0.58)) type = "bulbCorner";
+        else if (roll < (cursor += bulbChance * 0.42)) type = "bulbStraight";
+        else if (roll < (cursor += crossChance)) type = "cross";
+        else if (roll < (cursor += teeChance)) type = "tee";
+        else if (roll < (cursor += cornerChance)) type = "corner";
+
+        return this.createPiece(type, Math.floor(Math.random() * 4));
+      }
+
+      createPiece(type, rotation = 0) {
+        const hasBulb = type === "bulbStraight" || type === "bulbCorner";
+        return {
+          type,
+          rotation,
+          connections: this.getConnections(type, rotation),
+          hasBulb,
+          isLit: false,
+          clearing: false,
+          fallOffset: 0,
+          pulse: Math.random() * Math.PI * 2
+        };
+      }
+
+      getConnections(type, rotation) {
+        const base = PIECE_BASES[type] || [];
+        if (type === "cross" || type === "block") return [...base];
+        const turns = ((rotation % 4) + 4) % 4;
+        return base.map((dir) => DIRECTIONS[(DIRECTIONS.indexOf(dir) + turns) % 4]);
+      }
+
+      rotatePiece(row, col) {
+        const piece = this.grid[row][col];
+        if (!piece || piece.type === "cross" || piece.type === "block" || piece.clearing) return;
+        piece.rotation = (piece.rotation + 1) % 4;
+        piece.connections = this.getConnections(piece.type, piece.rotation);
+        piece.pulse = 0;
+        this.drawGrid();
+      }
+
+      updateSparks(delta) {
+        const interval = Math.max(330, 780 - Math.min(360, this.score / 32));
+        this.sparkTimer += delta;
+        if (this.sparkTimer < interval) return;
+        this.sparkTimer -= interval;
+
+        this.sparks.forEach((spark) => {
+          spark.row += 1;
+          spark.glow = 1;
+          if (spark.row >= this.rows) {
+            spark.row = -1 - Math.floor(Math.random() * 4);
+          } else if (spark.row >= 0) {
+            const col = spark.side === "left" ? 0 : this.cols - 1;
+            const entryDirection = spark.side;
+            const piece = this.grid[spark.row][col];
+            if (piece && piece.connections.includes(entryDirection) && !piece.clearing) {
+              this.resolveSparkHit(spark.row, col);
+              spark.row = -2;
+            }
+          }
+        });
+      }
+
+      findConnectedNetwork(row, col) {
+        const start = this.grid[row]?.[col];
+        if (!start || start.type === "block") return [];
+        const visited = new Set();
+        const queue = [{ row, col }];
+        const network = [];
+
+        while (queue.length > 0) {
+          const current = queue.shift();
+          const key = `${current.row},${current.col}`;
+          if (visited.has(key)) continue;
+          visited.add(key);
+
+          const piece = this.grid[current.row]?.[current.col];
+          if (!piece || piece.type === "block") continue;
+          network.push(current);
+
+          piece.connections.forEach((dir) => {
+            const vector = DIR_VECTORS[dir];
+            const nextRow = current.row + vector.row;
+            const nextCol = current.col + vector.col;
+            if (!this.isInside(nextRow, nextCol)) return;
+            const neighbor = this.grid[nextRow][nextCol];
+            if (!neighbor || neighbor.type === "block" || neighbor.clearing) return;
+            if (neighbor.connections.includes(OPPOSITE[dir])) {
+              queue.push({ row: nextRow, col: nextCol });
+            }
+          });
+        }
+
+        return network;
+      }
+
+      resolveSparkHit(row, col) {
+        const network = this.findConnectedNetwork(row, col);
+        if (network.length === 0) return;
+        const bulbCount = network.filter(({ row: r, col: c }) => this.grid[r][c]?.hasBulb).length;
+        const spansBothEdges = this.networkSpansBothEdges(network);
+
+        if (bulbCount > 0) {
+          const gained = this.calculateScore(network);
+          this.score += gained;
+          this.lastSuccessAt = performance.now();
+          this.clearNetwork(network);
+          this.showFloatingText(this.makeSuccessText(network.length, bulbCount, gained, spansBothEdges));
+        } else {
+          this.combo = 1;
+          this.showFloatingText("SHORT CIRCUIT");
+          this.flashNetwork(network, false);
+        }
+
+        this.updateHud();
+      }
+
+      calculateScore(network) {
+        const now = performance.now();
+        const bulbCount = network.filter(({ row, col }) => this.grid[row][col]?.hasBulb).length;
+        const length = network.length;
+        const spansBothEdges = this.networkSpansBothEdges(network);
+        if (this.lastSuccessAt && now - this.lastSuccessAt < 5000) this.combo = Math.min(5, this.combo + 1);
+        else this.combo = 1;
+
+        let points = 50 + length * 10 + bulbCount * 150 + bulbCount * bulbCount * 100;
+        if (spansBothEdges) points += length >= 12 ? 800 : 400;
+        if (length >= 18) points += 1000;
+        else if (length >= 12) points += 500;
+        else if (length >= 8) points += 200;
+
+        return points * this.combo;
+      }
+
+      networkSpansBothEdges(network) {
+        const touchesLeft = network.some(({ row, col }) => {
+          const piece = this.grid[row]?.[col];
+          return col === 0 && piece?.connections.includes("left");
+        });
+        const touchesRight = network.some(({ row, col }) => {
+          const piece = this.grid[row]?.[col];
+          return col === this.cols - 1 && piece?.connections.includes("right");
+        });
+        return touchesLeft && touchesRight;
+      }
+
+      clearNetwork(network) {
+        network.forEach(({ row, col }) => {
+          const piece = this.grid[row][col];
+          if (piece) {
+            piece.isLit = true;
+            piece.clearing = true;
+            this.clearingKeys.add(`${row},${col}`);
+          }
+        });
+
+        window.setTimeout(() => {
+          network.forEach(({ row, col }) => {
+            if (this.grid[row]?.[col]?.clearing) this.grid[row][col] = null;
+            this.clearingKeys.delete(`${row},${col}`);
+          });
+          this.applyGravity();
+          this.drawGrid();
+        }, 300);
+      }
+
+      applyGravity() {
+        for (let col = 0; col < this.cols; col += 1) {
+          const fallingPieces = [];
+          for (let row = this.rows - 1; row >= 0; row -= 1) {
+            const piece = this.grid[row][col];
+            if (piece) fallingPieces.push({ piece, fromRow: row });
+          }
+
+          for (let row = 0; row < this.rows; row += 1) {
+            this.grid[row][col] = null;
+          }
+
+          fallingPieces.forEach(({ piece, fromRow }, index) => {
+            const targetRow = this.rows - 1 - index;
+            piece.isLit = false;
+            piece.clearing = false;
+            piece.fallOffset = targetRow !== fromRow ? (fromRow - targetRow) * this.cellSize : 0;
+            this.grid[targetRow][col] = piece;
+          });
+        }
+      }
+
+      flashNetwork(network, isSuccess) {
+        network.forEach(({ row, col }) => {
+          const piece = this.grid[row][col];
+          if (piece) {
+            piece.isLit = isSuccess;
+            piece.pulse = 0;
+          }
+        });
+        window.setTimeout(() => {
+          network.forEach(({ row, col }) => {
+            const piece = this.grid[row]?.[col];
+            if (piece) piece.isLit = false;
+          });
+        }, 260);
+      }
+
+      makeSuccessText(length, bulbs, points, spansBothEdges) {
+        const comboText = this.combo > 1 ? ` COMBO x${this.combo}` : "";
+        if (spansBothEdges && length >= 12) return `EDGE LINK!${comboText}\n+${points}`;
+        if (length >= 18 && bulbs >= 3) return `MEGA SPARK!${comboText}\n+${points}`;
+        if (length >= 12 || bulbs >= 2) return `LONG CIRCUIT!${comboText}\n+${points}`;
+        return `LIGHT ON!${comboText}\n+${points}`;
+      }
+
+      updateDifficulty(delta) {
+        const interval = Math.max(2600, 6500 - Math.min(3000, this.score / 3));
+        this.rowTimer += delta;
+        if (this.rowTimer >= interval) {
+          this.rowTimer -= interval;
+          this.generateNewRow(true);
+        }
+      }
+
+      endGame() {
+        this.gameOver = true;
+        this.started = false;
+        this.paused = false;
+        if (this.score > this.bestScore) {
+          this.bestScore = this.score;
+          localStorage.setItem(this.bestScoreKey, String(this.bestScore));
+        }
+        this.updateHud();
+        this.showOverlay(
+          "게임 오버",
+          "회로판이 가득 찼습니다. 전선이 길게 연결될수록 실제 회로에서는 저항이 커질 수 있다는 점도 기억해 보세요.",
+          "다시 시작",
+          `최종 점수 ${this.score.toLocaleString()} / 최고점 ${this.bestScore.toLocaleString()}`
+        );
+      }
+
+      loop(time) {
+        const delta = Math.min(80, time - this.lastFrame || 16);
+        this.lastFrame = time;
+
+        if (this.started && !this.paused && !this.gameOver) {
+          this.updateSparks(delta);
+          this.updateDifficulty(delta);
+          this.sparks.forEach((spark) => {
+            spark.glow = Math.max(0, spark.glow - delta / 260);
+          });
+        }
+
+        this.updateFallingPieces(delta);
+
+        this.drawGrid();
+        requestAnimationFrame((nextTime) => this.loop(nextTime));
+      }
+
+      updateFallingPieces(delta) {
+        const step = Math.max(4, this.cellSize * (delta / 110));
+        for (let row = 0; row < this.rows; row += 1) {
+          for (let col = 0; col < this.cols; col += 1) {
+            const piece = this.grid[row][col];
+            if (!piece || !piece.fallOffset) continue;
+            piece.fallOffset = Math.min(0, piece.fallOffset + step);
+          }
+        }
+      }
+
+      resizeCanvas() {
+        const shell = this.canvas.parentElement;
+        const availableWidth = Math.min(shell.clientWidth - 20, window.innerWidth - 28);
+        const maxHeight = window.innerHeight > 760 ? window.innerHeight - 120 : window.innerHeight - 210;
+        const byWidth = Math.floor(availableWidth / (this.cols + 1.08));
+        const byHeight = Math.floor(Math.max(360, maxHeight) / (this.rows + 0.28));
+        this.cellSize = Math.max(42, Math.min(78, byWidth, byHeight));
+        this.sparkTop = Math.round(this.cellSize * 0.18);
+        this.boardTop = Math.round(this.cellSize * 0.28);
+        this.boardLeft = Math.round(this.cellSize * 0.54);
+        this.boardWidth = this.cellSize * this.cols;
+        this.width = this.boardWidth + this.boardLeft * 2;
+        this.height = this.boardTop + this.cellSize * this.rows;
+
+        const ratio = window.devicePixelRatio || 1;
+        this.canvas.width = Math.floor(this.width * ratio);
+        this.canvas.height = Math.floor(this.height * ratio);
+        this.canvas.style.width = `${this.width}px`;
+        this.canvas.style.height = `${this.height}px`;
+        this.ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      }
+
+      drawGrid() {
+        const ctx = this.ctx;
+        ctx.clearRect(0, 0, this.width, this.height);
+        this.drawBackground(ctx);
+        this.drawSparks(ctx);
+
+        for (let row = 0; row < this.rows; row += 1) {
+          for (let col = 0; col < this.cols; col += 1) {
+            const x = this.boardLeft + col * this.cellSize;
+            const y = this.boardTop + row * this.cellSize;
+            this.drawCell(ctx, x, y, row, col);
+            const piece = this.grid[row][col];
+            if (piece) this.drawPiece(piece, x, y + (piece.fallOffset || 0));
+          }
+        }
+      }
+
+      drawBackground(ctx) {
+        const gradient = ctx.createLinearGradient(0, 0, 0, this.height);
+        gradient.addColorStop(0, "#1c5876");
+        gradient.addColorStop(0.52, "#153d5a");
+        gradient.addColorStop(1, "#102c45");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, this.width, this.height);
+
+        const boardGlow = ctx.createRadialGradient(this.width * 0.5, this.height * 0.18, 0, this.width * 0.5, this.height * 0.18, this.width * 0.74);
+        boardGlow.addColorStop(0, "rgba(159, 246, 255, 0.18)");
+        boardGlow.addColorStop(1, "rgba(159, 246, 255, 0)");
+        ctx.fillStyle = boardGlow;
+        ctx.fillRect(0, 0, this.width, this.height);
+
+        ctx.strokeStyle = "rgba(170, 247, 255, 0.18)";
+        ctx.lineWidth = 1;
+        for (let x = 0; x <= this.width; x += this.cellSize / 2) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, this.height);
+          ctx.stroke();
+        }
+        for (let y = this.boardTop; y <= this.height; y += this.cellSize / 2) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(this.width, y);
+          ctx.stroke();
+        }
+
+        const leftRailX = this.boardLeft * 0.5;
+        const rightRailX = this.boardLeft + this.boardWidth + this.boardLeft * 0.5;
+        ctx.shadowColor = "rgba(255, 231, 123, 0.5)";
+        ctx.shadowBlur = 12;
+        ctx.strokeStyle = "rgba(255, 231, 123, 0.38)";
+        ctx.lineWidth = Math.max(2, this.cellSize * 0.035);
+        [leftRailX, rightRailX].forEach((x) => {
+          ctx.beginPath();
+          ctx.moveTo(x, this.boardTop);
+          ctx.lineTo(x, this.height);
+          ctx.stroke();
+        });
+
+        for (let row = 0; row < this.rows; row += 1) {
+          const y = this.boardTop + row * this.cellSize + this.cellSize / 2;
+          ctx.fillStyle = "rgba(255, 235, 130, 0.22)";
+          ctx.beginPath();
+          ctx.arc(leftRailX, y, this.cellSize * 0.08, 0, Math.PI * 2);
+          ctx.arc(rightRailX, y, this.cellSize * 0.08, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.shadowBlur = 0;
+          ctx.strokeStyle = "rgba(171, 248, 255, 0.34)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(leftRailX, y);
+          ctx.lineTo(this.boardLeft, y);
+          ctx.moveTo(this.boardLeft + this.boardWidth, y);
+          ctx.lineTo(rightRailX, y);
+          ctx.stroke();
+        }
+      }
+
+      drawCell(ctx, x, y, row, col) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.fillStyle = (row + col) % 2 === 0 ? "rgba(26, 75, 96, 0.84)" : "rgba(20, 63, 87, 0.84)";
+        ctx.fillRect(1, 1, this.cellSize - 2, this.cellSize - 2);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.035)";
+        ctx.fillRect(3, 3, this.cellSize - 6, Math.max(2, this.cellSize * 0.18));
+        ctx.strokeStyle = "rgba(169, 245, 252, 0.32)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0.5, 0.5, this.cellSize - 1, this.cellSize - 1);
+
+        if (row === 0) {
+          ctx.fillStyle = "rgba(255, 115, 130, 0.1)";
+          ctx.fillRect(2, 2, this.cellSize - 4, this.cellSize - 4);
+        }
+        ctx.restore();
+      }
+
+      drawPiece(piece, x, y) {
+        const ctx = this.ctx;
+        const size = this.cellSize;
+        const cx = x + size / 2;
+        const cy = y + size / 2;
+        const radius = size * 0.18;
+        const lit = piece.isLit || piece.clearing;
+        const wireColor = lit ? "#ffe66b" : "#76d9e6";
+        const glowColor = lit ? "rgba(255, 230, 107, 0.72)" : "rgba(84, 232, 242, 0.22)";
+        const lineWidth = Math.max(5, size * 0.1);
+
+        ctx.save();
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        if (piece.type === "block") {
+          ctx.fillStyle = "rgba(21, 30, 40, 0.96)";
+          ctx.strokeStyle = "rgba(135, 152, 162, 0.38)";
+          this.roundRect(ctx, x + size * 0.2, y + size * 0.2, size * 0.6, size * 0.6, 5);
+          ctx.fill();
+          ctx.stroke();
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.16)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x + size * 0.33, y + size * 0.67);
+          ctx.lineTo(x + size * 0.67, y + size * 0.33);
+          ctx.stroke();
+          ctx.restore();
+          return;
+        }
+
+        ctx.shadowBlur = lit ? 22 : 10;
+        ctx.shadowColor = glowColor;
+        ctx.strokeStyle = wireColor;
+        ctx.lineWidth = lineWidth;
+
+        piece.connections.forEach((dir) => {
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          if (dir === "up") ctx.lineTo(cx, y + size * 0.1);
+          if (dir === "right") ctx.lineTo(x + size * 0.9, cy);
+          if (dir === "down") ctx.lineTo(cx, y + size * 0.9);
+          if (dir === "left") ctx.lineTo(x + size * 0.1, cy);
+          ctx.stroke();
+        });
+
+        ctx.fillStyle = lit ? "#fff4a6" : "#102b39";
+        ctx.strokeStyle = lit ? "#ffe66b" : "#67d6e4";
+        ctx.lineWidth = Math.max(2, size * 0.035);
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        if (piece.hasBulb) {
+          const glassTop = cy - size * 0.31;
+          const glassBottom = cy + size * 0.25;
+          const neckTop = cy + size * 0.18;
+          const socketY = cy + size * 0.24;
+          const bulbGlow = lit ? "rgba(255, 222, 78, 0.98)" : "rgba(170, 215, 226, 0.28)";
+          const glassGradient = ctx.createRadialGradient(
+            cx - size * 0.11,
+            cy - size * 0.17,
+            size * 0.02,
+            cx,
+            cy - size * 0.02,
+            size * 0.43
+          );
+
+          if (lit) {
+            const halo = ctx.createRadialGradient(cx, cy - size * 0.03, size * 0.08, cx, cy - size * 0.03, size * 0.78);
+            halo.addColorStop(0, "rgba(255, 245, 150, 0.68)");
+            halo.addColorStop(0.42, "rgba(255, 198, 40, 0.26)");
+            halo.addColorStop(1, "rgba(255, 198, 40, 0)");
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = halo;
+            ctx.beginPath();
+            ctx.arc(cx, cy - size * 0.03, size * 0.78, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.save();
+            ctx.translate(cx, cy - size * 0.05);
+            ctx.strokeStyle = "rgba(255, 244, 175, 0.7)";
+            ctx.lineWidth = Math.max(1.2, size * 0.018);
+            ctx.lineCap = "round";
+            for (let i = 0; i < 10; i += 1) {
+              const angle = (Math.PI * 2 * i) / 10;
+              const inner = size * 0.38;
+              const outer = size * 0.49;
+              ctx.beginPath();
+              ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+              ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+              ctx.stroke();
+            }
+            ctx.restore();
+          }
+
+          if (lit) {
+            glassGradient.addColorStop(0, "#fffef4");
+            glassGradient.addColorStop(0.22, "#fff5b9");
+            glassGradient.addColorStop(0.56, "#ffd456");
+            glassGradient.addColorStop(0.88, "#f69b22");
+            glassGradient.addColorStop(1, "#a85e12");
+          } else {
+            glassGradient.addColorStop(0, "rgba(238, 252, 255, 0.68)");
+            glassGradient.addColorStop(0.32, "rgba(125, 172, 180, 0.38)");
+            glassGradient.addColorStop(0.78, "rgba(45, 73, 78, 0.72)");
+            glassGradient.addColorStop(1, "rgba(30, 48, 50, 0.95)");
+          }
+
+          ctx.shadowColor = bulbGlow;
+          ctx.shadowBlur = lit ? 34 : 9;
+          ctx.fillStyle = glassGradient;
+          ctx.strokeStyle = lit ? "rgba(255, 255, 230, 0.95)" : "rgba(207, 239, 240, 0.7)";
+          ctx.lineWidth = Math.max(2, size * 0.036);
+          ctx.beginPath();
+          ctx.moveTo(cx, glassTop);
+          ctx.bezierCurveTo(cx - size * 0.28, cy - size * 0.28, cx - size * 0.36, cy - size * 0.03, cx - size * 0.24, cy + size * 0.13);
+          ctx.bezierCurveTo(cx - size * 0.18, cy + size * 0.22, cx - size * 0.11, neckTop, cx - size * 0.1, glassBottom);
+          ctx.lineTo(cx + size * 0.1, glassBottom);
+          ctx.bezierCurveTo(cx + size * 0.11, neckTop, cx + size * 0.18, cy + size * 0.22, cx + size * 0.24, cy + size * 0.13);
+          ctx.bezierCurveTo(cx + size * 0.36, cy - size * 0.03, cx + size * 0.28, cy - size * 0.28, cx, glassTop);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.shadowBlur = 0;
+          const innerGlow = ctx.createRadialGradient(cx, cy - size * 0.03, 0, cx, cy - size * 0.03, size * 0.27);
+          innerGlow.addColorStop(0, lit ? "rgba(255, 249, 181, 0.72)" : "rgba(155, 205, 210, 0.16)");
+          innerGlow.addColorStop(1, "rgba(255, 255, 255, 0)");
+          ctx.fillStyle = innerGlow;
+          ctx.beginPath();
+          ctx.arc(cx, cy - size * 0.03, size * 0.28, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = lit ? "rgba(255, 255, 248, 0.76)" : "rgba(255, 255, 255, 0.3)";
+          ctx.beginPath();
+          ctx.ellipse(cx - size * 0.105, cy - size * 0.17, size * 0.055, size * 0.12, -0.58, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = lit ? "#fff2a5" : "rgba(204, 178, 96, 0.78)";
+          ctx.lineWidth = Math.max(1.4, size * 0.022);
+          ctx.beginPath();
+          ctx.moveTo(cx - size * 0.095, cy + size * 0.16);
+          ctx.lineTo(cx - size * 0.068, cy + size * 0.02);
+          ctx.moveTo(cx + size * 0.095, cy + size * 0.16);
+          ctx.lineTo(cx + size * 0.068, cy + size * 0.02);
+          ctx.stroke();
+
+          ctx.shadowColor = lit ? "rgba(255, 235, 115, 0.9)" : "rgba(170, 122, 43, 0.25)";
+          ctx.shadowBlur = lit ? 8 : 0;
+          ctx.strokeStyle = lit ? "#fff6b7" : "#b58a39";
+          ctx.lineWidth = Math.max(1.7, size * 0.026);
+          ctx.beginPath();
+          ctx.moveTo(cx - size * 0.085, cy + size * 0.018);
+          ctx.bezierCurveTo(cx - size * 0.055, cy - size * 0.055, cx - size * 0.025, cy + size * 0.08, cx, cy + size * 0.005);
+          ctx.bezierCurveTo(cx + size * 0.025, cy - size * 0.07, cx + size * 0.055, cy + size * 0.075, cx + size * 0.085, cy + size * 0.018);
+          ctx.stroke();
+
+          ctx.shadowBlur = 0;
+          const socketGradient = ctx.createLinearGradient(cx - size * 0.16, socketY, cx + size * 0.16, socketY + size * 0.22);
+          socketGradient.addColorStop(0, lit ? "#ffe39b" : "#7f908c");
+          socketGradient.addColorStop(0.5, lit ? "#b97527" : "#455d5f");
+          socketGradient.addColorStop(1, lit ? "#6d3c13" : "#25383d");
+          ctx.fillStyle = socketGradient;
+          ctx.strokeStyle = lit ? "rgba(255, 241, 176, 0.92)" : "rgba(185, 210, 207, 0.72)";
+          ctx.lineWidth = Math.max(1.5, size * 0.024);
+          this.roundRect(ctx, cx - size * 0.15, socketY, size * 0.3, size * 0.19, size * 0.035);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.strokeStyle = lit ? "rgba(255, 246, 185, 0.72)" : "rgba(222, 238, 233, 0.38)";
+          ctx.lineWidth = Math.max(1, size * 0.014);
+          for (let i = 0; i < 3; i += 1) {
+            const bandY = socketY + size * (0.045 + i * 0.048);
+            ctx.beginPath();
+            ctx.moveTo(cx - size * 0.125, bandY);
+            ctx.lineTo(cx + size * 0.125, bandY - size * 0.018);
+            ctx.stroke();
+          }
+        }
+
+        if (piece.clearing) {
+          ctx.fillStyle = "rgba(255, 230, 107, 0.16)";
+          ctx.beginPath();
+          ctx.arc(cx, cy, size * 0.42, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+
+      drawSparks(ctx) {
+        this.sparks.forEach((spark) => {
+          const isLeft = spark.side === "left";
+          const railX = isLeft
+            ? this.boardLeft * 0.5
+            : this.boardLeft + this.boardWidth + this.boardLeft * 0.5;
+          const boardEdgeX = isLeft ? this.boardLeft : this.boardLeft + this.boardWidth;
+          const targetY = spark.row < 0
+            ? this.sparkTop
+            : this.boardTop + spark.row * this.cellSize + this.cellSize / 2;
+          const y = Math.max(this.boardTop + this.cellSize * 0.08, targetY);
+
+          ctx.save();
+          ctx.shadowColor = spark.color;
+          ctx.shadowBlur = 22 + spark.glow * 18;
+          ctx.strokeStyle = spark.color;
+          ctx.lineWidth = Math.max(3, this.cellSize * 0.055);
+          ctx.beginPath();
+          ctx.moveTo(railX, this.boardTop);
+          ctx.lineTo(railX, y);
+          ctx.stroke();
+
+          ctx.fillStyle = spark.color;
+          ctx.beginPath();
+          ctx.arc(railX, y, this.cellSize * (0.105 + spark.glow * 0.025), 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = spark.color;
+          ctx.lineWidth = Math.max(2, this.cellSize * 0.035);
+          ctx.beginPath();
+          ctx.moveTo(railX, y);
+          ctx.lineTo(boardEdgeX, y);
+          ctx.stroke();
+
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(railX - this.cellSize * 0.08, y - this.cellSize * 0.12);
+          ctx.lineTo(railX + this.cellSize * 0.02, y - this.cellSize * 0.02);
+          ctx.lineTo(railX - this.cellSize * 0.02, y + this.cellSize * 0.1);
+          ctx.lineTo(railX + this.cellSize * 0.12, y - this.cellSize * 0.04);
+          ctx.stroke();
+          ctx.restore();
+        });
+      }
+
+      getCellFromPointer(event) {
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.width / rect.width;
+        const scaleY = this.height / rect.height;
+        const x = (event.clientX - rect.left) * scaleX - this.boardLeft;
+        const y = (event.clientY - rect.top) * scaleY - this.boardTop;
+        const col = Math.floor(x / this.cellSize);
+        const row = Math.floor(y / this.cellSize);
+        if (!this.isInside(row, col)) return null;
+        return { row, col };
+      }
+
+      isInside(row, col) {
+        return row >= 0 && row < this.rows && col >= 0 && col < this.cols;
+      }
+
+      updateHud() {
+        this.scoreEl.textContent = this.score.toLocaleString();
+        this.bestScoreEl.textContent = Math.max(this.bestScore, this.score).toLocaleString();
+        this.comboEl.textContent = `x${this.combo}`;
+        const speed = Math.min(2.2, 1 + this.score / 9000);
+        this.speedEl.textContent = speed.toFixed(1);
+      }
+
+      showOverlay(title, message, buttonText, scoreText) {
+        this.overlayTitle.textContent = title;
+        this.overlayMessage.textContent = message;
+        this.overlayButton.textContent = buttonText;
+        this.overlayScore.textContent = scoreText;
+        this.overlay.classList.remove("hidden");
+      }
+
+      hideOverlay() {
+        this.overlay.classList.add("hidden");
+      }
+
+      showFloatingText(text) {
+        this.floatingTextEl.textContent = text;
+        this.floatingTextEl.classList.remove("show");
+        void this.floatingTextEl.offsetWidth;
+        this.floatingTextEl.classList.add("show");
+      }
+
+      roundRect(ctx, x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+      }
+    }
+
+    function initGame() {
+      return new Game();
+    }
+
+    window.addEventListener("DOMContentLoaded", initGame);
+  </script>
+</body>
+</html>
