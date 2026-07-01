@@ -82,7 +82,8 @@ const projects = [
   { title: "물리 공식 맞추기", category: "게임", desc: "떨어지는 물리 공식을 맞추자!", tags: ["물리", "공식"], emoji: "❤️", demo: "./simul/물리 공식 맞추기.html", curriculumId: "ALL", thumb: "./thumb_nail/물리 공식 맞추기.png" },
   { title: "물리 퀴즈 도전!", category: "게임", desc: "물리 퀴즈를 맞추자!", tags: ["물리", "문제", "시뮬레이션"], emoji: "❤️", demo: "./simul/물리 퀴즈.html", curriculumId: "ALL", thumb: "./thumb_nail/물리 퀴즈.png" },
   { title: "물리학 타자연습", category: "게임", desc: "물리학 핵심 법칙을 따라 타이핑하며 타수와 물리 지식을 동시에 키워보세요!", tags: ["타자", "타수", "물리법칙"], emoji: "⌨️", demo: "./simul/physics-typing.html", curriculumId: "ALL", thumb: "./thumb_nail/physics-typing.png" },
-  { title: "입자 물리 수박게임", category: "게임", desc: "같은 입자끼리 합쳐 더 큰 입자로 진화시키는 입자물리 테마 퍼즐게임", tags: ["입자물리", "수박게임", "쿼크", "원자"], emoji: "⚛️", demo: "./simul/입자수박게임.html", curriculumId: "ALL", thumb: "./thumb_nail/입자수박게임.png" },
+  { title: "입자 물리 수박게임", category: "게임", desc: "같은 입자끼리 합쳐 더 큰 입자로 진화시키는 입자물리 테마 퍼즐게임", tags: ["입자물리", "수박게임", "쿼크", "원자"], emoji: "⚛️", demo: "./simul/입자수박게임.html", curriculumId: "ALL", thumb: "./thumb_nail/입자수박게임.svg" },
+  { title: "전구링크: Circuit Spark", category: "게임", desc: "회로 부품을 회전시켜 양옆 전류 레일과 전구를 연결하는 네온 회로 퍼즐게임", tags: ["회로", "전류", "전구", "퍼즐", "게임"], emoji: "💡", demo: "./simul/전구링크.html", curriculumId: "ALL", thumb: "./thumb_nail/전구링크.svg" },
 
   // ===== 12물리 =====
   { title: "토크와 평형", category: "역학", desc: "여러 물체를 이용해 토크평형 만들기", tags: ["토크", "평형"], emoji: "🧗‍♀️", demo: "./simul/토크와 평형.html", curriculumId: "[12물리01-01]", thumb: "./thumb_nail/토크와_평형.png" },
