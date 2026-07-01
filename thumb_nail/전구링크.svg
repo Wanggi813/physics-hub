@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">전구링크 Circuit Spark</title>
+  <desc id="desc">회로판 위에서 빛나는 전구와 전류 레일을 표현한 썸네일</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1f6b86"/>
+      <stop offset="0.55" stop-color="#173f61"/>
+      <stop offset="1" stop-color="#10233e"/>
+    </linearGradient>
+    <radialGradient id="bulbGlow" cx="50%" cy="44%" r="45%">
+      <stop offset="0" stop-color="#fff7b5" stop-opacity="0.95"/>
+      <stop offset="0.42" stop-color="#ffd24e" stop-opacity="0.44"/>
+      <stop offset="1" stop-color="#ffb42e" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glass" cx="38%" cy="28%" r="70%">
+      <stop offset="0" stop-color="#fffef2"/>
+      <stop offset="0.24" stop-color="#fff1a4"/>
+      <stop offset="0.68" stop-color="#ffc542"/>
+      <stop offset="1" stop-color="#b86f18"/>
+    </radialGradient>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="640" height="360" fill="url(#bg)"/>
+  <g opacity="0.26" stroke="#a8f4ff" stroke-width="1">
+    <path d="M0 45h640M0 90h640M0 135h640M0 180h640M0 225h640M0 270h640M0 315h640"/>
+    <path d="M60 0v360M120 0v360M180 0v360M240 0v360M300 0v360M360 0v360M420 0v360M480 0v360M540 0v360M600 0v360"/>
+  </g>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path d="M72 55v250M568 55v250" stroke="#ffe27b" stroke-width="7" opacity="0.7" filter="url(#softGlow)"/>
+    <path d="M72 120h125v60h90M568 240H440v-72h-88" stroke="#79f2ff" stroke-width="16" opacity="0.95" filter="url(#softGlow)"/>
+    <path d="M72 120h125v60h90M568 240H440v-72h-88" stroke="#dffbff" stroke-width="4" opacity="0.65"/>
+    <circle cx="72" cy="120" r="11" fill="#ffe66b"/>
+    <circle cx="568" cy="240" r="11" fill="#70f4ff"/>
+    <circle cx="197" cy="120" r="18" fill="#173f61" stroke="#79f2ff" stroke-width="7"/>
+    <circle cx="287" cy="180" r="18" fill="#173f61" stroke="#79f2ff" stroke-width="7"/>
+    <circle cx="440" cy="168" r="18" fill="#173f61" stroke="#79f2ff" stroke-width="7"/>
+  </g>
+  <circle cx="340" cy="178" r="118" fill="url(#bulbGlow)"/>
+  <g filter="url(#softGlow)">
+    <path d="M340 80c-50 5-76 43-66 86 6 29 28 44 34 70h64c6-26 28-41 34-70 10-43-16-81-66-86z" fill="url(#glass)" stroke="#fff7cc" stroke-width="8"/>
+    <path d="M310 109c18-19 47-22 67-7" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity="0.58"/>
+    <path d="M320 219h40v48h-40z" fill="#965a20" stroke="#ffe39b" stroke-width="5" rx="9"/>
+    <path d="M324 232l32-7M324 246l32-7M324 260l32-7" stroke="#ffe39b" stroke-width="4" stroke-linecap="round" opacity="0.72"/>
+    <path d="M309 187c12-44 28 22 31-13 4-40 23 30 39-12" fill="none" stroke="#fff6b7" stroke-width="8" stroke-linecap="round"/>
+    <path d="M315 219l13-48M365 219l-13-48" stroke="#ffe8a0" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <text x="34" y="330" fill="#f2fbff" font-family="Arial, sans-serif" font-size="38" font-weight="800">전구링크</text>
+  <text x="218" y="330" fill="#ffe66b" font-family="Arial, sans-serif" font-size="32" font-weight="700">Circuit Spark</text>
+</svg>

@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-label="입자 수박게임 썸네일">
+  <defs>
+    <radialGradient id="space" cx="50%" cy="35%" r="75%">
+      <stop offset="0%" stop-color="#273b7a"/>
+      <stop offset="55%" stop-color="#101938"/>
+      <stop offset="100%" stop-color="#070b1c"/>
+    </radialGradient>
+    <linearGradient id="board" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2e9d68"/>
+      <stop offset="100%" stop-color="#177148"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#9ff7c6"/>
+      <stop offset="100%" stop-color="#29b66d"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000" flood-opacity=".35"/>
+    </filter>
+  </defs>
+
+  <rect width="640" height="360" fill="url(#space)"/>
+
+  <g fill="#fff" opacity=".75">
+    <circle cx="54" cy="48" r="2"/>
+    <circle cx="115" cy="104" r="1.8"/>
+    <circle cx="212" cy="38" r="1.5"/>
+    <circle cx="505" cy="62" r="2"/>
+    <circle cx="581" cy="128" r="1.6"/>
+    <circle cx="452" cy="310" r="1.8"/>
+    <circle cx="87" cy="282" r="1.4"/>
+  </g>
+
+  <path d="M66 76c90-56 180-58 272-4s168 57 237 9" fill="none" stroke="#5ddcff" stroke-width="3" stroke-dasharray="10 12" opacity=".45"/>
+  <path d="M72 288c78-48 155-50 232-5s157 47 260 1" fill="none" stroke="#a8ff8a" stroke-width="3" stroke-dasharray="8 10" opacity=".35"/>
+
+  <g filter="url(#shadow)">
+    <rect x="126" y="42" width="388" height="286" rx="26" fill="#11182f" stroke="#74ffd0" stroke-width="7"/>
+    <rect x="146" y="74" width="348" height="232" rx="18" fill="url(#board)"/>
+    <path d="M154 246h332v43c0 11-9 20-20 20H174c-11 0-20-9-20-20z" fill="#0f5d3d" opacity=".65"/>
+    <path d="M158 78h324" stroke="#b6ffdc" stroke-width="4" stroke-linecap="round" opacity=".45"/>
+  </g>
+
+  <g stroke="#092319" stroke-width="5" stroke-linejoin="round" filter="url(#shadow)">
+    <circle cx="244" cy="253" r="39" fill="#ff5b7a"/>
+    <path d="M218 229c16 9 35 9 52 0M213 252c19 14 43 14 63 0" fill="none" stroke="#ffd8df" stroke-width="4" stroke-linecap="round"/>
+    <path d="M232 268l8 10 8-10 8 10 8-10" fill="none" stroke="#1b6b49" stroke-width="5" stroke-linecap="round"/>
+
+    <circle cx="324" cy="246" r="48" fill="#42d77d"/>
+    <path d="M292 216c20 12 44 12 65 0M284 247c24 17 55 17 80 0" fill="none" stroke="#d4ffe2" stroke-width="5" stroke-linecap="round"/>
+    <path d="M305 270l10 13 10-13 10 13 10-13" fill="none" stroke="#0b5d35" stroke-width="6" stroke-linecap="round"/>
+
+    <circle cx="395" cy="251" r="34" fill="#ffd350"/>
+    <text x="395" y="264" font-family="Courier New, monospace" font-size="28" font-weight="900" text-anchor="middle" fill="#092319">p</text>
+
+    <circle cx="279" cy="164" r="29" fill="#63a8ff"/>
+    <text x="279" y="176" font-family="Courier New, monospace" font-size="25" font-weight="900" text-anchor="middle" fill="#092319">u</text>
+
+    <circle cx="361" cy="151" r="26" fill="#ff8c42"/>
+    <text x="361" y="162" font-family="Courier New, monospace" font-size="23" font-weight="900" text-anchor="middle" fill="#092319">d</text>
+
+    <circle cx="319" cy="101" r="22" fill="#cfa7ff"/>
+    <text x="319" y="111" font-family="Courier New, monospace" font-size="20" font-weight="900" text-anchor="middle" fill="#092319">e</text>
+  </g>
+
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M291 151c15-13 32-15 52-5" stroke="#f5ff8a" stroke-width="4" stroke-dasharray="7 8"/>
+    <path d="M330 174c-3 20-1 38 6 55" stroke="#f5ff8a" stroke-width="4" stroke-dasharray="7 8"/>
+    <path d="M352 230c12-11 23-11 34 0" stroke="#f5ff8a" stroke-width="4" stroke-dasharray="7 8"/>
+  </g>
+
+  <g font-family="Pretendard, 'Malgun Gothic', Arial, sans-serif" text-anchor="middle">
+    <rect x="178" y="22" width="284" height="48" rx="18" fill="url(#rim)" stroke="#071929" stroke-width="5" filter="url(#shadow)"/>
+    <text x="320" y="55" font-size="28" font-weight="900" fill="#071929">입자 수박게임</text>
+    <text x="320" y="340" font-size="18" font-weight="800" fill="#dfffee" opacity=".92">합치고 진화시키는 입자 퍼즐</text>
+  </g>
+</svg>
