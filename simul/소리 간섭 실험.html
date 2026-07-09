@@ -1,0 +1,1217 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>스피커 좌우 위상차·간섭 실험</title>
+<style>
+  :root {
+    --bg: #eef1f8;
+    --card: #ffffff;
+    --card-soft: #f6f8fc;
+    --text: #172033;
+    --muted: #6b7686;
+    --line: #e3e8f2;
+    --accent: #4f6df5;
+    --accent-2: #7c5cff;
+    --accent-soft: #eef1ff;
+    --left-color: #ef476f;
+    --right-color: #118ab2;
+    --sum-color: #06a77d;
+    --warn: #dc2626;
+    --ok: #059669;
+    --radius: 16px;
+    --shadow: 0 8px 22px rgba(23, 32, 51, 0.08);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; padding: 0; }
+  body {
+    font-family: "Pretendard", "Segoe UI", system-ui, -apple-system, sans-serif;
+    background:
+      radial-gradient(900px 380px at 8% -10%, #dbe3ff 0%, transparent 55%),
+      radial-gradient(700px 380px at 100% -10%, #f1e4ff 0%, transparent 55%),
+      var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  header {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 22px;
+    flex-wrap: wrap;
+  }
+  .title-block { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  h1 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .subtitle {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+  .safety {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #9f1239;
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    padding: 6px 12px;
+    border-radius: 999px;
+    flex: none;
+  }
+
+  main {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 338px 1fr;
+    gap: 16px;
+    padding: 0 22px 18px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  /* ---------- left: control panel ---------- */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 16px 18px 14px;
+    gap: 10px;
+    overflow-y: auto;
+  }
+  .panel h2 {
+    margin: 0 0 2px;
+    font-size: 13.5px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .panel h2 .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
+    flex: none;
+  }
+
+  select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--card-soft);
+    color: var(--text);
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  select:focus { outline: none; border-color: var(--accent); }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 52px;
+    align-items: center;
+    gap: 8px;
+    row-gap: 2px;
+  }
+  .row label {
+    grid-column: 1 / 2;
+    font-weight: 700;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .row label .hint {
+    font-weight: 500;
+    font-size: 10.5px;
+    color: var(--muted);
+  }
+  .row input[type="range"] { grid-column: 1 / 2; }
+  .row input[type="number"] { grid-column: 2 / 3; }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 5px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    outline: none;
+    margin: 3px 0;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 15px; height: 15px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2.5px solid var(--accent);
+    box-shadow: 0 1px 4px rgba(79,109,245,0.4);
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 15px; height: 15px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2.5px solid var(--accent);
+    cursor: pointer;
+  }
+  input[type="number"] {
+    width: 100%;
+    padding: 5px 6px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--card-soft);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  input[type="number"]:focus { outline: none; border-color: var(--accent); }
+
+  hr.sep {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: 2px 0;
+  }
+
+  .btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  button {
+    border: 0;
+    border-radius: 10px;
+    padding: 8px 11px;
+    font-weight: 800;
+    font-size: 11.5px;
+    cursor: pointer;
+    background: var(--accent-soft);
+    color: var(--accent);
+    transition: transform 0.06s ease, filter 0.15s ease;
+  }
+  button:hover { filter: brightness(0.97); }
+  button:active { transform: scale(0.96); }
+  button.primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff;
+    box-shadow: 0 6px 14px rgba(79,109,245,0.32);
+    flex: 1;
+  }
+  button.warning { background: #fee2e2; color: var(--warn); }
+  button.wide { flex: 1; }
+
+  .bonus-box {
+    border: 1px dashed #cbd5e1;
+    background: var(--card-soft);
+    border-radius: 12px;
+    padding: 8px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .bonus-title {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .sweep-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--card-soft);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 8px 10px 9px;
+    margin-top: 10px;
+  }
+  #sweepToggle.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff;
+    box-shadow: 0 6px 14px rgba(79,109,245,0.32);
+  }
+
+  .calc-panel {
+    background: var(--accent-soft);
+    border: 1px solid #c7d2fe;
+    border-radius: 12px;
+    padding: 9px 10px 10px;
+  }
+  .calc-panel .bonus-title { color: var(--accent); }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    margin-top: auto;
+    padding-top: 6px;
+  }
+  .status .led {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #cbd5e1;
+    flex: none;
+  }
+  .status.playing { color: var(--ok); }
+  .status.playing .led {
+    background: var(--ok);
+    box-shadow: 0 0 0 4px rgba(5,150,105,0.15);
+    animation: pulse 1.4s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(5,150,105,0.15); }
+    50% { box-shadow: 0 0 0 7px rgba(5,150,105,0.05); }
+  }
+
+  /* ---------- right column ---------- */
+  .right-col {
+    display: grid;
+    grid-template-rows: minmax(240px, 1fr) auto;
+    gap: 14px;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+
+  .wave-card {
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    min-height: 240px;
+  }
+  .wave-card .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .wave-card h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .wave-card h2 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .legend {
+    display: flex;
+    gap: 14px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .legend i { width: 12px; height: 3px; border-radius: 2px; display: inline-block; }
+
+  .head-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  #advancedToggle {
+    background: var(--card-soft);
+    color: var(--muted);
+    border: 1px solid var(--line);
+    padding: 6px 11px;
+    font-size: 11px;
+  }
+  #advancedToggle.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff;
+    border-color: transparent;
+  }
+
+  #waveCanvas {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: linear-gradient(180deg, #fbfdff, #f4f7fc);
+    display: block;
+  }
+
+  .bottom-row {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .interp-card { min-width: 0; }
+
+  .interference-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 13px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 12.5px;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .interference-badge.constructive { background: #ecfdf5; color: var(--ok); border: 1px solid #a7f3d0; }
+  .interference-badge.destructive { background: #fef2f2; color: var(--warn); border: 1px solid #fecaca; }
+  .interference-badge.partial { background: var(--accent-soft); color: var(--accent); border: 1px solid #c7d2fe; }
+
+  .interp-card {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+  }
+  .metrics-inline {
+    display: flex;
+    gap: 10px;
+  }
+  .metric {
+    flex: 1;
+    background: var(--card-soft);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 7px 8px;
+    text-align: center;
+  }
+  .metric .k { font-size: 10px; color: var(--muted); font-weight: 700; }
+  .metric .v {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .calc-body { display: flex; flex-direction: column; gap: 6px; }
+  .calc-body .row { grid-template-columns: 1fr 46px; }
+  .calc-body .row label { font-size: 11px; }
+  .calc-result { margin-top: 4px; }
+  .calc-detail {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 6px;
+    line-height: 1.6;
+  }
+
+  footer {
+    flex: none;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 10.5px;
+    padding: 0 22px 10px;
+  }
+
+  .hidden { display: none; }
+
+  #guideBtn {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  /* ---------- tutorial overlay ---------- */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 48, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .overlay.hidden { display: none; }
+  .tut-card {
+    width: min(480px, 100%);
+    background: var(--card);
+    border-radius: 18px;
+    box-shadow: 0 20px 50px rgba(15,23,48,0.35);
+    padding: 24px 26px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .tut-steps {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+  }
+  .tut-steps span {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--line);
+  }
+  .tut-steps span.active { background: var(--accent); width: 18px; border-radius: 999px; }
+  .tut-title { font-size: 17px; font-weight: 800; margin: 0; text-align: center; }
+  .tut-body { font-size: 13px; color: var(--muted); text-align: center; line-height: 1.6; margin: 0; }
+  .tut-side {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 28px;
+  }
+  .tut-side .arrow { font-size: 20px; color: var(--muted); }
+  .tut-side .box {
+    width: 76px; height: 62px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    background: var(--card-soft);
+    border: 2px solid var(--line);
+    transition: all 0.2s ease;
+  }
+  .tut-side .box.active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 5px rgba(79,109,245,0.12);
+  }
+  .tut-playbtn {
+    align-self: center;
+  }
+  .tut-nav {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .tut-skip {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--muted);
+    text-decoration: underline;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 2px;
+  }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  @media (max-width: 900px) {
+    body { overflow: auto; height: auto; }
+    main { grid-template-columns: 1fr; height: auto; }
+    .panel { max-height: none; overflow: visible; }
+    .right-col { grid-template-rows: none; }
+    #waveCanvas { height: 260px; }
+    .bottom-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="title-block">
+      <h1>스피커 좌우 위상차·간섭 실험</h1>
+      <p class="subtitle">좌·우 스피커 출력을 독립 제어해 보강·상쇄 간섭을 관찰합니다</p>
+    </div>
+    <span class="safety">⚠ 시작 전 음량을 낮게 설정하세요</span>
+    <button id="guideBtn" class="wide" style="flex:none;">🎧 스피커 테스트 가이드</button>
+  </header>
+
+  <main>
+    <section class="card panel">
+      <div>
+        <h2><span class="dot"></span>실험 모드</h2>
+        <select id="mode">
+          <option value="phase">① 위상차 간섭 (보강·상쇄)</option>
+          <option value="beat">② 맥놀이 (Beat)</option>
+        </select>
+        <p class="subtitle" id="modeDesc" style="margin-top:6px;">오른쪽 스피커의 위상을 지연시켜 소리가 커지고 작아지는 지점을 찾습니다.</p>
+      </div>
+
+      <hr class="sep" />
+
+      <div class="row">
+        <label for="freq">기준 주파수 f<span class="hint">100–3000 Hz</span></label>
+        <input id="freq" type="range" min="100" max="3000" step="1" value="800" />
+        <input id="freqNum" type="number" min="100" max="3000" step="1" value="800" />
+      </div>
+
+      <div id="phaseControls" class="mode-controls">
+        <div class="row">
+          <label for="phase">오른쪽 위상 지연 φ<span class="hint">간섭 핵심 변수</span></label>
+          <input id="phase" type="range" min="0" max="360" step="1" value="0" />
+          <input id="phaseNum" type="number" min="0" max="360" step="1" value="0" />
+        </div>
+
+        <div class="btns">
+          <button id="preset0" class="wide">0° 보강</button>
+          <button id="preset90" class="wide">90° 부분</button>
+          <button id="preset180" class="wide">180° 상쇄</button>
+        </div>
+
+        <details class="sweep-box" id="sweepDetails">
+          <summary style="cursor:pointer; font-weight:800; font-size:11.5px; color:var(--muted);">자동 스윕 (선택) ▾</summary>
+          <div style="margin-top:6px; display:flex; flex-direction:column; gap:6px;">
+            <button id="sweepToggle" class="wide">▶ 자동 스윕 시작</button>
+            <div class="row">
+              <label for="sweepSpeed">스윕 속도<span class="hint">°/초</span></label>
+              <input id="sweepSpeed" type="range" min="5" max="180" step="5" value="30" />
+              <input id="sweepSpeedNum" type="number" min="5" max="180" step="5" value="30" />
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div id="beatControls" class="mode-controls">
+        <div class="row">
+          <label for="df">주파수 차이 Δf<span class="hint">맥놀이 핵심 변수</span></label>
+          <input id="df" type="range" min="-20" max="20" step="0.1" value="3" />
+          <input id="dfNum" type="number" min="-20" max="20" step="0.1" value="3" />
+        </div>
+      </div>
+
+      <div class="btns">
+        <button id="startBtn" class="primary">▶ 시작</button>
+        <button id="stopBtn" class="warning wide">■ 정지</button>
+      </div>
+
+      <div id="calcPanel" class="calc-panel calc-body hidden">
+        <div class="bonus-title">🔬 심화 · 스피커 배치 계산기</div>
+        <div class="row">
+          <label for="gap">스피커 간격 d<span class="hint">m</span></label>
+          <input id="gap" type="range" min="0.2" max="3" step="0.1" value="1" />
+          <input id="gapNum" type="number" min="0.2" max="3" step="0.1" value="1" />
+        </div>
+        <div class="row">
+          <label for="dist">정면 거리 D<span class="hint">m</span></label>
+          <input id="dist" type="range" min="0.3" max="5" step="0.1" value="1.5" />
+          <input id="distNum" type="number" min="0.3" max="5" step="0.1" value="1.5" />
+        </div>
+        <div class="row">
+          <label for="offset">좌우 이동 x<span class="hint">m, 중앙=0</span></label>
+          <input id="offset" type="range" min="-3" max="3" step="0.05" value="0" />
+          <input id="offsetNum" type="number" min="-3" max="3" step="0.05" value="0" />
+        </div>
+        <div class="calc-result">
+          <div class="interference-badge partial" id="calcBadge">계산 중…</div>
+          <div class="calc-detail" id="calcDetail"></div>
+        </div>
+      </div>
+
+      <details class="bonus-box">
+        <summary style="cursor:pointer; font-weight:800; font-size:10px; letter-spacing:0.03em; color:var(--muted); text-transform:uppercase;">고급: 좌우/전체 음량 ▾</summary>
+        <div style="margin-top:6px; display:flex; flex-direction:column; gap:6px;">
+          <div class="row">
+            <label for="leftGain">왼쪽 음량</label>
+            <input id="leftGain" type="range" min="0" max="1" step="0.01" value="0.35" />
+            <input id="leftGainNum" type="number" min="0" max="1" step="0.01" value="0.35" />
+          </div>
+          <div class="row">
+            <label for="rightGain">오른쪽 음량</label>
+            <input id="rightGain" type="range" min="0" max="1" step="0.01" value="0.35" />
+            <input id="rightGainNum" type="number" min="0" max="1" step="0.01" value="0.35" />
+          </div>
+          <div class="row">
+            <label for="masterGain">전체 음량<span class="hint">안전 상한 0.8</span></label>
+            <input id="masterGain" type="range" min="0" max="0.8" step="0.01" value="0.20" />
+            <input id="masterGainNum" type="number" min="0" max="0.8" step="0.01" value="0.20" />
+          </div>
+        </div>
+      </details>
+
+      <div class="status" id="status"><span class="led"></span><span id="statusText">정지 상태</span></div>
+    </section>
+
+    <div class="right-col">
+      <section class="card wave-card">
+        <div class="head">
+          <h2><span class="dot"></span>파형 미리보기</h2>
+          <div class="head-right">
+            <div class="legend">
+              <span><i style="background:#ef476f"></i>L</span>
+              <span><i style="background:#118ab2"></i>R</span>
+              <span><i style="background:#06a77d"></i>L+R 합성</span>
+              <span id="waveWindow">표시 구간 – ms</span>
+            </div>
+            <button id="advancedToggle">🔬 심화 모드</button>
+          </div>
+        </div>
+        <canvas id="waveCanvas" width="900" height="260"></canvas>
+      </section>
+
+      <div class="bottom-row">
+        <div class="card interp-card">
+          <div class="interference-badge partial" id="interferenceBadge">위상 0° → 보강 간섭</div>
+        </div>
+
+        <div class="card interp-card">
+          <div class="metrics-inline">
+            <div class="metric"><div class="k">합성 진폭</div><div class="v" id="mAmplitude">–</div></div>
+            <div class="metric"><div class="k">파장 λ</div><div class="v" id="mWavelength">–</div></div>
+            <div class="metric"><div class="k">지연</div><div class="v" id="mDelay">–</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>스피커 실험 · 로컬 브라우저에서 동작하며 외부로 전송되는 데이터는 없습니다.</footer>
+
+  <div class="overlay hidden" id="tutOverlay">
+    <div class="card tut-card">
+      <div class="tut-steps">
+        <span id="tutDot0"></span><span id="tutDot1"></span><span id="tutDot2"></span><span id="tutDot3"></span>
+      </div>
+
+      <div id="tutStep0">
+        <h2 class="tut-title">스피커 연결 확인 가이드</h2>
+        <p class="tut-body">실험을 시작하기 전, 좌·우 스피커가 올바르게 연결됐는지 소리로 직접 확인합니다.<br />유선 스테레오 연결을 권장합니다 (블루투스는 지연 보정으로 부적합).</p>
+      </div>
+
+      <div id="tutStep1" class="hidden">
+        <h2 class="tut-title">1/2 · 왼쪽 스피커 테스트</h2>
+        <p class="tut-body">아래 버튼을 눌러 <b>왼쪽</b>에서만 소리가 나는지 확인하세요.</p>
+        <div class="tut-side">
+          <div class="box active" id="tutBoxL">🔈</div>
+          <span class="arrow">···</span>
+          <div class="box" id="tutBoxR">🔇</div>
+        </div>
+        <button id="tutPlayL" class="primary wide tut-playbtn">▶ 왼쪽 테스트음 재생</button>
+      </div>
+
+      <div id="tutStep2" class="hidden">
+        <h2 class="tut-title">2/2 · 오른쪽 스피커 테스트</h2>
+        <p class="tut-body">아래 버튼을 눌러 <b>오른쪽</b>에서만 소리가 나는지 확인하세요.</p>
+        <div class="tut-side">
+          <div class="box" id="tutBoxL2">🔇</div>
+          <span class="arrow">···</span>
+          <div class="box active" id="tutBoxR2">🔈</div>
+        </div>
+        <button id="tutPlayR" class="primary wide tut-playbtn">▶ 오른쪽 테스트음 재생</button>
+      </div>
+
+      <div id="tutStep3" class="hidden">
+        <h2 class="tut-title">✅ 확인 완료</h2>
+        <p class="tut-body">양쪽 스피커가 정상적으로 작동합니다.<br />이제 위상차·맥놀이 실험을 시작할 수 있습니다.</p>
+      </div>
+
+      <div class="tut-nav">
+        <button id="tutPrev" class="wide">◀ 이전</button>
+        <button id="tutNext" class="primary wide">다음 ▶</button>
+      </div>
+      <button id="tutSkip" class="tut-skip">가이드 건너뛰기</button>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+
+    const sliders = [
+      ["freq", "freqNum"],
+      ["phase", "phaseNum"],
+      ["df", "dfNum"],
+      ["leftGain", "leftGainNum"],
+      ["rightGain", "rightGainNum"],
+      ["masterGain", "masterGainNum"],
+    ];
+
+    for (const [a, b] of sliders) {
+      const s = $(a), n = $(b);
+      s.addEventListener("input", () => {
+        n.value = s.value;
+        if (a === "phase") stopSweep();
+        updateAudio(); drawWave(); updateMetrics();
+      });
+      n.addEventListener("input", () => {
+        s.value = n.value;
+        if (a === "phase") stopSweep();
+        updateAudio(); drawWave(); updateMetrics();
+      });
+    }
+
+    const spatialSliders = [
+      ["gap", "gapNum"],
+      ["dist", "distNum"],
+      ["offset", "offsetNum"],
+    ];
+    for (const [a, b] of spatialSliders) {
+      const s = $(a), n = $(b);
+      s.addEventListener("input", () => { n.value = s.value; updateSpatialCalc(); });
+      n.addEventListener("input", () => { s.value = n.value; updateSpatialCalc(); });
+    }
+
+    const MODE_DESC = {
+      phase: "오른쪽 스피커의 위상을 지연시켜 소리가 커지고 작아지는 지점을 찾습니다.",
+      beat: "좌우 주파수를 살짝 다르게 하면 소리가 주기적으로 커졌다 작아집니다 (맥놀이).",
+    };
+
+    function applyModeVisibility() {
+      const mode = $("mode").value;
+      $("phaseControls").classList.toggle("hidden", mode !== "phase");
+      $("beatControls").classList.toggle("hidden", mode !== "beat");
+      $("modeDesc").textContent = MODE_DESC[mode] || "";
+    }
+
+    $("mode").addEventListener("change", () => {
+      if ($("mode").value !== "phase") stopSweep();
+      applyModeVisibility();
+      restartIfRunning();
+      drawWave();
+      updateMetrics();
+    });
+
+    let audioCtx = null;
+    let running = false;
+    let nodes = {};
+
+    function getVals() {
+      return {
+        mode: $("mode").value,
+        freq: Number($("freq").value),
+        phase: Number($("phase").value),
+        df: Number($("df").value),
+        leftGain: Number($("leftGain").value),
+        rightGain: Number($("rightGain").value),
+        masterGain: Number($("masterGain").value),
+      };
+    }
+
+    function startAudio() {
+      stopAudio();
+
+      const v = getVals();
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      const master = new GainNode(audioCtx, { gain: v.masterGain });
+      const merger = new ChannelMergerNode(audioCtx, { numberOfInputs: 2 });
+      merger.connect(master).connect(audioCtx.destination);
+
+      if (v.mode === "phase") {
+        const osc = new OscillatorNode(audioCtx, { type: "sine", frequency: v.freq });
+        const left = new GainNode(audioCtx, { gain: v.leftGain });
+        const right = new GainNode(audioCtx, { gain: v.rightGain });
+        const delay = new DelayNode(audioCtx, { maxDelayTime: 0.02 });
+        delay.delayTime.value = phaseToDelay(v.phase, v.freq);
+
+        osc.connect(left).connect(merger, 0, 0);
+        osc.connect(delay).connect(right).connect(merger, 0, 1);
+        osc.start();
+
+        nodes = { osc, left, right, delay, master };
+      } else {
+        const leftOsc = new OscillatorNode(audioCtx, { type: "sine", frequency: v.freq });
+        const rightOsc = new OscillatorNode(audioCtx, { type: "sine", frequency: v.freq + v.df });
+        const left = new GainNode(audioCtx, { gain: v.leftGain });
+        const right = new GainNode(audioCtx, { gain: v.rightGain });
+
+        leftOsc.connect(left).connect(merger, 0, 0);
+        rightOsc.connect(right).connect(merger, 0, 1);
+        leftOsc.start();
+        rightOsc.start();
+
+        nodes = { leftOsc, rightOsc, left, right, master };
+      }
+
+      running = true;
+      setStatus(true, "재생 중");
+    }
+
+    function stopAudio() {
+      if (audioCtx) {
+        try { audioCtx.close(); } catch (e) {}
+      }
+      audioCtx = null;
+      nodes = {};
+      running = false;
+      setStatus(false, "정지 상태");
+    }
+
+    function setStatus(playing, text) {
+      const statusEl = $("status");
+      statusEl.classList.toggle("playing", playing);
+      $("statusText").textContent = text;
+    }
+
+    function restartIfRunning() {
+      if (running) startAudio();
+    }
+
+    function updateAudio() {
+      if (!running || !audioCtx) return;
+      const v = getVals();
+      const t = audioCtx.currentTime;
+
+      if (nodes.master) nodes.master.gain.setTargetAtTime(v.masterGain, t, 0.01);
+
+      if (v.mode === "phase" && nodes.osc) {
+        nodes.osc.frequency.setTargetAtTime(v.freq, t, 0.01);
+        nodes.left.gain.setTargetAtTime(v.leftGain, t, 0.01);
+        nodes.right.gain.setTargetAtTime(v.rightGain, t, 0.01);
+        nodes.delay.delayTime.setTargetAtTime(phaseToDelay(v.phase, v.freq), t, 0.01);
+      } else if (nodes.leftOsc && nodes.rightOsc) {
+        nodes.leftOsc.frequency.setTargetAtTime(v.freq, t, 0.01);
+        nodes.rightOsc.frequency.setTargetAtTime(v.freq + v.df, t, 0.01);
+        nodes.left.gain.setTargetAtTime(v.leftGain, t, 0.01);
+        nodes.right.gain.setTargetAtTime(v.rightGain, t, 0.01);
+      }
+    }
+
+    function phaseToDelay(phaseDeg, freq) {
+      return (phaseDeg / 360) / Math.max(freq, 1);
+    }
+
+    function clamp(x, lo, hi) {
+      return Math.min(hi, Math.max(lo, x));
+    }
+
+    // ---------- 위상 자동 스윕 ----------
+    let sweepActive = false;
+    let sweepRAF = null;
+    let sweepLastTime = null;
+
+    function startSweep() {
+      $("mode").value = "phase";
+      applyModeVisibility();
+      restartIfRunning();
+      sweepActive = true;
+      sweepLastTime = null;
+      $("sweepToggle").textContent = "⏸ 자동 스윕 정지";
+      $("sweepToggle").classList.add("active");
+      sweepRAF = requestAnimationFrame(sweepStep);
+    }
+
+    function stopSweep() {
+      if (!sweepActive) return;
+      sweepActive = false;
+      if (sweepRAF) cancelAnimationFrame(sweepRAF);
+      sweepRAF = null;
+      $("sweepToggle").textContent = "▶ 자동 스윕 시작";
+      $("sweepToggle").classList.remove("active");
+    }
+
+    function sweepStep(now) {
+      if (!sweepActive) return;
+      if (sweepLastTime === null) sweepLastTime = now;
+      const dt = (now - sweepLastTime) / 1000;
+      sweepLastTime = now;
+
+      const speed = Number($("sweepSpeed").value);
+      const phaseEl = $("phase");
+      let next = Number(phaseEl.value) + speed * dt;
+      next = ((next % 360) + 360) % 360;
+      phaseEl.value = next;
+      $("phaseNum").value = Math.round(next);
+
+      updateAudio();
+      drawWave();
+      updateMetrics();
+
+      sweepRAF = requestAnimationFrame(sweepStep);
+    }
+
+    $("sweepToggle").addEventListener("click", () => {
+      if (sweepActive) stopSweep(); else startSweep();
+    });
+
+    for (const [a, b] of [["sweepSpeed", "sweepSpeedNum"]]) {
+      const s = $(a), n = $(b);
+      s.addEventListener("input", () => { n.value = s.value; });
+      n.addEventListener("input", () => { s.value = n.value; });
+    }
+
+    // ---------- 스피커 배치 계산기 ----------
+    function updateSpatialCalc() {
+      const v = getVals();
+      const d = Number($("gap").value);
+      const D = Number($("dist").value);
+      const x = Number($("offset").value);
+
+      const rL = Math.sqrt(D * D + (x + d / 2) ** 2);
+      const rR = Math.sqrt(D * D + (x - d / 2) ** 2);
+      const deltaR = rR - rL; // m
+      const wavelength = SPEED_OF_SOUND / Math.max(v.freq, 1); // m
+
+      const phaseFromPath = (deltaR / wavelength) * 360;
+      const totalPhaseDeg = ((phaseFromPath + v.phase) % 360 + 360) % 360;
+      const nearBoundary = Math.min(totalPhaseDeg, 360 - totalPhaseDeg);
+      const nearDestructive = Math.abs(totalPhaseDeg - 180);
+
+      const badge = $("calcBadge");
+      if (nearBoundary <= 10) {
+        badge.className = "interference-badge constructive";
+        badge.textContent = "예상: 보강 간섭 (Δφ≈" + totalPhaseDeg.toFixed(0) + "°)";
+      } else if (nearDestructive <= 10) {
+        badge.className = "interference-badge destructive";
+        badge.textContent = "예상: 상쇄 간섭 (Δφ≈" + totalPhaseDeg.toFixed(0) + "°)";
+      } else {
+        badge.className = "interference-badge partial";
+        badge.textContent = "예상: 부분 간섭 (Δφ≈" + totalPhaseDeg.toFixed(0) + "°)";
+      }
+
+      $("calcDetail").textContent =
+        "Δr=" + (deltaR * 100).toFixed(1) + "cm · λ=" + (wavelength * 100).toFixed(1) + "cm · " +
+        "r_L=" + rL.toFixed(2) + "m · r_R=" + rR.toFixed(2) + "m";
+    }
+
+    $("startBtn").addEventListener("click", startAudio);
+    $("stopBtn").addEventListener("click", stopAudio);
+
+    function applyPhasePreset(deg) {
+      $("mode").value = "phase";
+      $("phase").value = $("phaseNum").value = deg;
+      stopSweep();
+      applyModeVisibility();
+      restartIfRunning();
+      drawWave();
+      updateMetrics();
+    }
+
+    $("preset0").addEventListener("click", () => applyPhasePreset(0));
+    $("preset90").addEventListener("click", () => applyPhasePreset(90));
+    $("preset180").addEventListener("click", () => applyPhasePreset(180));
+
+    const SPEED_OF_SOUND = 343; // m/s
+
+    function updateMetrics() {
+      const v = getVals();
+      const wavelengthCm = (SPEED_OF_SOUND / Math.max(v.freq, 1)) * 100;
+      const delayMs = phaseToDelay(v.phase, v.freq) * 1000;
+      const phaseRad = (v.phase * Math.PI / 180);
+
+      $("mWavelength").textContent = wavelengthCm.toFixed(1) + " cm";
+
+      if (v.mode === "beat") {
+        $("mAmplitude").parentElement.querySelector(".k").textContent = "맥놀이 주기";
+        $("mDelay").parentElement.querySelector(".k").textContent = "Δf";
+        const beatPeriodMs = Math.abs(v.df) > 0 ? (1000 / Math.abs(v.df)) : Infinity;
+        $("mAmplitude").textContent = Number.isFinite(beatPeriodMs) ? beatPeriodMs.toFixed(0) + " ms" : "–";
+        $("mDelay").textContent = Math.abs(v.df).toFixed(1) + " Hz";
+      } else {
+        $("mAmplitude").parentElement.querySelector(".k").textContent = "합성 진폭";
+        $("mDelay").parentElement.querySelector(".k").textContent = "지연";
+        const delayMs = phaseToDelay(v.phase, v.freq) * 1000;
+        const amplitude = Math.sqrt(
+          v.leftGain ** 2 + v.rightGain ** 2 + 2 * v.leftGain * v.rightGain * Math.cos(phaseRad)
+        );
+        const maxPossible = v.leftGain + v.rightGain;
+        const pct = maxPossible > 0 ? Math.round((amplitude / maxPossible) * 100) : 0;
+        $("mAmplitude").textContent = amplitude.toFixed(2) + " (" + pct + "%)";
+        $("mDelay").textContent = delayMs.toFixed(2) + " ms";
+      }
+
+      const badge = $("interferenceBadge");
+      let phaseNorm = ((v.phase % 360) + 360) % 360;
+      const nearBoundary = Math.min(phaseNorm, 360 - phaseNorm);
+      const nearDestructive = Math.abs(phaseNorm - 180);
+
+      if (v.mode === "beat") {
+        badge.className = "interference-badge partial";
+        badge.textContent = "맥놀이 진행 중 — Δf=" + v.df + " Hz";
+      } else if (nearBoundary <= 5) {
+        badge.className = "interference-badge constructive";
+        badge.textContent = "위상 " + v.phase + "° → 보강 간섭 (최대)";
+      } else if (nearDestructive <= 5) {
+        badge.className = "interference-badge destructive";
+        badge.textContent = "위상 " + v.phase + "° → 상쇄 간섭 (최소)";
+      } else {
+        badge.className = "interference-badge partial";
+        badge.textContent = "위상 " + v.phase + "° → 부분 간섭";
+      }
+
+      updateSpatialCalc();
+    }
+
+    function drawWave() {
+      const canvas = $("waveCanvas");
+      const ctx = canvas.getContext("2d");
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      if (rect.width > 0 && rect.height > 0) {
+        const targetW = Math.round(rect.width * dpr);
+        const targetH = Math.round(rect.height * dpr);
+        if (canvas.width !== targetW || canvas.height !== targetH) {
+          canvas.width = targetW;
+          canvas.height = targetH;
+        }
+      }
+      const W = canvas.width, H = canvas.height;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "#e2e8f2";
+      ctx.beginPath();
+      ctx.moveTo(0, H/2);
+      ctx.lineTo(W, H/2);
+      ctx.stroke();
+
+      const v = getVals();
+      // 화면에 표시되는 주기 수를 실제 주파수에 비례시켜, 기준 주파수를 바꾸면
+      // 파형이 실제로 촘촘해지거나 성겨지는 것을 볼 수 있게 함 (기준: 800Hz -> 4주기)
+      const cycles = clamp(v.freq / 800 * 4, 1, 40);
+      const windowMs = (cycles / Math.max(v.freq, 1)) * 1000;
+      $("waveWindow").textContent = "표시 구간 " + windowMs.toFixed(1) + " ms";
+      const left = [];
+      const right = [];
+      const sum = [];
+
+      for (let x = 0; x < W; x++) {
+        const u = x / W;
+        let yL = v.leftGain * Math.sin(2 * Math.PI * cycles * u);
+        let yR;
+        if (v.mode === "beat") {
+          const ratio = (v.freq + v.df) / Math.max(v.freq, 1);
+          yR = v.rightGain * Math.sin(2 * Math.PI * cycles * ratio * u);
+        } else {
+          yR = v.rightGain * Math.sin(2 * Math.PI * cycles * u - v.phase * Math.PI / 180);
+        }
+        left.push(yL);
+        right.push(yR);
+        sum.push(yL + yR);
+      }
+
+      plot(ctx, left, H * 0.28, H * 0.16, "#ef476f");
+      plot(ctx, right, H * 0.54, H * 0.16, "#118ab2");
+      plot(ctx, sum, H * 0.82, H * 0.11, "#06a77d");
+    }
+
+    function plot(ctx, data, mid, amp, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.2;
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      for (let x = 0; x < data.length; x++) {
+        const y = mid - data[x] * amp;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    window.addEventListener("resize", drawWave);
+
+    applyModeVisibility();
+    drawWave();
+    updateMetrics();
+
+    // ---------- 심화 모드 (스피커 배치 계산기) ----------
+    $("advancedToggle").addEventListener("click", () => {
+      const panel = $("calcPanel");
+      const nowOpen = panel.classList.toggle("hidden") === false;
+      $("advancedToggle").classList.toggle("active", nowOpen);
+      $("advancedToggle").textContent = nowOpen ? "🔬 심화 모드 닫기" : "🔬 심화 모드";
+      if (nowOpen) updateSpatialCalc();
+    });
+
+    // ---------- 튜토리얼: 스피커 연결 확인 가이드 ----------
+    // 매 방문마다(공용 컴퓨터·새 학생) 자동으로 표시되는 필수 가이드입니다.
+    let tutStep = 0;
+    let tutCtx = null;
+    let tutSource = null;
+    let tutPlayedL = false;
+    let tutPlayedR = false;
+    const tutSteps = [0, 1, 2, 3];
+    const tutDots = tutSteps.map(i => $("tutDot" + i));
+    const tutPanels = tutSteps.map(i => $("tutStep" + i));
+
+    function stopTutTone() {
+      if (tutCtx) {
+        try { tutCtx.close(); } catch (e) {}
+      }
+      tutCtx = null;
+      tutSource = null;
+      $("tutPlayL").textContent = "▶ 왼쪽 테스트음 재생";
+      $("tutPlayR").textContent = "▶ 오른쪽 테스트음 재생";
+    }
+
+    function playTutTone(side) {
+      stopTutTone();
+      tutCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const merger = new ChannelMergerNode(tutCtx, { numberOfInputs: 2 });
+      const gainVal = Math.min(0.25, Math.max(0.05, Number($("masterGain").value) || 0.2));
+      const gain = new GainNode(tutCtx, { gain: gainVal });
+      merger.connect(gain).connect(tutCtx.destination);
+      const osc = new OscillatorNode(tutCtx, { type: "sine", frequency: 440 });
+      osc.connect(merger, 0, side === "L" ? 0 : 1);
+      osc.start();
+      tutSource = osc;
+
+      if (side === "L") { tutPlayedL = true; $("tutPlayL").textContent = "■ 재생 중지"; }
+      else { tutPlayedR = true; $("tutPlayR").textContent = "■ 재생 중지"; }
+      updateTutNav();
+    }
+
+    function toggleTutTone(side) {
+      const active = side === "L" ? $("tutPlayL").textContent.startsWith("■") : $("tutPlayR").textContent.startsWith("■");
+      if (active) stopTutTone();
+      else playTutTone(side);
+    }
+
+    function updateTutNav() {
+      $("tutPrev").disabled = tutStep === 0;
+      $("tutNext").textContent = tutStep === 3 ? "실험 시작하기 ✓" : "다음 ▶";
+      let nextDisabled = false;
+      if (tutStep === 1) nextDisabled = !tutPlayedL;
+      if (tutStep === 2) nextDisabled = !tutPlayedR;
+      $("tutNext").disabled = nextDisabled;
+    }
+
+    function renderTutStep() {
+      tutPanels.forEach((p, i) => p.classList.toggle("hidden", i !== tutStep));
+      tutDots.forEach((d, i) => d.classList.toggle("active", i === tutStep));
+      stopTutTone();
+      updateTutNav();
+    }
+
+    function openTutorial(fromStart) {
+      stopAudio();
+      if (fromStart) { tutStep = 0; tutPlayedL = false; tutPlayedR = false; }
+      renderTutStep();
+      $("tutOverlay").classList.remove("hidden");
+    }
+
+    function closeTutorial() {
+      stopTutTone();
+      $("tutOverlay").classList.add("hidden");
+    }
+
+    $("tutPlayL").addEventListener("click", () => toggleTutTone("L"));
+    $("tutPlayR").addEventListener("click", () => toggleTutTone("R"));
+
+    $("tutNext").addEventListener("click", () => {
+      if ($("tutNext").disabled) return;
+      if (tutStep === 3) {
+        closeTutorial();
+        return;
+      }
+      tutStep += 1;
+      renderTutStep();
+    });
+
+    $("tutPrev").addEventListener("click", () => {
+      if (tutStep === 0) return;
+      tutStep -= 1;
+      renderTutStep();
+    });
+
+    $("tutSkip").addEventListener("click", closeTutorial);
+
+    $("guideBtn").addEventListener("click", () => openTutorial(true));
+
+    openTutorial(true);
+  </script>
+</body>
+</html>
