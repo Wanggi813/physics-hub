@@ -116,6 +116,8 @@ const projects = [
   { title: "맥스웰의 도깨비", category: "열", desc: "엔트로피를 거슬러라! 뜨거운 공과 차가운 공을 분류하는 미니 게임", tags: ["엔트로피", "열역학", "게임"], emoji: "😈", demo: "./simul/멕스웰 도깨비.html", curriculumId: "[12역학02-05]", thumb: "./thumb_nail/멕스웰 도깨비.png" },
   { title: "극한의 번지점프", category: "역학", desc: "가속도와 변위의 관계! 바닥에 닿지도, 기절하지도 않게 k값을 조절하라", tags: ["단진동", "용수철", "가속도", "G-Force"], emoji: "🪂", demo: "./simul/번지점프.html", curriculumId: "[12역학03-01]", thumb: "./thumb_nail/번지점프.png" },
   { title: "도플러효과", category: "파동/광학", desc: "음원의 속도와 진동수에 따른 관측 음원의 변화 관찰하기", tags: ["도플러", "파동"], emoji: "🎵", demo: "./simul/도플러효과.html", curriculumId: "[12역학03-03]", thumb: "./thumb_nail/도플러효과.png" },
+  { title: "소리 간섭 실험", category: "파동/광학", desc: "좌우 스피커 위상차로 보강·상쇄 간섭 관찰하기", tags: ["간섭", "위상차", "맥놀이"], emoji: "🔊", demo: "./simul/소리 간섭 실험.html", curriculumId: "[12역학03-04]", thumb: "./thumb_nail/소리 간섭 실험.png" },
+
 
   // ===== 12전자 =====
   { title: "정전기 유도와 유전분극", category: "전자/반도체", desc: "도체의 자유 전자 이동과 유전체의 전자구름 변위를 각각 관찰하기", tags: ["정전기유도", "유전분극", "도체", "유전체"], emoji: "⚡", demo: "./simul/정전기 유도와 유전분극.html", curriculumId: "[12전자01-02]", thumb: "./thumb_nail/정전기 유도와 유전분극.svg" },
