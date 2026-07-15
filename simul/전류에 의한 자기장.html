@@ -1,0 +1,2129 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+    <title>전류에 의한 자기장</title>
+    <style>
+        @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+        :root {
+            --accent-color: #00f2fe;
+            --danger-color: #ff4757;
+            --warning-color: #ffa502;
+            --success-color: #2ed573;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            color: #e0e6ed;
+            font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #scene {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+        }
+
+        #scene canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            outline: none;
+        }
+
+        #rotate-warning {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #050a14;
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+        }
+
+        .phone-icon { font-size: 3rem; animation: rotatePhone 1.5s infinite; margin-bottom: 20px; }
+
+        @keyframes rotatePhone {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(-90deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        @media screen and (orientation: portrait) and (max-width: 600px) {
+            #rotate-warning { display: flex; }
+            #scene, #ui-layer { display: none; }
+        }
+
+        #ui-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .panel {
+            pointer-events: auto;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 상단 HUD */
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+        }
+
+        .hud-box {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-family: 'Space Mono', monospace;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .hud-label { font-size: 0.75rem; color: #aaa; margin-bottom: 5px; }
+        .hud-val { font-size: 1.1rem; font-weight: bold; color: var(--accent-color); }
+
+        /* 좌측 상단: 도선 종류 */
+        #wirePanel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 15px;
+            border-radius: 15px;
+            max-width: 200px;
+        }
+
+        #multiPanel {
+            position: absolute;
+            top: 240px;
+            left: 20px;
+            padding: 15px;
+            border-radius: 15px;
+            width: 250px;
+            max-height: calc(100vh - 260px);
+            overflow-y: auto;
+        }
+
+        .multi-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid transparent;
+        }
+        .multi-item:hover { background: rgba(255,255,255,0.08); }
+        .multi-item.selected { border-color: var(--accent-color); background: rgba(0, 242, 254, 0.1); }
+        .multi-tool-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0; }
+        .multi-tool {
+            padding: 8px 6px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.04);
+            color: #ccd6e3;
+            cursor: pointer;
+            font: 700 0.72rem "Pretendard", sans-serif;
+        }
+        .multi-tool.active { color: #031316; background: var(--accent-color); border-color: var(--accent-color); }
+        .multi-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin: 7px 0; }
+        .multi-actions button { padding: 7px 2px; font-size: 0.66rem; }
+        .multi-item.locked { opacity: 0.55; }
+        .precision-settings { margin: 8px 0; border-top: 1px solid rgba(255,255,255,0.08); }
+        .precision-settings summary { padding: 9px 0; cursor: pointer; color: #9aa9bc; font-size: 0.72rem; }
+        #directEditTip {
+            position: fixed; z-index: 40; display: none; pointer-events: none;
+            padding: 6px 9px; border-radius: 7px; background: rgba(3,10,18,0.9);
+            border: 1px solid var(--accent-color); color: #fff;
+            font: 0.72rem 'Space Mono', monospace;
+        }
+        #selectedWireLabel {
+            position: fixed; z-index: 35; display: none; pointer-events: none;
+            padding: 5px 8px; border-radius: 6px; background: rgba(2,12,20,0.88);
+            border: 1px solid var(--accent-color); color: #dffcff; font-size: 0.7rem;
+        }
+        #measurePanel {
+            position: absolute; right: 20px; bottom: 20px; width: 300px;
+            padding: 13px; border-radius: 14px; display: none;
+        }
+        #measurePanel canvas { width: 100%; height: 125px; background: #07111f; border-radius: 8px; }
+        .measure-row { display: flex; gap: 6px; margin: 7px 0; }
+        .measure-row select, .measure-row button {
+            flex: 1; min-width: 0; padding: 7px; border-radius: 7px;
+            border: 1px solid rgba(255,255,255,.16); background: #101b2c; color: #dfe8f3;
+        }
+
+        .panel-title { font-size: 0.8rem; color: #aaa; margin-bottom: 10px; letter-spacing: 1px; }
+
+        .w-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            opacity: 0.6;
+            transition: 0.2s;
+            padding: 6px 8px;
+            border-radius: 8px;
+        }
+
+        .w-option:hover { opacity: 1; background: rgba(255,255,255,0.05); }
+        .w-option.active { opacity: 1; color: var(--accent-color); font-weight: bold; background: rgba(0, 242, 254, 0.1); }
+        .w-icon { margin-right: 10px; font-size: 1.1rem; }
+
+        .hint-text {
+            font-size: 0.72rem;
+            color: #888;
+            margin-top: 10px;
+            line-height: 1.5;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding-top: 10px;
+        }
+
+        /* 우측 상단: 모드 버튼 */
+        #modePanel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 30px;
+            font-family: "Pretendard", sans-serif;
+            font-weight: 800;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            white-space: nowrap;
+            pointer-events: auto;
+        }
+
+        #drawModeBtn { background: transparent; border: 2px solid var(--warning-color); color: var(--warning-color); }
+        #drawModeBtn:hover, #drawModeBtn.active { background: var(--warning-color); color: #000; box-shadow: 0 0 20px var(--warning-color); }
+
+        #clearBtn { background: transparent; border: 2px solid var(--danger-color); color: var(--danger-color); display: none; }
+        #clearBtn:hover { background: var(--danger-color); color: #fff; }
+
+        #resetViewBtn { background: transparent; border: 2px solid #a29bfe; color: #a29bfe; }
+        #resetViewBtn:hover { background: #a29bfe; color: #000; box-shadow: 0 0 20px #a29bfe; }
+
+
+        /* 하단 컨트롤 패널 */
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 92%;
+            max-width: 760px;
+            background: rgba(15, 23, 42, 0.3);
+            backdrop-filter: blur(8px);
+            padding: 18px 32px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            gap: 22px;
+            align-items: center;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            pointer-events: auto;
+        }
+
+        .control-group { flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 70px; }
+        .control-group label { font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; letter-spacing: 0.5px; color: #ccc; white-space: nowrap; }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin: 10px 0; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: rgba(255, 255, 255, 0.2); border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%;
+            background: var(--accent-color); cursor: pointer; margin-top: -6px; box-shadow: 0 0 10px var(--accent-color);
+        }
+
+        .value-display { font-family: 'Space Mono', monospace; font-size: 0.82rem; color: #fff; margin-top: 5px; }
+
+        #flipBtn { background: var(--accent-color); color: #000; padding: 12px 20px; font-size: 0.82rem; }
+        #flipBtn:hover { transform: translateY(-2px); box-shadow: 0 0 20px var(--accent-color); }
+
+        #message {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.6rem;
+            font-weight: 800;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.3s;
+            text-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+
+        #dragHint {
+            position: absolute;
+            bottom: 148px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.78rem;
+            color: #888;
+            text-align: center;
+            white-space: nowrap;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        @media screen and (max-width: 900px), screen and (max-height: 600px) {
+            #hud { top: 5px; gap: 6px; }
+            .hud-box { padding: 4px 8px; min-width: 60px; border-radius: 5px; }
+            .hud-label { font-size: 0.55rem; margin-bottom: 2px; }
+            .hud-val { font-size: 0.75rem; }
+            #wirePanel { top: 5px; left: 5px; padding: 8px; border-radius: 10px; max-width: 128px; }
+            #multiPanel { top: 195px; left: 5px; padding: 8px; width: 150px; }
+            .multi-item { font-size: 0.65rem; padding: 4px 6px; }
+            .w-option { font-size: 0.63rem; margin-bottom: 3px; padding: 4px 5px; }
+            .w-icon { font-size: 0.85rem; margin-right: 5px; }
+            .hint-text { font-size: 0.56rem; margin-top: 6px; padding-top: 6px; }
+            #modePanel { top: 5px; right: 5px; gap: 5px; }
+            .btn { padding: 6px 12px; font-size: 0.62rem; border-radius: 15px; border-width: 1.5px; }
+            #controls { bottom: 8px; padding: 10px 12px; gap: 8px; width: 96%; border-radius: 15px; flex-wrap: wrap; }
+            .control-group label { font-size: 0.58rem; margin-bottom: 2px; }
+            .value-display { font-size: 0.62rem; margin-top: 2px; }
+            #flipBtn { padding: 8px 12px; font-size: 0.65rem; }
+            #message { font-size: 1.1rem; }
+            #dragHint { bottom: 150px; font-size: 0.6rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="rotate-warning">
+        <div class="phone-icon">📱</div>
+        <p>가로 모드로 돌려주세요<br>(Please Rotate Your Device)</p>
+    </div>
+
+    <div id="scene"></div>
+
+    <div id="ui-layer">
+        <div id="hud">
+            <div class="panel hud-box">
+                <div class="hud-label">전류 I</div>
+                <div class="hud-val" id="hudI">3.0 A</div>
+            </div>
+            <div class="panel hud-box">
+                <div class="hud-label">최대 자기장 B</div>
+                <div class="hud-val" id="hudB">-</div>
+            </div>
+            <div class="panel hud-box" id="solenoidTheoryBox" style="display:none;">
+                <div class="hud-label">중심 B · 유한 솔레노이드 이론</div>
+                <div class="hud-val" id="hudSolenoidTheory">-</div>
+            </div>
+        </div>
+
+        <div id="wirePanel" class="panel">
+            <div class="panel-title">도선 종류</div>
+            <div class="w-option active" data-type="straight" onclick="setWireType('straight', this)">
+                <span class="w-icon">➖</span> 직선 도선
+            </div>
+            <div class="w-option" data-type="loop" onclick="setWireType('loop', this)">
+                <span class="w-icon">⭕</span> 원형 도선
+            </div>
+            <div class="w-option" data-type="solenoid" onclick="setWireType('solenoid', this)">
+                <span class="w-icon">🌀</span> 솔레노이드
+            </div>
+            <div class="w-option" data-type="multi" onclick="setWireType('multi', this)">
+                <span class="w-icon">➕</span> 다중 도선 (중첩)
+            </div>
+            <div class="hint-text" id="hintText">
+                마우스 드래그로 시점을 회전하고,<br>휠로 확대/축소하며 입체 구조를 확인하세요.
+            </div>
+        </div>
+
+        <div id="multiPanel" class="panel" style="display:none;">
+            <div class="panel-title">다중 도선 (중첩)</div>
+            <div style="display:flex; gap:6px; margin-bottom:10px;">
+                <button class="btn" id="addStraightBtn" style="flex:1; padding:8px 6px; font-size:0.72rem; background:transparent; border:1.5px solid var(--accent-color); color:var(--accent-color);">➖ 직선</button>
+                <button class="btn" id="addLoopBtn" style="flex:1; padding:8px 6px; font-size:0.72rem; background:transparent; border:1.5px solid var(--accent-color); color:var(--accent-color);">⭕ 원형</button>
+                <button class="btn" id="addSolenoidBtn" style="flex:1; padding:8px 6px; font-size:0.72rem; background:transparent; border:1.5px solid var(--accent-color); color:var(--accent-color);">🌀 솔레노이드</button>
+            </div>
+            <div class="multi-actions">
+                <button class="multi-tool" id="multiUndoBtn" title="실행 취소">↶ 취소</button>
+                <button class="multi-tool" id="multiRedoBtn" title="다시 실행">↷ 다시</button>
+                <button class="multi-tool" id="multiResetSelectedBtn" title="선택 도선 원위치">⌂ 원위치</button>
+                <button class="multi-tool" id="multiLockAllBtn" title="전체 잠금">🔒 전체</button>
+            </div>
+            <button class="multi-tool" id="multiClearAllBtn" style="width:100%; margin-bottom:7px; color:#ff9aa5;">전체 배치 초기화</button>
+            <div style="display:flex; gap:6px; margin-bottom:10px;">
+                <button class="btn" id="parallelPresetBtn" style="flex:1; padding:7px 5px; font-size:0.68rem; background:rgba(255,255,255,0.04); border:1px solid #7f8fa6; color:#dfe6e9;">평행 도선</button>
+                <button class="btn" id="helmholtzPresetBtn" style="flex:1; padding:7px 5px; font-size:0.68rem; background:rgba(255,255,255,0.04); border:1px solid #7f8fa6; color:#dfe6e9;">헬름홀츠 코일</button>
+            </div>
+            <div id="multiWireList" style="max-height:180px; overflow-y:auto; margin-bottom:8px;"></div>
+            <div id="multiWireEditor" style="display:none; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">
+                <div class="hint-text" style="margin-top:0; border-top:none; padding-top:0;" id="multiEditorTitle">선택된 도선</div>
+                <div class="multi-tool-row">
+                    <button class="multi-tool active" id="multiMoveModeBtn">✥ 이동</button>
+                    <button class="multi-tool" id="multiRotateModeBtn">↻ 회전</button>
+                </div>
+                <div class="hint-text" id="multiDirectHint" style="margin-top:4px; padding-top:6px;">도선을 드래그해 X·Z 이동 · Alt+드래그로 Y 이동</div>
+                <details class="precision-settings" id="multiPrecisionSettings">
+                    <summary>정밀 설정 펼치기</summary>
+                <div class="control-group" style="align-items:stretch; margin-bottom:8px;">
+                    <label style="text-align:left;">X 위치</label>
+                    <input type="range" id="multiXSlider" min="-5" max="5" step="0.1" value="0">
+                </div>
+                <div class="control-group" style="align-items:stretch; margin-bottom:8px;">
+                    <label style="text-align:left;">Y 위치</label>
+                    <input type="range" id="multiYSlider" min="-5" max="5" step="0.1" value="0">
+                </div>
+                <div class="control-group" style="align-items:stretch; margin-bottom:8px;">
+                    <label style="text-align:left;">Z 위치</label>
+                    <input type="range" id="multiZSlider" min="-5" max="5" step="0.1" value="0">
+                </div>
+                <div class="control-group" style="align-items:stretch; margin-bottom:8px;">
+                    <label style="text-align:left;">X축 기울기 <span id="multiRotXVal">0°</span></label>
+                    <input type="range" id="multiRotXSlider" min="-180" max="180" step="90" value="0">
+                </div>
+                <div class="control-group" style="align-items:stretch; margin-bottom:8px;">
+                    <label style="text-align:left;">Z축 기울기 <span id="multiRotZVal">0°</span></label>
+                    <input type="range" id="multiRotZSlider" min="-180" max="180" step="90" value="0">
+                </div>
+                <div class="control-group" style="align-items:stretch; margin-bottom:8px;">
+                    <label style="text-align:left;">전류 세기</label>
+                    <input type="range" id="multiCurrentSlider" min="0.5" max="6" step="0.1" value="3">
+                </div>
+                </details>
+                <div style="display:flex; gap:6px;">
+                    <button class="btn" id="multiFlipBtn" style="flex:1; padding:8px 6px; font-size:0.72rem; background:transparent; border:1.5px solid var(--warning-color); color:var(--warning-color);">⇄ 방향</button>
+                    <button class="btn" id="multiDuplicateBtn" style="flex:1; padding:8px 6px; font-size:0.72rem; background:transparent; border:1.5px solid #a29bfe; color:#a29bfe;">복제</button>
+                    <button class="btn" id="multiDeleteBtn" style="flex:1; padding:8px 6px; font-size:0.72rem; background:transparent; border:1.5px solid var(--danger-color); color:var(--danger-color);">삭제</button>
+                </div>
+                <button class="multi-tool" id="multiLockBtn" style="width:100%; margin-top:6px;">🔓 선택 도선 잠금</button>
+            </div>
+            <button class="btn" id="finishLayoutBtn" style="width:100%; margin-top:10px; padding:10px; background:var(--success-color); color:#03130a;">배치 완료 · 측정하기</button>
+            <div class="hint-text" id="multiHint">도선을 추가하고 목록에서 클릭해<br>위치와 전류를 조절해보세요.</div>
+        </div>
+
+        <div id="modePanel">
+            <button id="drawModeBtn" class="btn">✏️ 자유 곡선 그리기</button>
+            <button id="clearBtn" class="btn">지우기</button>
+            <button id="resetViewBtn" class="btn">⟲ 시점 초기화</button>
+        </div>
+
+
+        <div id="message"></div>
+        <div id="directEditTip"></div>
+        <div id="selectedWireLabel"></div>
+        <div id="measurePanel" class="panel">
+            <div class="panel-title">📊 자기장 측정</div>
+            <div class="measure-row">
+                <select id="fieldViewSelect" aria-label="자기장 표시 방식">
+                    <option value="total">전체 합성장</option>
+                    <option value="selected">선택 도선만</option>
+                    <option value="individual">개별장 색상 구분</option>
+                </select>
+                <select id="fieldDensitySelect" aria-label="자기장 표시 밀도">
+                    <option value="low">간단</option>
+                    <option value="medium" selected>보통</option>
+                    <option value="high">자세히</option>
+                </select>
+            </div>
+            <div class="measure-row">
+                <select id="fieldPlaneSelect" aria-label="자기장 표시 평면">
+                    <option value="3d">3D 공간</option>
+                    <option value="xy">XY 단면</option>
+                    <option value="xz">XZ 단면</option>
+                    <option value="yz">YZ 단면</option>
+                </select>
+            </div>
+            <div class="hint-text" style="margin:4px 0 8px; padding-top:7px; color:#ff8cff;">
+                ◉ 자기장 상쇄 지점: <strong id="zeroFieldCount">0개</strong>
+            </div>
+            <canvas id="fieldGraph" width="552" height="250"></canvas>
+            <div class="hint-text" id="fieldGraphCaption">선택 도선의 중심축을 따라 |B|를 측정합니다.</div>
+            <div class="measure-row">
+                <button id="backToLayoutBtn">← 배치 수정</button>
+                <button id="unlockAllBtn">🔓 전체 잠금 해제</button>
+            </div>
+        </div>
+        <div id="dragHint">🖱️ 드래그: 시점 회전 · 휠: 확대/축소 · 오른쪽 드래그: 이동</div>
+
+        <div id="controls">
+            <div class="control-group">
+                <label style="color:var(--accent-color)">전류 세기 (I)</label>
+                <input type="range" id="iSlider" min="0.5" max="6" step="0.1" value="3">
+                <div class="value-display" id="iVal">3.0 A</div>
+            </div>
+            <div class="control-group">
+                <label style="color:#a29bfe">도선 회전 (Y축)</label>
+                <input type="range" id="rotSlider" min="0" max="360" step="1" value="0">
+                <div class="value-display" id="rotVal">0°</div>
+            </div>
+            <button id="flipBtn" class="btn">⇄ 전류 방향 전환</button>
+        </div>
+    </div>
+
+    <script src="./libs/three.min.js"></script>
+    <script src="./libs/orbit-controls-lite.js"></script>
+    <script>
+        const elScene = document.getElementById('scene');
+
+        // ---------- 상태 ----------
+        const state = {
+            wireType: 'straight',
+            current: 3.0,
+            direction: 1,
+            fieldLineCount: 8,
+            wireRotY: 0,
+            drawMode: false,
+            multiEditMode: 'move',
+            measureMode: false,
+            fieldView: 'total',
+            fieldDensity: 'medium',
+            fieldPlane: '3d',
+            multiWires: [],       // { id, type, x, z, current, direction, group }
+            multiSelectedId: null,
+            multiNextId: 1
+        };
+
+        const WIRE_LEN = 8;      // 직선/솔레노이드 길이
+        const LOOP_R = 3.2;      // 원형 루프 반지름
+        const SOL_R = 1.6;       // 솔레노이드 반지름
+        const SOL_TURNS = 8;
+
+        // ---------- Three.js 기본 셋업 ----------
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        elScene.appendChild(renderer.domElement);
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+        scene.fog = new THREE.Fog(0x000000, 22, 60);
+
+        const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+        const cameraHome = new THREE.Vector3(9, 7, 12);
+        camera.position.copy(cameraHome);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        controls.target.set(0, 0, 0);
+        controls.minDistance = 4;
+        controls.maxDistance = 40;
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.1);
+        keyLight.position.set(10, 14, 10);
+        scene.add(keyLight);
+        const fillLight = new THREE.DirectionalLight(0x4477ff, 0.4);
+        fillLight.position.set(-10, -6, -8);
+        scene.add(fillLight);
+
+        // 배경 그리드 (바닥)
+        const grid = new THREE.GridHelper(40, 40, 0x0a3a44, 0x081824);
+        grid.position.y = -6;
+        scene.add(grid);
+
+        const axesHelper = new THREE.AxesHelper(0); // 표시 안함 (참조용)
+
+        // ---------- 도선/필드 그룹 ----------
+        const wireGroup = new THREE.Group();
+        const fieldGroup = new THREE.Group();
+        const curveGroup = new THREE.Group();
+        scene.add(wireGroup, fieldGroup, curveGroup);
+
+        const matCopper = new THREE.MeshStandardMaterial({ color: 0xff4757, roughness: 0.25, metalness: 0.7, emissive: 0x400000, emissiveIntensity: 0.5 });
+        const matSelected = new THREE.MeshStandardMaterial({ color: 0x66f7ff, roughness: 0.18, metalness: 0.65, emissive: 0x007f88, emissiveIntensity: 1.1 });
+        const matField = new THREE.MeshBasicMaterial({ color: 0x00f2fe, transparent: true, opacity: 0.85 });
+
+        // ---------- 도선 지오메트리 빌드 ----------
+        function clearGroup(g) {
+            while (g.children.length) {
+                const obj = g.children.pop();
+                if (obj.geometry) obj.geometry.dispose();
+                if (obj.material) obj.material.dispose();
+            }
+        }
+
+        function buildWire() {
+            clearGroup(wireGroup);
+            wireGroup.rotation.y = THREE.MathUtils.degToRad(state.wireRotY);
+            wireGroup.visible = state.wireType !== 'multi';
+            multiGroup.visible = state.wireType === 'multi';
+
+            if (state.wireType === 'straight') {
+                buildStraightWire();
+            } else if (state.wireType === 'loop') {
+                buildLoopWire();
+            } else if (state.wireType === 'solenoid') {
+                buildSolenoidWire();
+            } else if (state.wireType === 'multi') {
+                buildMultiWires();
+            }
+        }
+
+        // ---------- 다중 도선(중첩) 지오메트리 ----------
+        const multiGroup = new THREE.Group();
+        scene.add(multiGroup);
+        const multiGizmo = new THREE.Group();
+        scene.add(multiGizmo);
+
+        (function buildMultiGizmo() {
+            const axes = [
+                ['x', new THREE.Vector3(1, 0, 0), 0xff5b62],
+                ['y', new THREE.Vector3(0, 1, 0), 0x52d273],
+                ['z', new THREE.Vector3(0, 0, 1), 0x4d8dff]
+            ];
+            for (const [axisName, dir, color] of axes) {
+                const arrow = new THREE.ArrowHelper(dir, new THREE.Vector3(), 1.5, color, 0.35, 0.18);
+                arrow.userData.gizmoAxis = axisName;
+                arrow.traverse(o => { o.userData.gizmoAxis = axisName; });
+                multiGizmo.add(arrow);
+            }
+            const ringMatX = new THREE.MeshBasicMaterial({ color: 0xff7d83, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
+            const ringX = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.035, 8, 64), ringMatX);
+            ringX.rotation.y = Math.PI / 2;
+            ringX.userData.gizmoRotation = 'x';
+            multiGizmo.add(ringX);
+            const ringZ = new THREE.Mesh(new THREE.TorusGeometry(1.18, 0.035, 8, 64), new THREE.MeshBasicMaterial({ color: 0x74a6ff, transparent: true, opacity: 0.8 }));
+            ringZ.userData.gizmoRotation = 'z';
+            multiGizmo.add(ringZ);
+            multiGizmo.visible = false;
+        })();
+
+        function getWireQuaternion(wire) {
+            return new THREE.Quaternion().setFromEuler(new THREE.Euler(
+                THREE.MathUtils.degToRad(wire.rotX || 0),
+                0,
+                THREE.MathUtils.degToRad(wire.rotZ || 0),
+                'XYZ'
+            ));
+        }
+
+        function wireLocalToWorld(wire, point) {
+            return point.clone()
+                .applyQuaternion(getWireQuaternion(wire))
+                .add(new THREE.Vector3(wire.x || 0, wire.y || 0, wire.z || 0));
+        }
+
+        function buildSingleWireMesh(wire) {
+            const g = new THREE.Group();
+            g.position.set(wire.x || 0, wire.y || 0, wire.z || 0);
+            g.quaternion.copy(getWireQuaternion(wire));
+
+            const wireMaterial = wire.id === state.multiSelectedId ? matSelected : matCopper;
+            if (wire.type === 'straight') {
+                const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, WIRE_LEN, 16), wireMaterial);
+                g.add(mesh);
+                let a = new THREE.Vector3(0, -WIRE_LEN / 2, 0), b = new THREE.Vector3(0, WIRE_LEN / 2, 0);
+                if (wire.direction < 0) { [a, b] = [b, a]; }
+                const dir = b.clone().sub(a).normalize();
+                g.add(new THREE.ArrowHelper(dir, a, WIRE_LEN, 0xff4757, WIRE_LEN * 0.18, WIRE_LEN * 0.09));
+            } else if (wire.type === 'loop') {
+                const mesh = new THREE.Mesh(new THREE.TorusGeometry(LOOP_R, 0.08, 12, 48), wireMaterial);
+                mesh.rotation.x = Math.PI / 2;
+                g.add(mesh);
+                for (let i = 0; i < 4; i++) {
+                    const theta = (i / 4) * Math.PI * 2;
+                    const p = new THREE.Vector3(Math.cos(theta) * LOOP_R, 0, Math.sin(theta) * LOOP_R);
+                    const tangent = new THREE.Vector3(-Math.sin(theta), 0, Math.cos(theta)).multiplyScalar(wire.direction);
+                    g.add(new THREE.ArrowHelper(tangent, p, 0.9, 0xff4757, 0.35, 0.2));
+                }
+            } else {
+                const count = SOL_TURNS;
+                const samples = count * 16;
+                const points = [];
+                for (let i = 0; i <= samples; i++) {
+                    const u = i / samples;
+                    // 코일의 기하 구조는 고정하고 전류 방향만 별도로 뒤집는다.
+                    const angle = u * count * Math.PI * 2;
+                    points.push(new THREE.Vector3(SOL_R * Math.cos(angle), -WIRE_LEN / 2 + u * WIRE_LEN, SOL_R * Math.sin(angle)));
+                }
+                const curve = new THREE.CatmullRomCurve3(points);
+                g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, samples, 0.07, 8, false), wireMaterial));
+            }
+            return g;
+        }
+
+        function buildMultiWires() {
+            clearGroup(multiGroup);
+            for (const wire of state.multiWires) {
+                const mesh = buildSingleWireMesh(wire);
+                mesh.userData.wireId = wire.id;
+                multiGroup.add(mesh);
+            }
+            updateMultiGizmo();
+        }
+
+        function updateMultiGizmo() {
+            const wire = state.multiWires.find(w => w.id === state.multiSelectedId);
+            multiGizmo.visible = state.wireType === 'multi' && !state.measureMode && !!wire && !wire.locked;
+            if (!wire) return;
+            multiGizmo.position.set(wire.x || 0, wire.y || 0, wire.z || 0);
+            multiGizmo.children.slice(0, 3).forEach(o => { o.visible = state.multiEditMode === 'move'; });
+            multiGizmo.children.slice(3).forEach(o => { o.visible = state.multiEditMode === 'rotate'; });
+        }
+
+        function buildStraightWire() {
+            const geo = new THREE.CylinderGeometry(0.08, 0.08, WIRE_LEN, 16);
+            const mesh = new THREE.Mesh(geo, matCopper);
+            wireGroup.add(mesh);
+
+            addCurrentArrows(wireGroup, [
+                new THREE.Vector3(0, -WIRE_LEN / 2, 0),
+                new THREE.Vector3(0, WIRE_LEN / 2, 0)
+            ]);
+        }
+
+        function buildLoopWire() {
+            const geo = new THREE.TorusGeometry(LOOP_R, 0.08, 12, 64);
+            const mesh = new THREE.Mesh(geo, matCopper);
+            mesh.rotation.x = Math.PI / 2;
+            wireGroup.add(mesh);
+
+            // 전류 방향 화살표 (원 위 4곳)
+            const arrowCount = 4;
+            for (let i = 0; i < arrowCount; i++) {
+                const theta = (i / arrowCount) * Math.PI * 2;
+                const p = new THREE.Vector3(Math.cos(theta) * LOOP_R, 0, Math.sin(theta) * LOOP_R);
+                const tangent = new THREE.Vector3(-Math.sin(theta), 0, Math.cos(theta)).multiplyScalar(state.direction);
+                const arrow = new THREE.ArrowHelper(tangent, p, 0.9, 0xff4757, 0.35, 0.2);
+                wireGroup.add(arrow);
+            }
+        }
+
+        function buildSolenoidWire() {
+            const count = SOL_TURNS;
+            const samples = count * 20;
+            const points = [];
+            for (let i = 0; i <= samples; i++) {
+                const u = i / samples;
+                const angle = u * count * Math.PI * 2;
+                points.push(new THREE.Vector3(
+                    SOL_R * Math.cos(angle),
+                    -WIRE_LEN / 2 + u * WIRE_LEN,
+                    SOL_R * Math.sin(angle)
+                ));
+            }
+            const curve = new THREE.CatmullRomCurve3(points);
+            const helix = new THREE.Mesh(new THREE.TubeGeometry(curve, samples, 0.07, 10, false), matCopper);
+            wireGroup.add(helix);
+
+            const coreMat = new THREE.MeshStandardMaterial({
+                color: 0x00f2fe, roughness: 0.3, metalness: 0.1,
+                transparent: true, opacity: 0.08, emissive: 0x003a46, emissiveIntensity: 0.1
+            });
+            const core = new THREE.Mesh(new THREE.CylinderGeometry(SOL_R * 0.85, SOL_R * 0.85, WIRE_LEN + 0.3, 32), coreMat);
+            wireGroup.add(core);
+
+            // 나선을 따라 도는 전류 방향 화살표 (각 turn의 앞쪽에 접선 방향으로 배치)
+            for (let t = 0; t < count; t++) {
+                const u = (t + 0.5) / count;
+                const angle = u * count * Math.PI * 2;
+                const pos = new THREE.Vector3(SOL_R * Math.cos(angle), -WIRE_LEN / 2 + u * WIRE_LEN, SOL_R * Math.sin(angle));
+                // 곡선 접선 = 각도 증가 방향(원주 성분) + 축 방향(진행 성분)을 합성
+                const circumfDir = new THREE.Vector3(-Math.sin(angle), 0, Math.cos(angle));
+                const axialDir = new THREE.Vector3(0, 1, 0).multiplyScalar(WIRE_LEN / (count * Math.PI * 2 * SOL_R));
+                const tangent = circumfDir.add(axialDir).normalize().multiplyScalar(state.direction);
+                const arrow = new THREE.ArrowHelper(tangent, pos, 0.75, 0xff4757, 0.28, 0.16);
+                wireGroup.add(arrow);
+            }
+        }
+
+        function addCurrentArrows(group, ends) {
+            let a = ends[0].clone(), b = ends[1].clone();
+            if (state.direction < 0) { [a, b] = [b, a]; }
+            const dir = b.clone().sub(a).normalize();
+            const len = a.distanceTo(b);
+            const arrow = new THREE.ArrowHelper(dir, a, len, 0xff4757, len * 0.18, len * 0.09);
+            group.add(arrow);
+        }
+
+        // ---------- 전류 흐름 입자 애니메이션 ----------
+        // 도선 위 위치(u: 0~1)를 월드 좌표로 변환하는 함수를 도선 종류별로 제공한다.
+        function pathPointStraight(u) {
+            return new THREE.Vector3(0, -WIRE_LEN / 2 + u * WIRE_LEN, 0);
+        }
+        function pathPointLoop(u) {
+            const theta = u * Math.PI * 2;
+            return new THREE.Vector3(Math.cos(theta) * LOOP_R, 0, Math.sin(theta) * LOOP_R);
+        }
+        function pathPointSolenoid(u) {
+            const angle = u * SOL_TURNS * Math.PI * 2;
+            return new THREE.Vector3(SOL_R * Math.cos(angle), -WIRE_LEN / 2 + u * WIRE_LEN, SOL_R * Math.sin(angle));
+        }
+
+        const PARTICLE_COUNT = 14;
+        let currentParticles = [];
+        let particleGroup = new THREE.Group();
+        scene.add(particleGroup);
+        const matParticle = new THREE.MeshBasicMaterial({ color: 0xfff2a8 });
+        let flowU = 0; // 애니메이션 진행도(0~1 반복)
+
+        function buildCurrentParticles() {
+            clearGroup(particleGroup);
+            currentParticles = [];
+
+            if (state.wireType === 'multi') {
+                for (const wire of state.multiWires) {
+                    let pathFn;
+                    if (wire.type === 'straight') pathFn = pathPointStraight;
+                    else if (wire.type === 'loop') pathFn = pathPointLoop;
+                    else pathFn = pathPointSolenoid;
+
+                    for (let i = 0; i < PARTICLE_COUNT; i++) {
+                        const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), matParticle);
+                        particleGroup.add(mesh);
+                        currentParticles.push({ mesh, offset: i / PARTICLE_COUNT, pathFn, wire });
+                    }
+                }
+                return;
+            }
+
+            if (state.drawMode) {
+                if (curvePoints.length < 2) return;
+                for (let i = 0; i < PARTICLE_COUNT; i++) {
+                    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), matParticle);
+                    particleGroup.add(mesh);
+                    currentParticles.push({ mesh, offset: i / PARTICLE_COUNT });
+                }
+                return;
+            }
+
+            let pathFn;
+            if (state.wireType === 'straight') pathFn = pathPointStraight;
+            else if (state.wireType === 'loop') pathFn = pathPointLoop;
+            else pathFn = pathPointSolenoid;
+
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), matParticle);
+                particleGroup.add(mesh);
+                currentParticles.push({ mesh, offset: i / PARTICLE_COUNT, pathFn });
+            }
+        }
+
+        function updateCurrentParticles(dt) {
+            if (currentParticles.length === 0) return;
+
+            if (state.wireType === 'multi') {
+                particleGroup.visible = true;
+                for (const p of currentParticles) {
+                    const speed = 0.06 + p.wire.current * 0.05;
+                    p._flowU = ((p._flowU || 0) + dt * speed) % 1;
+                    let u = (p._flowU * p.wire.direction + p.offset) % 1;
+                    if (u < 0) u += 1;
+                    p.mesh.position.copy(wireLocalToWorld(p.wire, p.pathFn(u)));
+                }
+                return;
+            }
+
+            // 전류 세기에 비례해 흐르는 속도가 빨라지도록 한다 (전류=전하의 흐름을 체감)
+            const speed = 0.06 + state.current * 0.05;
+            flowU = (flowU + dt * speed) % 1;
+
+            if (state.drawMode) {
+                if (curvePoints.length < 2) { particleGroup.visible = false; return; }
+                particleGroup.visible = true;
+                const n = curvePoints.length;
+                for (const p of currentParticles) {
+                    let u = (flowU * state.direction + p.offset) % 1;
+                    if (u < 0) u += 1;
+                    const idx = u * (n - 1);
+                    const i0 = Math.floor(idx), i1 = Math.min(n - 1, i0 + 1);
+                    const frac = idx - i0;
+                    p.mesh.position.lerpVectors(curvePoints[i0], curvePoints[i1], frac);
+                }
+                return;
+            }
+
+            particleGroup.visible = true;
+            for (const p of currentParticles) {
+                let u = (flowU * state.direction + p.offset) % 1;
+                if (u < 0) u += 1;
+                const local = p.pathFn(u);
+                local.applyAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(state.wireRotY));
+                p.mesh.position.copy(local);
+            }
+        }
+
+        // ---------- 자기장 계산 (비오-사바르, 3D) ----------
+        // 장면 좌표 1 = 0.10 m로 두고 모든 반환값을 μT로 통일한다.
+        // μ0/(4π) × 10^6 / WORLD_TO_METERS = 1.0 (μT·scene-unit/A)
+        const WORLD_TO_METERS = 0.10;
+        const BIOT_SAVART_UT = 1e-7 * 1e6 / WORLD_TO_METERS;
+        const MIN_WIRE_DISTANCE = 0.12;
+
+        function biotSavartSegment(B, a, b, p, current, direction, weight = 1) {
+            const dl = b.clone().sub(a).multiplyScalar(direction);
+            const mid = a.clone().add(b).multiplyScalar(0.5);
+            const rVec = p.clone().sub(mid);
+            const rLen = Math.max(MIN_WIRE_DISTANCE, rVec.length());
+            B.add(dl.cross(rVec).multiplyScalar(BIOT_SAVART_UT * current * weight / (rLen ** 3)));
+        }
+
+        function fieldAtLoopPosition(p, yPos, radius, current, direction, segments = 36, weight = 1) {
+            const B = new THREE.Vector3();
+            for (let i = 0; i < segments; i++) {
+                const t0 = i / segments * Math.PI * 2;
+                const t1 = (i + 1) / segments * Math.PI * 2;
+                const a = new THREE.Vector3(Math.cos(t0) * radius, yPos, Math.sin(t0) * radius);
+                const b = new THREE.Vector3(Math.cos(t1) * radius, yPos, Math.sin(t1) * radius);
+                biotSavartSegment(B, a, b, p, current, direction, weight);
+            }
+            return B;
+        }
+
+        function fieldAtStraight(p) {
+            // 로컬 좌표계(wireGroup 기준)로 변환된 p를 받는다고 가정
+            const axis = new THREE.Vector3(0, 1, 0);
+            const rhoVec = new THREE.Vector3(p.x, 0, p.z);
+            const rho = Math.max(MIN_WIRE_DISTANCE, rhoVec.length());
+            const half = WIRE_LEN / 2;
+            const upper = (half - p.y) / Math.sqrt(rho * rho + (half - p.y) ** 2);
+            const lower = (half + p.y) / Math.sqrt(rho * rho + (half + p.y) ** 2);
+            const mag = BIOT_SAVART_UT * state.current * (upper + lower) / rho;
+            const dir = axis.clone().multiplyScalar(state.direction).cross(rhoVec).normalize();
+            return dir.multiplyScalar(Math.max(0, mag));
+        }
+
+        function fieldAtLoop(p) {
+            return fieldAtLoopPosition(p, 0, LOOP_R, state.current, state.direction, 48);
+        }
+
+        function fieldAtSolenoid(p) {
+            const B = new THREE.Vector3();
+            for (let turn = 0; turn < SOL_TURNS; turn++) {
+                const yPos = -WIRE_LEN / 2 + (turn + 0.5) * WIRE_LEN / SOL_TURNS;
+                B.add(fieldAtLoopPosition(p, yPos, SOL_R, state.current, state.direction, 32));
+            }
+            return B;
+        }
+
+        // 자유곡선 포인트들 (월드 좌표)
+        let curvePoints = [];
+
+        function fieldAtCurve(p) {
+            const B = new THREE.Vector3();
+            if (curvePoints.length < 2) return B;
+            const step = Math.max(1, Math.floor(curvePoints.length / 60));
+            for (let i = 0; i < curvePoints.length - step; i += step) {
+                const a = curvePoints[i], b = curvePoints[i + step];
+                const dl = b.clone().sub(a).multiplyScalar(state.direction);
+                const mid = a.clone().add(b).multiplyScalar(0.5);
+                const rVec = p.clone().sub(mid);
+                let rLen = rVec.length();
+                if (rLen < 0.2) rLen = 0.2;
+                const dB = dl.clone().cross(rVec).multiplyScalar(BIOT_SAVART_UT * state.current / (rLen ** 3));
+                B.add(dB);
+            }
+            return B;
+        }
+
+        function fieldAtWorld(worldP) {
+            if (state.wireType === 'multi') return fieldAtMulti(worldP);
+            if (state.drawMode) return fieldAtCurve(worldP);
+            // 도선 로컬 좌표로 변환 (wireGroup의 Y축 회전만 반영)
+            const localP = worldP.clone();
+            localP.applyAxisAngle(new THREE.Vector3(0, 1, 0), -THREE.MathUtils.degToRad(state.wireRotY));
+
+            let Blocal;
+            if (state.wireType === 'straight') Blocal = fieldAtStraight(localP);
+            else if (state.wireType === 'loop') Blocal = fieldAtLoop(localP);
+            else Blocal = fieldAtSolenoid(localP);
+
+            Blocal.applyAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(state.wireRotY));
+            return Blocal;
+        }
+
+        // ---------- 다중 도선(중첩) 자기장 계산 ----------
+        // 각 도선은 (x, z) 위치에 y축과 나란히 놓인다고 가정하고, 개별 전류/방향을 갖는다.
+        // 여러 도선의 기여분을 비오-사바르 중첩 원리에 따라 벡터 합산한다.
+        function fieldFromSingleWire(wire, p) {
+            // p: 도선 위치가 원점이 되도록 이미 평행이동된 로컬 좌표
+            const I = wire.current, dir = wire.direction;
+            if (wire.type === 'straight') {
+                const axis = new THREE.Vector3(0, 1, 0);
+                const rhoVec = new THREE.Vector3(p.x, 0, p.z);
+                const rho = Math.max(MIN_WIRE_DISTANCE, rhoVec.length());
+                const half = WIRE_LEN / 2;
+                const upper = (half - p.y) / Math.sqrt(rho * rho + (half - p.y) ** 2);
+                const lower = (half + p.y) / Math.sqrt(rho * rho + (half + p.y) ** 2);
+                const mag = BIOT_SAVART_UT * I * (upper + lower) / rho;
+                return axis.multiplyScalar(dir).cross(rhoVec).normalize().multiplyScalar(Math.max(0, mag));
+            } else if (wire.type === 'loop') {
+                return fieldAtLoopPosition(p, 0, LOOP_R, I, dir, 32);
+            } else {
+                const B = new THREE.Vector3();
+                for (let turn = 0; turn < SOL_TURNS; turn++) {
+                    const yPos = -WIRE_LEN / 2 + (turn + 0.5) * WIRE_LEN / SOL_TURNS;
+                    B.add(fieldAtLoopPosition(p, yPos, SOL_R, I, dir, 24));
+                }
+                return B;
+            }
+        }
+
+        function fieldAtWireWorld(wire, worldP) {
+            const q = getWireQuaternion(wire);
+            const local = worldP.clone()
+                .sub(new THREE.Vector3(wire.x || 0, wire.y || 0, wire.z || 0))
+                .applyQuaternion(q.clone().invert());
+            return fieldFromSingleWire(wire, local).applyQuaternion(q);
+        }
+
+        function fieldAtMulti(worldP) {
+            const B = new THREE.Vector3();
+            for (const wire of state.multiWires) B.add(fieldAtWireWorld(wire, worldP));
+            return B;
+        }
+
+        // ---------- 자기장 필드라인(곡선 추적) ----------
+        // 시작점에서 자기장 방향을 따라 짧은 스텝으로 적분해 실제 곡선 궤적을 얻는다.
+        // (화살표 다발 대신, 원형/솔레노이드 외부처럼 실제로 휘어지는 구간이 매끄러운 곡선으로 보이도록 함)
+        //
+        // 수치 적분은 스텝마다 오차가 누적되어, 완전한 원이어야 할 경로가 나선처럼 어긋나기 쉽다.
+        // 그래서 대칭축(xz평면, y=0)까지만 절반을 추적하고 나머지 절반은 거울 대칭으로 만들어
+        // 폐곡선이 항상 정확히 닫히도록 한다. seed가 이미 대칭축 위(y≈0)에 있으면 그대로 전체를 추적한다.
+        function traceFieldLine(seed, opts = {}) {
+            const stepLen = opts.stepLen || 0.1;
+            const maxSteps = opts.maxSteps || 260;
+            const maxRadius = opts.maxRadius || 13;
+            const closeDist = opts.closeDist || 0.18;
+            const mirrorY = opts.mirrorY || false; // true면 y=0에서 궤적을 끊고 대칭 복사
+
+            const pts = [seed.clone()];
+            let p = seed.clone();
+            let prevDir = null;
+            let crossedAxis = Math.abs(seed.y) < 1e-3;
+
+            for (let i = 0; i < maxSteps; i++) {
+                const B = fieldAtWorld(p);
+                const mag = B.length();
+                if (mag < 1e-4) break;
+                let dir = B.clone().normalize();
+                if (prevDir && prevDir.dot(dir) < -0.3) break;
+                prevDir = dir.clone();
+                const next = p.clone().add(dir.multiplyScalar(stepLen));
+
+                if (mirrorY && !crossedAxis && Math.sign(next.y) !== Math.sign(p.y) && p.y !== 0) {
+                    // y=0 평면을 통과하는 순간 정확히 그 지점에서 멈춘다 (대칭 미러링의 접합점)
+                    const t = p.y / (p.y - next.y);
+                    const crossPt = p.clone().lerp(next, t);
+                    pts.push(crossPt);
+                    break;
+                }
+
+                p = next;
+                if (p.length() > maxRadius) break;
+                pts.push(p.clone());
+                if (i > 5 && p.distanceTo(seed) < closeDist) { pts.push(seed.clone()); break; }
+            }
+            return pts;
+        }
+
+        // 절반 궤적(끝점이 y=0 평면 위)을 y=0 기준으로 대칭 복사해 완전한 폐곡선을 만든다.
+        function mirrorHalfLineY(half) {
+            const mirrored = [];
+            for (let i = half.length - 2; i >= 0; i--) {
+                const p = half[i];
+                mirrored.push(new THREE.Vector3(p.x, -p.y, p.z));
+            }
+            return half.concat(mirrored);
+        }
+
+        // 직선 도선을 감싸는 자기장선은 도선 축 대칭이라 완전한 원이다 -> 수치적분 없이 해석적으로 생성
+        function circleAroundAxis(center, radius, segments = 64) {
+            const pts = [];
+            for (let i = 0; i <= segments; i++) {
+                const theta = (i / segments) * Math.PI * 2;
+                pts.push(new THREE.Vector3(center.x + Math.cos(theta) * radius, center.y, center.z + Math.sin(theta) * radius));
+            }
+            return pts;
+        }
+
+        function fieldMagAt(p) {
+            return fieldAtWorld(p).length();
+        }
+
+        // ---------- 필드라인 렌더링 ----------
+        let fieldLineMeshes = [];
+        let zeroFieldMarkers = [];
+
+        function addFieldLineMesh(line, norm) {
+            if (line.length < 3) return;
+            const hue = 0.5 - norm * 0.16;
+            const color = new THREE.Color().setHSL(hue, 0.95, 0.5 + norm * 0.15);
+            const radius = 0.02 + norm * 0.035;
+
+            const curve = new THREE.CatmullRomCurve3(line);
+            const tubeSamples = Math.max(8, line.length);
+            const geo = new THREE.TubeGeometry(curve, tubeSamples, radius, 6, line[0].distanceTo(line[line.length - 1]) < 0.05);
+            const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.55 + norm * 0.4 });
+            const mesh = new THREE.Mesh(geo, mat);
+            fieldGroup.add(mesh);
+            fieldLineMeshes.push(mesh);
+
+            // 진행 방향 화살표 하나를 곡선 일부에 얹어 방향을 표시
+            const tailIdx = Math.max(1, Math.floor(line.length * 0.7));
+            const a = line[tailIdx - 1], b = line[tailIdx];
+            const dir = b.clone().sub(a).normalize();
+            if (dir.lengthSq() > 0) {
+                const arrowLen = 0.4 + norm * 0.5;
+                const arrow = new THREE.ArrowHelper(dir, a, arrowLen, color, arrowLen * 0.5, arrowLen * 0.28);
+                fieldGroup.add(arrow);
+            }
+        }
+
+        function rebuildFieldArrows() {
+            clearGroup(fieldGroup);
+            fieldLineMeshes = [];
+            zeroFieldMarkers = [];
+
+            const referenceMag = 12; // 6 A 유한 직선 도선에서 약 0.10 m 떨어진 크기(μT)
+
+            if (state.wireType === 'multi') {
+                renderMultiFieldArrows(referenceMag);
+            } else if (state.wireType === 'straight' && !state.drawMode) {
+                // 도선 축 대칭 -> 완전한 원으로 해석적으로 그린다 (수치적분 불필요, 항상 정확히 닫힘)
+                renderStraightFieldCircles(referenceMag);
+            } else if (state.wireType === 'loop' && !state.drawMode) {
+                renderLoopFieldLines(referenceMag);
+            } else if (state.wireType === 'solenoid' && !state.drawMode) {
+                renderSolenoidFieldLines(referenceMag);
+            } else {
+                renderTracedFieldLines(generateSeedPoints(), referenceMag);
+            }
+
+            updateSolenoidTheoryHUD();
+            if (state.measureMode) drawFieldGraph();
+        }
+
+        function updateSolenoidTheoryHUD() {
+            const box = document.getElementById('solenoidTheoryBox');
+            if (state.wireType !== 'solenoid' || state.drawMode) {
+                box.style.display = 'none';
+                return;
+            }
+
+            box.style.display = 'block';
+            const lengthM = WIRE_LEN * WORLD_TO_METERS;
+            const radiusM = SOL_R * WORLD_TO_METERS;
+            const turnsPerMeter = SOL_TURNS / lengthM;
+            const halfLength = lengthM / 2;
+            const finiteLengthFactor = halfLength / Math.sqrt(radiusM ** 2 + halfLength ** 2);
+            const theoryUT = 4 * Math.PI * 1e-7 * turnsPerMeter * state.current * finiteLengthFactor * 1e6;
+            const calculatedUT = fieldAtWorld(new THREE.Vector3(0, 0, 0)).length();
+            document.getElementById('hudSolenoidTheory').textContent = `${calculatedUT.toFixed(2)} / ${theoryUT.toFixed(2)} μT`;
+        }
+
+        // 다중 도선(중첩) 모드: 모든 도선을 감싸는 영역에 화살표 격자를 배치하고
+        // 비오-사바르 중첩 원리로 합산된 자기장을 시각화한다.
+        function renderMultiFieldArrows(referenceMag) {
+            if (state.multiWires.length === 0) {
+                document.getElementById('hudB').textContent = '-';
+                document.getElementById('zeroFieldCount').textContent = '0개';
+                return;
+            }
+
+            const box = new THREE.Box3();
+            for (const wire of state.multiWires) {
+                // 회전된 도선을 빠짐없이 포함하도록 보수적인 구형 경계를 사용한다.
+                const half = wire.type === 'loop' ? LOOP_R + 1 : Math.sqrt((WIRE_LEN / 2) ** 2 + (wire.type === 'solenoid' ? SOL_R ** 2 : 0.2));
+                const center = new THREE.Vector3(wire.x || 0, wire.y || 0, wire.z || 0);
+                box.expandByPoint(center.clone().addScalar(-half));
+                box.expandByPoint(center.clone().addScalar(half));
+            }
+
+            const densitySteps = {
+                low: [4, 2, 4],
+                medium: [8, 4, 8],
+                high: [12, 6, 12]
+            }[state.fieldDensity] || [8, 4, 8];
+            const [stepsX, stepsY, stepsZ] = densitySteps;
+            const samples = [];
+            const selectedCenter = state.multiWires.find(w => w.id === state.multiSelectedId);
+            const planeCenter = selectedCenter
+                ? new THREE.Vector3(selectedCenter.x || 0, selectedCenter.y || 0, selectedCenter.z || 0)
+                : box.getCenter(new THREE.Vector3());
+            const counts = state.fieldPlane === 'xy' ? [stepsX, stepsY, 0]
+                : state.fieldPlane === 'xz' ? [stepsX, 0, stepsZ]
+                : state.fieldPlane === 'yz' ? [0, stepsY, stepsZ]
+                : [stepsX, stepsY, stepsZ];
+            for (let ix = 0; ix <= counts[0]; ix++) {
+                for (let iy = 0; iy <= counts[1]; iy++) {
+                    for (let iz = 0; iz <= counts[2]; iz++) {
+                        const x = counts[0] ? THREE.MathUtils.lerp(box.min.x, box.max.x, ix / counts[0]) : planeCenter.x;
+                        const y = counts[1] ? THREE.MathUtils.lerp(box.min.y, box.max.y, iy / counts[1]) : planeCenter.y;
+                        const z = counts[2] ? THREE.MathUtils.lerp(box.min.z, box.max.z, iz / counts[2]) : planeCenter.z;
+                        samples.push(new THREE.Vector3(x, y, z));
+                    }
+                }
+            }
+
+            const selectedWire = state.multiWires.find(w => w.id === state.multiSelectedId);
+            const visibleWires = state.fieldView === 'selected' && selectedWire ? [selectedWire] : state.multiWires;
+            let maxMag = 0.0001;
+            const results = samples.map(p => {
+                const B = new THREE.Vector3();
+                visibleWires.forEach(w => B.add(fieldAtWireWorld(w, p)));
+                if (B.length() > maxMag) maxMag = B.length();
+                return { p, B };
+            });
+
+            // 멀리 떨어져 약해진 곳이 아니라, 개별 자기장은 크지만 벡터합이 상쇄된 곳만 찾는다.
+            if (state.multiWires.length >= 2) {
+                const candidates = samples.map(p => {
+                    const contributions = state.multiWires.map(w => fieldAtWireWorld(w, p));
+                    const total = contributions.reduce((sum, b) => sum.add(b), new THREE.Vector3());
+                    const contributionSum = contributions.reduce((sum, b) => sum + b.length(), 0);
+                    return { p, totalMag: total.length(), contributionSum, ratio: total.length() / Math.max(1e-9, contributionSum) };
+                });
+                // 도선 바로 옆의 특이하게 큰 값이 중앙 상쇄점을 가리지 않도록 절대 하한을 사용한다.
+                const interactionFloor = Math.max(0.5, referenceMag * 0.05);
+                const chosen = [];
+                candidates
+                    .filter(c => c.contributionSum > interactionFloor && c.ratio < 0.10)
+                    .sort((a, b) => a.ratio - b.ratio)
+                    .forEach(c => {
+                        if (chosen.length >= 24 || chosen.some(v => v.p.distanceTo(c.p) < 0.65)) return;
+                        chosen.push(c);
+                    });
+                const zeroMat = new THREE.MeshBasicMaterial({ color: 0xff55f5, transparent: true, opacity: 0.9 });
+                chosen.forEach(c => {
+                    const marker = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 12), zeroMat);
+                    marker.position.copy(c.p);
+                    marker.userData.zeroRatio = c.ratio;
+                    fieldGroup.add(marker);
+                    zeroFieldMarkers.push(marker);
+                });
+                document.getElementById('zeroFieldCount').textContent = `${chosen.length}개`;
+            } else {
+                document.getElementById('zeroFieldCount').textContent = '0개';
+            }
+
+            if (state.fieldView === 'individual') {
+                const palette = [0x3de7ff, 0xff6b81, 0xffd166, 0x9b7bff, 0x53e88b, 0xff8f4c];
+                const individual = [];
+                state.multiWires.forEach((wire, wireIndex) => {
+                    samples.forEach(p => {
+                        const B = fieldAtWireWorld(wire, p);
+                        if (B.length() > maxMag) maxMag = B.length();
+                        individual.push({ p, B, color: palette[wireIndex % palette.length] });
+                    });
+                });
+                const threshold = maxMag * 0.09;
+                for (const r of individual) {
+                    if (r.B.length() < threshold) continue;
+                    const norm = Math.min(1, r.B.length() / Math.max(referenceMag * 0.18, maxMag * 0.05));
+                    const len = 0.2 + norm * 0.85;
+                    fieldGroup.add(new THREE.ArrowHelper(r.B.clone().normalize(), r.p, len, r.color, len * 0.3, len * 0.14));
+                }
+                document.getElementById('hudB').textContent = maxMag.toFixed(2) + ' μT';
+                return;
+            }
+
+            const scaleBasis = Math.max(referenceMag * 0.18, maxMag * 0.05);
+            for (const r of results) {
+                if (r.B.length() < maxMag * 0.05) continue;
+                const norm = Math.min(1, r.B.length() / scaleBasis);
+                const len = 0.25 + norm * 1.1;
+                const dir = r.B.clone().normalize();
+                const hue = 0.5 - norm * 0.16;
+                const color = new THREE.Color().setHSL(hue, 0.95, 0.5 + norm * 0.15);
+                const arrow = new THREE.ArrowHelper(dir, r.p, len, color, len * 0.32, len * 0.16);
+                fieldGroup.add(arrow);
+            }
+
+            document.getElementById('hudB').textContent = maxMag.toFixed(2) + ' μT';
+        }
+
+        function renderStraightFieldCircles(referenceMag) {
+            const n = state.fieldLineCount;
+            const radii = [1.0, 1.6, 2.3];
+            const heightSteps = 3;
+            const rotY = THREE.MathUtils.degToRad(state.wireRotY);
+            const axis = new THREE.Vector3(0, 1, 0);
+
+            let maxMag = 0.0001;
+            const entries = [];
+            for (const rad of radii) {
+                const mag = fieldAtWorld(new THREE.Vector3(rad, 0, 0)).length();
+                if (mag > maxMag) maxMag = mag;
+                for (let h = 0; h < heightSteps; h++) {
+                    const y = -WIRE_LEN / 2 + 1.5 + (WIRE_LEN - 3) * (h / (heightSteps - 1));
+                    entries.push({ rad, y, mag });
+                }
+            }
+            const scaleBasis = Math.max(referenceMag * 0.18, maxMag * 0.05);
+
+            for (const e of entries) {
+                const norm = Math.min(1, e.mag / scaleBasis);
+                if (norm < 0.03) continue;
+                let circle = circleAroundAxis(new THREE.Vector3(0, e.y, 0), e.rad, 72);
+                // 전류 방향에 따라 진행 방향(오른손 법칙)이 반대가 되도록 순서를 뒤집는다
+                if (state.direction < 0) circle = circle.slice().reverse();
+                circle = circle.map(p => p.clone().applyAxisAngle(axis, rotY));
+                addFieldLineMesh(circle, norm);
+            }
+            document.getElementById('hudB').textContent = maxMag.toFixed(2) + ' μT';
+        }
+
+        function renderLoopFieldLines(referenceMag) {
+            const n = Math.max(4, Math.round(state.fieldLineCount * 0.6));
+            const tubeR = 0.55;
+            const rotY = THREE.MathUtils.degToRad(state.wireRotY);
+            const axis = new THREE.Vector3(0, 1, 0);
+
+            let maxMag = 0.0001;
+            const halves = [];
+            for (let i = 0; i < n; i++) {
+                const phi = (i / n) * Math.PI * 2;
+                const seed = new THREE.Vector3(Math.cos(phi) * (LOOP_R + tubeR), 0, Math.sin(phi) * (LOOP_R + tubeR));
+                const half = traceFieldLine(seed, { mirrorY: true, maxSteps: 140 });
+                if (half.length < 3) continue;
+                const mag = fieldMagAt(half[Math.floor(half.length / 2)]);
+                if (mag > maxMag) maxMag = mag;
+                halves.push(half);
+            }
+
+            // 중심축을 관통하는 필드라인 (완전한 직선, y=0 대칭 필요 없음)
+            const axisMag = fieldMagAt(new THREE.Vector3(0, 0, 0));
+            if (axisMag > maxMag) maxMag = axisMag;
+
+            const scaleBasis = Math.max(referenceMag * 0.18, maxMag * 0.05);
+
+            for (const half of halves) {
+                const full = mirrorHalfLineY(half).map(p => p.clone().applyAxisAngle(axis, rotY));
+                const mag = fieldMagAt(half[Math.floor(half.length / 2)]);
+                const norm = Math.min(1, mag / scaleBasis);
+                if (norm < 0.03) continue;
+                addFieldLineMesh(full, norm);
+            }
+
+            // addFieldLineMesh는 최소 3개 점이 필요하므로 중간점을 포함해 직선을 구성한다
+            const axisLine = [
+                new THREE.Vector3(0, -LOOP_R * 1.5, 0).applyAxisAngle(axis, rotY),
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(0, LOOP_R * 1.5, 0).applyAxisAngle(axis, rotY)
+            ];
+            if (state.direction < 0) axisLine.reverse();
+            const axisNorm = Math.min(1, axisMag / scaleBasis);
+            if (axisNorm >= 0.03) addFieldLineMesh(axisLine, axisNorm);
+
+            document.getElementById('hudB').textContent = maxMag.toFixed(2) + ' μT';
+        }
+
+        // 솔레노이드는 곡선 추적 대신 화살표 격자로 표시한다 (내부 균일장 / 외부 발산장이
+        // 짧은 화살표 다발로도 충분히 직관적이고, 외부 곡선 추적은 오히려 산만해서 제외함)
+        function renderSolenoidFieldLines(referenceMag) {
+            const n = state.fieldLineCount;
+            const rotY = THREE.MathUtils.degToRad(state.wireRotY);
+            const axis = new THREE.Vector3(0, 1, 0);
+
+            const radii = [1.2, 2.4];
+            const heightSteps = 3;
+            const samples = [];
+            for (const rad of radii) {
+                for (let i = 0; i < n; i++) {
+                    const theta = (i / n) * Math.PI * 2;
+                    for (let h = 0; h < heightSteps; h++) {
+                        const y = -WIRE_LEN / 2 + 1.2 + (WIRE_LEN - 2.4) * (h / (heightSteps - 1));
+                        const local = new THREE.Vector3(Math.cos(theta) * rad, y, Math.sin(theta) * rad);
+                        samples.push(local.applyAxisAngle(axis, rotY));
+                    }
+                }
+            }
+
+            let maxMag = 0.0001;
+            const results = samples.map(p => {
+                const B = fieldAtWorld(p);
+                if (B.length() > maxMag) maxMag = B.length();
+                return { p, B };
+            });
+
+            const scaleBasis = Math.max(referenceMag * 0.18, maxMag * 0.05);
+            for (const r of results) {
+                if (r.B.length() < maxMag * 0.02) continue;
+                const norm = Math.min(1, r.B.length() / scaleBasis);
+                const len = 0.28 + norm * 1.3;
+                const dir = r.B.clone().normalize();
+                const hue = 0.5 - norm * 0.16;
+                const color = new THREE.Color().setHSL(hue, 0.95, 0.5 + norm * 0.15);
+                const arrow = new THREE.ArrowHelper(dir, r.p, len, color, len * 0.32, len * 0.16);
+                fieldGroup.add(arrow);
+            }
+
+            document.getElementById('hudB').textContent = maxMag.toFixed(2) + ' μT';
+        }
+
+        function renderTracedFieldLines(seeds, referenceMag) {
+            if (seeds.length === 0) {
+                document.getElementById('hudB').textContent = '-';
+                return;
+            }
+            let maxMag = 0.0001;
+            for (const s of seeds) {
+                const m = fieldMagAt(s);
+                if (m > maxMag) maxMag = m;
+            }
+            const scaleBasis = Math.max(referenceMag * 0.18, maxMag * 0.05);
+
+            for (const seed of seeds) {
+                const line = traceFieldLine(seed);
+                if (line.length < 3) continue;
+                const midMag = fieldMagAt(line[Math.floor(line.length / 2)]);
+                const norm = Math.min(1, midMag / scaleBasis);
+                if (norm < 0.03) continue;
+                addFieldLineMesh(line, norm);
+            }
+            document.getElementById('hudB').textContent = maxMag > 0.001 ? maxMag.toFixed(2) + ' μT' : '-';
+        }
+
+        // 자유 곡선 그리기 모드에서 필드라인을 시작할 씨앗점들을 생성한다.
+        // (직선/원형/솔레노이드는 각각 전용 렌더 함수가 해석적/대칭 방식으로 직접 그린다)
+        function generateSeedPoints() {
+            const points = [];
+            const n = state.fieldLineCount;
+            if (curvePoints.length < 2) return points;
+
+            const sampleIdx = [0.15, 0.4, 0.6, 0.85];
+            const ringN = Math.max(4, Math.round(n / 2));
+            for (const t of sampleIdx) {
+                const idx = Math.floor(t * (curvePoints.length - 1));
+                const center = curvePoints[idx];
+                for (let i = 0; i < ringN; i++) {
+                    const theta = (i / ringN) * Math.PI * 2;
+                    const r = 0.5;
+                    points.push(center.clone().add(new THREE.Vector3(Math.cos(theta) * r, Math.sin(theta) * r, 0)));
+                }
+            }
+            return points;
+        }
+
+        // ---------- 자유 곡선 그리기 ----------
+        const drawPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0); // z=0 평면
+        const raycaster = new THREE.Raycaster();
+        const mouseNDC = new THREE.Vector2();
+        let isDrawing = false;
+
+        // ---------- 다중 도선 직접 조작 ----------
+        let directDrag = null;
+        const directMovePlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+        function setPointerRay(clientX, clientY) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouseNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            mouseNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouseNDC, camera);
+        }
+
+        function wireIdFromObject(object) {
+            let node = object;
+            while (node && node !== multiGroup) {
+                if (node.userData.wireId != null) return node.userData.wireId;
+                node = node.parent;
+            }
+            return null;
+        }
+
+        function snapValue(value, step, precisionMode) {
+            return precisionMode ? value : Math.round(value / step) * step;
+        }
+
+        function projectedAxis(axisName, origin) {
+            const axis = axisName === 'x' ? new THREE.Vector3(1, 0, 0) : axisName === 'y' ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(0, 0, 1);
+            const a = origin.clone().project(camera);
+            const b = origin.clone().add(axis).project(camera);
+            const rect = renderer.domElement.getBoundingClientRect();
+            const dx = (b.x - a.x) * rect.width / 2;
+            const dy = -(b.y - a.y) * rect.height / 2;
+            const pixelsPerWorld = Math.max(8, Math.hypot(dx, dy));
+            return { x: dx / pixelsPerWorld, y: dy / pixelsPerWorld, pixelsPerWorld };
+        }
+
+        function showDirectEditTip(e, wire) {
+            const tip = document.getElementById('directEditTip');
+            tip.style.display = 'block';
+            tip.style.left = `${e.clientX + 14}px`;
+            tip.style.top = `${e.clientY + 14}px`;
+            tip.textContent = state.multiEditMode === 'move'
+                ? `(${wire.x.toFixed(2)}, ${wire.y.toFixed(2)}, ${wire.z.toFixed(2)})`
+                : `X ${wire.rotX.toFixed(0)}° · Z ${wire.rotZ.toFixed(0)}°`;
+        }
+
+        function onMultiDirectPointerDown(e) {
+            if (state.wireType !== 'multi' || e.button !== 0) return;
+            setPointerRay(e.clientX, e.clientY);
+            const gizmoHit = multiGizmo.visible ? raycaster.intersectObjects(multiGizmo.children, true)[0] : null;
+            const hit = gizmoHit || raycaster.intersectObjects(multiGroup.children, true)[0];
+            if (!hit) {
+                state.multiSelectedId = null;
+                buildWire();
+                refreshMultiUI();
+                return;
+            }
+            const id = gizmoHit ? state.multiSelectedId : wireIdFromObject(hit.object);
+            const wire = state.multiWires.find(w => w.id === id);
+            if (!wire || wire.locked || state.measureMode) return;
+
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            state.multiSelectedId = id;
+            pushMultiHistory();
+            directMovePlane.constant = -(wire.y || 0);
+            const planePoint = new THREE.Vector3();
+            raycaster.ray.intersectPlane(directMovePlane, planePoint);
+            directDrag = {
+                wire,
+                pointerId: e.pointerId,
+                startX: e.clientX, startY: e.clientY,
+                x: wire.x, y: wire.y || 0, z: wire.z,
+                rotX: wire.rotX || 0, rotZ: wire.rotZ || 0,
+                planePoint: planePoint.clone(),
+                axis: hit.object.userData.gizmoAxis || hit.object.parent?.userData.gizmoAxis || null,
+                rotationAxis: hit.object.userData.gizmoRotation || hit.object.parent?.userData.gizmoRotation || null,
+                lastFieldUpdate: 0
+            };
+            if (directDrag.axis) directDrag.projectedAxis = projectedAxis(directDrag.axis, multiGizmo.position);
+            renderer.domElement.setPointerCapture?.(e.pointerId);
+            controls.enabled = false;
+            buildWire();
+            refreshMultiSelectionUI();
+            showDirectEditTip(e, wire);
+        }
+
+        function onMultiDirectPointerMove(e) {
+            if (!directDrag) return;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const { wire } = directDrag;
+
+            if (state.multiEditMode === 'move') {
+                if (directDrag.axis) {
+                    const dx = e.clientX - directDrag.startX, dy = e.clientY - directDrag.startY;
+                    const pa = directDrag.projectedAxis;
+                    const delta = (dx * pa.x + dy * pa.y) / pa.pixelsPerWorld;
+                    wire[directDrag.axis] = THREE.MathUtils.clamp(snapValue(directDrag[directDrag.axis] + delta, 0.25, e.shiftKey), -5, 5);
+                } else if (e.altKey) {
+                    wire.y = THREE.MathUtils.clamp(snapValue(directDrag.y - (e.clientY - directDrag.startY) * 0.025, 0.25, e.shiftKey), -5, 5);
+                } else {
+                    setPointerRay(e.clientX, e.clientY);
+                    const point = new THREE.Vector3();
+                    if (raycaster.ray.intersectPlane(directMovePlane, point)) {
+                        wire.x = THREE.MathUtils.clamp(snapValue(directDrag.x + point.x - directDrag.planePoint.x, 0.25, e.shiftKey), -5, 5);
+                        wire.z = THREE.MathUtils.clamp(snapValue(directDrag.z + point.z - directDrag.planePoint.z, 0.25, e.shiftKey), -5, 5);
+                    }
+                }
+            } else {
+                const wrapAngle = angle => THREE.MathUtils.euclideanModulo(angle + 180, 360) - 180;
+                if (directDrag.rotationAxis === 'x') {
+                    wire.rotX = wrapAngle(snapValue(directDrag.rotX + (e.clientY - directDrag.startY) * 0.5, 90, false));
+                } else if (directDrag.rotationAxis === 'z') {
+                    wire.rotZ = wrapAngle(snapValue(directDrag.rotZ + (e.clientX - directDrag.startX) * 0.5, 90, false));
+                } else {
+                    wire.rotZ = wrapAngle(snapValue(directDrag.rotZ + (e.clientX - directDrag.startX) * 0.5, 90, false));
+                    wire.rotX = wrapAngle(snapValue(directDrag.rotX + (e.clientY - directDrag.startY) * 0.5, 90, false));
+                }
+            }
+
+            buildWire();
+            if (performance.now() - directDrag.lastFieldUpdate > 140) {
+                rebuildFieldArrows();
+                directDrag.lastFieldUpdate = performance.now();
+            }
+            showDirectEditTip(e, wire);
+        }
+
+        function onMultiDirectPointerUp(e) {
+            if (!directDrag) return;
+            e.stopImmediatePropagation();
+            renderer.domElement.releasePointerCapture?.(directDrag.pointerId);
+            directDrag = null;
+            controls.enabled = true;
+            document.getElementById('directEditTip').style.display = 'none';
+            buildCurrentParticles();
+            rebuildFieldArrows();
+            refreshMultiSelectionUI();
+        }
+
+        renderer.domElement.addEventListener('pointerdown', onMultiDirectPointerDown, { capture: true });
+        renderer.domElement.addEventListener('pointermove', onMultiDirectPointerMove, { capture: true });
+        window.addEventListener('pointerup', onMultiDirectPointerUp, { capture: true });
+
+        function screenToPlanePoint(clientX, clientY) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouseNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            mouseNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouseNDC, camera);
+            const target = new THREE.Vector3();
+            raycaster.ray.intersectPlane(drawPlane, target);
+            return target;
+        }
+
+        function updateCurveMesh() {
+            clearGroup(curveGroup);
+            if (curvePoints.length < 2) return;
+            const curve = new THREE.CatmullRomCurve3(curvePoints);
+            const tubeSamples = Math.max(8, curvePoints.length);
+            const geo = new THREE.TubeGeometry(curve, tubeSamples, 0.06, 8, false);
+            const mesh = new THREE.Mesh(geo, matCopper);
+            curveGroup.add(mesh);
+
+            const a = state.direction > 0 ? curvePoints[0] : curvePoints[curvePoints.length - 1];
+            const b = state.direction > 0 ? curvePoints[curvePoints.length - 1] : curvePoints[0];
+            const dir = b.clone().sub(a).normalize();
+            const arrow = new THREE.ArrowHelper(dir, a, a.distanceTo(b) * 0.3, 0xff4757, 0.4, 0.22);
+            curveGroup.add(arrow);
+        }
+
+        function onCanvasPointerDown(e) {
+            if (!state.drawMode) return;
+            if (e.button !== 0) return; // 왼쪽 버튼만
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            isDrawing = true;
+            curvePoints = [screenToPlanePoint(e.clientX, e.clientY)];
+            updateCurveMesh();
+        }
+
+        function onCanvasPointerMove(e) {
+            if (!state.drawMode || !isDrawing) return;
+            e.stopImmediatePropagation();
+            const p = screenToPlanePoint(e.clientX, e.clientY);
+            const last = curvePoints[curvePoints.length - 1];
+            if (!last || last.distanceTo(p) > 0.12) {
+                curvePoints.push(p);
+                if (curvePoints.length > 200) curvePoints.shift();
+                updateCurveMesh();
+            }
+        }
+
+        function onCanvasPointerUp(e) {
+            if (!state.drawMode) return;
+            if (isDrawing) e.stopImmediatePropagation();
+            isDrawing = false;
+            buildCurrentParticles();
+            rebuildFieldArrows();
+        }
+
+        // 캡처 단계에서 먼저 가로채 OrbitControls(버블 단계 리스너)로 전파되지 않도록 막는다
+        renderer.domElement.addEventListener('pointerdown', onCanvasPointerDown, { capture: true });
+        renderer.domElement.addEventListener('pointermove', onCanvasPointerMove, { capture: true });
+        window.addEventListener('pointerup', onCanvasPointerUp, { capture: true });
+
+
+        // ---------- UI 이벤트 ----------
+        function setWireType(type, el) {
+            if (state.drawMode) toggleDrawMode();
+
+            state.wireType = type;
+            document.querySelectorAll('.w-option').forEach(o => o.classList.remove('active'));
+            el.classList.add('active');
+
+            const multiPanel = document.getElementById('multiPanel');
+            multiPanel.style.display = type === 'multi' ? 'block' : 'none';
+            // 다중 도선 모드에서는 좌측 패널에서 도선별로 개별 조작하므로 하단 공용 컨트롤은 숨긴다
+            document.getElementById('controls').style.display = type === 'multi' ? 'none' : 'flex';
+
+            const hint = document.getElementById('hintText');
+            if (type === 'straight') hint.innerHTML = '마우스 드래그로 시점을 회전하고,<br>휠로 확대/축소하며 입체 구조를 확인하세요.';
+            else if (type === 'loop') hint.innerHTML = '원형 루프를 감싸는 도넛 모양의<br>자기장선을 회전시켜 확인해보세요.';
+            else if (type === 'solenoid') hint.innerHTML = '상단의 중심 B는 계산값 / 유한 길이 이론값입니다.<br>전류를 뒤집어 오른손 법칙도 확인해보세요.';
+            else hint.innerHTML = '여러 도선을 추가해 자기장이<br>중첩되는 모습을 관찰해보세요.';
+
+            if (type === 'multi') {
+                document.getElementById('hudI').textContent = state.multiWires.length + '개 도선';
+            } else {
+                document.getElementById('hudI').textContent = state.current.toFixed(1) + ' A';
+            }
+
+            buildWire();
+            buildCurrentParticles();
+            rebuildFieldArrows();
+        }
+        window.setWireType = setWireType;
+
+        // ---------- 다중 도선 UI 로직 ----------
+        const multiHistory = [];
+        const multiFuture = [];
+
+        function multiSnapshot() {
+            return JSON.stringify({ wires: state.multiWires, selectedId: state.multiSelectedId, nextId: state.multiNextId });
+        }
+
+        function pushMultiHistory() {
+            const snapshot = multiSnapshot();
+            if (multiHistory[multiHistory.length - 1] !== snapshot) multiHistory.push(snapshot);
+            if (multiHistory.length > 40) multiHistory.shift();
+            multiFuture.length = 0;
+        }
+
+        function restoreMultiSnapshot(snapshot) {
+            const data = JSON.parse(snapshot);
+            state.multiWires = data.wires;
+            state.multiSelectedId = data.selectedId;
+            state.multiNextId = data.nextId;
+            refreshMultiUI();
+        }
+
+        function undoMulti() {
+            if (!multiHistory.length) return;
+            multiFuture.push(multiSnapshot());
+            restoreMultiSnapshot(multiHistory.pop());
+        }
+
+        function redoMulti() {
+            if (!multiFuture.length) return;
+            multiHistory.push(multiSnapshot());
+            restoreMultiSnapshot(multiFuture.pop());
+        }
+        document.getElementById('multiUndoBtn').addEventListener('click', undoMulti);
+        document.getElementById('multiRedoBtn').addEventListener('click', redoMulti);
+
+        function setMultiEditMode(mode) {
+            state.multiEditMode = mode;
+            document.getElementById('multiMoveModeBtn').classList.toggle('active', mode === 'move');
+            document.getElementById('multiRotateModeBtn').classList.toggle('active', mode === 'rotate');
+            document.getElementById('multiDirectHint').textContent = mode === 'move'
+                ? '도선을 드래그해 X·Z 이동 · Alt+드래그로 Y 이동'
+                : '도선을 드래그하면 90° 단위로 회전합니다';
+            updateMultiGizmo();
+        }
+        document.getElementById('multiMoveModeBtn').addEventListener('click', () => setMultiEditMode('move'));
+        document.getElementById('multiRotateModeBtn').addEventListener('click', () => setMultiEditMode('rotate'));
+
+        function addMultiWire(type) {
+            pushMultiHistory();
+            const wire = {
+                id: state.multiNextId++,
+                type,
+                x: (state.multiWires.length % 3 - 1) * 2.2,
+                y: 0,
+                z: Math.floor(state.multiWires.length / 3) * 2.2,
+                rotX: 0,
+                rotZ: 0,
+                current: 3.0,
+                direction: 1,
+                locked: false,
+                home: { x: (state.multiWires.length % 3 - 1) * 2.2, y: 0, z: Math.floor(state.multiWires.length / 3) * 2.2, rotX: 0, rotZ: 0 }
+            };
+            state.multiWires.push(wire);
+            state.multiSelectedId = wire.id;
+            refreshMultiUI();
+        }
+        document.getElementById('addStraightBtn').addEventListener('click', () => addMultiWire('straight'));
+        document.getElementById('addLoopBtn').addEventListener('click', () => addMultiWire('loop'));
+        document.getElementById('addSolenoidBtn').addEventListener('click', () => addMultiWire('solenoid'));
+
+        function makeMultiWire(type, overrides = {}) {
+            const wire = {
+                id: state.multiNextId++, type,
+                x: 0, y: 0, z: 0, rotX: 0, rotZ: 0,
+                current: 3, direction: 1, locked: false,
+                ...overrides
+            };
+            wire.home = { x: wire.x, y: wire.y, z: wire.z, rotX: wire.rotX, rotZ: wire.rotZ };
+            return wire;
+        }
+
+        function loadMultiPreset(name) {
+            pushMultiHistory();
+            if (name === 'parallel') {
+                state.multiWires = [
+                    makeMultiWire('straight', { x: -1.5 }),
+                    makeMultiWire('straight', { x: 1.5 })
+                ];
+                showMsg('같은 방향의 평행 도선을 배치했습니다', 'var(--accent-color)', 1800);
+            } else {
+                // 헬름홀츠 조건: 두 원형 코일의 중심 간격 = 코일 반지름
+                state.multiWires = [
+                    makeMultiWire('loop', { y: -LOOP_R / 2 }),
+                    makeMultiWire('loop', { y: LOOP_R / 2 })
+                ];
+                showMsg('코일 간격이 반지름과 같은 헬름홀츠 코일입니다', 'var(--accent-color)', 2200);
+            }
+            state.multiSelectedId = state.multiWires[0].id;
+            refreshMultiUI();
+        }
+        document.getElementById('parallelPresetBtn').addEventListener('click', () => loadMultiPreset('parallel'));
+        document.getElementById('helmholtzPresetBtn').addEventListener('click', () => loadMultiPreset('helmholtz'));
+
+        function selectMultiWire(id) {
+            state.multiSelectedId = id;
+            refreshMultiUI();
+        }
+        window.selectMultiWire = selectMultiWire;
+
+        function deleteSelectedMultiWire() {
+            pushMultiHistory();
+            state.multiWires = state.multiWires.filter(w => w.id !== state.multiSelectedId);
+            state.multiSelectedId = state.multiWires.length ? state.multiWires[0].id : null;
+            refreshMultiUI();
+        }
+        document.getElementById('multiDeleteBtn').addEventListener('click', deleteSelectedMultiWire);
+
+        document.getElementById('multiResetSelectedBtn').addEventListener('click', () => {
+            const wire = state.multiWires.find(w => w.id === state.multiSelectedId);
+            if (!wire || wire.locked) return;
+            pushMultiHistory();
+            const home = wire.home || { x: 0, y: 0, z: 0, rotX: 0, rotZ: 0 };
+            Object.assign(wire, home);
+            refreshMultiUI();
+        });
+
+        document.getElementById('multiLockBtn').addEventListener('click', () => {
+            const wire = state.multiWires.find(w => w.id === state.multiSelectedId);
+            if (!wire) return;
+            pushMultiHistory();
+            wire.locked = !wire.locked;
+            refreshMultiUI();
+        });
+
+        document.getElementById('multiLockAllBtn').addEventListener('click', () => {
+            if (!state.multiWires.length) return;
+            pushMultiHistory();
+            const shouldLock = state.multiWires.some(w => !w.locked);
+            state.multiWires.forEach(w => { w.locked = shouldLock; });
+            refreshMultiUI();
+        });
+        document.getElementById('multiClearAllBtn').addEventListener('click', () => {
+            if (!state.multiWires.length) return;
+            pushMultiHistory();
+            state.multiWires = [];
+            state.multiSelectedId = null;
+            refreshMultiUI();
+        });
+
+        document.getElementById('multiDuplicateBtn').addEventListener('click', () => {
+            const source = state.multiWires.find(w => w.id === state.multiSelectedId);
+            if (!source) return;
+            pushMultiHistory();
+            const copy = { ...source, id: state.multiNextId++, x: source.x + 0.6, z: source.z + 0.6 };
+            copy.home = { x: copy.x, y: copy.y || 0, z: copy.z, rotX: copy.rotX || 0, rotZ: copy.rotZ || 0 };
+            state.multiWires.push(copy);
+            state.multiSelectedId = copy.id;
+            refreshMultiUI();
+        });
+
+        document.getElementById('multiFlipBtn').addEventListener('click', () => {
+            const wire = state.multiWires.find(w => w.id === state.multiSelectedId);
+            if (!wire || wire.locked) return;
+            pushMultiHistory();
+            wire.direction *= -1;
+            buildWire();
+            buildCurrentParticles();
+            rebuildFieldArrows();
+        });
+
+        function onMultiSliderChange() {
+            const wire = state.multiWires.find(w => w.id === state.multiSelectedId);
+            if (!wire || wire.locked) return;
+            wire.x = parseFloat(document.getElementById('multiXSlider').value);
+            wire.y = parseFloat(document.getElementById('multiYSlider').value);
+            wire.z = parseFloat(document.getElementById('multiZSlider').value);
+            wire.rotX = parseFloat(document.getElementById('multiRotXSlider').value);
+            wire.rotZ = parseFloat(document.getElementById('multiRotZSlider').value);
+            wire.current = parseFloat(document.getElementById('multiCurrentSlider').value);
+            document.getElementById('multiRotXVal').textContent = wire.rotX.toFixed(0) + '°';
+            document.getElementById('multiRotZVal').textContent = wire.rotZ.toFixed(0) + '°';
+            buildWire();
+            buildCurrentParticles();
+            rebuildFieldArrows();
+        }
+        document.getElementById('multiXSlider').addEventListener('input', onMultiSliderChange);
+        document.getElementById('multiYSlider').addEventListener('input', onMultiSliderChange);
+        document.getElementById('multiZSlider').addEventListener('input', onMultiSliderChange);
+        document.getElementById('multiRotXSlider').addEventListener('input', onMultiSliderChange);
+        document.getElementById('multiRotZSlider').addEventListener('input', onMultiSliderChange);
+        document.getElementById('multiCurrentSlider').addEventListener('input', onMultiSliderChange);
+        ['multiXSlider','multiYSlider','multiZSlider','multiRotXSlider','multiRotZSlider','multiCurrentSlider'].forEach(id => {
+            document.getElementById(id).addEventListener('pointerdown', pushMultiHistory);
+        });
+
+        const WIRE_TYPE_LABEL = { straight: '➖ 직선', loop: '⭕ 원형', solenoid: '🌀 솔레노이드' };
+
+        function refreshMultiSelectionUI() {
+            document.querySelectorAll('#multiWireList .multi-item').forEach((item, index) => {
+                item.classList.toggle('selected', state.multiWires[index]?.id === state.multiSelectedId);
+            });
+            const selected = state.multiWires.find(w => w.id === state.multiSelectedId);
+            if (!selected) return;
+            document.getElementById('multiEditorTitle').textContent = `${WIRE_TYPE_LABEL[selected.type]} #${selected.id} 설정`;
+            document.getElementById('multiXSlider').value = selected.x;
+            document.getElementById('multiYSlider').value = selected.y || 0;
+            document.getElementById('multiZSlider').value = selected.z;
+            document.getElementById('multiRotXSlider').value = selected.rotX || 0;
+            document.getElementById('multiRotZSlider').value = selected.rotZ || 0;
+            document.getElementById('multiRotXVal').textContent = (selected.rotX || 0).toFixed(0) + '°';
+            document.getElementById('multiRotZVal').textContent = (selected.rotZ || 0).toFixed(0) + '°';
+            document.getElementById('multiCurrentSlider').value = selected.current;
+            document.getElementById('multiLockBtn').textContent = selected.locked ? '🔒 선택 도선 잠금 해제' : '🔓 선택 도선 잠금';
+        }
+
+        function updateSelectedWireLabel() {
+            const label = document.getElementById('selectedWireLabel');
+            const wire = state.multiWires.find(w => w.id === state.multiSelectedId);
+            if (state.wireType !== 'multi' || !wire) { label.style.display = 'none'; return; }
+            const p = new THREE.Vector3(wire.x || 0, (wire.y || 0) + 1.2, wire.z || 0).project(camera);
+            if (p.z < -1 || p.z > 1) { label.style.display = 'none'; return; }
+            label.style.display = 'block';
+            label.style.left = `${(p.x * 0.5 + 0.5) * window.innerWidth}px`;
+            label.style.top = `${(-p.y * 0.5 + 0.5) * window.innerHeight}px`;
+            label.textContent = `${wire.locked ? '🔒 ' : ''}${WIRE_TYPE_LABEL[wire.type]} #${wire.id} · ${wire.current.toFixed(1)} A`;
+        }
+
+        function refreshMultiUI() {
+            document.getElementById('hudI').textContent = state.multiWires.length + '개 도선';
+
+            const list = document.getElementById('multiWireList');
+            list.innerHTML = '';
+            for (const wire of state.multiWires) {
+                const item = document.createElement('div');
+                item.className = 'multi-item' + (wire.id === state.multiSelectedId ? ' selected' : '') + (wire.locked ? ' locked' : '');
+                item.innerHTML = `<span>${wire.locked ? '🔒 ' : ''}${WIRE_TYPE_LABEL[wire.type]} #${wire.id}</span><span>${wire.current.toFixed(1)}A</span>`;
+                item.addEventListener('click', () => selectMultiWire(wire.id));
+                list.appendChild(item);
+            }
+
+            const editor = document.getElementById('multiWireEditor');
+            const hint = document.getElementById('multiHint');
+            const selected = state.multiWires.find(w => w.id === state.multiSelectedId);
+
+            if (selected) {
+                editor.style.display = 'block';
+                hint.style.display = 'none';
+                document.getElementById('multiEditorTitle').textContent = `${WIRE_TYPE_LABEL[selected.type]} #${selected.id} 설정`;
+                document.getElementById('multiXSlider').value = selected.x;
+                document.getElementById('multiYSlider').value = selected.y || 0;
+                document.getElementById('multiZSlider').value = selected.z;
+                document.getElementById('multiRotXSlider').value = selected.rotX || 0;
+                document.getElementById('multiRotZSlider').value = selected.rotZ || 0;
+                document.getElementById('multiRotXVal').textContent = (selected.rotX || 0).toFixed(0) + '°';
+                document.getElementById('multiRotZVal').textContent = (selected.rotZ || 0).toFixed(0) + '°';
+                document.getElementById('multiCurrentSlider').value = selected.current;
+                document.getElementById('multiLockBtn').textContent = selected.locked ? '🔒 선택 도선 잠금 해제' : '🔓 선택 도선 잠금';
+            } else {
+                editor.style.display = 'none';
+                hint.style.display = 'block';
+            }
+
+            buildWire();
+            buildCurrentParticles();
+            rebuildFieldArrows();
+        }
+
+        function setMeasureMode(enabled) {
+            if (enabled && !state.multiWires.length) {
+                showMsg('먼저 도선을 하나 이상 배치하세요', 'var(--warning-color)', 1800);
+                return;
+            }
+            state.measureMode = enabled;
+            if (enabled) state.multiWires.forEach(w => { w.locked = true; });
+            document.getElementById('multiPanel').style.display = enabled ? 'none' : 'block';
+            document.getElementById('measurePanel').style.display = enabled ? 'block' : 'none';
+            updateMultiGizmo();
+            buildWire();
+            rebuildFieldArrows();
+        }
+
+        document.getElementById('finishLayoutBtn').addEventListener('click', () => setMeasureMode(true));
+        document.getElementById('backToLayoutBtn').addEventListener('click', () => {
+            state.multiWires.forEach(w => { w.locked = false; });
+            setMeasureMode(false);
+            refreshMultiUI();
+        });
+        document.getElementById('unlockAllBtn').addEventListener('click', () => {
+            state.multiWires.forEach(w => { w.locked = false; });
+            setMeasureMode(false);
+            refreshMultiUI();
+        });
+        document.getElementById('fieldViewSelect').addEventListener('change', e => {
+            state.fieldView = e.target.value;
+            rebuildFieldArrows();
+        });
+        document.getElementById('fieldDensitySelect').addEventListener('change', e => {
+            state.fieldDensity = e.target.value;
+            rebuildFieldArrows();
+        });
+        document.getElementById('fieldPlaneSelect').addEventListener('change', e => {
+            state.fieldPlane = e.target.value;
+            rebuildFieldArrows();
+        });
+
+        function drawFieldGraph() {
+            const canvas = document.getElementById('fieldGraph');
+            const ctx = canvas.getContext('2d');
+            const wire = state.multiWires.find(w => w.id === state.multiSelectedId) || state.multiWires[0];
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#07111f'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if (!wire) return;
+
+            const points = [];
+            const isStraight = wire.type === 'straight';
+            for (let i = 0; i <= 60; i++) {
+                const t = isStraight ? 0.5 + i / 60 * 5.5 : -6 + i / 60 * 12;
+                const local = isStraight ? new THREE.Vector3(t, 0, 0) : new THREE.Vector3(0, t, 0);
+                const world = wireLocalToWorld(wire, local);
+                points.push({ distance: t * WORLD_TO_METERS, mag: fieldAtMulti(world).length() });
+            }
+            const maxB = Math.max(0.01, ...points.map(p => p.mag));
+            const pad = { l: 50, r: 16, t: 18, b: 35 };
+            const w = canvas.width - pad.l - pad.r, h = canvas.height - pad.t - pad.b;
+            ctx.strokeStyle = '#35516f'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + h); ctx.lineTo(pad.l + w, pad.t + h); ctx.stroke();
+            ctx.fillStyle = '#9fb3ca'; ctx.font = '20px sans-serif';
+            ctx.fillText(`${maxB.toFixed(1)} μT`, 4, pad.t + 6);
+            ctx.fillText(isStraight ? '도선으로부터 거리 (m)' : '중심축 위치 (m)', pad.l + w / 2 - 75, canvas.height - 7);
+            ctx.strokeStyle = '#35e5ee'; ctx.lineWidth = 3; ctx.beginPath();
+            points.forEach((p, i) => {
+                const x = pad.l + i / (points.length - 1) * w;
+                const y = pad.t + h - p.mag / maxB * h;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            document.getElementById('fieldGraphCaption').textContent = isStraight
+                ? '선택 도선에 수직인 방향으로 전체 합성 |B|를 측정합니다.'
+                : '선택 도선의 중심축을 따라 전체 합성 |B|를 측정합니다.';
+        }
+
+        function toggleDrawMode() {
+            state.drawMode = !state.drawMode;
+            const btn = document.getElementById('drawModeBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const wirePanel = document.getElementById('wirePanel');
+
+            wireGroup.visible = !state.drawMode;
+            curveGroup.visible = state.drawMode;
+            particleGroup.visible = false;
+
+            if (state.drawMode) {
+                btn.classList.add('active');
+                btn.textContent = '📍 프리셋 모드로';
+                clearBtn.style.display = 'inline-block';
+                wirePanel.style.opacity = 0.35;
+                wirePanel.style.pointerEvents = 'none';
+                showMsg('화면을 드래그해서 도선을 그려보세요', 'var(--warning-color)', 2000);
+                curvePoints = [];
+                updateCurveMesh();
+                buildCurrentParticles();
+
+                // 왜곡 없이 그릴 수 있도록 카메라를 그리기 평면(z=0) 정면으로 고정
+                camera.position.set(0, 0, 14);
+                controls.target.set(0, 0, 0);
+                controls.update();
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = '✏️ 자유 곡선 그리기';
+                clearBtn.style.display = 'none';
+                wirePanel.style.opacity = 1;
+                wirePanel.style.pointerEvents = 'auto';
+                buildCurrentParticles();
+            }
+            rebuildFieldArrows();
+        }
+        document.getElementById('drawModeBtn').addEventListener('click', toggleDrawMode);
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            curvePoints = [];
+            updateCurveMesh();
+            buildCurrentParticles();
+            rebuildFieldArrows();
+        });
+
+        document.getElementById('resetViewBtn').addEventListener('click', () => {
+            camera.position.copy(cameraHome);
+            controls.target.set(0, 0, 0);
+            controls.update();
+        });
+
+        document.getElementById('flipBtn').addEventListener('click', () => {
+            state.direction *= -1;
+            buildWire();
+            updateCurveMesh();
+            rebuildFieldArrows();
+        });
+
+        function updateSliders() {
+            state.current = parseFloat(document.getElementById('iSlider').value);
+            state.wireRotY = parseFloat(document.getElementById('rotSlider').value);
+
+            document.getElementById('iVal').textContent = state.current.toFixed(1) + ' A';
+            document.getElementById('hudI').textContent = state.current.toFixed(1) + ' A';
+            document.getElementById('rotVal').textContent = state.wireRotY.toFixed(0) + '°';
+
+            buildWire();
+            rebuildFieldArrows();
+        }
+        document.getElementById('iSlider').addEventListener('input', updateSliders);
+        document.getElementById('rotSlider').addEventListener('input', updateSliders);
+
+        function showMsg(text, color, duration = 1500) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.style.color = color;
+            msg.style.opacity = 1;
+            msg.style.textShadow = `0 0 30px ${color}`;
+            clearTimeout(showMsg._t);
+            showMsg._t = setTimeout(() => { msg.style.opacity = 0; }, duration);
+        }
+
+        // ---------- 리사이즈 ----------
+        function resize() {
+            const w = window.innerWidth, h = window.innerHeight;
+            renderer.setSize(w, h);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+        }
+        window.addEventListener('resize', resize);
+
+        // ---------- 애니메이션 루프 ----------
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(0.05, clock.getDelta());
+            controls.update();
+            updateCurrentParticles(dt);
+            const pulse = 1 + Math.sin(performance.now() * 0.006) * 0.28;
+            zeroFieldMarkers.forEach(marker => marker.scale.setScalar(pulse));
+            updateSelectedWireLabel();
+            renderer.render(scene, camera);
+        }
+
+        // ---------- 초기화 ----------
+        resize();
+        buildWire();
+        buildCurrentParticles();
+        rebuildFieldArrows();
+        animate();
+    </script>
+</body>
+
+</html>
