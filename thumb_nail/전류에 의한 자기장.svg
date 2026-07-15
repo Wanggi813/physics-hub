@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">전류에 의한 자기장</title>
+  <desc id="desc">전류가 흐르는 도선 주위의 자기장선과 두 자기장이 상쇄되는 지점을 표현한 썸네일</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07111f"/>
+      <stop offset="0.55" stop-color="#0b1f32"/>
+      <stop offset="1" stop-color="#050810"/>
+    </linearGradient>
+    <linearGradient id="wire" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7f1d2d"/>
+      <stop offset="0.45" stop-color="#ff526b"/>
+      <stop offset="0.7" stop-color="#ff9a82"/>
+      <stop offset="1" stop-color="#5d1525"/>
+    </linearGradient>
+    <radialGradient id="zeroGlow">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.25" stop-color="#ff7cf5" stop-opacity=".95"/>
+      <stop offset="1" stop-color="#ff40ed" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="cyanGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="pinkGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0 0 6 3 0 6Z" fill="#5ff5e8"/>
+    </marker>
+  </defs>
+
+  <rect width="640" height="360" rx="24" fill="url(#bg)"/>
+  <g opacity=".25" stroke="#26c6da" stroke-width="1">
+    <path d="M0 300H640M20 270H620M58 240H582M98 210H542"/>
+    <path d="M80 360 230 185M180 360 275 185M280 360 315 185M380 360 365 185M480 360 410 185M580 360 455 185"/>
+  </g>
+
+  <g filter="url(#cyanGlow)" fill="none" stroke="#58eadf" stroke-width="5" opacity=".92">
+    <ellipse cx="214" cy="170" rx="112" ry="43"/>
+    <ellipse cx="214" cy="170" rx="77" ry="29"/>
+    <ellipse cx="214" cy="170" rx="43" ry="16"/>
+    <ellipse cx="426" cy="170" rx="112" ry="43"/>
+    <ellipse cx="426" cy="170" rx="77" ry="29"/>
+    <ellipse cx="426" cy="170" rx="43" ry="16"/>
+  </g>
+  <g fill="none" stroke="#5ff5e8" stroke-width="5" marker-end="url(#arrow)">
+    <path d="M146 136C176 123 224 122 257 134"/>
+    <path d="M358 205C390 217 438 218 470 205"/>
+  </g>
+
+  <g>
+    <rect x="196" y="66" width="36" height="214" rx="18" fill="url(#wire)" stroke="#ff8492" stroke-width="2"/>
+    <rect x="408" y="66" width="36" height="214" rx="18" fill="url(#wire)" stroke="#ff8492" stroke-width="2"/>
+    <path d="M214 251V92" stroke="#ffe68a" stroke-width="7" marker-end="url(#arrow)"/>
+    <path d="M426 251V92" stroke="#ffe68a" stroke-width="7" marker-end="url(#arrow)"/>
+  </g>
+
+  <circle cx="320" cy="170" r="40" fill="url(#zeroGlow)" filter="url(#pinkGlow)"/>
+  <circle cx="320" cy="170" r="8" fill="#fff" stroke="#ff61ef" stroke-width="5"/>
+  <path d="M296 170H344M320 146V194" stroke="#ffb0f8" stroke-width="2" stroke-dasharray="4 5"/>
+
+  <g font-family="Pretendard, Noto Sans KR, sans-serif">
+    <text x="32" y="42" fill="#dffcff" font-size="25" font-weight="800">전류에 의한 자기장</text>
+    <text x="32" y="329" fill="#8aa8bd" font-size="15">자기장 중첩 · 상쇄 · 오른손 법칙</text>
+    <g transform="translate(484 28)">
+      <rect width="122" height="36" rx="18" fill="#0e3346" stroke="#41e9e0"/>
+      <text x="61" y="24" text-anchor="middle" fill="#66fff2" font-size="15" font-weight="700">3D MAGNETIC</text>
+    </g>
+  </g>
+</svg>
