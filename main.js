@@ -121,6 +121,7 @@ const projects = [
 
   // ===== 12전자 =====
   { title: "정전기 유도와 유전분극", category: "전자/반도체", desc: "도체의 자유 전자 이동과 유전체의 전자구름 변위를 각각 관찰하기", tags: ["정전기유도", "유전분극", "도체", "유전체"], emoji: "⚡", demo: "./simul/정전기 유도와 유전분극.html", curriculumId: "[12전자01-02]", thumb: "./thumb_nail/정전기 유도와 유전분극.svg" },
+  { title: "전류에 의한 자기장", category: "전자/반도체", desc: "직선 도선·원형 도선·솔레노이드의 자기장과 여러 도선에 의한 중첩·상쇄를 3차원으로 탐구하기", tags: ["전류", "자기장", "자기력선", "비오사바르법칙", "솔레노이드", "중첩"], emoji: "🧲", demo: "./simul/전류에 의한 자기장.html", curriculumId: "[12전자01-03]", thumb: "./thumb_nail/전류에 의한 자기장.svg" },
   { title: "로런츠 힘과 오로라", category: "전자/반도체", desc: "자기장 속 전하의 원운동(F=qvB) 실험부터 태양풍이 만드는 오로라의 원리까지!", tags: ["로런츠힘", "자기장", "오로라",], emoji: "🌌", demo: "./simul/로런츠 힘.html", curriculumId: "[12전자01-04]", thumb: "./thumb_nail/로런츠 힘.png" },
   { title: "RLC 공명", category: "전자/반도체", desc: "직렬 RLC 회로의 공명/위상·전류 변화 시각화하기", tags: ["회로", "공명"], emoji: "🔄", demo: "./simul/RLC 공명.html", curriculumId: "[12전자01-06]", thumb: "./thumb_nail/RLC회로.png" },
   { title: "러더퍼드 알파입자 산란실험", category: "시뮬레이션", desc: "러더퍼드의 알파입자 산란실험 확인하기", tags: ["산란", "쿨롱"], emoji: "🧪", demo: "./simul/러더퍼드 알파입자 산란실험.html", curriculumId: "[12전자01-06]", thumb: "./thumb_nail/러더퍼드_산란실험.png" },
