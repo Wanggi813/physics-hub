@@ -1,9 +1,22 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+
   <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; media-src 'self' https: blob: data:; worker-src 'self' blob:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>해석을 훈련하는 수업 — 시뮬레이션 기반 탐구</title>
+  <meta name="description" content="시(물리)에이션이 시뮬레이션 기반 물리 수업을 선택한 이유와 해석 훈련 중심 탐구 학습의 설계 의도를 소개합니다.">
+  <link rel="canonical" href="https://www.phy-simul.com/시뮬레이션.html">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="시(물리)에이션">
+  <meta property="og:title" content="해석을 훈련하는 수업 — 시뮬레이션 기반 탐구">
+  <meta property="og:description" content="시(물리)에이션이 시뮬레이션 기반 물리 수업을 선택한 이유와 해석 훈련 중심 탐구 학습의 설계 의도를 소개합니다.">
+  <meta property="og:url" content="https://www.phy-simul.com/시뮬레이션.html">
+  <meta property="og:image" content="https://www.phy-simul.com/image/hero.png">
+  <meta property="og:locale" content="ko_KR">
   <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
   <style>
     @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
@@ -1834,5 +1847,6 @@
     fill(r.tir?color(200,40,40):color(4,78,50),210);text(r.tir?'θ₂ = 없음 (전반사)':`θ₂ = ${r.theta2.toFixed(1)}°`,18,38);
   }
 </script>
+<a href="./privacy.html" style="position:fixed; right:8px; bottom:6px; z-index:9999; font-size:11px; color:#0f2d1a; opacity:.55; text-decoration:none; background:rgba(255,255,255,.65); padding:2px 6px; border-radius:6px;">개인정보처리방침</a>
 </body>
 </html>

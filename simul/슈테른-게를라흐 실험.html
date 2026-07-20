@@ -2,9 +2,12 @@
 <html lang="ko">
 
 <head>
+
   <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; media-src 'self' https: blob: data:; worker-src 'self' blob:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>슈테른-게를라흐 실험 - 고전 예측과 실제 관측</title>
+  <title>슈테른-게를라흐 실험</title>
   <style>
     @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
 
@@ -690,7 +693,7 @@
         <div class="canvas-wrap">
           <div id="scene"></div>
           <div class="mode-transition" id="modeTransition">
-            <span class="kicker">MODE SHIFT</span>
+            <span class="kicker">모드 전환</span>
             <div class="title" id="modeTransitionText">고전 예측</div>
           </div>
           <div class="caption">
@@ -732,7 +735,7 @@
     </div>
   </div>
 
-  <script src="../libs/three.min.js"></script>
+  <script src="./libs/three.min.js"></script>
   <script>
     const ui = {
       gradient: document.getElementById("gradient"),
@@ -879,7 +882,7 @@
       ].forEach(([button, mode]) => {
         button.classList.toggle("active", state.mode === mode);
       });
-      // Show only the relevant theory button for the current mode
+      // 현재 모드에 맞는 이론 버튼만 표시
       ui.classicalInfoBtn.style.display = state.mode === "quantum"  ? "none" : "";
       ui.quantumVideoBtn.style.display  = state.mode === "classical" ? "none" : "";
       updateApparatusFromControls();

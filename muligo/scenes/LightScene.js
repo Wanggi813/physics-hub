@@ -162,7 +162,7 @@
     gAtm.lineBetween(window.x + 24, WALL, W * 0.44, this.H * 0.74);
   }
 
-  // Bookshelves
+  // 책장
   shelfRects() {
     const { W, H, WALL } = this;
     return [
@@ -382,7 +382,7 @@
     }));
   }
 
-  // Zones and sonar
+  // 구역 및 소나
   createZoneOverlays() {
     this.darkOverlays = this.layout.darkZones.map((z, i) => {
       const rect = this.add.rectangle(z.x, z.y, z.w, z.h, 0x020204, 0.72).setDepth(31);
@@ -400,7 +400,7 @@
       .setBlendMode(Phaser.BlendModes.ADD);
   }
 
-  // Restore station and goal
+  // 복원 스테이션과 목표
   createStation() {
     const { station, goal, decoy } = this.layout;
     const g = this.add.graphics().setDepth(7);
@@ -486,7 +486,7 @@
     g.lineBetween(decoy.x, decoy.y - 14, decoy.x, decoy.y + 12);
   }
 
-  // Mirrors and beams
+  // 거울과 빔
   createMirrors() {
     this.mirrors = this.layout.mirrors.map((def, i) => {
       const g = this.add.graphics().setDepth(11);
@@ -1009,7 +1009,7 @@
     }).setOrigin(0.5).setDepth(37);
   }
 
-  // Floating books
+  // 떠다니는 책
   createFloatingBooks() {
     const { W, H, WALL } = this;
 
@@ -1666,7 +1666,7 @@
     }
   }
 
-  // Collection and interaction
+  // 수집 및 상호작용
   collectShard(item) {
     item.done = true;
     item.g.destroy();

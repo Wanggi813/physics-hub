@@ -8,6 +8,13 @@
     <priority>1.0</priority>
   </url>
 
+  <!-- 개인정보처리방침 -->
+  <url>
+    <loc>https://www.phy-simul.com/privacy.html</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
+
   <!-- 핵심 시뮬레이션 -->
   <url>
     <loc>https://www.phy-simul.com/simul/광전효과.html</loc>

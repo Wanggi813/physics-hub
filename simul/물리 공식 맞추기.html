@@ -2,9 +2,12 @@
 <html lang="ko">
 
 <head>
+
   <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; media-src 'self' https: blob: data:; worker-src 'self' blob:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
-  <title>물리 공식 칠판 배틀</title>
+  <title>물리 공식 맞추기</title>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 
@@ -860,7 +863,7 @@
     function spawnDrop() {
       const isItem = random() < 0.1;
 
-      // ★ 수정됨: 모바일(폭 768 이하)인지 확인하여 여백 조절
+      // 모바일(폭 768 이하)인지 확인하여 여백 조절
       const isMobile = width <= 768;
 
       // 모바일이면 좌우 여백 20px, 데스크탑이면 패널 크기만큼(320px, 300px) 피함
@@ -1005,7 +1008,7 @@
     window.logDebug = function (msg) {
       const el = document.getElementById("debug-log");
       if (el) el.textContent = msg;
-      console.log("[DEBUG]", msg);
+
     };
 
     /* =========================================
@@ -1013,8 +1016,6 @@
        ========================================= */
     // 닉네임 자동 생성 (수정 기능 삭제됨)
     window.myNickname = "학생" + Math.floor(Math.random() * 1000);
-
-
 
     window.updateRankingBoard = function (rankData) {
       const list = document.getElementById("rank-list");

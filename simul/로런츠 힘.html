@@ -2,9 +2,12 @@
 <html lang="ko">
 
 <head>
+
     <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; media-src 'self' https: blob: data:; worker-src 'self' blob:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>크로스 필드: 입자 가속 시뮬레이터</title>
+    <title>로런츠 힘</title>
     <style>
         @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
         @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
@@ -478,7 +481,7 @@
         </div>
 
         <div id="particleSelector">
-            <div class="hud-label" style="margin-bottom:10px;">PARTICLE TYPE</div>
+            <div class="hud-label" style="margin-bottom:10px;">입자 종류</div>
             <div class="p-option active" onclick="setParticle('proton', this)">
                 <div class="p-dot" style="background: #ff4757;"></div> Proton (p+)
             </div>
@@ -493,7 +496,7 @@
         <div id="gameModePanel">
             <div id="levelBadge" class="level-badge">LEVEL 1</div>
             <div class="button-container">
-                <button id="challengeBtn" class="btn">CHALLENGE MODE</button>
+                <button id="challengeBtn" class="btn">도전 모드</button>
                 <button id="auroraBtn" class="btn">PROJECT: AURORA</button>
             </div>
         </div>
@@ -649,7 +652,7 @@
             } else {
                 state.mode = 'free';
                 btn.classList.remove('active');
-                btn.textContent = "CHALLENGE MODE";
+                btn.textContent = "도전 모드";
                 badge.style.display = 'none';
                 target.active = false;
                 obstacles = [];
@@ -788,7 +791,7 @@
         function launch() {
             resetSystem();
 
-            // [수정] 속도는 '너비' 기준 스케일 (가로가 좁으면 느리게)
+            // 속도는 '너비' 기준 스케일 (가로가 좁으면 느리게)
             const scaleX = Math.min(1.0, width / 1200);
             particle.vx = state.v0 * scaleX;
             state.running = true;
@@ -798,7 +801,7 @@
         function updatePhysics() {
             if (!state.running) return;
 
-            // [중요] 전기장은 '높이' 기준, 속도는 '너비' 기준
+            // 전기장은 '높이' 기준, 속도는 '너비' 기준
             const scaleY = Math.min(1.0, height / 700);
 
             const originalDt = 0.2;
@@ -920,7 +923,7 @@
 
                 ctx.strokeStyle = `rgba(${color}, 0.5)`;
                 ctx.beginPath();
-                // [수정] 전기장 방향: 양수면 위->아래, 음수면 아래->위
+                // 전기장 방향: 양수면 위->아래, 음수면 아래->위
                 for (let x = 50; x < width; x += 100) {
                     if (state.E > 0) drawArrow(x, 30, x, height - 30, 8);
                     else drawArrow(x, height - 30, x, 30, 8);

@@ -2,7 +2,10 @@
 <html lang="ko">
 
 <head>
+
   <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; media-src 'self' https: blob: data:; worker-src 'self' blob:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>전자기유도</title>
   <style>
@@ -471,7 +474,7 @@
       camera.position.copy(CAMERA_HOME);
       camera.lookAt(CAMERA_TARGET);
 
-      // OrbircControls
+      // 궤도 컨트롤러
       const controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.05;
@@ -892,7 +895,8 @@
       const rpmDisplay = document.getElementById('mg-rpm-display');
       const prog = document.getElementById('mg-prog');
 
-      const TARGET_RPM = 8;
+      const _lvParam = Math.min(5, Math.max(1, parseInt(new URLSearchParams(location.search).get('level') || '1')));
+      const TARGET_RPM = [8, 11, 14, 17, 20][_lvParam - 1];
       const INTERVAL_MS = 200;
       const TARGET_COUNT = Math.round(5000 / INTERVAL_MS); // 5 seconds
       let sustainCount = 0;

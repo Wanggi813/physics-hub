@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+
   <meta charset="UTF-8"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; media-src 'self' https: blob: data:; worker-src 'self' blob:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-  <title>슈테른-게를라흐 — 전자 시점</title>
+  <title>슈테른-게를라흐 전자시점</title>
+  <meta name="description" content="전자의 시점에서 비균일 자기장 속 스핀 편향과 슈테른-게를라흐 측정 결과를 관찰하는 3D 시뮬레이션입니다."/>
   <style>
     @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
     :root {
@@ -159,7 +163,7 @@
     const AUTOPLAY = new URLSearchParams(location.search).has('autoplay');
     if (AUTOPLAY) {
       document.querySelector('.sidebar').style.display = 'none';
-      // Restyle caption as a subtitle bar
+      // 캡션을 자막 바 형태로 스타일링
       const cap = document.querySelector('.caption');
       cap.style.cssText = 'position:fixed;left:0;right:0;bottom:0;padding:0;pointer-events:none;z-index:20;';
       const capBox = document.querySelector('.cap-box');
@@ -230,7 +234,7 @@
     furnace.position.set(7.2, -0.1, 0);
     scene.add(furnace);
 
-    // Furnace aperture glow
+    // 용광로 구멍 발광 효과
     const aperture = new THREE.Mesh(
       new THREE.CylinderGeometry(0.13, 0.13, 0.12, 20),
       new THREE.MeshBasicMaterial({ color: 0x0099ee })
@@ -239,7 +243,7 @@
     aperture.position.set(6.46, -0.1, 0);
     scene.add(aperture);
 
-    // Slit plates
+    // 슬릿 판
     [6.05, 5.55].forEach(x => {
       [0.56, -0.56].forEach(y => {
         const s = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.62, 0.92), slitMat);
@@ -248,7 +252,7 @@
       });
     });
 
-    // Magnet shape builder
+    // 자석 형태 생성
     function makeMagnet(isUpper, mat) {
       const face = new THREE.Shape();
       if (isUpper) {
@@ -274,7 +278,7 @@
     lowerMag.position.set(1.18, -1.78, 0);
     scene.add(lowerMag);
 
-    // Magnet face labels
+    // 자석 극 라벨
     function makeLabelMesh(text, bg, fg) {
       const cvs = document.createElement('canvas');
       cvs.width = 256; cvs.height = 96;
@@ -298,7 +302,7 @@
     sLabel.position.set(0, 0.12, 3.6);
     lowerMag.add(sLabel);
 
-    // Detector screen
+    // 검출 화면
     const screen = new THREE.Mesh(new THREE.BoxGeometry(0.18, 5.5, 3.6), screenMat);
     screen.position.set(-7.3, 0, 0);
     scene.add(screen);
@@ -498,7 +502,7 @@
       sim.running = false;
       electrons.forEach(e => {
         const ep = e.path.getPointAt(1);
-        // Glowing dot on the detector screen
+        // 검출 화면의 발광 점
         const hit = new THREE.Mesh(
           new THREE.CircleGeometry(0.16, 24),
           new THREE.MeshBasicMaterial({ color: e.spin > 0 ? 0x0099ee : 0xdd2255, transparent: true, opacity: 0.95, side: THREE.DoubleSide })
@@ -550,7 +554,7 @@
         return;
       }
 
-      // Follow midpoint between the two electrons
+      // 두 전자 사이 중점을 추적
       const mid = followMid;
       const tPos  = new THREE.Vector3(mid.x + 5.0, mid.y + 2.8, mid.z + 3.5);
       const tLook = new THREE.Vector3(mid.x - 2.0, mid.y,       mid.z);
@@ -568,7 +572,7 @@
       const dt = Math.min(0.05, clock.getDelta());
       t += dt;
 
-      // Pulse field lines
+      // 전기력선 펄스
       fieldGroup.children.forEach((obj, i) => {
         if (obj.material && obj.material.opacity !== undefined) {
           const base = fieldBaseOpacities[Math.min(i, fieldBaseOpacities.length - 1)] || 0.5;
@@ -576,7 +580,7 @@
         }
       });
 
-      // Electron animation
+      // 전자 애니메이션
       if (sim.running && electrons.length === 2) {
         sim.progress = Math.min(1, sim.progress + dt * sim.speed);
 
@@ -592,7 +596,7 @@
           e.ringAngle += dt * e.spin * 6.0;
           e.ring.position.copy(pos);
 
-          // Arrow position on horizontal circle
+          // 수평 원 위의 화살표 위치
           const ca = Math.cos(e.ringAngle), sa = Math.sin(e.ringAngle);
           e.orbitArrow.position.set(
             pos.x + e.ORBIT * ca,
@@ -673,7 +677,7 @@
     animate();
 
     if (AUTOPLAY) {
-      // Short delay so the scene renders before firing
+      // 발사 전 씬이 먼저 렌더링되도록 짧은 지연
       setTimeout(() => {
         sim.progress = 0;
         sim.running  = true;

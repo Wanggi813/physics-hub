@@ -2,9 +2,13 @@
 <html lang="ko">
 
 <head>
+
   <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; media-src 'self' https: blob: data:; worker-src 'self' blob:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>발광다이오드</title>
+  <title>발광 다이오드</title>
+  <meta name="description" content="LED 색상과 전압에 따른 순방향 전압, 공핍층 변화, 빛 방출 조건을 관찰하는 반도체 시뮬레이션입니다." />
   <style>
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
     :root {
@@ -138,7 +142,7 @@
 
 <body>
   <div class="wrap">
-    <h1>광다이오드 (정·역바이어스 직관)</h1>
+    <h1>발광 다이오드 (정·역바이어스 직관)</h1>
 
     <div class="panel">
       <div class="row">
@@ -177,8 +181,7 @@
       </div>
     </div>
 
-    <div class="brand">왕왕물리시뮬레이션</div>
-  </div>
+</div>
 
   <script>
     (() => {

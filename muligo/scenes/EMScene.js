@@ -88,7 +88,7 @@
       g.lineBetween(64, y, W - 64, y);
     }
 
-    // Floor safety line
+    // 바닥 안전선
     g.lineStyle(3, 0xb89010, 0.32);
     g.strokeRect(82, 82, W - 164, H - 164);
     g.lineStyle(1, 0xb89010, 0.14);
@@ -157,25 +157,25 @@
     const PW = 310, PH = 210;
     const px = cx - PW / 2, py = cy - PH / 2;
 
-    // Ground circle guides
+    // 바닥 원형 가이드
     g.lineStyle(1, 0x30d060, 0.07);
     g.strokeCircle(cx, cy, 118);
     g.lineStyle(1, 0x30d060, 0.04);
     g.strokeCircle(cx, cy, 136);
 
-    // Drop shadow
+    // 드롭 섀도우
     g.fillStyle(0x000000, 0.5);
     g.fillRoundedRect(px + 7, py + 7, PW, PH, 10);
 
-    // Main housing body
+    // 메인 하우징 본체
     g.fillStyle(0x141f14, 1);
     g.fillRoundedRect(px, py, PW, PH, 10);
 
-    // Outer frame stroke
+    // 외곽 프레임
     g.lineStyle(3, 0x2e4a2e, 1);
     g.strokeRoundedRect(px, py, PW, PH, 10);
 
-    // Inner highlight inset
+    // 내부 하이라이트
     g.lineStyle(1, 0x50ff80, 0.22);
     g.strokeRoundedRect(px + 5, py + 5, PW - 10, PH - 10, 7);
 
@@ -185,7 +185,7 @@
     g.lineStyle(1, 0x40b060, 0.5);
     g.strokeRoundedRect(px + 8, py + 8, PW - 16, 36, 5);
 
-    // Header caution stripes
+    // 상단 경고 줄무늬
     for (let i = 0; i < 10; i++) {
       const sw = (PW - 16) / 10;
       g.fillStyle(i % 2 === 0 ? 0x1e3a1e : 0x111c11, 0.5);
@@ -196,7 +196,7 @@
     g.fillRect(px + 8, py + 8, 5, 36);
     g.fillRect(px + PW - 13, py + 8, 5, 36);
 
-    // Interior grid texture
+    // 내부 격자 텍스처
     g.lineStyle(1, 0x1a2e1a, 0.4);
     for (let gy = py + 52; gy < py + PH - 10; gy += 12) {
       g.lineBetween(px + 12, gy, px + PW - 12, gy);
@@ -216,7 +216,7 @@
       g.strokeCircle(lx, ly, 6);
     });
 
-    // Copper bus bars
+    // 구리 버스바
     [0.44, 0.68].forEach(frac => {
       const by = py + PH * frac;
       g.fillStyle(0x7a5a10, 0.65);
@@ -242,7 +242,7 @@
       }
     });
 
-    // Slot bay inset panel
+    // 슬롯 베이 패널
     g.fillStyle(0x0a150a, 0.95);
     g.fillRoundedRect(cx - 122, cy - 18, 244, 68, 5);
     g.lineStyle(1.5, 0x2a4a2a, 0.7);
@@ -250,7 +250,7 @@
     g.lineStyle(1, 0x60ff90, 0.12);
     g.strokeRoundedRect(cx - 119, cy - 15, 238, 62, 4);
 
-    // Slot bay circuit traces connecting slots
+    // 슬롯 연결 회로 트레이스
     g.lineStyle(1, 0x20a040, 0.3);
     g.lineBetween(cx - 108, cy + 34, cx + 108, cy + 34);
     for (let i = 0; i < 4; i++) {
@@ -260,7 +260,7 @@
       g.fillCircle(sx, cy + 38, 2);
     }
 
-    // Warning indicators on left edge
+    // 좌측 경고 표시
     [0.52, 0.66, 0.80].forEach((frac, i) => {
       const wy = py + PH * frac;
       g.fillStyle(i === 0 ? 0xb03010 : 0x143014, 0.8);
@@ -269,7 +269,7 @@
       g.strokeRoundedRect(px + 14, wy - 4, 8, 8, 2);
     });
 
-    // Bottom terminal block
+    // 하단 터미널 블록
     for (let i = 0; i < 6; i++) {
       const tx = cx - 70 + i * 28;
       const ty = py + PH - 18;
@@ -290,7 +290,7 @@
       g.strokeCircle(rx, ry, 5);
       g.lineStyle(1, 0x70ff90, 0.14);
       g.strokeCircle(rx, ry, 7.5);
-      // Cross slot on bolt
+      // 볼트 십자 홈
       g.lineStyle(1, 0x3a583a, 0.6);
       g.lineBetween(rx - 3, ry, rx + 3, ry);
       g.lineBetween(rx, ry - 3, rx, ry + 3);
@@ -305,7 +305,7 @@
       cg.strokeCircle(ax, cy, 10);
     });
 
-    // Label area above slots
+    // 슬롯 상단 라벨 영역
     cg.fillStyle(0x0c1c0c, 1);
     cg.fillRoundedRect(cx - 82, cy - 16, 164, 14, 3);
     cg.lineStyle(1, 0x30a050, 0.4);
@@ -353,7 +353,7 @@
       borderG.strokeRect(cell.x - cell.w / 2, cell.y - cell.h / 2, cell.w, cell.h);
     });
 
-    // Minimap preview
+    // 미니맵 미리보기
     this.previewG = this.add.graphics().setDepth(22);
     this.previewLabels = [];
     this.updatePreview();
@@ -764,7 +764,7 @@
     const { W, H } = this;
     const g = this.add.graphics().setDepth(2);
 
-    // Ground terminal
+    // 접지 단자
     const gx = 58, gy = H * 0.78;
     g.fillStyle(0x253525, 1);
     g.fillRect(gx, gy, 36, 28);
@@ -780,7 +780,7 @@
       fontFamily: 'monospace', fontSize: '7px', color: '#60c060', fontStyle: '700'
     }).setOrigin(0.5).setDepth(3);
 
-    // Emergency cutoff switch
+    // 긴급 차단 스위치
     const ex = W - 56 - 44, ey = 62;
     g.fillStyle(0x3a1010, 1);
     g.fillRoundedRect(ex, ey, 34, 30, 4);
@@ -796,11 +796,11 @@
       fontFamily: 'Pretendard, Malgun Gothic, sans-serif', fontSize: '7px', color: '#ff7070'
     }).setOrigin(0.5, 0).setDepth(3);
 
-    // Warning signs
+    // 경고 표지
     this.drawWarningSign(g, 30, H * 0.42, '고전압\n위험');
     this.drawWarningSign(g, W - 30, H * 0.22, '접근\n금지');
 
-    // Cable outlets
+    // 케이블 출구
     [W * 0.3, W * 0.55, W * 0.75].forEach(cx => {
       g.fillStyle(0x283028, 1);
       g.fillRect(cx - 12, H - 56, 24, 18);
@@ -975,7 +975,7 @@
       sg.strokeRoundedRect(sx - hw, sy - hh, hw * 2, hh * 2, 5);
       sg.lineStyle(1, 0x5a1010, 0.5);
       sg.strokeRoundedRect(sx - hw + 3, sy - hh + 3, hw * 2 - 6, hh * 2 - 6, 3);
-      // Hazard diagonal stripes
+      // 위험 사선 줄무늬
       sg.lineStyle(1, 0x6a1818, 0.35);
       for (let d = -hh * 2; d < hw * 2; d += 8) {
         const x1 = sx - hw + Math.max(0, d);
@@ -984,7 +984,7 @@
         const y2 = sy - hh + Math.min(hh * 2, hh * 2 - d);
         if (x1 < sx + hw && y1 < sy + hh) sg.lineBetween(x1, y1, x2, y2);
       }
-      // Corner marks
+      // 코너 마크
       [[sx - hw + 4, sy - hh + 4], [sx + hw - 4, sy - hh + 4]].forEach(([cx, cy]) => {
         sg.lineStyle(1.5, 0xff3030, 0.6);
         sg.lineBetween(cx - 3, cy, cx + 3, cy);
@@ -1001,19 +1001,19 @@
       sg.strokeRoundedRect(sx - hw, sy - hh, hw * 2, hh * 2, 5);
       sg.lineStyle(1, 0x2080c0, 0.5);
       sg.strokeRoundedRect(sx - hw + 3, sy - hh + 3, hw * 2 - 6, hh * 2 - 6, 3);
-      // Card inserted indicator lines
+      // 카드 삽입 표시선
       sg.lineStyle(1, 0x3090d0, 0.45);
       for (let r = 0; r < 3; r++) {
         const ry = sy - hh + 10 + r * 8;
         sg.lineBetween(sx - hw + 5, ry, sx + hw - 5, ry);
       }
-      // Ready corner indicators
+      // 준비 완료 코너 표시
       [[sx - hw + 5, sy - hh + 5], [sx + hw - 5, sy - hh + 5],
        [sx - hw + 5, sy + hh - 5], [sx + hw - 5, sy + hh - 5]].forEach(([cx, cy]) => {
         sg.fillStyle(0x50c0ff, 0.7);
         sg.fillCircle(cx, cy, 2.5);
       });
-      // Central glow
+      // 중앙 발광
       sg.fillStyle(0x1060a0, 0.3);
       sg.fillCircle(sx, sy - 2, 10);
       st.setText(`${i + 1}`).setColor('#80e8ff').setFontFamily('monospace').setFontSize('15px');
@@ -1027,13 +1027,13 @@
       sg.strokeRoundedRect(sx - hw, sy - hh, hw * 2, hh * 2, 5);
       sg.lineStyle(1, 0x20b050, 0.45);
       sg.strokeRoundedRect(sx - hw + 3, sy - hh + 3, hw * 2 - 6, hh * 2 - 6, 3);
-      // Circuit trace pattern
+      // 회로 트레이스 패턴
       sg.lineStyle(1, 0x20a050, 0.4);
       sg.lineBetween(sx - hw + 5, sy, sx - 8, sy);
       sg.lineBetween(sx - 8, sy, sx - 8, sy - hh + 8);
       sg.lineBetween(sx + hw - 5, sy, sx + 8, sy);
       sg.lineBetween(sx + 8, sy, sx + 8, sy + hh - 8);
-      // Nodes on trace
+      // 트레이스 노드
       [[-8, -hh + 8], [8, hh - 8]].forEach(([ox, oy]) => {
         sg.fillStyle(0x30ff70, 0.7);
         sg.fillCircle(sx + ox, sy + oy, 2.5);

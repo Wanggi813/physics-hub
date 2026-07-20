@@ -2,9 +2,12 @@
 <html lang="ko">
 
 <head>
+
   <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; media-src 'self' https: blob: data:; worker-src 'self' blob:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>특수상대성이론</title>
+  <title>상대성이론</title>
   <style>
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
     html,
@@ -459,10 +462,7 @@
 
       const moonTex = new THREE.TextureLoader().load(
         './image/moon.png',
-        () => console.log('moon.png 로드 성공'),
-        undefined,
-        (e) => console.error('moon.png 로드 실패:', e)
-      );
+        () =>
       moonTex.colorSpace = THREE.SRGBColorSpace;
       moonTex.minFilter = THREE.LinearFilter;
       moonTex.magFilter = THREE.LinearFilter;

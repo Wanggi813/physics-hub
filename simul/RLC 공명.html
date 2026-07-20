@@ -1,7 +1,10 @@
 <!doctype html>
 <html lang="ko">
 <head>
+
   <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; media-src 'self' https: blob: data:; worker-src 'self' blob:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>RLC 공명</title>
   <style>
@@ -86,7 +89,7 @@
     .goal-meta{margin-top:6px;font-size:12px;color:rgba(148,163,184,.92)}
 
     /* =========================================
-       ★ 모바일 반응형 (Split View) 스타일 적용 ★
+       모바일 반응형 (Split View) 스타일
        ========================================= */
     @media (max-width: 768px){
       /* 헤더 간소화 */
@@ -577,7 +580,7 @@
       gModel.add(addJoint(resPortTop), addJoint(resPortBot));
     }
 
-    // Capacitor electron clouds
+    // 축전기 전자 구름
     const CAP_MAX = 160; const capDotGeo = new THREE.SphereGeometry(0.04, 10, 10);
     const capDotsTop = new THREE.InstancedMesh(capDotGeo, new THREE.MeshStandardMaterial({ color:0x00b4ff, emissive:0x33ccff, emissiveIntensity:0.85, metalness:0.0, roughness:0.6 }), CAP_MAX);
     const capDotsBot = new THREE.InstancedMesh(capDotGeo, new THREE.MeshStandardMaterial({ color:0x00b4ff, emissive:0x33ccff, emissiveIntensity:0.85, metalness:0.0, roughness:0.6 }), CAP_MAX);
@@ -722,7 +725,6 @@
     }
     requestAnimationFrame(animate);
 
-    // ★ Resize Logic Updated for Mobile Split View ★
     function handleResize(){
       const w = window.innerWidth;
       let h = window.innerHeight;

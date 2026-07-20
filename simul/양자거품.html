@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+
+    <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; media-src 'self' https: blob: data:; worker-src 'self' blob:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>양자거품</title>
+    <meta name="description" content="미시적 시공간의 요동과 관측 효과를 3D 격자로 살펴보는 양자거품 시뮬레이션입니다.">
+    <style>
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #03050a;
+            color: #fff;
+            font-family: "Pretendard", 'Courier New', Courier, monospace;
+        }
+
+        #info {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            pointer-events: none;
+            z-index: 10;
+            background: rgba(0, 10, 20, 0.4);
+            padding: 25px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-left: 5px solid #00f2fe;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2), inset 0 0 20px rgba(0, 242, 254, 0.1);
+            backdrop-filter: blur(4px);
+        }
+
+        #scale-indicator {
+            font-size: 1.6em;
+            font-weight: 900;
+            color: #00f2fe;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #00f2fe;
+            transition: all 0.5s ease;
+        }
+
+        .description {
+            font-size: 0.9em;
+            color: #88aadd;
+            margin-top: 15px;
+            line-height: 1.6;
+            font-family: sans-serif;
+        }
+
+        .data-panel {
+            margin-top: 20px;
+            font-size: 0.95em;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        .highlight {
+            color: #ff00aa;
+            font-weight: bold;
+            text-shadow: 0 0 8px #ff00aa;
+        }
+
+        #btn-shoot {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 50px;
+            font-size: 1.2em;
+            font-weight: 900;
+            font-family: 'Courier New', Courier, monospace;
+            color: #00f2fe;
+            background: transparent;
+            border: 2px solid #00f2fe;
+            border-radius: 0;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3), inset 0 0 15px rgba(0, 242, 254, 0.2);
+            transition: all 0.2s ease;
+            z-index: 20;
+        }
+
+        #btn-shoot:hover {
+            background: rgba(0, 242, 254, 0.2);
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.6), inset 0 0 30px rgba(0, 242, 254, 0.4);
+            text-shadow: 0 0 10px #00f2fe;
+        }
+
+        #btn-shoot:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+    </style>
+    <script src="./libs/three.min.js"></script>
+    <script src="./libs/orbit-controls-lite.js"></script>
+</head>
+
+<body>
+    <div id="info">
+        <div id="scale-indicator">거시 다양체</div>
+        <div class="description">마우스를 움직여 공간을 <span class="highlight">관측(Observe)</span>해 보세요.<br>관측된 영역은 파동 함수가 붕괴하여
+            매끄러워집니다.</div>
+        <div class="data-panel" id="data-panel">OBSERVATION_SCALE: 90.0<br>OBSERVER_STATUS: STANDBY</div>
+    </div>
+
+    <button id="btn-shoot" onclick="shootPhoton()">[ 광자 빔 발사 ]</button>
+
+    <script>
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x03050a, 0.008);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+        camera.position.set(0, 45, 90);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x03050a);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05; // 값을 높일수록 마우스를 뗐을 때 더 빨리 멈춥니다.
+        controls.autoRotate = false;   // 혼자 돌아가는 현상을 방지합니다.
+        controls.screenSpacePanning = true; // 화면 공간 기준으로 팬 이동을 하여 조작감을 개선합니다.
+
+        // 수평 이하로 내려가지 않도록 각도 제한 (이전보다 조금 더 제한)
+        controls.maxPolarAngle = Math.PI / 2 - 0.2;
+
+        function createSoftNodeTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 32; canvas.height = 32;
+            const context = canvas.getContext('2d');
+            const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+            gradient.addColorStop(0.4, 'rgba(0, 242, 254, 0.8)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            context.fillStyle = gradient;
+            context.fillRect(0, 0, 32, 32);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        const gridSize = 140;
+        const segments = 100;
+        const geometry = new THREE.PlaneGeometry(gridSize, gridSize, segments, segments);
+        geometry.rotateX(-Math.PI / 2);
+
+        const colors = [];
+        for (let i = 0; i < geometry.attributes.position.count; i++) {
+            colors.push(1, 1, 1);
+        }
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+        const wireMaterial = new THREE.MeshBasicMaterial({
+            vertexColors: true, wireframe: true, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false
+        });
+        const wireMesh = new THREE.Mesh(geometry, wireMaterial);
+        scene.add(wireMesh);
+
+        const pointMaterial = new THREE.PointsMaterial({
+            size: 0.8, map: createSoftNodeTexture(), vertexColors: true, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false
+        });
+        const quantaPoints = new THREE.Points(geometry, pointMaterial);
+        scene.add(quantaPoints);
+
+        const posAttr = geometry.attributes.position;
+        const colorAttr = geometry.attributes.color;
+        const basePos = new Float32Array(posAttr.array.length);
+        for (let i = 0; i < posAttr.array.length; i++) {
+            basePos[i] = posAttr.array[i];
+        }
+
+        // --- 💡 관측자 효과(Observer Effect)를 위한 레이캐스터 및 시각화 링 설정 ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2(-1000, -1000);
+        const planeForRaycast = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const intersectionPoint = new THREE.Vector3();
+        const OBS_RADIUS = 18.0; // 관측 반경
+
+        const obsGeo = new THREE.RingGeometry(OBS_RADIUS - 0.5, OBS_RADIUS, 64);
+        obsGeo.rotateX(-Math.PI / 2);
+        const obsMat = new THREE.MeshBasicMaterial({
+            color: 0x00f2fe, transparent: true, opacity: 0.0, side: THREE.DoubleSide, blending: THREE.AdditiveBlending
+        });
+        const obsMesh = new THREE.Mesh(obsGeo, obsMat);
+        scene.add(obsMesh);
+
+        window.addEventListener('mousemove', (e) => {
+            const rect = renderer.domElement.getBoundingClientRect();
+            // 캔버스 내 마우스 상대 좌표를 0~1 사이로 변환 후 -1~1 범위로 매핑
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        });
+
+        // -------------------------------------------------------------
+
+        const clock = new THREE.Clock();
+        const indicator = document.getElementById('scale-indicator');
+        const dataPanel = document.getElementById('data-panel');
+
+        const colorMacro = new THREE.Color(0x2255ff);
+        const colorLink = new THREE.Color(0x00f2fe);
+        const colorVortex = new THREE.Color(0xff00aa);
+        const colorScattered = new THREE.Color(0xffd700);
+
+        const gravityWell = 35.0;
+        const fluctuation = 1.2;
+        const quantaSize = 3.5;
+
+        const NUM_PHOTONS = 15;
+        const photons = [];
+        const photonGeo = new THREE.SphereGeometry(0.6, 8, 8);
+
+        for (let i = 0; i < NUM_PHOTONS; i++) {
+            const photonMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1.0, depthTest: false });
+            const mesh = new THREE.Mesh(photonGeo, photonMat);
+            mesh.renderOrder = 999;
+            scene.add(mesh);
+            mesh.visible = false;
+
+            const trailGeo = new THREE.BufferGeometry();
+            const trailMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1.0, blending: THREE.AdditiveBlending, depthTest: false });
+            const trail = new THREE.Line(trailGeo, trailMat);
+            trail.renderOrder = 998;
+            scene.add(trail);
+            trail.visible = false;
+
+            photons.push({
+                mesh: mesh, trail: trail, trailGeo: trailGeo, trailMat: trailMat,
+                logicalPos: new THREE.Vector2(), logicalVel: new THREE.Vector2(), path: [], active: false, isScattered: false
+            });
+        }
+
+        window.shootPhoton = function () {
+            const baseY = -15 + (Math.random() * 5 - 2.5);
+            const baseAngle = Math.atan2(0.25, 1.0);
+
+            photons.forEach((p, index) => {
+                p.active = true;
+                p.isScattered = false;
+                p.logicalPos.set(-75, baseY);
+                const spread = ((index / (NUM_PHOTONS - 1)) - 0.5) * 0.15;
+                p.logicalVel.set(Math.cos(baseAngle + spread), Math.sin(baseAngle + spread)).multiplyScalar(0.7);
+                p.path = [];
+                p.mesh.visible = true; p.trail.visible = true;
+                p.trailMat.color.setHex(0xffffff); p.mesh.material.color.setHex(0xffffff);
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = clock.getElapsedTime() * 0.8;
+            const dist = camera.position.length();
+
+            // 1. 목표 화각(targetFOV)을 먼저 계산합니다.
+            const fovMix = 1.0 - THREE.MathUtils.smoothstep(dist, 5, 50);
+            const targetFOV = THREE.MathUtils.lerp(60, 75, fovMix); // const로 변수를 선언해줍니다.
+
+            // 2. 현재 화각과 목표 화각의 차이가 클 때만 업데이트하여 성능을 최적화합니다.
+            if (Math.abs(camera.fov - targetFOV) > 0.1) {
+                camera.fov = targetFOV;
+                camera.updateProjectionMatrix();
+            }
+            camera.updateProjectionMatrix();
+
+            // 글로벌 척도 상태
+            const globalFoamMix = 1.0 - THREE.MathUtils.smoothstep(dist, 15, 50);
+            const globalQuantizeMix = 1.0 - THREE.MathUtils.smoothstep(dist, 4, 15);
+
+            // 마우스 레이캐스팅 (관측 좌표 추적)
+            raycaster.setFromCamera(mouse, camera);
+            raycaster.ray.intersectPlane(planeForRaycast, intersectionPoint);
+
+            // 관측자 링 UI 업데이트
+            if (globalQuantizeMix > 0.1) {
+                controls.target.lerp(new THREE.Vector3(intersectionPoint.x, 2, intersectionPoint.z), 0.02);
+            } else {
+                controls.target.lerp(new THREE.Vector3(0, 0, 0), 0.02);
+            }
+
+            let pathText = "GEODESIC CURVE";
+            if (globalQuantizeMix > 0.1) {
+                indicator.innerText = "SPIN NETWORK";
+                indicator.style.color = "#ff00aa";
+                indicator.style.textShadow = "0 0 15px #ff00aa";
+                pathText = '<span style="color:#ffd700;">양자 산란</span>';
+            } else if (globalFoamMix > 0.1) {
+                indicator.innerText = "QUANTUM FLUCTUATION";
+                indicator.style.color = "#00f2fe";
+                indicator.style.textShadow = "0 0 15px #00f2fe";
+                pathText = '<span style="color:#00f2fe;">파동 섭동</span>';
+            } else {
+                indicator.innerText = "거시 다양체";
+                indicator.style.color = "#4477ff";
+                indicator.style.textShadow = "none";
+            }
+
+            pointMaterial.opacity = THREE.MathUtils.lerp(0.0, 0.9, globalQuantizeMix);
+            wireMaterial.opacity = THREE.MathUtils.lerp(0.6, 1.0, globalFoamMix);
+
+            const obsStatus = globalQuantizeMix > 0.1 ? '<span style="color:#00f2fe;">WAVE COLLAPSED (LOCAL)</span>' : 'STANDBY';
+            dataPanel.innerHTML = `OBSERVATION_SCALE: ${(dist).toFixed(1)}<br>OBSERVER_STATUS: ${obsStatus}`;
+
+            const obsRadiusSq = OBS_RADIUS * OBS_RADIUS;
+
+            // 광자(Photon Array) 물리 엔진
+            photons.forEach(p => {
+                if (!p.active) return;
+
+                const r2 = p.logicalPos.x * p.logicalPos.x + p.logicalPos.y * p.logicalPos.y;
+                const gravityDir = new THREE.Vector2(-p.logicalPos.x, -p.logicalPos.y).normalize();
+                const gravityStrength = 25.0 / (r2 + 100);
+
+                // 💡 광자에도 관측자 효과 적용: 관측 반경 안에서는 양자 믹스(산란 확률)가 0으로 수렴
+                let pDistSq = (p.logicalPos.x - intersectionPoint.x) ** 2 + (p.logicalPos.y - intersectionPoint.z) ** 2;
+                let pObserverFactor = 1.0;
+                if (pDistSq < obsRadiusSq) {
+                    pObserverFactor = THREE.MathUtils.smoothstep(Math.sqrt(pDistSq) / OBS_RADIUS, 0.0, 1.0);
+                }
+                const pQuantizeMix = globalQuantizeMix * pObserverFactor;
+
+                p.logicalVel.add(gravityDir.multiplyScalar(gravityStrength * (1.0 - pQuantizeMix)));
+
+                if (pQuantizeMix > 0.1) {
+                    if (Math.random() < 0.25 * pQuantizeMix) {
+                        const angle = (Math.random() - 0.5) * Math.PI * pQuantizeMix * 1.5;
+                        const cos = Math.cos(angle); const sin = Math.sin(angle);
+                        const nx = p.logicalVel.x * cos - p.logicalVel.y * sin;
+                        const ny = p.logicalVel.x * sin + p.logicalVel.y * cos;
+                        p.logicalVel.set(nx, ny);
+                        p.isScattered = true;
+                    }
+                }
+
+                if (p.isScattered) {
+                    p.trailMat.color.lerp(colorScattered, 0.2);
+                    p.mesh.material.color.lerp(colorScattered, 0.2);
+                }
+
+                p.logicalVel.normalize().multiplyScalar(0.7);
+                p.logicalPos.add(p.logicalVel);
+
+                let bx = p.logicalPos.x; let bz = p.logicalPos.y;
+                const macroY = -gravityWell * Math.exp(-(bx * bx + bz * bz) / 800);
+
+                let microX = 0, microY = 0, microZ = 0;
+                // 시각 렌더링을 위한 폼 믹스도 관측자 팩터 적용
+                const pFoamMix = globalFoamMix * pObserverFactor;
+
+                if (pFoamMix > 0) {
+                    const wave1 = Math.sin(bz * 0.15 + time);
+                    const wave2 = Math.cos(bx * 0.15 - time * 1.2);
+                    const curl = Math.sin((bx + bz) * 0.1 + time);
+                    microX = wave1 * curl * (4.0 * fluctuation) * pFoamMix;
+                    microZ = wave2 * curl * (4.0 * fluctuation) * pFoamMix;
+                    microY = (wave1 + wave2) * (3.0 * fluctuation) * pFoamMix;
+                }
+
+                const continuousX = bx + microX; const continuousY = macroY + microY; const continuousZ = bz + microZ;
+                const gridX = Math.round(bx / quantaSize); const gridZ = Math.round(bz / quantaSize);
+                const targetNodeX = gridX * quantaSize + Math.sin(gridZ * 1.2) * 1.5;
+                const targetNodeY = macroY + Math.sin(gridX * 0.9) * Math.cos(gridZ * 0.9) * 4.0;
+                const targetNodeZ = gridZ * quantaSize + Math.cos(gridX * 1.2) * 1.5;
+
+                const clusterX = THREE.MathUtils.lerp(continuousX, targetNodeX, 0.75);
+                const clusterY = THREE.MathUtils.lerp(continuousY, targetNodeY, 0.75);
+                const clusterZ = THREE.MathUtils.lerp(continuousZ, targetNodeZ, 0.75);
+
+                const finalX = THREE.MathUtils.lerp(continuousX, clusterX, pQuantizeMix);
+                const finalY = THREE.MathUtils.lerp(continuousY, clusterY, pQuantizeMix);
+                const finalZ = THREE.MathUtils.lerp(continuousZ, clusterZ, pQuantizeMix);
+
+                const visualPos = new THREE.Vector3(finalX, finalY + 2.0, finalZ);
+                p.path.push(visualPos);
+                if (p.path.length > 200) p.path.shift();
+
+                p.trailGeo.setFromPoints(p.path);
+                p.mesh.position.copy(visualPos);
+                if (p.logicalPos.length() > 80) p.active = false;
+            });
+
+            // --- 💡 지형(시공간) 렌더링 업데이트 및 위상 재구성(Pachner Moves) ---
+            for (let i = 0; i < posAttr.count; i++) {
+                let bx = basePos[i * 3];
+                let bz = basePos[i * 3 + 2];
+
+                // 💡 거리 기반 관측자 파동 붕괴 적용
+                const distSq = (bx - intersectionPoint.x) ** 2 + (bz - intersectionPoint.z) ** 2;
+                let observerFactor = 1.0;
+                if (distSq < obsRadiusSq) {
+                    observerFactor = THREE.MathUtils.smoothstep(Math.sqrt(distSq) / OBS_RADIUS, 0.0, 1.0);
+                }
+
+                const localFoamMix = globalFoamMix * observerFactor;
+                const localQuantizeMix = globalQuantizeMix * observerFactor;
+
+                const r2 = bx * bx + bz * bz;
+                const macroY = -gravityWell * Math.exp(-r2 / 800);
+
+                let microX = 0, microY = 0, microZ = 0;
+                if (localFoamMix > 0) {
+                    const wave1 = Math.sin(bz * 0.15 + time);
+                    const wave2 = Math.cos(bx * 0.15 - time * 1.2);
+                    const curl = Math.sin((bx + bz) * 0.1 + time);
+                    microX = wave1 * curl * (4.0 * fluctuation) * localFoamMix;
+                    microZ = wave2 * curl * (4.0 * fluctuation) * localFoamMix;
+                    microY = (wave1 + wave2) * (3.0 * fluctuation) * localFoamMix;
+                }
+
+                const continuousX = bx + microX;
+                const continuousY = macroY + microY;
+                const continuousZ = bz + microZ;
+
+                // 💡 동적 위상 재구성 (Pachner Moves) 로직
+                // 고정된 거점을 향하지 않고, 시간과 위치에 따라 랜덤하게 주변의 다른 노드로 타겟을 변경(Jump)합니다.
+                let jumpX = 0, jumpZ = 0;
+                if (localQuantizeMix > 0.5) {
+                    const jitter = Math.sin(bx * 13.1 + bz * 4.3 + time * 10.0);
+                    if (jitter > 0.95) jumpX = quantaSize;
+                    else if (jitter < -0.95) jumpZ = quantaSize;
+                }
+
+                const gridX = Math.round(bx / quantaSize);
+                const gridZ = Math.round(bz / quantaSize);
+
+                const targetNodeX = gridX * quantaSize + jumpX + Math.sin(gridZ * 1.2) * 1.5;
+                const targetNodeY = macroY + Math.sin(gridX * 0.9) * Math.cos(gridZ * 0.9) * 4.0;
+                const targetNodeZ = gridZ * quantaSize + jumpZ + Math.cos(gridX * 1.2) * 1.5;
+
+                const clusterX = THREE.MathUtils.lerp(continuousX, targetNodeX, 0.75);
+                const clusterY = THREE.MathUtils.lerp(continuousY, targetNodeY, 0.75);
+                const clusterZ = THREE.MathUtils.lerp(continuousZ, targetNodeZ, 0.75);
+
+                const finalX = THREE.MathUtils.lerp(continuousX, clusterX, localQuantizeMix);
+                const finalY = THREE.MathUtils.lerp(continuousY, clusterY, localQuantizeMix);
+                const finalZ = THREE.MathUtils.lerp(continuousZ, clusterZ, localQuantizeMix);
+
+                posAttr.setXYZ(i, finalX, finalY, finalZ);
+
+                let tempColor = colorMacro.clone();
+                const stress = Math.min(1.0, (Math.abs(microX) + Math.abs(microY) + Math.abs(microZ)) / (8.0 * fluctuation + 0.1));
+
+                if (localFoamMix > 0) {
+                    tempColor.lerp(colorLink, localFoamMix * 0.8);
+                    tempColor.lerp(colorVortex, stress * localQuantizeMix);
+                }
+
+                colorAttr.setXYZ(i, tempColor.r, tempColor.g, tempColor.b);
+            }
+
+            posAttr.needsUpdate = true;
+            colorAttr.needsUpdate = true;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+
+</html>

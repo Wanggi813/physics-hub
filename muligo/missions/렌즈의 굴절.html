@@ -2,7 +2,10 @@
 <html lang="ko">
 
 <head>
+
   <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; media-src 'self' https: blob: data:; worker-src 'self' blob:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>렌즈의 굴절</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="./libs/p5.min.js"></script>
@@ -1278,7 +1281,7 @@
       const prog = document.getElementById('mg-prog');
       let triggered = false;
 
-      // Update progress bar display
+      // 진행 바 업데이트
       let lastRound = 0;
       setInterval(() => {
         const r = window.lensGameRound || 0;

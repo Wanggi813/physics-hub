@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"e:\\\\시뮬레이션\\\\muligo2\\\\\" -Recurse -Force | Select-Object FullName | ForEach-Object { $_.FullName })",
+      "Bash(python -c ' *)"
+    ]
+  }
+}

@@ -7,11 +7,16 @@
       "title": "물리고 이상현상대응부",
       "category": "게임",
       "description": "제작 중",
-      "tags": ["물리 방탈출", "물리학"],
+      "tags": [
+        "물리 방탈출",
+        "물리학"
+      ],
       "emoji": "❤️",
       "demoUrl": "./muligo/index.html",
       "thumbnailUrl": "./thumb_nail/물리고.png",
-      "curriculumIds": ["ALL"],
+      "curriculumIds": [
+        "ALL"
+      ],
       "difficulty": "medium",
       "estimatedTime": 30
     },
@@ -20,11 +25,19 @@
       "title": "물리량 단위 짝맞추기",
       "category": "게임",
       "description": "물리량 이름과 SI 단위 카드를 뒤집어 짝을 맞춰보세요!",
-      "tags": ["물리", "SI단위", "단위", "카드게임", "짝맞추기"],
+      "tags": [
+        "물리",
+        "SI단위",
+        "단위",
+        "카드게임",
+        "짝맞추기"
+      ],
       "emoji": "🃏",
       "demoUrl": "./simul/물리량 단위 짝맞추기.html",
       "thumbnailUrl": "./thumb_nail/물리량 단위 짝맞추기.png",
-      "curriculumIds": ["ALL"],
+      "curriculumIds": [
+        "ALL"
+      ],
       "difficulty": "easy",
       "estimatedTime": 10
     },
@@ -33,11 +46,16 @@
       "title": "물리 공식 맞추기",
       "category": "게임",
       "description": "떨어지는 물리 공식을 맞추자!",
-      "tags": ["물리", "공식"],
+      "tags": [
+        "물리",
+        "공식"
+      ],
       "emoji": "❤️",
       "demoUrl": "./simul/물리 공식 맞추기.html",
       "thumbnailUrl": "./thumb_nail/물리 공식 맞추기.png",
-      "curriculumIds": ["ALL"],
+      "curriculumIds": [
+        "ALL"
+      ],
       "difficulty": "easy",
       "estimatedTime": 10
     },
@@ -46,11 +64,17 @@
       "title": "물리 퀴즈 도전!",
       "category": "게임",
       "description": "물리 퀴즈를 맞추자!",
-      "tags": ["물리", "문제", "시뮬레이션"],
+      "tags": [
+        "물리",
+        "문제",
+        "시뮬레이션"
+      ],
       "emoji": "❤️",
       "demoUrl": "./simul/물리 퀴즈.html",
       "thumbnailUrl": "./thumb_nail/물리 퀴즈.png",
-      "curriculumIds": ["ALL"],
+      "curriculumIds": [
+        "ALL"
+      ],
       "difficulty": "easy",
       "estimatedTime": 10
     },
@@ -59,11 +83,18 @@
       "title": "물리학 타자연습",
       "category": "게임",
       "description": "물리학 핵심 법칙을 따라 타이핑하며 타수와 물리 지식을 동시에 키워보세요!",
-      "tags": ["타자", "타수", "물리법칙", "게임"],
+      "tags": [
+        "타자",
+        "타수",
+        "물리법칙",
+        "게임"
+      ],
       "emoji": "⌨️",
       "demoUrl": "./simul/physics-typing.html",
       "thumbnailUrl": "./thumb_nail/physics-typing.png",
-      "curriculumIds": ["ALL"],
+      "curriculumIds": [
+        "ALL"
+      ],
       "difficulty": "easy",
       "estimatedTime": 10
     },
@@ -72,11 +103,16 @@
       "title": "토크와 평형",
       "category": "역학",
       "description": "여러 물체를 이용해 토크평형 만들기",
-      "tags": ["토크", "평형"],
+      "tags": [
+        "토크",
+        "평형"
+      ],
       "emoji": "🧗‍♀️",
       "demoUrl": "./simul/토크와 평형.html",
       "thumbnailUrl": "./thumb_nail/토크와_평형.png",
-      "curriculumIds": ["12물리01-01"],
+      "curriculumIds": [
+        "12물리01-01"
+      ],
       "difficulty": "medium",
       "estimatedTime": 15
     },
@@ -85,11 +121,17 @@
       "title": "위치와 변위",
       "category": "역학",
       "description": "선을 그려 이동거리와 변위의 차이를 눈으로 확인하기 (직선 그리기 도전!)",
-      "tags": ["이동거리", "변위", "벡터"],
+      "tags": [
+        "이동거리",
+        "변위",
+        "벡터"
+      ],
       "emoji": "📏",
       "demoUrl": "./simul/위치와 변위.html",
       "thumbnailUrl": "./thumb_nail/위치와 변위.png",
-      "curriculumIds": ["12물리01-02"],
+      "curriculumIds": [
+        "12물리01-02"
+      ],
       "difficulty": "easy",
       "estimatedTime": 10
     },
@@ -98,11 +140,40 @@
       "title": "우주 미아 생존기",
       "category": "역학",
       "description": "공구를 던져 장애물을 피하고 귀환하라! 운동량 보존 법칙 퍼즐 게임",
-      "tags": ["운동량보존", "작용반작용", "벡터", "게임"],
+      "tags": [
+        "운동량보존",
+        "작용반작용",
+        "벡터",
+        "게임"
+      ],
       "emoji": "👨‍🚀",
       "demoUrl": "./simul/우주 미아.html",
       "thumbnailUrl": "./thumb_nail/우주 미아.png",
-      "curriculumIds": ["12물리01-03"],
+      "curriculumIds": [
+        "12물리01-03"
+      ],
+      "difficulty": "medium",
+      "estimatedTime": 15
+    },
+    {
+      "id": "momentum-collision",
+      "title": "운동량과 충돌",
+      "category": "역학",
+      "description": "당구공으로 배우는 운동량 보존과 충돌. 충돌 순간 슬로우모션·확대로 작용반작용을 시각화. 1차원·2차원 선택, 탄성계수 조절 가능.",
+      "tags": [
+        "운동량",
+        "충돌",
+        "작용반작용",
+        "탄성충돌",
+        "비탄성충돌",
+        "당구"
+      ],
+      "emoji": "🎱",
+      "demoUrl": "./simul/운동량과 충돌.html",
+      "thumbnailUrl": "./thumb_nail/운동량과 충돌.svg",
+      "curriculumIds": [
+        "12물리01-03"
+      ],
       "difficulty": "medium",
       "estimatedTime": 15
     },
@@ -111,11 +182,16 @@
       "title": "일과 운동에너지",
       "category": "역학",
       "description": "용수철을 이용해 일과 운동에너지 비교하기",
-      "tags": ["일", "운동에너지"],
+      "tags": [
+        "일",
+        "운동에너지"
+      ],
       "emoji": "🧗‍♀️",
       "demoUrl": "./simul/일과 운동에너지.html",
       "thumbnailUrl": "./thumb_nail/일과_운동에너지.png",
-      "curriculumIds": ["12물리01-04"],
+      "curriculumIds": [
+        "12물리01-04"
+      ],
       "difficulty": "medium",
       "estimatedTime": 15
     },
@@ -124,11 +200,18 @@
       "title": "일과 에너지",
       "category": "역학",
       "description": "힘과 변위가 만드는 일, 위치에너지와 운동에너지의 변화를 함께 확인하기",
-      "tags": ["일", "에너지", "운동에너지", "위치에너지"],
+      "tags": [
+        "일",
+        "에너지",
+        "운동에너지",
+        "위치에너지"
+      ],
       "emoji": "⚙️",
       "demoUrl": "./simul/일과 에너지.html",
       "thumbnailUrl": "./thumb_nail/일과_운동에너지.png",
-      "curriculumIds": ["12물리01-04"],
+      "curriculumIds": [
+        "12물리01-04"
+      ],
       "difficulty": "medium",
       "estimatedTime": 15
     },
@@ -137,11 +220,16 @@
       "title": "줄의 실험",
       "category": "열",
       "description": "줄의 일의 열당량을 알아보기",
-      "tags": ["줄", "일의 열당량"],
+      "tags": [
+        "줄",
+        "일의 열당량"
+      ],
       "emoji": "🧗‍♀️",
       "demoUrl": "./simul/줄의 실험.html",
       "thumbnailUrl": "./thumb_nail/줄의_실험.png",
-      "curriculumIds": ["12물리01-05"],
+      "curriculumIds": [
+        "12물리01-05"
+      ],
       "difficulty": "medium",
       "estimatedTime": 15
     },
@@ -150,11 +238,17 @@
       "title": "열역학",
       "category": "열",
       "description": "등압, 등적, 등온, 단열과정 확인하기",
-      "tags": ["열기관", "열과정"],
+      "tags": [
+        "열기관",
+        "열과정"
+      ],
       "emoji": "🐦‍🔥",
       "demoUrl": "./simul/열역학.html",
       "thumbnailUrl": "./thumb_nail/열역학.png",
-      "curriculumIds": ["12물리01-06", "12역학02-02"],
+      "curriculumIds": [
+        "12물리01-06",
+        "12역학02-02"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
     },
@@ -163,11 +257,17 @@
       "title": "전기장과 등전위면",
       "category": "전자/반도체",
       "description": "전하가 만드는 전기장과 등전위면을 알아보기",
-      "tags": ["전기장", "등전위면"],
+      "tags": [
+        "전기장",
+        "등전위면"
+      ],
       "emoji": "⚡",
       "demoUrl": "./simul/전기장과 등전위면.html",
       "thumbnailUrl": "./thumb_nail/전기장과_등전위면.png",
-      "curriculumIds": ["12물리02-01", "12전자01-01"],
+      "curriculumIds": [
+        "12물리02-01",
+        "12전자01-01"
+      ],
       "difficulty": "medium",
       "estimatedTime": 15
     },
@@ -176,11 +276,16 @@
       "title": "옴의 법칙",
       "category": "전자/반도체",
       "description": "V=IR, 직렬/병렬 에 따른 옴의 법칙 확인하기",
-      "tags": ["전압", "전류"],
+      "tags": [
+        "전압",
+        "전류"
+      ],
       "emoji": "⚡",
       "demoUrl": "./simul/옴의 법칙.html",
       "thumbnailUrl": "./thumb_nail/옴의_법칙.png",
-      "curriculumIds": ["12물리02-02"],
+      "curriculumIds": [
+        "12물리02-02"
+      ],
       "difficulty": "easy",
       "estimatedTime": 10
     },
@@ -188,12 +293,21 @@
       "id": "capacitor",
       "title": "축전기",
       "category": "전자/반도체",
-      "description": "전압, 극판 면적, 거리, 유전체에 따라 축전기의 전하와 전기용량이 어떻게 바뀌는지 확인하기",
-      "tags": ["축전기", "전기용량", "전기장", "RC회로"],
+      "description": "극판 면적, 간격, 유전체에 따른 전기용량·전기장·저장에너지와 전구 방전을 탐구하기",
+      "tags": [
+        "축전기",
+        "전기용량",
+        "전기장",
+        "에너지저장",
+        "충방전"
+      ],
       "emoji": "🔋",
       "demoUrl": "./simul/축전기.html",
-      "thumbnailUrl": "./thumb_nail/전기장과_등전위면.png",
-      "curriculumIds": ["12물리02-01", "12전자01-01"],
+      "thumbnailUrl": "./thumb_nail/축전기.svg",
+      "curriculumIds": [
+        "12물리02-03",
+        "12전자01-06"
+      ],
       "difficulty": "medium",
       "estimatedTime": 15
     },
@@ -201,12 +315,21 @@
       "id": "electromagnetic-induction",
       "title": "전자기유도",
       "category": "전자/반도체",
-      "description": "전자기 유도현상과 정류자의 역할 알아보기",
-      "tags": ["전자기유도", "정류자"],
+      "description": "자석 운동으로 변하는 자기선속, 유도 기전력, 렌츠 법칙을 관찰하기",
+      "tags": [
+        "전자기유도",
+        "자기선속",
+        "유도기전력",
+        "렌츠법칙",
+        "솔레노이드"
+      ],
       "emoji": "⚡",
       "demoUrl": "./simul/전자기유도.html",
       "thumbnailUrl": "./thumb_nail/전자기유도.png",
-      "curriculumIds": ["12물리02-05", "12전자01-05"],
+      "curriculumIds": [
+        "12물리02-06",
+        "12전자01-05"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
     },
@@ -215,11 +338,16 @@
       "title": "간섭무늬",
       "category": "파동/광학",
       "description": "파장과 파원의 간격 조절로 간섭 패턴 관찰.",
-      "tags": ["파동", "무늬"],
+      "tags": [
+        "파동",
+        "무늬"
+      ],
       "emoji": "🎯",
       "demoUrl": "./simul/간섭무늬.html",
       "thumbnailUrl": "./thumb_nail/간섭무늬.png",
-      "curriculumIds": ["12물리03-01"],
+      "curriculumIds": [
+        "12물리03-01"
+      ],
       "difficulty": "medium",
       "estimatedTime": 15
     },
@@ -228,11 +356,16 @@
       "title": "렌즈의 굴절",
       "category": "파동/광학",
       "description": "렌즈의 종류에 따라 어떤 상이 맺히는지 확인하기",
-      "tags": ["렌즈", "상"],
+      "tags": [
+        "렌즈",
+        "상"
+      ],
       "emoji": "🔭",
       "demoUrl": "./simul/렌즈의 굴절.html",
       "thumbnailUrl": "./thumb_nail/렌즈의_법칙.png",
-      "curriculumIds": ["12물리03-02"],
+      "curriculumIds": [
+        "12물리03-02"
+      ],
       "difficulty": "medium",
       "estimatedTime": 15
     },
@@ -241,11 +374,16 @@
       "title": "스넬의 법칙",
       "category": "파동/광학",
       "description": "굴절률 변화에 따른 입사/굴절/임계각 확인하기",
-      "tags": ["n1,n2", "TIR"],
+      "tags": [
+        "n1,n2",
+        "TIR"
+      ],
       "emoji": "📐",
       "demoUrl": "./simul/스넬의 법칙.html",
       "thumbnailUrl": "./thumb_nail/스넬의_법칙.png",
-      "curriculumIds": ["12물리03-02"],
+      "curriculumIds": [
+        "12물리03-02"
+      ],
       "difficulty": "medium",
       "estimatedTime": 15
     },
@@ -254,11 +392,16 @@
       "title": "다이오드",
       "category": "전자/반도체",
       "description": "PN 접합·공핍층·I–V 특성 직관",
-      "tags": ["PN", "I–V"],
+      "tags": [
+        "PN",
+        "I–V"
+      ],
       "emoji": "🔌",
       "demoUrl": "./simul/다이오드.html",
       "thumbnailUrl": "./thumb_nail/다이오드.png",
-      "curriculumIds": ["12물리03-05"],
+      "curriculumIds": [
+        "12물리03-05"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
     },
@@ -267,11 +410,16 @@
       "title": "상대성이론",
       "category": "상대성",
       "description": "우주선의 속력에 따라 행성의 변화 관찰하기",
-      "tags": ["특수", "일반"],
+      "tags": [
+        "특수",
+        "일반"
+      ],
       "emoji": "🚀",
       "demoUrl": "./simul/상대성이론.html",
       "thumbnailUrl": "./thumb_nail/상대성이론.png",
-      "curriculumIds": ["12물리03-06"],
+      "curriculumIds": [
+        "12물리03-06"
+      ],
       "difficulty": "hard",
       "estimatedTime": 25
     },
@@ -280,11 +428,16 @@
       "title": "힘의 합력",
       "category": "역학",
       "description": "여러 힘의 합력 알아보기",
-      "tags": ["힘", "알짜힘"],
+      "tags": [
+        "힘",
+        "알짜힘"
+      ],
       "emoji": "🧗‍♀️",
       "demoUrl": "./simul/힘의 평형.html",
       "thumbnailUrl": "./thumb_nail/힘의_평형.png",
-      "curriculumIds": ["12역학01-01"],
+      "curriculumIds": [
+        "12역학01-01"
+      ],
       "difficulty": "easy",
       "estimatedTime": 10
     },
@@ -293,11 +446,16 @@
       "title": "포물선 운동",
       "category": "역학",
       "description": "대포를 쏴서 과녁을 맞추자.",
-      "tags": ["포물선운동", "게임"],
+      "tags": [
+        "포물선운동",
+        "게임"
+      ],
       "emoji": "🌈",
       "demoUrl": "./simul/포물선 운동.html",
       "thumbnailUrl": "./thumb_nail/포물선_운동.png",
-      "curriculumIds": ["12역학01-02"],
+      "curriculumIds": [
+        "12역학01-02"
+      ],
       "difficulty": "easy",
       "estimatedTime": 10
     },
@@ -306,11 +464,17 @@
       "title": "진화하는 로켓",
       "category": "역학",
       "description": "내가 그린 미로를 탈출하라! 유전 알고리즘으로 길을 찾는 AI 로켓",
-      "tags": ["유전알고리즘", "인공지능", "그리기"],
+      "tags": [
+        "유전알고리즘",
+        "인공지능",
+        "그리기"
+      ],
       "emoji": "🧬",
       "demoUrl": "./simul/경로찾기.html",
       "thumbnailUrl": "./thumb_nail/경로찾기.png",
-      "curriculumIds": ["12역학01-02"],
+      "curriculumIds": [
+        "12역학01-02"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
     },
@@ -319,11 +483,18 @@
       "title": "궤도 올리기",
       "category": "역학",
       "description": "행성의 탈출속도와 위성의 궤도 알아보기",
-      "tags": ["중력", "탈출속도", "궤도"],
+      "tags": [
+        "중력",
+        "탈출속도",
+        "궤도"
+      ],
       "emoji": "🧗‍♀️",
       "demoUrl": "./simul/궤도 올리기.html",
       "thumbnailUrl": "./thumb_nail/궤도 올리기.png",
-      "curriculumIds": ["12역학01-04", "12역학01-05"],
+      "curriculumIds": [
+        "12역학01-04",
+        "12역학01-05"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
     },
@@ -332,11 +503,19 @@
       "title": "탈출 속도",
       "category": "역학",
       "description": "초기 속도에 따라 로켓이 행성 중력을 벗어나는 조건을 실험하기",
-      "tags": ["중력", "탈출속도", "로켓", "에너지"],
+      "tags": [
+        "중력",
+        "탈출속도",
+        "로켓",
+        "에너지"
+      ],
       "emoji": "🚀",
       "demoUrl": "./simul/탈출 속도.html",
       "thumbnailUrl": "./thumb_nail/궤도 올리기.png",
-      "curriculumIds": ["12역학01-04", "12역학01-05"],
+      "curriculumIds": [
+        "12역학01-04",
+        "12역학01-05"
+      ],
       "difficulty": "medium",
       "estimatedTime": 15
     },
@@ -345,11 +524,18 @@
       "title": "아인슈타인 엘리베이터",
       "category": "상대성",
       "description": "가속하는 엘리베이터와 중력의 등가원리! 빛이 휘는 원리를 직접 확인하기",
-      "tags": ["등가원리", "일반상대성", "중력렌즈", "빛"],
+      "tags": [
+        "등가원리",
+        "일반상대성",
+        "중력렌즈",
+        "빛"
+      ],
       "emoji": "🛗",
       "demoUrl": "./simul/일반상대론.html",
       "thumbnailUrl": "./thumb_nail/일반상대론.png",
-      "curriculumIds": ["12역학01-06"],
+      "curriculumIds": [
+        "12역학01-06"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
     },
@@ -358,11 +544,18 @@
       "title": "블랙홀과 중력렌즈",
       "category": "상대성",
       "description": "공간이 휘어진다! 블랙홀이 만드는 아인슈타인 링과 중력 렌즈 효과",
-      "tags": ["일반상대성", "블랙홀", "중력렌즈", "빛"],
+      "tags": [
+        "일반상대성",
+        "블랙홀",
+        "중력렌즈",
+        "빛"
+      ],
       "emoji": "🕳️",
       "demoUrl": "./simul/중력렌즈.html",
       "thumbnailUrl": "./thumb_nail/중력렌즈.png",
-      "curriculumIds": ["12역학01-06"],
+      "curriculumIds": [
+        "12역학01-06"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
     },
@@ -371,11 +564,17 @@
       "title": "맥스웰의 도깨비",
       "category": "열",
       "description": "엔트로피를 거슬러라! 뜨거운 공과 차가운 공을 분류하는 미니 게임",
-      "tags": ["엔트로피", "열역학", "게임"],
+      "tags": [
+        "엔트로피",
+        "열역학",
+        "게임"
+      ],
       "emoji": "😈",
       "demoUrl": "./simul/멕스웰 도깨비.html",
       "thumbnailUrl": "./thumb_nail/멕스웰 도깨비.png",
-      "curriculumIds": ["12역학02-05"],
+      "curriculumIds": [
+        "12역학02-05"
+      ],
       "difficulty": "medium",
       "estimatedTime": 15
     },
@@ -384,11 +583,18 @@
       "title": "극한의 번지점프",
       "category": "역학",
       "description": "가속도와 변위의 관계! 바닥에 닿지도, 기절하지도 않게 k값을 조절하라",
-      "tags": ["단진동", "용수철", "가속도", "G-Force"],
+      "tags": [
+        "단진동",
+        "용수철",
+        "가속도",
+        "G-Force"
+      ],
       "emoji": "🪂",
       "demoUrl": "./simul/번지점프.html",
       "thumbnailUrl": "./thumb_nail/번지점프.png",
-      "curriculumIds": ["12역학03-01"],
+      "curriculumIds": [
+        "12역학03-01"
+      ],
       "difficulty": "medium",
       "estimatedTime": 15
     },
@@ -397,11 +603,16 @@
       "title": "도플러효과",
       "category": "파동/광학",
       "description": "음원의 속도와 진동수에 따른 관측 음원의 변화 관찰하기",
-      "tags": ["도플러", "파동"],
+      "tags": [
+        "도플러",
+        "파동"
+      ],
       "emoji": "🎵",
       "demoUrl": "./simul/도플러효과.html",
       "thumbnailUrl": "./thumb_nail/도플러효과.png",
-      "curriculumIds": ["12역학03-03"],
+      "curriculumIds": [
+        "12역학03-03"
+      ],
       "difficulty": "medium",
       "estimatedTime": 15
     },
@@ -410,11 +621,17 @@
       "title": "로런츠 힘과 오로라",
       "category": "전자/반도체",
       "description": "자기장 속 전하의 원운동(F=qvB) 실험부터 태양풍이 만드는 오로라의 원리까지!",
-      "tags": ["로런츠힘", "자기장", "오로라"],
+      "tags": [
+        "로런츠힘",
+        "자기장",
+        "오로라"
+      ],
       "emoji": "🌌",
       "demoUrl": "./simul/로런츠 힘.html",
       "thumbnailUrl": "./thumb_nail/로런츠 힘.png",
-      "curriculumIds": ["12전자01-04"],
+      "curriculumIds": [
+        "12전자01-04"
+      ],
       "difficulty": "medium",
       "estimatedTime": 15
     },
@@ -423,11 +640,16 @@
       "title": "RLC 공명",
       "category": "전자/반도체",
       "description": "직렬 RLC 회로의 공명/위상·전류 변화 시각화하기",
-      "tags": ["회로", "공명"],
+      "tags": [
+        "회로",
+        "공명"
+      ],
       "emoji": "🔄",
       "demoUrl": "./simul/RLC 공명.html",
       "thumbnailUrl": "./thumb_nail/RLC회로.png",
-      "curriculumIds": ["12전자01-06"],
+      "curriculumIds": [
+        "12전자01-06"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
     },
@@ -436,11 +658,16 @@
       "title": "러더퍼드 알파입자 산란실험",
       "category": "시뮬레이션",
       "description": "러더퍼드의 알파입자 산란실험 확인하기",
-      "tags": ["산란", "쿨롱"],
+      "tags": [
+        "산란",
+        "쿨롱"
+      ],
       "emoji": "🧪",
       "demoUrl": "./simul/러더퍼드 알파입자 산란실험.html",
       "thumbnailUrl": "./thumb_nail/러더퍼드_산란실험.png",
-      "curriculumIds": ["12전자01-06"],
+      "curriculumIds": [
+        "12전자01-06"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
     },
@@ -449,24 +676,57 @@
       "title": "편광과 LCD",
       "category": "파동/광학",
       "description": "편광의 원리와 LCD의 원리 알아보기",
-      "tags": ["편광", "LCD"],
+      "tags": [
+        "편광",
+        "LCD"
+      ],
       "emoji": "🔭",
       "demoUrl": "./simul/편광과 LCD.html",
       "thumbnailUrl": "./thumb_nail/편광과 LCD.png",
-      "curriculumIds": ["12전자02-03"],
+      "curriculumIds": [
+        "12전자02-03"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
+    },
+    {
+      "id": "lens-aberrations",
+      "title": "렌즈와 수차",
+      "category": "파동/광학",
+      "description": "렌즈의 빛 번짐, 색 번짐, 가장자리 흐림, 격자 왜곡을 한 화면에서 비교하기",
+      "tags": [
+        "렌즈",
+        "수차",
+        "광학기기",
+        "왜곡"
+      ],
+      "emoji": "🔭",
+      "demoUrl": "./simul/렌즈와 수차.html",
+      "thumbnailUrl": "./thumb_nail/렌즈와_수차.svg",
+      "curriculumIds": [
+        "12전자02-02"
+      ],
+      "difficulty": "medium",
+      "estimatedTime": 15
     },
     {
       "id": "quantum-polarization",
       "title": "양자 편광",
       "category": "현대물리",
       "description": "단일 광자의 편광 측정과 필터 각도에 따른 통과 확률을 실험하기",
-      "tags": ["편광", "광자", "양자측정", "확률"],
+      "tags": [
+        "편광",
+        "광자",
+        "양자측정",
+        "확률"
+      ],
       "emoji": "🔭",
       "demoUrl": "./simul/양자 편광.html",
       "thumbnailUrl": "./thumb_nail/편광과 LCD.png",
-      "curriculumIds": ["12전자02-03", "12전자03-02"],
+      "curriculumIds": [
+        "12전자02-03",
+        "12전자03-02"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
     },
@@ -475,11 +735,16 @@
       "title": "광전효과",
       "category": "전자/반도체",
       "description": "파장/세기에 따른 광전자 방출과 임계 주파수 확인하기",
-      "tags": ["광자", "금속"],
+      "tags": [
+        "광자",
+        "금속"
+      ],
       "emoji": "📸",
       "demoUrl": "./simul/광전효과.html",
       "thumbnailUrl": "./thumb_nail/광전효과.png",
-      "curriculumIds": ["12전자02-04"],
+      "curriculumIds": [
+        "12전자02-04"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
     },
@@ -488,11 +753,16 @@
       "title": "발광 다이오드",
       "category": "전자/반도체",
       "description": "파장별 전압·밴드갭과 발광.",
-      "tags": ["LED", "밴드갭"],
+      "tags": [
+        "LED",
+        "밴드갭"
+      ],
       "emoji": "💡",
       "demoUrl": "./simul/발광 다이오드.html",
       "thumbnailUrl": "./thumb_nail/발광_다이오드.png",
-      "curriculumIds": ["12전자02-04"],
+      "curriculumIds": [
+        "12전자02-04"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
     },
@@ -501,11 +771,17 @@
       "title": "LASER",
       "category": "파동/광학",
       "description": "빛의 복제 공장! 유도 방출과 반전 분포로 만드는 강력한 빛",
-      "tags": ["레이저", "증폭", "유도방출"],
+      "tags": [
+        "레이저",
+        "증폭",
+        "유도방출"
+      ],
       "emoji": "🔦",
       "demoUrl": "./simul/레이저.html",
       "thumbnailUrl": "./thumb_nail/레이저.png",
-      "curriculumIds": ["12전자02-05"],
+      "curriculumIds": [
+        "12전자02-05"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
     },
@@ -514,11 +790,16 @@
       "title": "이중슬릿",
       "category": "파동/광학",
       "description": "이중슬릿을 통과한 전자의 간섭무늬 확인하기",
-      "tags": ["슬릿", "간섭"],
+      "tags": [
+        "슬릿",
+        "간섭"
+      ],
       "emoji": "〰️",
       "demoUrl": "./simul/이중슬릿.html",
       "thumbnailUrl": "./thumb_nail/이중슬릿.png",
-      "curriculumIds": ["12전자03-01"],
+      "curriculumIds": [
+        "12전자03-01"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
     },
@@ -527,11 +808,17 @@
       "title": "양자 터널링",
       "category": "현대물리",
       "description": "입자가 벽을 뚫고 지나간다? 양자 터널 효과와 확률 파동",
-      "tags": ["양자역학", "터널링", "파동함수"],
+      "tags": [
+        "양자역학",
+        "터널링",
+        "파동함수"
+      ],
       "emoji": "👻",
       "demoUrl": "./simul/양자 터널링.html",
       "thumbnailUrl": "./thumb_nail/양자_터널링.png",
-      "curriculumIds": ["12전자03-03"],
+      "curriculumIds": [
+        "12전자03-03"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
     },
@@ -540,7 +827,12 @@
       "title": "양자거품",
       "category": "현대물리",
       "description": "미시적 시공간의 요동을 3D 격자로 관찰하고 관측 효과를 시각화하기",
-      "tags": ["양자요동", "시공간", "관측", "3D"],
+      "tags": [
+        "양자요동",
+        "시공간",
+        "관측",
+        "3D"
+      ],
       "emoji": "🫧",
       "demoUrl": "./simul/양자거품.html",
       "thumbnailUrl": "./thumb_nail/양자_터널링.png",
@@ -553,11 +845,16 @@
       "title": "원자모형",
       "category": "시뮬레이션",
       "description": "보어/오비탈/전자구름 개념 확인하기",
-      "tags": ["원자", "준위"],
+      "tags": [
+        "원자",
+        "준위"
+      ],
       "emoji": "🧬",
       "demoUrl": "./simul/원자모형.html",
       "thumbnailUrl": "./thumb_nail/원자모형.png",
-      "curriculumIds": ["12전자03-04"],
+      "curriculumIds": [
+        "12전자03-04"
+      ],
       "difficulty": "medium",
       "estimatedTime": 15
     },
@@ -566,11 +863,17 @@
       "title": "나만의 별 키우기",
       "category": "현대물리",
       "description": "가스를 모아 별을 점화하라! 중력과 압력의 균형(정역학 평형) 게임",
-      "tags": ["핵융합", "별의진화", "흑체복사"],
+      "tags": [
+        "핵융합",
+        "별의진화",
+        "흑체복사"
+      ],
       "emoji": "🌟",
       "demoUrl": "./simul/별의 탄생.html",
       "thumbnailUrl": "./thumb_nail/별의 탄생.png",
-      "curriculumIds": ["12전자03-05"],
+      "curriculumIds": [
+        "12전자03-05"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
     },
@@ -579,11 +882,17 @@
       "title": "슈테른-게를라흐 실험",
       "category": "현대물리",
       "description": "고전 예측과 실제 관측 비교! 자기장 속 은 원자의 스핀 양자화",
-      "tags": ["스핀", "양자화", "자기모멘트"],
+      "tags": [
+        "스핀",
+        "양자화",
+        "자기모멘트"
+      ],
       "emoji": "🧲",
       "demoUrl": "./simul/슈테른-게를라흐 실험.html",
       "thumbnailUrl": "./thumb_nail/슈테른-게를라흐 실험.png",
-      "curriculumIds": ["12전자03-02"],
+      "curriculumIds": [
+        "12전자03-02"
+      ],
       "difficulty": "hard",
       "estimatedTime": 20
     },
@@ -592,11 +901,18 @@
       "title": "슈테른-게를라흐 전자시점",
       "category": "현대물리",
       "description": "전자의 시점에서 비균일 자기장 속 스핀 편향과 측정 결과를 따라가 보기",
-      "tags": ["스핀", "전자", "양자화", "자기장"],
+      "tags": [
+        "스핀",
+        "전자",
+        "양자화",
+        "자기장"
+      ],
       "emoji": "🧲",
       "demoUrl": "./simul/슈테른-게를라흐 전자시점.html",
       "thumbnailUrl": "./thumb_nail/슈테른-게를라흐 실험.png",
-      "curriculumIds": ["12전자03-02"],
+      "curriculumIds": [
+        "12전자03-02"
+      ],
       "difficulty": "hard",
       "estimatedTime": 15
     },
@@ -605,7 +921,10 @@
       "title": "베타붕괴",
       "category": "현대물리",
       "description": "베타붕괴 현상 알아보기",
-      "tags": ["베타붕괴", "입자물리"],
+      "tags": [
+        "베타붕괴",
+        "입자물리"
+      ],
       "emoji": "☢️",
       "demoUrl": "./simul/베타붕괴.html",
       "thumbnailUrl": "./thumb_nail/베타붕괴.png",
@@ -618,7 +937,10 @@
       "title": "입자가속기",
       "category": "현대물리",
       "description": "입자가속기 속에서 생기는 표준모형 알아보기",
-      "tags": ["입자가속기", "입자물리"],
+      "tags": [
+        "입자가속기",
+        "입자물리"
+      ],
       "emoji": "🌀",
       "demoUrl": "./simul/입자가속기.html",
       "thumbnailUrl": "./thumb_nail/입자가속기.png",
@@ -631,7 +953,12 @@
       "title": "음성 분석",
       "category": "파동/광학",
       "description": "녹음한 음성을 주파수 성분으로 분석하고 복원하기",
-      "tags": ["소리", "FFT", "진동수", "파형"],
+      "tags": [
+        "소리",
+        "FFT",
+        "진동수",
+        "파형"
+      ],
       "emoji": "🎤",
       "demoUrl": "./simul/음성분석.html",
       "thumbnailUrl": "./thumb_nail/음성분석.png",

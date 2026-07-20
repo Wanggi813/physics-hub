@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+
   <meta charset="UTF-8"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; media-src 'self' https: blob: data:; worker-src 'self' blob:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-  <title>물리 퀴즈 챌린지</title>
+  <title>물리 퀴즈</title>
   <script src="../config.js"></script>
   <script src="https://unpkg.com/p5@1.9.0/lib/p5.min.js"></script>
   <style>
@@ -818,10 +821,11 @@ new p5(sk => {
                 'E = hf','F = kq₁q₂/r²'];
   const IMG_SRCS = [
     '../image/역학시물이.png',
-    '../image/전기시물이.png',
+    '../image/전자기시물이.png',
     '../image/열시물이.png',
     '../image/양자시물이.png',
-    '../image/상대시물이.png',
+    '../image/특수상대시물이.png',
+    '../image/일반상대시물이.png',
   ];
   let blobs=[], dots=[], eqItems=[], chars=[], wt=0;
   let imgs=[];
@@ -1251,10 +1255,10 @@ function updateComboHUD(){
 
 const MASCOT_MAP = {
   '역학':       '../image/역학시물이.png',
-  '파동/광학':  '../image/전기시물이.png',
-  '전자/반도체':'../image/전기시물이.png',
+  '파동/광학':  '../image/전자기시물이.png',
+  '전자/반도체':'../image/전자기시물이.png',
   '열역학':     '../image/열시물이.png',
-  '상대성':     '../image/상대시물이.png',
+  '상대성':     '../image/특수상대시물이.png',
   '현대물리':   '../image/양자시물이.png',
 };
 

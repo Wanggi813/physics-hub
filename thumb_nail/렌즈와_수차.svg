@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="렌즈와 수차 썸네일">
+  <defs>
+    <radialGradient id="bg" cx="52%" cy="45%" r="72%">
+      <stop offset="0%" stop-color="#18324f"/>
+      <stop offset="62%" stop-color="#07111f"/>
+      <stop offset="100%" stop-color="#030712"/>
+    </radialGradient>
+    <linearGradient id="lens" x1="0" x2="1">
+      <stop offset="0" stop-color="#38bdf8" stop-opacity=".12"/>
+      <stop offset=".5" stop-color="#e0f2fe" stop-opacity=".82"/>
+      <stop offset="1" stop-color="#38bdf8" stop-opacity=".12"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="640" height="360" fill="url(#bg)"/>
+  <g stroke="#16324d" stroke-width="1">
+    <path d="M0 290h640M0 250h640M0 210h640M0 170h640"/>
+    <path d="M80 360 220 0M180 360 320 0M280 360 420 0M380 360 520 0M480 360 620 0"/>
+  </g>
+  <line x1="40" y1="180" x2="600" y2="180" stroke="#94a3b8" stroke-opacity=".28" stroke-dasharray="7 8"/>
+  <path d="M320 58 C374 100 374 260 320 302 C266 260 266 100 320 58Z" fill="url(#lens)" stroke="#bae6fd" stroke-width="4"/>
+  <g fill="none" stroke-width="3" stroke-linecap="round" filter="url(#glow)">
+    <path d="M68 112 320 118 568 162" stroke="#ef4444" stroke-opacity=".85"/>
+    <path d="M68 145 320 146 568 177" stroke="#f59e0b" stroke-opacity=".9"/>
+    <path d="M68 180 320 180 568 190" stroke="#22c55e" stroke-opacity=".9"/>
+    <path d="M68 215 320 214 568 204" stroke="#38bdf8" stroke-opacity=".9"/>
+    <path d="M68 248 320 242 568 220" stroke="#3b82f6" stroke-opacity=".85"/>
+  </g>
+  <line x1="546" y1="72" x2="546" y2="290" stroke="#e5edf7" stroke-width="4" stroke-opacity=".75"/>
+  <g filter="url(#glow)">
+    <circle cx="568" cy="162" r="5" fill="#ef4444"/>
+    <circle cx="568" cy="177" r="5" fill="#f59e0b"/>
+    <circle cx="568" cy="190" r="5" fill="#22c55e"/>
+    <circle cx="568" cy="204" r="5" fill="#38bdf8"/>
+    <circle cx="568" cy="220" r="5" fill="#3b82f6"/>
+  </g>
+  <g transform="translate(34 26)">
+    <rect width="238" height="48" rx="12" fill="#0f172a" fill-opacity=".76" stroke="#334155"/>
+    <text x="18" y="31" fill="#e5edf7" font-family="Pretendard, system-ui, sans-serif" font-size="22" font-weight="800">렌즈와 수차</text>
+  </g>
+  <text x="392" y="320" fill="#94a3b8" font-family="Pretendard, system-ui, sans-serif" font-size="15" font-weight="700">spot diagram · distortion · chromatic blur</text>
+</svg>

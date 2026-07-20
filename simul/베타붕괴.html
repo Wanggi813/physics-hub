@@ -2,1056 +2,1057 @@
 <html lang="ko">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>베타 붕괴 시뮬레이션</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-    <style>
+
+ <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; media-src 'self' https: blob: data:; worker-src 'self' blob:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>베타붕괴</title>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+ <style>
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
-        :root {
-            --bg-color: #0B0C10;
-            --panel-bg: #1F2833;
-            --primary-text: #C5C6C7;
-            --accent-color: #66FCF1;
-            --accent-hover: #45A29E;
-            --graph-bg: #11151C;
-        }
+ :root {
+ --bg-color: #0B0C10;
+ --panel-bg: #1F2833;
+ --primary-text: #C5C6C7;
+ --accent-color: #66FCF1;
+ --accent-hover: #45A29E;
+ --graph-bg: #11151C;
+ }
 
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #000;
-            font-family: "Pretendard", 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
-            /* 화면 밖으로 넘치는 스크롤바 방지 */
-            color: var(--primary-text);
-        }
+ body {
+ margin: 0;
+ padding: 0;
+ background-color: #000;
+ font-family: "Pretendard", 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+ overflow: hidden;
+ /* 화면 밖으로 넘치는 스크롤바 방지 */
+ color: var(--primary-text);
+ }
 
-        #app-container {
-            background-color: var(--bg-color);
-            width: 100vw;
-            /* 기존 1000px을 지우고 화면 너비 100%로 변경! */
-            height: 100vh;
-            /* 화면 높이 100%로 변경! */
-            display: flex;
-            flex-direction: column;
-            border-radius: 0;
-            /* 전체화면이므로 둥근 모서리 제거 */
-        }
+ #app-container {
+ background-color: var(--bg-color);
+ width: 100vw;
+ /* 기존 1000px을 지우고 화면 너비 100%로 변경! */
+ height: 100vh;
+ /* 화면 높이 100%로 변경! */
+ display: flex;
+ flex-direction: column;
+ border-radius: 0;
+ /* 전체화면이므로 둥근 모서리 제거 */
+ }
 
-        #simulation-container {
-            flex-grow: 1;
-            min-height: 0;
-            width: 100%;
-            position: relative;
-            /* 👇 우주 성운(Nebula) 느낌의 깊이 있는 방사형 그라데이션 배경 추가 */
-            background: radial-gradient(ellipse at center, #1B1533 0%, #0B0C10 50%, #000000 100%);
-        }
+ #simulation-container {
+ flex-grow: 1;
+ min-height: 0;
+ width: 100%;
+ position: relative;
+ /* 우주 성운(Nebula) 느낌의 깊이 있는 방사형 그라데이션 배경 추가 */
+ background: radial-gradient(ellipse at center, #1B1533 0%, #0B0C10 50%, #000000 100%);
+ }
 
-        /* --- 세련된 컨트롤 패널 UI --- */
-        #control-panel {
-            background: linear-gradient(180deg, #171c28 0%, #0f121b 100%);
-            padding: 20px 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            border-top: 1px solid rgba(102, 252, 241, 0.3);
-            box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.5);
-            z-index: 10;
-        }
+ /* --- 세련된 컨트롤 패널 UI --- */
+ #control-panel {
+ background: linear-gradient(180deg, #171c28 0%, #0f121b 100%);
+ padding: 20px 30px;
+ display: flex;
+ flex-direction: column;
+ gap: 20px;
+ border-top: 1px solid rgba(102, 252, 241, 0.3);
+ box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.5);
+ z-index: 10;
+ }
 
-        .row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-        }
+ .row {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ gap: 20px;
+ }
 
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: rgba(255, 255, 255, 0.03);
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
+ .control-group {
+ display: flex;
+ align-items: center;
+ gap: 12px;
+ background: rgba(255, 255, 255, 0.03);
+ padding: 8px 16px;
+ border-radius: 8px;
+ border: 1px solid rgba(255, 255, 255, 0.05);
+ }
 
-        /* 탭 및 버튼 스타일 고급화 */
-        .tabs {
-            display: flex;
-            gap: 8px;
-        }
+ /* 탭 및 버튼 스타일 고급화 */
+ .tabs {
+ display: flex;
+ gap: 8px;
+ }
 
-        button,
-        select {
-            background-color: rgba(31, 40, 51, 0.8);
-            color: var(--primary-text);
-            border: 1px solid rgba(102, 252, 241, 0.4);
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
+ button,
+ select {
+ background-color: rgba(31, 40, 51, 0.8);
+ color: var(--primary-text);
+ border: 1px solid rgba(102, 252, 241, 0.4);
+ padding: 8px 16px;
+ border-radius: 6px;
+ cursor: pointer;
+ font-size: 13px;
+ font-weight: 600;
+ letter-spacing: 0.5px;
+ transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+ }
 
-        button:hover,
-        select:hover {
-            background-color: rgba(102, 252, 241, 0.15);
-            border-color: var(--accent-color);
-            transform: translateY(-1px);
-        }
+ button:hover,
+ select:hover {
+ background-color: rgba(102, 252, 241, 0.15);
+ border-color: var(--accent-color);
+ transform: translateY(-1px);
+ }
 
-        button.active {
-            background-color: var(--accent-color);
-            color: var(--bg-color);
-            box-shadow: 0 0 10px rgba(102, 252, 241, 0.4);
-        }
+ button.active {
+ background-color: var(--accent-color);
+ color: var(--bg-color);
+ box-shadow: 0 0 10px rgba(102, 252, 241, 0.4);
+ }
 
-        /* 아이콘 버튼용 특별 스타일 */
-        .icon-btn {
-            font-size: 16px;
-            padding: 6px 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+ /* 아이콘 버튼용 특별 스타일 */
+ .icon-btn {
+ font-size: 16px;
+ padding: 6px 12px;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ }
 
-        select {
-            outline: none;
-            appearance: none;
-            padding-right: 30px;
-        }
+ select {
+ outline: none;
+ appearance: none;
+ padding-right: 30px;
+ }
 
-        /* 슬라이더(Range) 트랙 예쁘게 꾸미기 */
-        .slider-container {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-grow: 1;
-            background: rgba(255, 255, 255, 0.03);
-            padding: 10px 20px;
-            border-radius: 8px;
-        }
+ /* 슬라이더(Range) 트랙 예쁘게 꾸미기 */
+ .slider-container {
+ display: flex;
+ align-items: center;
+ gap: 15px;
+ flex-grow: 1;
+ background: rgba(255, 255, 255, 0.03);
+ padding: 10px 20px;
+ border-radius: 8px;
+ }
 
-        input[type=range] {
-            -webkit-appearance: none;
-            flex-grow: 1;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            outline: none;
-        }
+ input[type=range] {
+ -webkit-appearance: none;
+ flex-grow: 1;
+ height: 6px;
+ background: rgba(255, 255, 255, 0.1);
+ border-radius: 3px;
+ outline: none;
+ }
 
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: var(--accent-color);
-            cursor: pointer;
-            box-shadow: 0 0 8px var(--accent-color);
-            transition: transform 0.1s;
-        }
+ input[type=range]::-webkit-slider-thumb {
+ -webkit-appearance: none;
+ width: 16px;
+ height: 16px;
+ border-radius: 50%;
+ background: var(--accent-color);
+ cursor: pointer;
+ box-shadow: 0 0 8px var(--accent-color);
+ transition: transform 0.1s;
+ }
 
-        input[type=range]::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-        }
+ input[type=range]::-webkit-slider-thumb:hover {
+ transform: scale(1.2);
+ }
 
-        .label {
-            font-size: 13px;
-            font-weight: 600;
-            color: #8e95a5;
-        }
-    </style>
+ .label {
+ font-size: 13px;
+ font-weight: 600;
+ color: #8e95a5;
+ }
+ </style>
 </head>
 
 <body>
 
-    <div id="app-container">
-        <div id="simulation-container"></div>
-        <div id="control-panel">
-            <div class="row">
-                <div class="tabs">
-                    <button id="tab-single" class="active">🔍 단일 원자</button>
-                    <button id="tab-multi">📊 다중 원자</button>
-                </div>
-
-                <div class="control-group">
-                    <span class="label">시간 제어:</span>
-                    <button id="btn-playpause" class="icon-btn">⏸️ 일시정지</button>
-                    <button id="btn-step" class="icon-btn" title="1프레임 이동 (정지 시 작동)">⏭️</button>
-                </div>
-
-                <div class="control-group">
-                    <span class="label">동위원소:</span>
-                    <select id="isotope-select">
-                        <option value="carbon14">탄소-14 (C-14)</option>
-                        <option value="tritium">삼중수소 (H-3)</option>
-                        <option value="custom">가상 원자 (Custom)</option>
-                    </select>
-                </div>
-
-                <div class="tabs">
-                    <button id="btn-add" style="display: none;">+ 원자 50개</button>
-                    <button id="btn-reset">🔄 초기화</button>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="slider-container">
-                    <span class="label">⏱️ 반감기 (짧게)</span>
-                    <input type="range" id="halflife-slider" min="50" max="1000" value="300">
-                    <span class="label">(길게)</span>
-                </div>
-            </div>
-            <div id="custom-atom-panel" class="row"
-                style="display: none; background: rgba(255,255,255,0.03); padding: 10px 20px; border-radius: 8px;">
-                <div class="slider-container" style="flex-grow: 1;">
-                    <div id="custom-info" class="label">Z = 4, N = 6</div>
-                    <span class="label">⚛️ 총 핵자수(A)</span>
-                    <input type="range" id="mass-slider" min="2" max="24" value="10">
-                    <span id="mass-val" class="label">10</span>
-                </div>
-
-                <div class="slider-container" style="flex-grow: 1;">
-                    <span class="label">⚖️ 중성자 비율</span>
-                    <input type="range" id="ratio-slider" min="0.1" max="0.9" step="0.05" value="0.6">
-                    <span id="ratio-val" class="label">0.60</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const ISOTOPE_DATA = {
-            'carbon14': {
-                p: 6, n: 8,
-                parentName: 'C-14', parentSymbol: 'C', parentZ: 6, parentA: 14,
-                daughterName: 'N-14', daughterSymbol: 'N', daughterZ: 7, daughterA: 14
-            },
-            'tritium': {
-                p: 1, n: 2,
-                parentName: 'H-3', parentSymbol: 'H', parentZ: 1, parentA: 3,
-                daughterName: 'He-3', daughterSymbol: 'He', daughterZ: 2, daughterA: 3
-            },
-            'custom': {
-                p: 4, n: 6,
-                parentName: 'Be-10', parentSymbol: 'Be', parentZ: 4, parentA: 10,
-                daughterName: 'B-10', daughterSymbol: 'B', daughterZ: 5, daughterA: 10
-            }
-        };
-
-        const ELEMENT_SYMBOLS = [
-            null,
-            'H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne',
-            'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca',
-            'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe'
-        ];
-
-        const ELEMENT_NAMES = [
-            null,
-            'Hydrogen', 'Helium', 'Lithium', 'Beryllium', 'Boron',
-            'Carbon', 'Nitrogen', 'Oxygen', 'Fluorine', 'Neon',
-            'Sodium', 'Magnesium', 'Aluminum', 'Silicon', 'Phosphorus',
-            'Sulfur', 'Chlorine', 'Argon', 'Potassium', 'Calcium',
-            'Scandium', 'Titanium', 'Vanadium', 'Chromium', 'Manganese', 'Iron'
-        ];
-
-        // 모드 상태 변수 추가
-        let currentMode = 'single'; // 'single' 또는 'multi'
-        let currentIsotope = 'carbon14';
-        let nuclei = [];
-        let wBosons = [];
-        let decayParticles = [];
-
-        let SIM_WIDTH, SIM_HEIGHT;
-        let DASHBOARD_WIDTH = 340; // 우측 대시보드가 차지할 고정 너비
-        let stars = []; // 배경 별가루 배열
-
-        let isPlaying = true; // 재생 상태
-        let stepRequested = false; // 1프레임 이동 트리거
-
-        let timeElapsed = 0;
-        let startNucleiCount = 0;
-        let graphData = [];
-        let halfLifeFrames = 300;
-        let sliderHalfLife;
-
-        class Nucleus {
-            // isSingle 파라미터 추가
-            constructor(x, y, type, isSingle = false) {
-                this.pos = createVector(x, y);
-                this.vel = createVector(0, 0);
-                this.type = type;
-                this.isDecayed = false;
-                this.isSingle = isSingle;
-                this.nucleons = [];
-                this.baseRotation = random(TWO_PI);
-
-                let data = ISOTOPE_DATA[type];
-                if (type === 'custom') {
-                    this.currentA = data.parentA;
-                    this.currentZ = data.parentZ;
-                    this.currentN = data.n;
-                    this.startZ = data.parentZ;
-                    this.targetZ = getFinalStableZ(this.currentA);
-                    this.decayCount = 0;
-                }
-                let numProtons = data.p;
-                let numNeutrons = data.n;
-                let totalNucleons = numProtons + numNeutrons;
-
-                // 단일 모드일 경우 크기를 3.5배 키움
-                let scaleFactor = this.isSingle ? 3.5 : 1;
-                let nucleonSize = map(totalNucleons, 3, 14, 14, 11) * scaleFactor;
-
-                let types = [];
-                let nCnt = numNeutrons;
-                let pCnt = numProtons;
-                for (let i = 0; i < totalNucleons; i++) {
-                    if (nCnt > 0 && pCnt > 0) {
-                        if (i % (Math.floor(numNeutrons / numProtons) + 1) === 0) {
-                            types.push('proton'); pCnt--;
-                        } else {
-                            types.push('neutron'); nCnt--;
-                        }
-                    } else if (nCnt > 0) {
-                        types.push('neutron'); nCnt--;
-                    } else {
-                        types.push('proton'); pCnt--;
-                    }
-                }
-
-                const GOLDEN_ANGLE = 2.39996;
-                const SPREAD_FACTOR = (nucleonSize * 0.45);
-
-                for (let i = 0; i < totalNucleons; i++) {
-                    let angle = i * GOLDEN_ANGLE;
-                    let radius = SPREAD_FACTOR * Math.sqrt(i);
-                    let offset = createVector(cos(angle) * radius, sin(angle) * radius);
-
-                    let isNeutron = types[i] === 'neutron';
-                    this.nucleons.push({
-                        offset: offset,
-                        type: types[i],
-                        color: isNeutron ? color('#4A90E2') : color('#E94B3C'),
-                        size: nucleonSize
-                    });
-                }
-                if (!this.isSingle) {
-                    this.vel = p5.Vector.random2D().mult(random(0.1, 0.4));
-                }
-            }
-
-            update(halfLife) {
-                // 속도 적용 및 화면 밖 이탈 방지
-                this.pos.add(this.vel);
-                this.vel.mult(0.95); // 붕괴 반발력(Recoil) 감쇠
-
-                // 무중력 상태를 연출하기 위해 속도가 0.2 이하로 떨어지지 않게 유지
-                if (!this.isSingle && this.vel.mag() < 0.2) {
-                    this.vel.setMag(0.2);
-                }
-
-                // 벽에 부딪히면 튕겨 나오도록 안전장치 강화
-                let margin = 30;
-                if (this.pos.x < margin) { this.pos.x = margin; this.vel.x *= -1; }
-                if (this.pos.x > SIM_WIDTH - margin) { this.pos.x = SIM_WIDTH - margin; this.vel.x *= -1; }
-                if (this.pos.y < margin) { this.pos.y = margin; this.vel.y *= -1; }
-                if (this.pos.y > SIM_HEIGHT - margin) { this.pos.y = SIM_HEIGHT - margin; this.vel.y *= -1; }
-
-                if (this.type === 'custom') {
-                    if (this.currentZ >= this.targetZ || this.currentN <= 0) return;
-                } else {
-                    if (this.isDecayed) return;
-                }
-
-                let effectiveHalfLife = halfLife;
-
-                if (this.type === 'custom') {
-                    effectiveHalfLife = max(20, halfLife * 0.15);
-                }
-
-                let decayProbability = Math.LN2 / effectiveHalfLife;
-                if (random() < decayProbability) {
-                    this.triggerDecay();
-                }
-            }
-
-            triggerDecay() {
-                let neutrons = this.nucleons.filter(n => n.type === 'neutron');
-                if (neutrons.length === 0) return;
-
-                // custom이 아닐 때만 1회 붕괴로 종료
-                if (this.type !== 'custom') {
-                    this.isDecayed = true;
-                } else {
-                    if (this.currentN <= 0 || this.currentZ >= this.targetZ) return;
-
-                    this.currentN -= 1;
-                    this.currentZ += 1;
-                    this.decayCount += 1;
-
-                    if (this.currentZ >= this.targetZ || this.currentN <= 0) {
-                        this.isDecayed = true;
-                    }
-                }
-
-                let target = random(neutrons);
-                target.type = 'proton';
-                target.color = color('#E94B3C');
-
-                let rotatedOffset = target.offset.copy().rotate(this.baseRotation);
-                let emitPos = p5.Vector.add(this.pos, rotatedOffset);
-
-                let wBoson = new W_Boson(emitPos.x, emitPos.y, this.isSingle);
-                wBosons.push(wBoson);
-
-                let recoilMult = this.isSingle ? -0.1 : -0.3;
-                let recoilForce = wBoson.vel.copy().mult(recoilMult);
-                this.vel.add(recoilForce);
-            }
-
-            display() {
-                push();
-                translate(this.pos.x, this.pos.y);
-
-                // 진동 효과 (양자 요동)
-                if (!this.isDecayed && this.vel.mag() < 0.1) {
-                    let jitter = this.isSingle ? 0.8 : 0.3;
-                    translate(random(-jitter, jitter), random(-jitter, jitter));
-                }
-
-                // 1. 포도송이 그리기 (덩어리 전체 회전 적용)
-                push();
-                rotate(this.baseRotation);
-                noStroke();
-                if (this.isSingle) {
-                    drawingContext.shadowBlur = 10;
-                    drawingContext.shadowColor = 'rgba(255, 255, 255, 0.2)';
-                } else {
-                    drawingContext.shadowBlur = 0;
-                }
-
-                for (let n of this.nucleons) {
-                    fill(n.color);
-                    circle(n.offset.x, n.offset.y, n.size);
-                }
-                pop(); // 회전 상태 해제 (글자는 똑바로 서 있게 됨)
-
-                // 2. 동위원소 이름표 (표준 표기법) 중앙 배치
-                let symbol, a, z;
-
-                if (this.type === 'custom') {
-                    let info = getElementInfo(this.currentZ);
-                    symbol = info.symbol;
-                    a = this.currentA;
-                    z = this.currentZ;
-                } else {
-                    let data = ISOTOPE_DATA[this.type];
-                    symbol = this.isDecayed ? data.daughterSymbol : data.parentSymbol;
-                    a = this.isDecayed ? data.daughterA : data.parentA;
-                    z = this.isDecayed ? data.daughterZ : data.parentZ;
-                }
-
-                drawingContext.shadowBlur = 0;
-
-                // 단일 모드와 다중 모드일 때의 글자 크기 설정 (입자 덩어리 직경의 약 70% 수준)
-                let mainSize = this.isSingle ? 90 : 24;
-                let subSize = this.isSingle ? 40 : 11;
-                let yOffset = this.isSingle ? 28 : 8;
-
-                // 텍스트 가독성을 위한 검은색 두꺼운 테두리 설정 (구슬 색상에 묻히지 않게)
-                stroke(0);
-                strokeWeight(this.isSingle ? 6 : 2.5);
-                strokeJoin(ROUND); // 테두리를 둥글게 처리하여 깔끔하게
-                fill(255); // 기본 흰색 글씨
-
-                // 붕괴 후에는 살짝 붉은빛이 도는 텍스트로 변경하여 상태 변화를 시각적으로 강조
-                if (this.isDecayed) {
-                    fill('#FF8A80');
-                }
-
-                // 중앙 원소 기호 (C, N 등) 렌더링
-                textSize(mainSize);
-                textAlign(CENTER, CENTER);
-                // p5.js 특성상 CENTER 정렬 시 미세하게 아래로 쳐지는 현상 보정
-                let textYFix = this.isSingle ? -6 : -2;
-                text(symbol, 0, textYFix);
-
-                // 질량수와 원자번호를 원소 기호 너비에 맞춰서 동적으로 왼쪽 배치
-                let symbolWidth = textWidth(symbol);
-                let xOffset = -(symbolWidth / 2) - (this.isSingle ? 6 : 2);
-
-                textSize(subSize);
-                textAlign(RIGHT, CENTER);
-                text(a, xOffset, textYFix - yOffset); // 상단: 질량수 (A)
-                text(z, xOffset, textYFix + yOffset); // 하단: 원자번호 (Z)
-
-                pop();
-            }
-        }
-
-        class W_Boson {
-            constructor(x, y, isSingle = false) {
-                this.pos = createVector(x, y);
-                this.isSingle = isSingle;
-                let speed = isSingle ? 3 : 2;
-                this.vel = p5.Vector.random2D().mult(speed);
-                // 단일 모드일 때 수명을 늘려 관찰 시간을 확보
-                this.lifespan = isSingle ? 30 : 15;
-                this.maxLifespan = this.lifespan;
-            }
-
-            update() {
-                this.pos.add(this.vel);
-                this.lifespan--;
-                if (this.lifespan === 0) this.decayIntoParticles();
-            }
-
-            decayIntoParticles() {
-                let baseAngle = this.vel.heading();
-                let electronSpeed = random(3, 8);
-                let neutrinoSpeed = 10 - electronSpeed;
-
-                // 단일 모드일 때 입자 속도를 살짝 늦춰 궤적을 잘 보이게 함
-                if (this.isSingle) {
-                    electronSpeed *= 0.7;
-                    neutrinoSpeed *= 0.7;
-                }
-
-                decayParticles.push(new SubatomicParticle(this.pos.x, this.pos.y, 'electron', baseAngle + random(0.5, 1.5), electronSpeed, this.isSingle));
-                decayParticles.push(new SubatomicParticle(this.pos.x, this.pos.y, 'antineutrino', baseAngle - random(0.5, 1.5), neutrinoSpeed, this.isSingle));
-            }
-
-            display() {
-                push();
-                let alpha = map(this.lifespan, 0, this.maxLifespan, 0, 255);
-                fill(180, 0, 255, alpha);
-                noStroke();
-                drawingContext.shadowBlur = 15;
-                drawingContext.shadowColor = 'rgba(180, 0, 255, 1)';
-                let size = this.isSingle ? 12 : 8;
-                circle(this.pos.x, this.pos.y, size);
-
-                if (this.isSingle) {
-                    fill(255, alpha);
-                    textSize(14);
-                    textAlign(CENTER, CENTER);
-                    drawingContext.shadowBlur = 0;
-                    text("W⁻", this.pos.x, this.pos.y - 15);
-                }
-                pop();
-            }
-        }
-
-        class SubatomicParticle {
-            constructor(x, y, type, angle, speed, isSingle = false) {
-                this.pos = createVector(x, y);
-                this.vel = p5.Vector.fromAngle(angle).mult(speed);
-                this.type = type;
-                this.isSingle = isSingle;
-                this.history = [];
-                this.color = type === 'electron' ? color('#F4D03F') : color('#58D68D');
-                this.label = type === 'electron' ? 'e⁻' : 'ν̄ₑ';
-            }
-
-            update() {
-                this.history.push(this.pos.copy());
-                let tailLength = this.isSingle ? 20 : 10;
-                if (this.history.length > tailLength) this.history.shift();
-                this.pos.add(this.vel);
-            }
-
-            display() {
-                push();
-                noFill();
-                strokeWeight(this.isSingle ? 3 : 2);
-                for (let i = 0; i < this.history.length - 1; i++) {
-                    let alpha = map(i, 0, this.history.length, 0, 255);
-                    let c = color(this.color);
-                    c.setAlpha(alpha);
-                    stroke(c);
-                    line(this.history[i].x, this.history[i].y, this.history[i + 1].x, this.history[i + 1].y);
-                }
-
-                noStroke();
-                fill(this.color);
-                drawingContext.shadowBlur = 10;
-                drawingContext.shadowColor = this.color.toString();
-                let size = this.isSingle ? 8 : 5;
-                circle(this.pos.x, this.pos.y, size);
-
-                if (this.isSingle) {
-                    fill(255);
-                    textSize(12);
-                    textAlign(LEFT, CENTER);
-                    drawingContext.shadowBlur = 0;
-                    text(this.label, this.pos.x + 10, this.pos.y);
-                }
-                pop();
-            }
-
-            isOffScreen() {
-                return (this.pos.x < -50 || this.pos.x > SIM_WIDTH + 50 || this.pos.y < -50 || this.pos.y > SIM_HEIGHT + 50);
-            }
-        }
-
-        function setup() {
-            // 브라우저 창 전체 너비(windowWidth)에서 하단 패널 높이를 뺀 만큼 캔버스 생성
-            let cpHeight = document.getElementById('control-panel').offsetHeight;
-            let canvas = createCanvas(windowWidth, windowHeight - cpHeight);
-            canvas.parent('simulation-container');
-
-
-            SIM_WIDTH = width - DASHBOARD_WIDTH;
-            SIM_HEIGHT = height;
-            sliderHalfLife = document.getElementById('halflife-slider');
-
-            // 🌌 다양한 별 색상 (백색, 청백색, 황색, 적색, 보라색)
-            let starColors = ['#FFFFFF', '#B6DDF0', '#F0E6B6', '#FFD1B3', '#D4B3FF'];
-
-            // 우주 배경을 위한 별 300개 생성
-            for (let i = 0; i < 300; i++) {
-                stars.push({
-                    x: random(width),
-                    y: random(height),
-                    size: random(0.5, 2.5),
-                    alpha: random(50, 255),
-                    color: random(starColors),      // 색상 부여
-                    vx: random(-0.05, 0.05),        // X축 은은한 이동 속도
-                    vy: random(-0.05, 0.05)         // Y축 은은한 이동 속도
-                });
-            }
-
-            document.getElementById('tab-single').addEventListener('click', () => setMode('single'));
-            document.getElementById('tab-multi').addEventListener('click', () => setMode('multi'));
-            let massSlider = document.getElementById('mass-slider');
-            let ratioSlider = document.getElementById('ratio-slider');
-            let massVal = document.getElementById('mass-val');
-            let ratioVal = document.getElementById('ratio-val');
-
-            function updateCustomAtom() {
-                let A = parseInt(massSlider.value);
-                let ratio = parseFloat(ratioSlider.value);
-
-                let n = Math.round(A * ratio);
-                let p = A - n;
-
-                if (p < 1) { p = 1; n = A - 1; }
-                if (n < 1) { n = 1; p = A - 1; }
-
-                const parentInfo = getElementInfo(p);
-                const daughterInfo = getElementInfo(p + 1);
-
-                massVal.innerText = A;
-                ratioVal.innerText = ratio.toFixed(2);
-
-                ISOTOPE_DATA['custom'].p = p;
-                ISOTOPE_DATA['custom'].n = n;
-
-                ISOTOPE_DATA['custom'].parentA = A;
-                ISOTOPE_DATA['custom'].parentZ = p;
-                ISOTOPE_DATA['custom'].daughterA = A;
-                ISOTOPE_DATA['custom'].daughterZ = p + 1;
-
-                ISOTOPE_DATA['custom'].parentSymbol = parentInfo.symbol;
-                ISOTOPE_DATA['custom'].daughterSymbol = daughterInfo.symbol;
-                ISOTOPE_DATA['custom'].parentName = `${parentInfo.symbol}-${A}`;
-                ISOTOPE_DATA['custom'].daughterName = `${daughterInfo.symbol}-${A}`;
-
-
-
-                if (currentIsotope === 'custom') initSimulation();
-            }
-            massSlider.addEventListener('input', updateCustomAtom);
-            ratioSlider.addEventListener('input', updateCustomAtom);
-
-            // 동위원소 선택 드롭다운 로직 (커스텀 패널 표시/숨김)
-            document.getElementById('isotope-select').addEventListener('change', (e) => {
-                currentIsotope = e.target.value;
-
-                const customPanel = document.getElementById('custom-atom-panel');
-                customPanel.style.display = (currentIsotope === 'custom') ? 'flex' : 'none';
-
-                updateCanvasSize();
-                initSimulation();
-            });
-
-            document.getElementById('btn-reset').addEventListener('click', initSimulation);
-            document.getElementById('btn-add').addEventListener('click', () => {
-                if (currentMode === 'multi') {
-                    for (let i = 0; i < 50; i++) addRandomNucleus();
-                    resetGraph();
-                }
-            });
-            // [기능 추가] 재생 & 일시정지 버튼 로직
-            document.getElementById('btn-playpause').addEventListener('click', () => {
-                isPlaying = !isPlaying;
-                document.getElementById('btn-playpause').innerHTML = isPlaying ? "⏸️ 일시정지" : "▶️ 재생";
-                document.getElementById('btn-playpause').classList.toggle('active', !isPlaying);
-            });
-
-            // [기능 추가] 1프레임 스텝 이동 로직
-            document.getElementById('btn-step').addEventListener('click', () => {
-                if (!isPlaying) stepRequested = true;
-            });
-            initSimulation();
-        }
-
-        function getElementInfo(z) {
-            return {
-                symbol: ELEMENT_SYMBOLS[z] || `E${z}`,
-                name: ELEMENT_NAMES[z] || `Element-${z}`
-            };
-        }
-
-        function updateCanvasSize() {
-            let cpHeight = document.getElementById('control-panel').offsetHeight;
-            resizeCanvas(windowWidth, windowHeight - cpHeight);
-            SIM_WIDTH = width - DASHBOARD_WIDTH;
-            SIM_HEIGHT = height;
-        }
-
-        function updateCanvasSize() {
-            let cpHeight = document.getElementById('control-panel').offsetHeight;
-            resizeCanvas(windowWidth, windowHeight - cpHeight);
-            SIM_WIDTH = width - DASHBOARD_WIDTH;
-            SIM_HEIGHT = height;
-        }
-
-        // 창 크기 조절 시 캔버스 자동 대응
-        function windowResized() {
-            updateCanvasSize();
-        }
-
-        function setMode(mode) {
-            currentMode = mode;
-            document.getElementById('tab-single').classList.toggle('active', mode === 'single');
-            document.getElementById('tab-multi').classList.toggle('active', mode === 'multi');
-
-            // 다중 모드일 때만 '원자 추가' 버튼 표시
-            document.getElementById('btn-add').style.display = mode === 'multi' ? 'block' : 'none';
-            initSimulation();
-        }
-
-        function getFinalStableZ(A) {
-            return Math.round(A / 2);
-        }
-
-
-        function draw() {
-            clear();
-            // 반짝이며 이동하는 우주 별 배경 렌더링
-            noStroke();
-            for (let star of stars) {
-                // 우주 유영 (미세 이동)
-                star.x += star.vx;
-                star.y += star.vy;
-
-                // 화면 밖으로 나가면 반대편에서 나타나도록 처리 (무한한 우주 연출)
-                if(star.x < 0) star.x = width;
-                if(star.x > width) star.x = 0;
-                if(star.y < 0) star.y = height;
-                if(star.y > height) star.y = 0;
-
-                let twinkle = star.alpha + sin(frameCount * 0.05 + star.x) * 50;
-                
-                // 크기가 1.5 이상인 별은 은은한 빛 번짐(Glow) 효과 추가
-                if (star.size > 1.5) {
-                    drawingContext.shadowBlur = 6;
-                    drawingContext.shadowColor = star.color;
-                } else {
-                    drawingContext.shadowBlur = 0;
-                }
-
-                let c = color(star.color);
-                c.setAlpha(twinkle);
-                fill(c);
-                circle(star.x, star.y, star.size);
-            }
-            drawingContext.shadowBlur = 0; // 그림자 리셋 (다른 객체에 영향 안 가도록)
-
-            // --- 물리 엔진 업데이트 (재생 중이거나 스텝 버튼을 눌렀을 때만 작동) ---
-            if (isPlaying || stepRequested) {
-                halfLifeFrames = parseInt(sliderHalfLife.value);
-                timeElapsed++;
-
-                for (let n of nuclei) n.update(halfLifeFrames);
-                for (let i = wBosons.length - 1; i >= 0; i--) {
-                    wBosons[i].update();
-                    if (wBosons[i].lifespan <= 0) wBosons.splice(i, 1);
-                }
-                for (let i = decayParticles.length - 1; i >= 0; i--) {
-                    decayParticles[i].update();
-                    if (decayParticles[i].isOffScreen()) decayParticles.splice(i, 1);
-                }
-            }
-
-            // --- 렌더링 (화면에 그리는 것은 정지 상태라도 항상 수행) ---
-            push();
-            for (let n of nuclei) n.display();
-            for (let w of wBosons) w.display();
-            for (let p of decayParticles) p.display();
-            pop();
-
-            stroke('#1F2833');
-            strokeWeight(2);
-            line(SIM_WIDTH, 0, SIM_WIDTH, height);
-
-            drawDashboard();
-
-            stepRequested = false; // 프레임 스텝 초기화
-        }
-
-        function initSimulation() {
-            nuclei = [];
-            wBosons = [];
-            decayParticles = [];
-
-            if (currentMode === 'single') {
-                // 단일 원자 모드: 캔버스 정중앙에 거대한 원자 1개 배치
-                nuclei.push(new Nucleus(SIM_WIDTH / 2, SIM_HEIGHT / 2, currentIsotope, true));
-            } else {
-                // 다중 원자 모드: 50개 흩뿌리기
-                for (let i = 0; i < 50; i++) addRandomNucleus();
-            }
-
-            // 👈 원자 배치가 모두 끝난 후 마지막에 그래프와 카운트를 초기화합니다!
-            resetGraph();
-        }
-
-        function addRandomNucleus() {
-            let x = random(40, SIM_WIDTH - 40);
-            let y = random(40, SIM_HEIGHT - 40);
-            nuclei.push(new Nucleus(x, y, currentIsotope, false));
-        }
-
-        function resetGraph() {
-            timeElapsed = 0;
-            graphData = [];
-            startNucleiCount = nuclei.length;
-        }
-
-        function drawDashboard() {
-            let dashX = SIM_WIDTH + 20;
-            let dashW = width - SIM_WIDTH - 40;
-            let data = ISOTOPE_DATA[currentIsotope];
-
-            drawingContext.shadowBlur = 0;
-
-            if (currentMode === 'single') {
-                // --- 단일 모드 대시보드 ---
-                fill(255);
-                noStroke();
-                textSize(20);
-                textAlign(LEFT, TOP);
-                text("단일 원자 붕괴 분석", dashX, 20);
-
-                let targetNucleus = nuclei[0];
-                let isDecayed = false;
-
-                if (targetNucleus) {
-                    if (currentIsotope === 'custom') {
-                        isDecayed = (targetNucleus.currentZ >= targetNucleus.targetZ || targetNucleus.currentN <= 0);
-                    } else {
-                        isDecayed = targetNucleus.isDecayed;
-                    }
-                }
-
-                textSize(15);
-                fill(isDecayed ? '#E94B3C' : '#4A90E2');
-                text(`상태: ${isDecayed ? '붕괴 완료 (Decayed)' : '대기 중 (Waiting...)'}`, dashX, 55);
-
-                fill(255);
-                textSize(13);
-                if (currentIsotope === 'custom' && nuclei[0]) {
-                    let cur = nuclei[0];
-                    let currentInfo = getElementInfo(cur.currentZ);
-                    let finalInfo = getElementInfo(cur.targetZ);
-
-                    text(`현재: ${currentInfo.symbol}-${cur.currentA}  →  목표: ${finalInfo.symbol}-${cur.currentA}`, dashX, 80);
-                }
-                // [기능 3] 시간에 따른 붕괴 누적 확률 게이지
-                let prob;
-
-                if (currentIsotope === 'custom' && targetNucleus) {
-                    let totalSteps = Math.max(1, targetNucleus.targetZ - targetNucleus.startZ);
-                    let doneSteps = targetNucleus.currentZ - targetNucleus.startZ;
-                    prob = constrain(doneSteps / totalSteps, 0, 1);
-                } else {
-                    prob = isDecayed ? 1 : 1 - Math.pow(0.5, timeElapsed / halfLifeFrames);
-                }
-
-                fill(255);
-                textAlign(LEFT, TOP);
-                let gaugeLabel = "시간에 따른 붕괴 누적 확률:";
-                if (currentIsotope === 'custom') {
-                    gaugeLabel = "연쇄 붕괴 진행도:";
-                }
-                text(gaugeLabel, dashX, 115);
-                fill('#11151C');
-                stroke('#1F2833');
-                rect(dashX, 135, dashW, 20, 10);
-
-                noStroke();
-                let fillWidth = map(prob, 0, 1, 0, dashW);
-                let probColor = lerpColor(color('#4A90E2'), color('#E94B3C'), prob);
-                fill(probColor);
-                rect(dashX, 135, fillWidth, 20, 10);
-
-                fill(255);
-                textAlign(CENTER, CENTER);
-                text(`${(prob * 100).toFixed(1)}%`, dashX + dashW / 2, 145);
-
-                // [기능 1] 질량-에너지 등가원리 차트
-                textAlign(LEFT, TOP);
-                fill(255);
-                text("에너지 보존 (질량-에너지 등가원리):", dashX, 180);
-
-                let chartY = 210;
-                let chartH = 130;
-                let barW = 60;
-                let gap = 80;
-                let bar1X = dashX + 30;
-                let bar2X = bar1X + barW + gap;
-
-                stroke(100);
-                strokeWeight(1);
-                line(dashX, chartY + chartH, dashX + dashW, chartY + chartH);
-
-                noStroke();
-                fill('#4A90E2');
-                rect(bar1X, chartY, barW, chartH);
-                fill(255);
-                textAlign(CENTER, BOTTOM);
-                text("붕괴 전", bar1X + barW / 2, chartY - 5);
-
-                if (isDecayed) {
-                    let h1 = chartH * 0.85;
-                    fill('#E94B3C');
-                    rect(bar2X, chartY + chartH - h1, barW, h1);
-
-                    let h2 = chartH * 0.05;
-                    fill('#F4D03F');
-                    rect(bar2X, chartY + chartH - h1 - h2, barW, h2);
-
-                    let h3 = chartH * 0.10;
-                    fill('#58D68D');
-                    rect(bar2X, chartY + chartH - h1 - h2 - h3, barW, h3);
-
-                    fill(255);
-                    text("붕괴 후", bar2X + barW / 2, chartY - 5);
-
-                    textAlign(LEFT, CENTER);
-                    textSize(11);
-                    fill('#58D68D'); text("운동 에너지", bar2X + barW + 10, chartY + 10);
-                    fill('#F4D03F'); text("전자 질량", bar2X + barW + 10, chartY + 25);
-                    fill('#E94B3C'); text("자원소 질량", bar2X + barW + 10, chartY + chartH / 2);
-                } else {
-                    stroke(100);
-                    drawingContext.setLineDash([4, 4]);
-                    noFill();
-                    rect(bar2X, chartY, barW, chartH);
-                    drawingContext.setLineDash([]);
-
-                    noStroke();
-                    fill(150);
-                    text("붕괴 후", bar2X + barW / 2, chartY - 5);
-                    textAlign(CENTER, CENTER);
-                    textSize(20);
-                    text("?", bar2X + barW / 2, chartY + chartH / 2);
-                }
-            } else {
-                // --- 다중 모드 대시보드 (기존 반감기 그래프 복구) ---
-                let total = nuclei.length;
-                let decayed = nuclei.filter(n => n.isDecayed).length;
-                let parentCount = total - decayed;
-
-                if ((isPlaying || stepRequested) && timeElapsed % 5 === 0 && total > 0) {
-                    graphData.push({ t: timeElapsed, count: parentCount });
-                }
-
-                fill(255);
-                noStroke();
-                textSize(20);
-                textAlign(LEFT, TOP);
-                text("Decay Statistics", dashX, 20);
-
-                textSize(14);
-                fill('#4A90E2');
-                text(`모원소 (${data.parentName}): ${parentCount}`, dashX, 55);
-                fill('#E94B3C');
-                text(`자원소 (${data.daughterName}): ${decayed}`, dashX, 75);
-
-                let graphY = 130;
-                let graphH = 200;
-
-                fill('#11151C');
-                stroke('#1F2833');
-                rect(dashX, graphY, dashW, graphH, 5);
-
-                if (startNucleiCount > 0) {
-                    noFill();
-                    stroke(100);
-                    strokeWeight(1);
-                    beginShape();
-                    for (let t = 0; t <= dashW; t += 5) {
-                        let simulatedTime = map(t, 0, dashW, 0, halfLifeFrames * 3);
-                        let theoreticalCount = startNucleiCount * Math.pow(0.5, simulatedTime / halfLifeFrames);
-                        let px = dashX + t;
-                        let py = map(theoreticalCount, 0, startNucleiCount, graphY + graphH, graphY);
-                        vertex(px, py);
-                    }
-                    endShape();
-
-                    noFill();
-                    stroke('#4A90E2');
-                    strokeWeight(2);
-                    beginShape();
-                    for (let i = 0; i < graphData.length; i++) {
-                        let pt = graphData[i];
-                        let displayMaxTime = halfLifeFrames * 3;
-                        let px = dashX + map(pt.t, 0, displayMaxTime, 0, dashW);
-                        let py = map(pt.count, 0, startNucleiCount, graphY + graphH, graphY);
-
-                        if (px <= dashX + dashW) vertex(px, py);
-                    }
-                    endShape();
-
-                    stroke(255, 100);
-                    strokeWeight(1);
-                    drawingContext.setLineDash([5, 5]);
-                    let halfLifeX = dashX + map(halfLifeFrames, 0, halfLifeFrames * 3, 0, dashW);
-                    if (halfLifeX <= dashX + dashW) {
-                        line(halfLifeX, graphY, halfLifeX, graphY + graphH);
-                        noStroke();
-                        fill(255, 150);
-                        textAlign(CENTER, BOTTOM);
-                        text("T₁/₂", halfLifeX, graphY - 5);
-                    }
-                    drawingContext.setLineDash([]);
-                }
-            }
-
-            // --- 공통 범례 ---
-            let legendY = 370;
-            textAlign(LEFT, CENTER);
-            textSize(13);
-
-            fill(180, 0, 255); circle(dashX + 10, legendY, 10);
-            fill(255); text("W⁻ Boson", dashX + 25, legendY);
-
-            fill('#F4D03F'); circle(dashX + 110, legendY, 8);
-            fill(255); text("Electron (e⁻)", dashX + 125, legendY);
-
-            fill('#58D68D'); circle(dashX + 10, legendY + 30, 6);
-            fill(255); text("Antineutrino (ν̄ₑ)", dashX + 25, legendY + 30);
-        }
-    </script>
+ <div id="app-container">
+ <div id="simulation-container"></div>
+ <div id="control-panel">
+ <div class="row">
+ <div class="tabs">
+ <button id="tab-single" class="active">🔍 단일 원자</button>
+ <button id="tab-multi">📊 다중 원자</button>
+ </div>
+
+ <div class="control-group">
+ <span class="label">시간 제어:</span>
+ <button id="btn-playpause" class="icon-btn">⏸️ 일시정지</button>
+ <button id="btn-step" class="icon-btn" title="1프레임 이동 (정지 시 작동)">⏭️</button>
+ </div>
+
+ <div class="control-group">
+ <span class="label">동위원소:</span>
+ <select id="isotope-select">
+ <option value="carbon14">탄소-14 (C-14)</option>
+ <option value="tritium">삼중수소 (H-3)</option>
+ <option value="custom">가상 원자 (Custom)</option>
+ </select>
+ </div>
+
+ <div class="tabs">
+ <button id="btn-add" style="display: none;">+ 원자 50개</button>
+ <button id="btn-reset">🔄 초기화</button>
+ </div>
+ </div>
+
+ <div class="row">
+ <div class="slider-container">
+ <span class="label">⏱️ 반감기 (짧게)</span>
+ <input type="range" id="halflife-slider" min="50" max="1000" value="300">
+ <span class="label">(길게)</span>
+ </div>
+ </div>
+ <div id="custom-atom-panel" class="row"
+ style="display: none; background: rgba(255,255,255,0.03); padding: 10px 20px; border-radius: 8px;">
+ <div class="slider-container" style="flex-grow: 1;">
+ <div id="custom-info" class="label">Z = 4, N = 6</div>
+ <span class="label">⚛️ 총 핵자수(A)</span>
+ <input type="range" id="mass-slider" min="2" max="24" value="10">
+ <span id="mass-val" class="label">10</span>
+ </div>
+
+ <div class="slider-container" style="flex-grow: 1;">
+ <span class="label">⚖️ 중성자 비율</span>
+ <input type="range" id="ratio-slider" min="0.1" max="0.9" step="0.05" value="0.6">
+ <span id="ratio-val" class="label">0.60</span>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <script>
+ const ISOTOPE_DATA = {
+ 'carbon14': {
+ p: 6, n: 8,
+ parentName: 'C-14', parentSymbol: 'C', parentZ: 6, parentA: 14,
+ daughterName: 'N-14', daughterSymbol: 'N', daughterZ: 7, daughterA: 14
+ },
+ 'tritium': {
+ p: 1, n: 2,
+ parentName: 'H-3', parentSymbol: 'H', parentZ: 1, parentA: 3,
+ daughterName: 'He-3', daughterSymbol: 'He', daughterZ: 2, daughterA: 3
+ },
+ 'custom': {
+ p: 4, n: 6,
+ parentName: 'Be-10', parentSymbol: 'Be', parentZ: 4, parentA: 10,
+ daughterName: 'B-10', daughterSymbol: 'B', daughterZ: 5, daughterA: 10
+ }
+ };
+
+ const ELEMENT_SYMBOLS = [
+ null,
+ 'H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne',
+ 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca',
+ 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe'
+ ];
+
+ const ELEMENT_NAMES = [
+ null,
+ 'Hydrogen', 'Helium', 'Lithium', 'Beryllium', 'Boron',
+ 'Carbon', 'Nitrogen', 'Oxygen', 'Fluorine', 'Neon',
+ 'Sodium', 'Magnesium', 'Aluminum', 'Silicon', 'Phosphorus',
+ 'Sulfur', 'Chlorine', 'Argon', 'Potassium', 'Calcium',
+ 'Scandium', 'Titanium', 'Vanadium', 'Chromium', 'Manganese', 'Iron'
+ ];
+
+ // 모드 상태 변수 추가
+ let currentMode = 'single'; // 'single' 또는 'multi'
+ let currentIsotope = 'carbon14';
+ let nuclei = [];
+ let wBosons = [];
+ let decayParticles = [];
+
+ let SIM_WIDTH, SIM_HEIGHT;
+ let DASHBOARD_WIDTH = 340; // 우측 대시보드가 차지할 고정 너비
+ let stars = []; // 배경 별가루 배열
+
+ let isPlaying = true; // 재생 상태
+ let stepRequested = false; // 1프레임 이동 트리거
+
+ let timeElapsed = 0;
+ let startNucleiCount = 0;
+ let graphData = [];
+ let halfLifeFrames = 300;
+ let sliderHalfLife;
+
+ class Nucleus {
+ // isSingle 파라미터 추가
+ constructor(x, y, type, isSingle = false) {
+ this.pos = createVector(x, y);
+ this.vel = createVector(0, 0);
+ this.type = type;
+ this.isDecayed = false;
+ this.isSingle = isSingle;
+ this.nucleons = [];
+ this.baseRotation = random(TWO_PI);
+
+ let data = ISOTOPE_DATA[type];
+ if (type === 'custom') {
+ this.currentA = data.parentA;
+ this.currentZ = data.parentZ;
+ this.currentN = data.n;
+ this.startZ = data.parentZ;
+ this.targetZ = getFinalStableZ(this.currentA);
+ this.decayCount = 0;
+ }
+ let numProtons = data.p;
+ let numNeutrons = data.n;
+ let totalNucleons = numProtons + numNeutrons;
+
+ // 단일 모드일 경우 크기를 3.5배 키움
+ let scaleFactor = this.isSingle ? 3.5 : 1;
+ let nucleonSize = map(totalNucleons, 3, 14, 14, 11) * scaleFactor;
+
+ let types = [];
+ let nCnt = numNeutrons;
+ let pCnt = numProtons;
+ for (let i = 0; i < totalNucleons; i++) {
+ if (nCnt > 0 && pCnt > 0) {
+ if (i % (Math.floor(numNeutrons / numProtons) + 1) === 0) {
+ types.push('proton'); pCnt--;
+ } else {
+ types.push('neutron'); nCnt--;
+ }
+ } else if (nCnt > 0) {
+ types.push('neutron'); nCnt--;
+ } else {
+ types.push('proton'); pCnt--;
+ }
+ }
+
+ const GOLDEN_ANGLE = 2.39996;
+ const SPREAD_FACTOR = (nucleonSize * 0.45);
+
+ for (let i = 0; i < totalNucleons; i++) {
+ let angle = i * GOLDEN_ANGLE;
+ let radius = SPREAD_FACTOR * Math.sqrt(i);
+ let offset = createVector(cos(angle) * radius, sin(angle) * radius);
+
+ let isNeutron = types[i] === 'neutron';
+ this.nucleons.push({
+ offset: offset,
+ type: types[i],
+ color: isNeutron ? color('#4A90E2') : color('#E94B3C'),
+ size: nucleonSize
+ });
+ }
+ if (!this.isSingle) {
+ this.vel = p5.Vector.random2D().mult(random(0.1, 0.4));
+ }
+ }
+
+ update(halfLife) {
+ // 속도 적용 및 화면 밖 이탈 방지
+ this.pos.add(this.vel);
+ this.vel.mult(0.95); // 붕괴 반발력(Recoil) 감쇠
+
+ // 무중력 상태를 연출하기 위해 속도가 0.2 이하로 떨어지지 않게 유지
+ if (!this.isSingle && this.vel.mag() < 0.2) {
+ this.vel.setMag(0.2);
+ }
+
+ // 벽에 부딪히면 튕겨 나오도록 안전장치 강화
+ let margin = 30;
+ if (this.pos.x < margin) { this.pos.x = margin; this.vel.x *= -1; }
+ if (this.pos.x > SIM_WIDTH - margin) { this.pos.x = SIM_WIDTH - margin; this.vel.x *= -1; }
+ if (this.pos.y < margin) { this.pos.y = margin; this.vel.y *= -1; }
+ if (this.pos.y > SIM_HEIGHT - margin) { this.pos.y = SIM_HEIGHT - margin; this.vel.y *= -1; }
+
+ if (this.type === 'custom') {
+ if (this.currentZ >= this.targetZ || this.currentN <= 0) return;
+ } else {
+ if (this.isDecayed) return;
+ }
+
+ let effectiveHalfLife = halfLife;
+
+ if (this.type === 'custom') {
+ effectiveHalfLife = max(20, halfLife * 0.15);
+ }
+
+ let decayProbability = Math.LN2 / effectiveHalfLife;
+ if (random() < decayProbability) {
+ this.triggerDecay();
+ }
+ }
+
+ triggerDecay() {
+ let neutrons = this.nucleons.filter(n => n.type === 'neutron');
+ if (neutrons.length === 0) return;
+
+ // custom이 아닐 때만 1회 붕괴로 종료
+ if (this.type !== 'custom') {
+ this.isDecayed = true;
+ } else {
+ if (this.currentN <= 0 || this.currentZ >= this.targetZ) return;
+
+ this.currentN -= 1;
+ this.currentZ += 1;
+ this.decayCount += 1;
+
+ if (this.currentZ >= this.targetZ || this.currentN <= 0) {
+ this.isDecayed = true;
+ }
+ }
+
+ let target = random(neutrons);
+ target.type = 'proton';
+ target.color = color('#E94B3C');
+
+ let rotatedOffset = target.offset.copy().rotate(this.baseRotation);
+ let emitPos = p5.Vector.add(this.pos, rotatedOffset);
+
+ let wBoson = new W_Boson(emitPos.x, emitPos.y, this.isSingle);
+ wBosons.push(wBoson);
+
+ let recoilMult = this.isSingle ? -0.1 : -0.3;
+ let recoilForce = wBoson.vel.copy().mult(recoilMult);
+ this.vel.add(recoilForce);
+ }
+
+ display() {
+ push();
+ translate(this.pos.x, this.pos.y);
+
+ // 진동 효과 (양자 요동)
+ if (!this.isDecayed && this.vel.mag() < 0.1) {
+ let jitter = this.isSingle ? 0.8 : 0.3;
+ translate(random(-jitter, jitter), random(-jitter, jitter));
+ }
+
+ // 1. 포도송이 그리기 (덩어리 전체 회전 적용)
+ push();
+ rotate(this.baseRotation);
+ noStroke();
+ if (this.isSingle) {
+ drawingContext.shadowBlur = 10;
+ drawingContext.shadowColor = 'rgba(255, 255, 255, 0.2)';
+ } else {
+ drawingContext.shadowBlur = 0;
+ }
+
+ for (let n of this.nucleons) {
+ fill(n.color);
+ circle(n.offset.x, n.offset.y, n.size);
+ }
+ pop(); // 회전 상태 해제 (글자는 똑바로 서 있게 됨)
+
+ // 2. 동위원소 이름표 (표준 표기법) 중앙 배치
+ let symbol, a, z;
+
+ if (this.type === 'custom') {
+ let info = getElementInfo(this.currentZ);
+ symbol = info.symbol;
+ a = this.currentA;
+ z = this.currentZ;
+ } else {
+ let data = ISOTOPE_DATA[this.type];
+ symbol = this.isDecayed ? data.daughterSymbol : data.parentSymbol;
+ a = this.isDecayed ? data.daughterA : data.parentA;
+ z = this.isDecayed ? data.daughterZ : data.parentZ;
+ }
+
+ drawingContext.shadowBlur = 0;
+
+ // 단일 모드와 다중 모드일 때의 글자 크기 설정 (입자 덩어리 직경의 약 70% 수준)
+ let mainSize = this.isSingle ? 90 : 24;
+ let subSize = this.isSingle ? 40 : 11;
+ let yOffset = this.isSingle ? 28 : 8;
+
+ // 텍스트 가독성을 위한 검은색 두꺼운 테두리 설정 (구슬 색상에 묻히지 않게)
+ stroke(0);
+ strokeWeight(this.isSingle ? 6 : 2.5);
+ strokeJoin(ROUND); // 테두리를 둥글게 처리하여 깔끔하게
+ fill(255); // 기본 흰색 글씨
+
+ // 붕괴 후에는 살짝 붉은빛이 도는 텍스트로 변경하여 상태 변화를 시각적으로 강조
+ if (this.isDecayed) {
+ fill('#FF8A80');
+ }
+
+ // 중앙 원소 기호 (C, N 등) 렌더링
+ textSize(mainSize);
+ textAlign(CENTER, CENTER);
+ // p5.js 특성상 CENTER 정렬 시 미세하게 아래로 쳐지는 현상 보정
+ let textYFix = this.isSingle ? -6 : -2;
+ text(symbol, 0, textYFix);
+
+ // 질량수와 원자번호를 원소 기호 너비에 맞춰서 동적으로 왼쪽 배치
+ let symbolWidth = textWidth(symbol);
+ let xOffset = -(symbolWidth / 2) - (this.isSingle ? 6 : 2);
+
+ textSize(subSize);
+ textAlign(RIGHT, CENTER);
+ text(a, xOffset, textYFix - yOffset); // 상단: 질량수 (A)
+ text(z, xOffset, textYFix + yOffset); // 하단: 원자번호 (Z)
+
+ pop();
+ }
+ }
+
+ class W_Boson {
+ constructor(x, y, isSingle = false) {
+ this.pos = createVector(x, y);
+ this.isSingle = isSingle;
+ let speed = isSingle ? 3 : 2;
+ this.vel = p5.Vector.random2D().mult(speed);
+ // 단일 모드일 때 수명을 늘려 관찰 시간을 확보
+ this.lifespan = isSingle ? 30 : 15;
+ this.maxLifespan = this.lifespan;
+ }
+
+ update() {
+ this.pos.add(this.vel);
+ this.lifespan--;
+ if (this.lifespan === 0) this.decayIntoParticles();
+ }
+
+ decayIntoParticles() {
+ let baseAngle = this.vel.heading();
+ let electronSpeed = random(3, 8);
+ let neutrinoSpeed = 10 - electronSpeed;
+
+ // 단일 모드일 때 입자 속도를 살짝 늦춰 궤적을 잘 보이게 함
+ if (this.isSingle) {
+ electronSpeed *= 0.7;
+ neutrinoSpeed *= 0.7;
+ }
+
+ decayParticles.push(new SubatomicParticle(this.pos.x, this.pos.y, 'electron', baseAngle + random(0.5, 1.5), electronSpeed, this.isSingle));
+ decayParticles.push(new SubatomicParticle(this.pos.x, this.pos.y, 'antineutrino', baseAngle - random(0.5, 1.5), neutrinoSpeed, this.isSingle));
+ }
+
+ display() {
+ push();
+ let alpha = map(this.lifespan, 0, this.maxLifespan, 0, 255);
+ fill(180, 0, 255, alpha);
+ noStroke();
+ drawingContext.shadowBlur = 15;
+ drawingContext.shadowColor = 'rgba(180, 0, 255, 1)';
+ let size = this.isSingle ? 12 : 8;
+ circle(this.pos.x, this.pos.y, size);
+
+ if (this.isSingle) {
+ fill(255, alpha);
+ textSize(14);
+ textAlign(CENTER, CENTER);
+ drawingContext.shadowBlur = 0;
+ text("W⁻", this.pos.x, this.pos.y - 15);
+ }
+ pop();
+ }
+ }
+
+ class SubatomicParticle {
+ constructor(x, y, type, angle, speed, isSingle = false) {
+ this.pos = createVector(x, y);
+ this.vel = p5.Vector.fromAngle(angle).mult(speed);
+ this.type = type;
+ this.isSingle = isSingle;
+ this.history = [];
+ this.color = type === 'electron' ? color('#F4D03F') : color('#58D68D');
+ this.label = type === 'electron' ? 'e⁻' : 'ν̄ₑ';
+ }
+
+ update() {
+ this.history.push(this.pos.copy());
+ let tailLength = this.isSingle ? 20 : 10;
+ if (this.history.length > tailLength) this.history.shift();
+ this.pos.add(this.vel);
+ }
+
+ display() {
+ push();
+ noFill();
+ strokeWeight(this.isSingle ? 3 : 2);
+ for (let i = 0; i < this.history.length - 1; i++) {
+ let alpha = map(i, 0, this.history.length, 0, 255);
+ let c = color(this.color);
+ c.setAlpha(alpha);
+ stroke(c);
+ line(this.history[i].x, this.history[i].y, this.history[i + 1].x, this.history[i + 1].y);
+ }
+
+ noStroke();
+ fill(this.color);
+ drawingContext.shadowBlur = 10;
+ drawingContext.shadowColor = this.color.toString();
+ let size = this.isSingle ? 8 : 5;
+ circle(this.pos.x, this.pos.y, size);
+
+ if (this.isSingle) {
+ fill(255);
+ textSize(12);
+ textAlign(LEFT, CENTER);
+ drawingContext.shadowBlur = 0;
+ text(this.label, this.pos.x + 10, this.pos.y);
+ }
+ pop();
+ }
+
+ isOffScreen() {
+ return (this.pos.x < -50 || this.pos.x > SIM_WIDTH + 50 || this.pos.y < -50 || this.pos.y > SIM_HEIGHT + 50);
+ }
+ }
+
+ function setup() {
+ // 브라우저 창 전체 너비(windowWidth)에서 하단 패널 높이를 뺀 만큼 캔버스 생성
+ let cpHeight = document.getElementById('control-panel').offsetHeight;
+ let canvas = createCanvas(windowWidth, windowHeight - cpHeight);
+ canvas.parent('simulation-container');
+
+
+ SIM_WIDTH = width - DASHBOARD_WIDTH;
+ SIM_HEIGHT = height;
+ sliderHalfLife = document.getElementById('halflife-slider');
+
+ // 🌌 다양한 별 색상 (백색, 청백색, 황색, 적색, 보라색)
+ let starColors = ['#FFFFFF', '#B6DDF0', '#F0E6B6', '#FFD1B3', '#D4B3FF'];
+
+ // 우주 배경을 위한 별 300개 생성
+ for (let i = 0; i < 300; i++) {
+ stars.push({
+ x: random(width),
+ y: random(height),
+ size: random(0.5, 2.5),
+ alpha: random(50, 255),
+ color: random(starColors), // 색상 부여
+ vx: random(-0.05, 0.05), // X축 은은한 이동 속도
+ vy: random(-0.05, 0.05) // Y축 은은한 이동 속도
+ });
+ }
+
+ document.getElementById('tab-single').addEventListener('click', () => setMode('single'));
+ document.getElementById('tab-multi').addEventListener('click', () => setMode('multi'));
+ let massSlider = document.getElementById('mass-slider');
+ let ratioSlider = document.getElementById('ratio-slider');
+ let massVal = document.getElementById('mass-val');
+ let ratioVal = document.getElementById('ratio-val');
+
+ function updateCustomAtom() {
+ let A = parseInt(massSlider.value);
+ let ratio = parseFloat(ratioSlider.value);
+
+ let n = Math.round(A * ratio);
+ let p = A - n;
+
+ if (p < 1) { p = 1; n = A - 1; }
+ if (n < 1) { n = 1; p = A - 1; }
+
+ const parentInfo = getElementInfo(p);
+ const daughterInfo = getElementInfo(p + 1);
+
+ massVal.innerText = A;
+ ratioVal.innerText = ratio.toFixed(2);
+
+ ISOTOPE_DATA['custom'].p = p;
+ ISOTOPE_DATA['custom'].n = n;
+
+ ISOTOPE_DATA['custom'].parentA = A;
+ ISOTOPE_DATA['custom'].parentZ = p;
+ ISOTOPE_DATA['custom'].daughterA = A;
+ ISOTOPE_DATA['custom'].daughterZ = p + 1;
+
+ ISOTOPE_DATA['custom'].parentSymbol = parentInfo.symbol;
+ ISOTOPE_DATA['custom'].daughterSymbol = daughterInfo.symbol;
+ ISOTOPE_DATA['custom'].parentName = `${parentInfo.symbol}-${A}`;
+ ISOTOPE_DATA['custom'].daughterName = `${daughterInfo.symbol}-${A}`;
+
+ if (currentIsotope === 'custom') initSimulation();
+ }
+ massSlider.addEventListener('input', updateCustomAtom);
+ ratioSlider.addEventListener('input', updateCustomAtom);
+
+ // 동위원소 선택 드롭다운 로직 (커스텀 패널 표시/숨김)
+ document.getElementById('isotope-select').addEventListener('change', (e) => {
+ currentIsotope = e.target.value;
+
+ const customPanel = document.getElementById('custom-atom-panel');
+ customPanel.style.display = (currentIsotope === 'custom') ? 'flex' : 'none';
+
+ updateCanvasSize();
+ initSimulation();
+ });
+
+ document.getElementById('btn-reset').addEventListener('click', initSimulation);
+ document.getElementById('btn-add').addEventListener('click', () => {
+ if (currentMode === 'multi') {
+ for (let i = 0; i < 50; i++) addRandomNucleus();
+ resetGraph();
+ }
+ });
+ // [기능 추가] 재생 & 일시정지 버튼 로직
+ document.getElementById('btn-playpause').addEventListener('click', () => {
+ isPlaying = !isPlaying;
+ document.getElementById('btn-playpause').innerHTML = isPlaying ? "⏸️ 일시정지" : "▶️ 재생";
+ document.getElementById('btn-playpause').classList.toggle('active', !isPlaying);
+ });
+
+ // [기능 추가] 1프레임 스텝 이동 로직
+ document.getElementById('btn-step').addEventListener('click', () => {
+ if (!isPlaying) stepRequested = true;
+ });
+ initSimulation();
+ }
+
+ function getElementInfo(z) {
+ return {
+ symbol: ELEMENT_SYMBOLS[z] || `E${z}`,
+ name: ELEMENT_NAMES[z] || `Element-${z}`
+ };
+ }
+
+ function updateCanvasSize() {
+ let cpHeight = document.getElementById('control-panel').offsetHeight;
+ resizeCanvas(windowWidth, windowHeight - cpHeight);
+ SIM_WIDTH = width - DASHBOARD_WIDTH;
+ SIM_HEIGHT = height;
+ }
+
+ function updateCanvasSize() {
+ let cpHeight = document.getElementById('control-panel').offsetHeight;
+ resizeCanvas(windowWidth, windowHeight - cpHeight);
+ SIM_WIDTH = width - DASHBOARD_WIDTH;
+ SIM_HEIGHT = height;
+ }
+
+ // 창 크기 조절 시 캔버스 자동 대응
+ function windowResized() {
+ updateCanvasSize();
+ }
+
+ function setMode(mode) {
+ currentMode = mode;
+ document.getElementById('tab-single').classList.toggle('active', mode === 'single');
+ document.getElementById('tab-multi').classList.toggle('active', mode === 'multi');
+
+ // 다중 모드일 때만 '원자 추가' 버튼 표시
+ document.getElementById('btn-add').style.display = mode === 'multi' ? 'block' : 'none';
+ initSimulation();
+ }
+
+ function getFinalStableZ(A) {
+ return Math.round(A / 2);
+ }
+
+
+ function draw() {
+ clear();
+ // 반짝이며 이동하는 우주 별 배경 렌더링
+ noStroke();
+ for (let star of stars) {
+ // 우주 유영 (미세 이동)
+ star.x += star.vx;
+ star.y += star.vy;
+
+ // 화면 밖으로 나가면 반대편에서 나타나도록 처리 (무한한 우주 연출)
+ if(star.x < 0) star.x = width;
+ if(star.x > width) star.x = 0;
+ if(star.y < 0) star.y = height;
+ if(star.y > height) star.y = 0;
+
+ let twinkle = star.alpha + sin(frameCount * 0.05 + star.x) * 50;
+ 
+ // 크기가 1.5 이상인 별은 은은한 빛 번짐(Glow) 효과 추가
+ if (star.size > 1.5) {
+ drawingContext.shadowBlur = 6;
+ drawingContext.shadowColor = star.color;
+ } else {
+ drawingContext.shadowBlur = 0;
+ }
+
+ let c = color(star.color);
+ c.setAlpha(twinkle);
+ fill(c);
+ circle(star.x, star.y, star.size);
+ }
+ drawingContext.shadowBlur = 0; // 그림자 리셋 (다른 객체에 영향 안 가도록)
+
+ // --- 물리 엔진 업데이트 (재생 중이거나 스텝 버튼을 눌렀을 때만 작동) ---
+ if (isPlaying || stepRequested) {
+ halfLifeFrames = parseInt(sliderHalfLife.value);
+ timeElapsed++;
+
+ for (let n of nuclei) n.update(halfLifeFrames);
+ for (let i = wBosons.length - 1; i >= 0; i--) {
+ wBosons[i].update();
+ if (wBosons[i].lifespan <= 0) wBosons.splice(i, 1);
+ }
+ for (let i = decayParticles.length - 1; i >= 0; i--) {
+ decayParticles[i].update();
+ if (decayParticles[i].isOffScreen()) decayParticles.splice(i, 1);
+ }
+ }
+
+ // --- 렌더링 (화면에 그리는 것은 정지 상태라도 항상 수행) ---
+ push();
+ for (let n of nuclei) n.display();
+ for (let w of wBosons) w.display();
+ for (let p of decayParticles) p.display();
+ pop();
+
+ stroke('#1F2833');
+ strokeWeight(2);
+ line(SIM_WIDTH, 0, SIM_WIDTH, height);
+
+ drawDashboard();
+
+ stepRequested = false; // 프레임 스텝 초기화
+ }
+
+ function initSimulation() {
+ nuclei = [];
+ wBosons = [];
+ decayParticles = [];
+
+ if (currentMode === 'single') {
+ // 단일 원자 모드: 캔버스 정중앙에 거대한 원자 1개 배치
+ nuclei.push(new Nucleus(SIM_WIDTH / 2, SIM_HEIGHT / 2, currentIsotope, true));
+ } else {
+ // 다중 원자 모드: 50개 흩뿌리기
+ for (let i = 0; i < 50; i++) addRandomNucleus();
+ }
+
+ // 원자 배치가 모두 끝난 후 마지막에 그래프와 카운트를 초기화합니다!
+ resetGraph();
+ }
+
+ function addRandomNucleus() {
+ let x = random(40, SIM_WIDTH - 40);
+ let y = random(40, SIM_HEIGHT - 40);
+ nuclei.push(new Nucleus(x, y, currentIsotope, false));
+ }
+
+ function resetGraph() {
+ timeElapsed = 0;
+ graphData = [];
+ startNucleiCount = nuclei.length;
+ }
+
+ function drawDashboard() {
+ let dashX = SIM_WIDTH + 20;
+ let dashW = width - SIM_WIDTH - 40;
+ let data = ISOTOPE_DATA[currentIsotope];
+
+ drawingContext.shadowBlur = 0;
+
+ if (currentMode === 'single') {
+ // --- 단일 모드 대시보드 ---
+ fill(255);
+ noStroke();
+ textSize(20);
+ textAlign(LEFT, TOP);
+ text("단일 원자 붕괴 분석", dashX, 20);
+
+ let targetNucleus = nuclei[0];
+ let isDecayed = false;
+
+ if (targetNucleus) {
+ if (currentIsotope === 'custom') {
+ isDecayed = (targetNucleus.currentZ >= targetNucleus.targetZ || targetNucleus.currentN <= 0);
+ } else {
+ isDecayed = targetNucleus.isDecayed;
+ }
+ }
+
+ textSize(15);
+ fill(isDecayed ? '#E94B3C' : '#4A90E2');
+ text(`상태: ${isDecayed ? '붕괴 완료 (Decayed)' : '대기 중 (Waiting...)'}`, dashX, 55);
+
+ fill(255);
+ textSize(13);
+ if (currentIsotope === 'custom' && nuclei[0]) {
+ let cur = nuclei[0];
+ let currentInfo = getElementInfo(cur.currentZ);
+ let finalInfo = getElementInfo(cur.targetZ);
+
+ text(`현재: ${currentInfo.symbol}-${cur.currentA} → 목표: ${finalInfo.symbol}-${cur.currentA}`, dashX, 80);
+ }
+ // [기능 3] 시간에 따른 붕괴 누적 확률 게이지
+ let prob;
+
+ if (currentIsotope === 'custom' && targetNucleus) {
+ let totalSteps = Math.max(1, targetNucleus.targetZ - targetNucleus.startZ);
+ let doneSteps = targetNucleus.currentZ - targetNucleus.startZ;
+ prob = constrain(doneSteps / totalSteps, 0, 1);
+ } else {
+ prob = isDecayed ? 1 : 1 - Math.pow(0.5, timeElapsed / halfLifeFrames);
+ }
+
+ fill(255);
+ textAlign(LEFT, TOP);
+ let gaugeLabel = "시간에 따른 붕괴 누적 확률:";
+ if (currentIsotope === 'custom') {
+ gaugeLabel = "연쇄 붕괴 진행도:";
+ }
+ text(gaugeLabel, dashX, 115);
+ fill('#11151C');
+ stroke('#1F2833');
+ rect(dashX, 135, dashW, 20, 10);
+
+ noStroke();
+ let fillWidth = map(prob, 0, 1, 0, dashW);
+ let probColor = lerpColor(color('#4A90E2'), color('#E94B3C'), prob);
+ fill(probColor);
+ rect(dashX, 135, fillWidth, 20, 10);
+
+ fill(255);
+ textAlign(CENTER, CENTER);
+ text(`${(prob * 100).toFixed(1)}%`, dashX + dashW / 2, 145);
+
+ // [기능 1] 질량-에너지 등가원리 차트
+ textAlign(LEFT, TOP);
+ fill(255);
+ text("에너지 보존 (질량-에너지 등가원리):", dashX, 180);
+
+ let chartY = 210;
+ let chartH = 130;
+ let barW = 60;
+ let gap = 80;
+ let bar1X = dashX + 30;
+ let bar2X = bar1X + barW + gap;
+
+ stroke(100);
+ strokeWeight(1);
+ line(dashX, chartY + chartH, dashX + dashW, chartY + chartH);
+
+ noStroke();
+ fill('#4A90E2');
+ rect(bar1X, chartY, barW, chartH);
+ fill(255);
+ textAlign(CENTER, BOTTOM);
+ text("붕괴 전", bar1X + barW / 2, chartY - 5);
+
+ if (isDecayed) {
+ let h1 = chartH * 0.85;
+ fill('#E94B3C');
+ rect(bar2X, chartY + chartH - h1, barW, h1);
+
+ let h2 = chartH * 0.05;
+ fill('#F4D03F');
+ rect(bar2X, chartY + chartH - h1 - h2, barW, h2);
+
+ let h3 = chartH * 0.10;
+ fill('#58D68D');
+ rect(bar2X, chartY + chartH - h1 - h2 - h3, barW, h3);
+
+ fill(255);
+ text("붕괴 후", bar2X + barW / 2, chartY - 5);
+
+ textAlign(LEFT, CENTER);
+ textSize(11);
+ fill('#58D68D'); text("운동 에너지", bar2X + barW + 10, chartY + 10);
+ fill('#F4D03F'); text("전자 질량", bar2X + barW + 10, chartY + 25);
+ fill('#E94B3C'); text("자원소 질량", bar2X + barW + 10, chartY + chartH / 2);
+ } else {
+ stroke(100);
+ drawingContext.setLineDash([4, 4]);
+ noFill();
+ rect(bar2X, chartY, barW, chartH);
+ drawingContext.setLineDash([]);
+
+ noStroke();
+ fill(150);
+ text("붕괴 후", bar2X + barW / 2, chartY - 5);
+ textAlign(CENTER, CENTER);
+ textSize(20);
+ text("?", bar2X + barW / 2, chartY + chartH / 2);
+ }
+ } else {
+ // --- 다중 모드 대시보드 (기존 반감기 그래프 복구) ---
+ let total = nuclei.length;
+ let decayed = nuclei.filter(n => n.isDecayed).length;
+ let parentCount = total - decayed;
+
+ if ((isPlaying || stepRequested) && timeElapsed % 5 === 0 && total > 0) {
+ graphData.push({ t: timeElapsed, count: parentCount });
+ }
+
+ fill(255);
+ noStroke();
+ textSize(20);
+ textAlign(LEFT, TOP);
+ text("Decay Statistics", dashX, 20);
+
+ textSize(14);
+ fill('#4A90E2');
+ text(`모원소 (${data.parentName}): ${parentCount}`, dashX, 55);
+ fill('#E94B3C');
+ text(`자원소 (${data.daughterName}): ${decayed}`, dashX, 75);
+
+ let graphY = 130;
+ let graphH = 200;
+
+ fill('#11151C');
+ stroke('#1F2833');
+ rect(dashX, graphY, dashW, graphH, 5);
+
+ if (startNucleiCount > 0) {
+ noFill();
+ stroke(100);
+ strokeWeight(1);
+ beginShape();
+ for (let t = 0; t <= dashW; t += 5) {
+ let simulatedTime = map(t, 0, dashW, 0, halfLifeFrames * 3);
+ let theoreticalCount = startNucleiCount * Math.pow(0.5, simulatedTime / halfLifeFrames);
+ let px = dashX + t;
+ let py = map(theoreticalCount, 0, startNucleiCount, graphY + graphH, graphY);
+ vertex(px, py);
+ }
+ endShape();
+
+ noFill();
+ stroke('#4A90E2');
+ strokeWeight(2);
+ beginShape();
+ for (let i = 0; i < graphData.length; i++) {
+ let pt = graphData[i];
+ let displayMaxTime = halfLifeFrames * 3;
+ let px = dashX + map(pt.t, 0, displayMaxTime, 0, dashW);
+ let py = map(pt.count, 0, startNucleiCount, graphY + graphH, graphY);
+
+ if (px <= dashX + dashW) vertex(px, py);
+ }
+ endShape();
+
+ stroke(255, 100);
+ strokeWeight(1);
+ drawingContext.setLineDash([5, 5]);
+ let halfLifeX = dashX + map(halfLifeFrames, 0, halfLifeFrames * 3, 0, dashW);
+ if (halfLifeX <= dashX + dashW) {
+ line(halfLifeX, graphY, halfLifeX, graphY + graphH);
+ noStroke();
+ fill(255, 150);
+ textAlign(CENTER, BOTTOM);
+ text("T₁/₂", halfLifeX, graphY - 5);
+ }
+ drawingContext.setLineDash([]);
+ }
+ }
+
+ // --- 공통 범례 ---
+ let legendY = 370;
+ textAlign(LEFT, CENTER);
+ textSize(13);
+
+ fill(180, 0, 255); circle(dashX + 10, legendY, 10);
+ fill(255); text("W⁻ Boson", dashX + 25, legendY);
+
+ fill('#F4D03F'); circle(dashX + 110, legendY, 8);
+ fill(255); text("Electron (e⁻)", dashX + 125, legendY);
+
+ fill('#58D68D'); circle(dashX + 10, legendY + 30, 6);
+ fill(255); text("Antineutrino (ν̄ₑ)", dashX + 25, legendY + 30);
+ }
+ </script>
 </body>
 
 </html>

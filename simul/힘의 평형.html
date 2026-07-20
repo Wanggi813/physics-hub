@@ -2,9 +2,13 @@
 <html lang="ko">
 
 <head>
+
     <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; media-src 'self' https: blob: data:; worker-src 'self' blob:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>힘의 평형</title>
+    <meta name="description" content="여러 힘의 크기와 방향을 조절해 합력과 평형력을 벡터로 확인하는 힘의 평형 시뮬레이션입니다.">
     <style>
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
         body {
@@ -34,6 +38,8 @@
         canvas {
             border: 1px solid #ccc;
             background-color: #fdfdfd;
+            max-width: 100%;
+            height: auto;
         }
 
         #controls-wrapper {
@@ -151,6 +157,24 @@
         .result-components {
             font-size: 0.9em;
             color: #5f6368;
+        }
+
+        @media (max-width: 760px) {
+            body {
+                padding: 0;
+            }
+
+            #simulation-container {
+                width: 100%;
+                min-height: 100vh;
+                border-radius: 0;
+                padding: 16px;
+                gap: 18px;
+            }
+
+            #controls-wrapper {
+                width: 100%;
+            }
         }
     </style>
 </head>

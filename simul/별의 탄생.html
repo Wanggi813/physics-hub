@@ -2,7 +2,10 @@
 <html lang="ko">
 
 <head>
+
     <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; media-src 'self' https: blob: data:; worker-src 'self' blob:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>별의 탄생</title>
     <style>
@@ -369,7 +372,7 @@
         const circleTex = createCircleTexture();
         const beamTex = createBeamTexture();
 
-        // [수정됨] 별(Star) 쉐이더: 노이즈 강도를 0.3 -> 0.02로 대폭 낮춤
+        // 별(Star) 쉐이더: 노이즈 강도를 0.3 -> 0.02로 대폭 낮춤
         const starVertShader = `
             varying vec2 vUv; varying vec3 vNormal; uniform float time;
             // Simplex Noise Function (축약됨)
@@ -404,7 +407,7 @@
             void main() {
                 vUv = uv; vNormal = normal;
                 float noise = snoise(position * 0.8 + time * 0.3);
-                // [수정됨] noise * 0.3 에서 noise * 0.02로 변경하여 거의 정지한 듯한 구체 표현
+                // noise * 0.3 에서 noise * 0.02로 변경하여 거의 정지한 듯한 구체 표현
                 vec3 newPos = position + normal * noise * 0.02; 
                 gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
             }
@@ -604,7 +607,7 @@
                 vertexShader: `void main() { gl_Position = vec4(position, 1.0); }`,
                 uniforms: {
                     iTime: { value: 0 },
-                    // [수정됨] 픽셀 비율(dpr)을 곱해서 고해상도 모바일 화면 보정
+                    // 픽셀 비율(dpr)을 곱해서 고해상도 모바일 화면 보정
                     iResolution: { value: new THREE.Vector2(window.innerWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio()) },
                     uBhMass: { value: 2.0 }
                 },
@@ -617,7 +620,7 @@
             scene.add(objects.blackholePlane);
         }
 
-        // 3-6. 배경 별 (Background Star Field) - [수정됨]
+        // 3-6. 배경 별 (Background Star Field)
         {
             const bgStarCount = 10000;
             const bgGeo = new THREE.BufferGeometry();
@@ -708,10 +711,10 @@
             mass: document.getElementById('val-mass'),
             temp: document.getElementById('val-temp'),
             press: document.getElementById('val-press'),
-            gauge: document.getElementById('gauge-bar'),    // [추가] 게이지 바 연결
+            gauge: document.getElementById('gauge-bar'),    // 게이지 바 연결
             overlay: document.getElementById('msg-overlay'),
-            class: document.getElementById('val-class'),   // [추가] 분광형
-            fusion: document.getElementById('val-fusion'), // [추가] 핵융합
+            class: document.getElementById('val-class'),   // 분광형
+            fusion: document.getElementById('val-fusion'), // 핵융합
             title: document.getElementById('msg-title'),
             desc: document.getElementById('msg-desc'),
             btnInject: document.getElementById('btn-inject'),
@@ -788,7 +791,7 @@
         }
 
         // [이 함수 전체를 교체하세요]
-        // [수정됨] updateLogic 함수
+        // updateLogic 함수
         function updateLogic() {
             if (state.phase === 'ENDED') return;
 
@@ -915,7 +918,7 @@
             updateInfoPanel();
         }
 
-        // [수정됨] 정보 패널 업데이트 (철 생성 경고 로직 추가)
+        // 정보 패널 업데이트 (철 생성 경고 로직 추가)
         function updateInfoPanel() {
             let sType = getSpectralType(state.temp, state.mass);
             let tRatio = state.temp / 50000;

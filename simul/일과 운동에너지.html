@@ -2,373 +2,377 @@
 <html lang="ko">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>일과 운동에너지</title>
-    <style>
+
+ <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; media-src 'self' https: blob: data:; worker-src 'self' blob:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>일과 운동에너지</title>
+ <meta name="description" content="용수철이 한 일과 수레의 운동에너지 변화를 비교하며 일-에너지 정리를 확인하는 시뮬레이션입니다.">
+ <style>
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
-        body {
-            font-family: "Pretendard", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            background-color: #f0f2f5;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-        }
+ body {
+ font-family: "Pretendard", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+ display: flex;
+ justify-content: center;
+ align-items: center;
+ flex-direction: column;
+ background-color: #f0f2f5;
+ color: #333;
+ margin: 0;
+ padding: 20px;
+ }
 
-        .container {
-            width: 100%;
-            max-width: 800px;
-            background-color: #fff;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
+ .container {
+ width: 100%;
+ max-width: 800px;
+ background-color: #fff;
+ padding: 25px;
+ border-radius: 12px;
+ box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+ }
 
-        h1,
-        h2 {
-            text-align: center;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
+ h1,
+ h2 {
+ text-align: center;
+ color: #2c3e50;
+ border-bottom: 2px solid #3498db;
+ padding-bottom: 10px;
+ margin-bottom: 20px;
+ }
 
-        .control-panel,
-        .results-panel {
-            margin-bottom: 25px;
-        }
+ .control-panel,
+ .results-panel {
+ margin-bottom: 25px;
+ }
 
-        .slider-group {
-            margin-bottom: 20px;
-        }
+ .slider-group {
+ margin-bottom: 20px;
+ }
 
-        .slider-group label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
+ .slider-group label {
+ display: block;
+ font-weight: bold;
+ margin-bottom: 8px;
+ }
 
-        .slider-group input[type="range"] {
-            width: 100%;
-            cursor: pointer;
-        }
+ .slider-group input[type="range"] {
+ width: 100%;
+ cursor: pointer;
+ }
 
-        .slider-group span {
-            font-weight: bold;
-            color: #3498db;
-        }
+ .slider-group span {
+ font-weight: bold;
+ color: #3498db;
+ }
 
-        /* ✨ New style for the checkbox */
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #ecf0f1;
-            border-radius: 8px;
-        }
+ /* New style for the checkbox */
+ .checkbox-group {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ margin-top: 20px;
+ padding: 10px;
+ background-color: #ecf0f1;
+ border-radius: 8px;
+ }
 
-        .checkbox-group label {
-            margin-left: 8px;
-            font-weight: bold;
-            color: #34495e;
-            cursor: pointer;
-        }
+ .checkbox-group label {
+ margin-left: 8px;
+ font-weight: bold;
+ color: #34495e;
+ cursor: pointer;
+ }
 
-        .checkbox-group input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
+ .checkbox-group input[type="checkbox"] {
+ width: 18px;
+ height: 18px;
+ cursor: pointer;
+ }
 
-        #simulationCanvas {
-            background-color: #ecf0f1;
-            border: 1px solid #bdc3c7;
-            border-radius: 8px;
-            width: 100%;
-        }
+ #simulationCanvas {
+ background-color: #ecf0f1;
+ border: 1px solid #bdc3c7;
+ border-radius: 8px;
+ width: 100%;
+ }
 
-        button {
-            display: block;
-            width: 100%;
-            padding: 15px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #fff;
-            background-color: #27ae60;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
+ button {
+ display: block;
+ width: 100%;
+ padding: 15px;
+ font-size: 18px;
+ font-weight: bold;
+ color: #fff;
+ background-color: #27ae60;
+ border: none;
+ border-radius: 8px;
+ cursor: pointer;
+ transition: background-color 0.3s ease;
+ }
 
-        button:hover:not(:disabled) {
-            background-color: #229954;
-        }
+ button:hover:not(:disabled) {
+ background-color: #229954;
+ }
 
-        button:disabled {
-            background-color: #95a5a6;
-            cursor: not-allowed;
-        }
+ button:disabled {
+ background-color: #95a5a6;
+ cursor: not-allowed;
+ }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
+ table {
+ width: 100%;
+ border-collapse: collapse;
+ margin-top: 15px;
+ }
 
-        th,
-        td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: center;
-        }
+ th,
+ td {
+ border: 1px solid #ddd;
+ padding: 12px;
+ text-align: center;
+ }
 
-        th {
-            background-color: #3498db;
-            color: white;
-        }
+ th {
+ background-color: #3498db;
+ color: white;
+ }
 
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
+ tr:nth-child(even) {
+ background-color: #f2f2f2;
+ }
 
-        .conclusion {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #eaf5ff;
-            border-left: 5px solid #3498db;
-            font-size: 16px;
-        }
-    </style>
+ .conclusion {
+ margin-top: 20px;
+ padding: 15px;
+ background-color: #eaf5ff;
+ border-left: 5px solid #3498db;
+ font-size: 16px;
+ }
+ </style>
 </head>
 
 <body>
 
-    <div class="container">
-        <h1>🔬 물리 실험실: 모드 선택</h1>
+ <div class="container">
+ <h1>🔬 물리 실험실: 모드 선택</h1>
 
-        <section class="control-panel">
-            <h2>1. 실험 조건 설정</h2>
-            <div class="slider-group">
-                <label for="mass">수레 질량 (m): <span id="massValue">1.0</span> kg</label>
-                <input type="range" id="mass" min="0.5" max="2.0" value="1.0" step="0.1">
-            </div>
-            <div class="slider-group">
-                <label for="springConst">용수철 상수 (k): <span id="springConstValue">200</span> N/m</label>
-                <input type="range" id="springConst" min="100" max="500" value="200" step="10">
-            </div>
-            <div class="slider-group">
-                <label for="compression">용수철 압축 길이 (x): <span id="compressionValue">0.20</span> m</label>
-                <input type="range" id="compression" min="0.1" max="0.4" value="0.2" step="0.01">
-            </div>
+ <section class="control-panel">
+ <h2>1. 실험 조건 설정</h2>
+ <div class="slider-group">
+ <label for="mass">수레 질량 (m): <span id="massValue">1.0</span> kg</label>
+ <input type="range" id="mass" min="0.5" max="2.0" value="1.0" step="0.1">
+ </div>
+ <div class="slider-group">
+ <label for="springConst">용수철 상수 (k): <span id="springConstValue">200</span> N/m</label>
+ <input type="range" id="springConst" min="100" max="500" value="200" step="10">
+ </div>
+ <div class="slider-group">
+ <label for="compression">용수철 압축 길이 (x): <span id="compressionValue">0.20</span> m</label>
+ <input type="range" id="compression" min="0.1" max="0.4" value="0.2" step="0.01">
+ </div>
 
-            <div class="checkbox-group">
-                <input type="checkbox" id="idealModeCheckbox" checked>
-                <label for="idealModeCheckbox">마찰/공기저항 무시 (이상적인 모드)</label>
-            </div>
-        </section>
+ <div class="checkbox-group">
+ <input type="checkbox" id="idealModeCheckbox" checked>
+ <label for="idealModeCheckbox">마찰/공기저항 무시 (이상적인 모드)</label>
+ </div>
+ </section>
 
-        <section class="simulation-panel">
-            <h2>2. 시뮬레이션</h2>
-            <canvas id="simulationCanvas" width="800" height="200"></canvas>
-            <button id="runButton" style="margin-top: 15px;">🚀 실험 시작</button>
-        </section>
+ <section class="simulation-panel">
+ <h2>2. 시뮬레이션</h2>
+ <canvas id="simulationCanvas" width="800" height="200"></canvas>
+ <button id="runButton" style="margin-top: 15px;">🚀 실험 시작</button>
+ </section>
 
-        <section class="results-panel">
-            <h2>3. 실험 결과</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>구분</th>
-                        <th>계산/측정 값</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>용수철이 한 일 (W)</td>
-                        <td id="workDone">0 J</td>
-                    </tr>
-                    <tr>
-                        <td>분리 직후 속력 (v_f)</td>
-                        <td id="finalVelocity">0 m/s</td>
-                    </tr>
-                    <tr>
-                        <td>운동 에너지 변화량 (ΔK)</td>
-                        <td id="kineticEnergy">0 J</td>
-                    </tr>
-                    <tr>
-                        <td>오차율</td>
-                        <td id="errorPercentage">0 %</td>
-                    </tr>
-                </tbody>
-            </table>
-            <div class="conclusion">
-                <p id="conclusionText">💡 실험 조건을 설정하고 '실험 시작' 버튼을 눌러주세요.</p>
-            </div>
-        </section>
-    </div>
+ <section class="results-panel">
+ <h2>3. 실험 결과</h2>
+ <table>
+ <thead>
+ <tr>
+ <th>구분</th>
+ <th>계산/측정 값</th>
+ </tr>
+ </thead>
+ <tbody>
+ <tr>
+ <td>용수철이 한 일 (W)</td>
+ <td id="workDone">0 J</td>
+ </tr>
+ <tr>
+ <td>분리 직후 속력 (v_f)</td>
+ <td id="finalVelocity">0 m/s</td>
+ </tr>
+ <tr>
+ <td>운동 에너지 변화량 (ΔK)</td>
+ <td id="kineticEnergy">0 J</td>
+ </tr>
+ <tr>
+ <td>오차율</td>
+ <td id="errorPercentage">0 %</td>
+ </tr>
+ </tbody>
+ </table>
+ <div class="conclusion">
+ <p id="conclusionText">💡 실험 조건을 설정하고 '실험 시작' 버튼을 눌러주세요.</p>
+ </div>
+ </section>
+ </div>
 
-    <script>
-        // DOM Elements
-        const massSlider = document.getElementById('mass');
-        const springConstSlider = document.getElementById('springConst');
-        const compressionSlider = document.getElementById('compression');
-        const massValue = document.getElementById('massValue');
-        const springConstValue = document.getElementById('springConstValue');
-        const compressionValue = document.getElementById('compressionValue');
-        const runButton = document.getElementById('runButton');
-        const canvas = document.getElementById('simulationCanvas');
-        const ctx = canvas.getContext('2d');
-        const workDoneTd = document.getElementById('workDone');
-        const finalVelocityTd = document.getElementById('finalVelocity');
-        const kineticEnergyTd = document.getElementById('kineticEnergy');
-        const errorPercentageTd = document.getElementById('errorPercentage');
-        const conclusionText = document.getElementById('conclusionText');
+ <script>
+ // DOM Elements
+ const massSlider = document.getElementById('mass');
+ const springConstSlider = document.getElementById('springConst');
+ const compressionSlider = document.getElementById('compression');
+ const massValue = document.getElementById('massValue');
+ const springConstValue = document.getElementById('springConstValue');
+ const compressionValue = document.getElementById('compressionValue');
+ const runButton = document.getElementById('runButton');
+ const canvas = document.getElementById('simulationCanvas');
+ const ctx = canvas.getContext('2d');
+ const workDoneTd = document.getElementById('workDone');
+ const finalVelocityTd = document.getElementById('finalVelocity');
+ const kineticEnergyTd = document.getElementById('kineticEnergy');
+ const errorPercentageTd = document.getElementById('errorPercentage');
+ const conclusionText = document.getElementById('conclusionText');
 
-        // ✨ Get checkbox element
-        const idealModeCheckbox = document.getElementById('idealModeCheckbox');
+ // Get checkbox element
+ const idealModeCheckbox = document.getElementById('idealModeCheckbox');
 
-        // Constants
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        const baseCartWidth = 40;
-        const baseCartHeight = 25;
-        const wallWidth = 10;
-        const springRestEnd = 180;
-        const plateWidth = 8;
-        let animationFrameId;
+ // Constants
+ const canvasWidth = canvas.width;
+ const canvasHeight = canvas.height;
+ const baseCartWidth = 40;
+ const baseCartHeight = 25;
+ const wallWidth = 10;
+ const springRestEnd = 180;
+ const plateWidth = 8;
+ let animationFrameId;
 
-        // Functions for drawing (unchanged from previous version)
-        function updateValues() {
-            massValue.textContent = parseFloat(massSlider.value).toFixed(1);
-            springConstValue.textContent = springConstSlider.value;
-            compressionValue.textContent = parseFloat(compressionSlider.value).toFixed(2);
-            drawScene();
-        }
+ // Functions for drawing (unchanged from previous version)
+ function updateValues() {
+ massValue.textContent = parseFloat(massSlider.value).toFixed(1);
+ springConstValue.textContent = springConstSlider.value;
+ compressionValue.textContent = parseFloat(compressionSlider.value).toFixed(2);
+ drawScene();
+ }
 
-        function drawScene(cartX) {
-            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-            const m = parseFloat(massSlider.value), x_compress = parseFloat(compressionSlider.value);
-            const compressionPixels = x_compress * 200;
-            let isAttached = cartX === undefined || cartX < springRestEnd;
-            if (cartX === undefined) cartX = springRestEnd - compressionPixels;
-            const massScale = 0.8 + (m - 0.5) / 1.5 * 0.4;
-            const cartWidth = baseCartWidth * massScale, cartHeight = baseCartHeight * massScale;
-            const cartY = canvasHeight / 2 + (baseCartHeight * 1.2 - cartHeight);
-            ctx.fillStyle = '#7f8c8d'; ctx.fillRect(0, cartY + cartHeight, canvasWidth, 5);
-            ctx.fillStyle = '#34495e'; ctx.fillRect(0, 0, wallWidth, canvasHeight);
-            let springPlateX = isAttached ? cartX : springRestEnd;
-            drawSpringWithPlate(wallWidth, springPlateX, cartY + cartHeight / 2);
-            drawCart(cartX, cartY, cartWidth, cartHeight, m);
-        }
+ function drawScene(cartX) {
+ ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+ const m = parseFloat(massSlider.value), x_compress = parseFloat(compressionSlider.value);
+ const compressionPixels = x_compress * 200;
+ let isAttached = cartX === undefined || cartX < springRestEnd;
+ if (cartX === undefined) cartX = springRestEnd - compressionPixels;
+ const massScale = 0.8 + (m - 0.5) / 1.5 * 0.4;
+ const cartWidth = baseCartWidth * massScale, cartHeight = baseCartHeight * massScale;
+ const cartY = canvasHeight / 2 + (baseCartHeight * 1.2 - cartHeight);
+ ctx.fillStyle = '#7f8c8d'; ctx.fillRect(0, cartY + cartHeight, canvasWidth, 5);
+ ctx.fillStyle = '#34495e'; ctx.fillRect(0, 0, wallWidth, canvasHeight);
+ let springPlateX = isAttached ? cartX : springRestEnd;
+ drawSpringWithPlate(wallWidth, springPlateX, cartY + cartHeight / 2);
+ drawCart(cartX, cartY, cartWidth, cartHeight, m);
+ }
 
-        function drawSpringWithPlate(startX, endX, y) {
-            const k = parseFloat(springConstSlider.value);
-            const length = endX - startX;
-            if (length <= 0) return;
-            const coils = 30, coilRadius = 15, wireThickness = 1 + (k / 500) * 3;
-            ctx.strokeStyle = '#8395a7'; ctx.lineWidth = wireThickness; ctx.beginPath();
-            for (let i = 0; i < length; i++) { ctx.lineTo(startX + i, y + Math.sin((i / length) * coils * Math.PI) * coilRadius); }
-            ctx.stroke();
-            ctx.strokeStyle = '#c8d6e5'; ctx.beginPath();
-            for (let i = 0; i < length; i++) { ctx.lineTo(startX + i, y + Math.sin((i / length) * coils * Math.PI + Math.PI) * coilRadius); }
-            ctx.stroke();
-            ctx.fillStyle = '#576574';
-            ctx.fillRect(endX, y - (baseCartHeight * 1.2) / 2 - 5, plateWidth, baseCartHeight * 1.2 + 10);
-        }
+ function drawSpringWithPlate(startX, endX, y) {
+ const k = parseFloat(springConstSlider.value);
+ const length = endX - startX;
+ if (length <= 0) return;
+ const coils = 30, coilRadius = 15, wireThickness = 1 + (k / 500) * 3;
+ ctx.strokeStyle = '#8395a7'; ctx.lineWidth = wireThickness; ctx.beginPath();
+ for (let i = 0; i < length; i++) { ctx.lineTo(startX + i, y + Math.sin((i / length) * coils * Math.PI) * coilRadius); }
+ ctx.stroke();
+ ctx.strokeStyle = '#c8d6e5'; ctx.beginPath();
+ for (let i = 0; i < length; i++) { ctx.lineTo(startX + i, y + Math.sin((i / length) * coils * Math.PI + Math.PI) * coilRadius); }
+ ctx.stroke();
+ ctx.fillStyle = '#576574';
+ ctx.fillRect(endX, y - (baseCartHeight * 1.2) / 2 - 5, plateWidth, baseCartHeight * 1.2 + 10);
+ }
 
-        function drawCart(x, y, width, height, mass) {
-            ctx.fillStyle = `rgba(52, 152, 219, ${0.6 + (mass / 2.0) * 0.4})`;
-            ctx.strokeStyle = '#2980b9'; ctx.lineWidth = 2; ctx.beginPath();
-            ctx.rect(x, y, width, height); ctx.fill(); ctx.stroke();
-            const wheelRadius = height * 0.2; ctx.fillStyle = '#2c3e50'; ctx.beginPath();
-            ctx.arc(x + width * 0.25, y + height, wheelRadius, 0, 2 * Math.PI);
-            ctx.arc(x + width * 0.75, y + height, wheelRadius, 0, 2 * Math.PI);
-            ctx.fill();
-        }
+ function drawCart(x, y, width, height, mass) {
+ ctx.fillStyle = `rgba(52, 152, 219, ${0.6 + (mass / 2.0) * 0.4})`;
+ ctx.strokeStyle = '#2980b9'; ctx.lineWidth = 2; ctx.beginPath();
+ ctx.rect(x, y, width, height); ctx.fill(); ctx.stroke();
+ const wheelRadius = height * 0.2; ctx.fillStyle = '#2c3e50'; ctx.beginPath();
+ ctx.arc(x + width * 0.25, y + height, wheelRadius, 0, 2 * Math.PI);
+ ctx.arc(x + width * 0.75, y + height, wheelRadius, 0, 2 * Math.PI);
+ ctx.fill();
+ }
 
-        // ✨ MODIFIED: Animation logic now checks the mode
-        function animate() {
-            const m = parseFloat(massSlider.value), k = parseFloat(springConstSlider.value), x_initial = parseFloat(compressionSlider.value);
-            let cart_pos_pixel = springRestEnd - (x_initial * 200), vel_pixel = 0;
-            const pixelsPerMeter = 200;
+ // MODIFIED: Animation logic now checks the mode
+ function animate() {
+ const m = parseFloat(massSlider.value), k = parseFloat(springConstSlider.value), x_initial = parseFloat(compressionSlider.value);
+ let cart_pos_pixel = springRestEnd - (x_initial * 200), vel_pixel = 0;
+ const pixelsPerMeter = 200;
 
-            const isIdealMode = idealModeCheckbox.checked;
-            const errorFactor = isIdealMode ? 1.0 : 1 - (Math.random() * 0.04 + 0.01);
+ const isIdealMode = idealModeCheckbox.checked;
+ const errorFactor = isIdealMode ? 1.0 : 1 - (Math.random() * 0.04 + 0.01);
 
-            const work = 0.5 * k * x_initial * x_initial;
-            const finalVel_pixel = Math.sqrt((2 * work) / m) * errorFactor * pixelsPerMeter;
+ const work = 0.5 * k * x_initial * x_initial;
+ const finalVel_pixel = Math.sqrt((2 * work) / m) * errorFactor * pixelsPerMeter;
 
-            let lastTime = 0;
-            function animationLoop(currentTime) {
-                if (lastTime === 0) lastTime = currentTime;
-                const deltaTime = (currentTime - lastTime) / 1000;
+ let lastTime = 0;
+ function animationLoop(currentTime) {
+ if (lastTime === 0) lastTime = currentTime;
+ const deltaTime = (currentTime - lastTime) / 1000;
 
-                if (cart_pos_pixel < springRestEnd) {
-                    const current_compression_meter = (springRestEnd - cart_pos_pixel) / pixelsPerMeter;
-                    vel_pixel += ((k * current_compression_meter) / m) * pixelsPerMeter * deltaTime;
-                } else {
-                    vel_pixel = finalVel_pixel;
-                }
-                cart_pos_pixel += vel_pixel * deltaTime;
+ if (cart_pos_pixel < springRestEnd) {
+ const current_compression_meter = (springRestEnd - cart_pos_pixel) / pixelsPerMeter;
+ vel_pixel += ((k * current_compression_meter) / m) * pixelsPerMeter * deltaTime;
+ } else {
+ vel_pixel = finalVel_pixel;
+ }
+ cart_pos_pixel += vel_pixel * deltaTime;
 
-                drawScene(cart_pos_pixel);
-                lastTime = currentTime;
+ drawScene(cart_pos_pixel);
+ lastTime = currentTime;
 
-                const massScale = 0.8 + (m - 0.5) / 1.5 * 0.4, cartWidth = baseCartWidth * massScale;
-                if (cart_pos_pixel < canvasWidth - cartWidth - 20) {
-                    animationFrameId = requestAnimationFrame(animationLoop);
-                } else {
-                    runButton.disabled = false;
-                }
-            }
-            animationFrameId = requestAnimationFrame(animationLoop);
-        }
+ const massScale = 0.8 + (m - 0.5) / 1.5 * 0.4, cartWidth = baseCartWidth * massScale;
+ if (cart_pos_pixel < canvasWidth - cartWidth - 20) {
+ animationFrameId = requestAnimationFrame(animationLoop);
+ } else {
+ runButton.disabled = false;
+ }
+ }
+ animationFrameId = requestAnimationFrame(animationLoop);
+ }
 
-        // ✨ MODIFIED: Calculation logic now checks the mode
-        function runSimulation() {
-            if (animationFrameId) cancelAnimationFrame(animationFrameId);
-            runButton.disabled = true;
+ // MODIFIED: Calculation logic now checks the mode
+ function runSimulation() {
+ if (animationFrameId) cancelAnimationFrame(animationFrameId);
+ runButton.disabled = true;
 
-            const m = parseFloat(massSlider.value), k = parseFloat(springConstSlider.value), x = parseFloat(compressionSlider.value);
-            const isIdealMode = idealModeCheckbox.checked; // Check mode
+ const m = parseFloat(massSlider.value), k = parseFloat(springConstSlider.value), x = parseFloat(compressionSlider.value);
+ const isIdealMode = idealModeCheckbox.checked; // Check mode
 
-            // Determine error factor based on mode
-            const errorFactor = isIdealMode ? 1.0 : 1 - (Math.random() * 0.04 + 0.01);
+ // 모드에 따른 오차 계수 결정
+ const errorFactor = isIdealMode ? 1.0 : 1 - (Math.random() * 0.04 + 0.01);
 
-            const work = 0.5 * k * x * x;
-            const idealVelocity = Math.sqrt((2 * work) / m);
-            const measuredVelocity = idealVelocity * errorFactor;
-            const kineticEnergyChange = 0.5 * m * measuredVelocity * measuredVelocity;
-            const percentageError = work > 0 ? Math.abs((work - kineticEnergyChange) / work) * 100 : 0;
+ const work = 0.5 * k * x * x;
+ const idealVelocity = Math.sqrt((2 * work) / m);
+ const measuredVelocity = idealVelocity * errorFactor;
+ const kineticEnergyChange = 0.5 * m * measuredVelocity * measuredVelocity;
+ const percentageError = work > 0 ? Math.abs((work - kineticEnergyChange) / work) * 100 : 0;
 
-            workDoneTd.textContent = `${work.toFixed(3)} J`;
-            finalVelocityTd.textContent = `${measuredVelocity.toFixed(3)} m/s`;
-            kineticEnergyTd.textContent = `${kineticEnergyChange.toFixed(3)} J`;
-            errorPercentageTd.textContent = `${percentageError.toFixed(2)} %`;
+ workDoneTd.textContent = `${work.toFixed(3)} J`;
+ finalVelocityTd.textContent = `${measuredVelocity.toFixed(3)} m/s`;
+ kineticEnergyTd.textContent = `${kineticEnergyChange.toFixed(3)} J`;
+ errorPercentageTd.textContent = `${percentageError.toFixed(2)} %`;
 
-            if (isIdealMode) {
-                conclusionText.textContent = `💡 [이상적인 모드] 마찰이 없어 용수철이 한 일(${work.toFixed(2)} J)이 모두 수레의 운동 에너지(${kineticEnergyChange.toFixed(2)} J)로 정확히 전환되었습니다.`;
-            } else {
-                conclusionText.textContent = `💡 [현실적인 모드] 용수철이 한 일(${work.toFixed(2)} J)의 일부가 마찰/저항으로 손실되어, 수레의 운동 에너지는 ${kineticEnergyChange.toFixed(2)} J로 측정되었습니다.`;
-            }
+ if (isIdealMode) {
+ conclusionText.textContent = `💡 [이상적인 모드] 마찰이 없어 용수철이 한 일(${work.toFixed(2)} J)이 모두 수레의 운동 에너지(${kineticEnergyChange.toFixed(2)} J)로 정확히 전환되었습니다.`;
+ } else {
+ conclusionText.textContent = `💡 [현실적인 모드] 용수철이 한 일(${work.toFixed(2)} J)의 일부가 마찰/저항으로 손실되어, 수레의 운동 에너지는 ${kineticEnergyChange.toFixed(2)} J로 측정되었습니다.`;
+ }
 
-            animate();
-        }
+ animate();
+ }
 
-        // Event Listeners
-        massSlider.addEventListener('input', updateValues);
-        springConstSlider.addEventListener('input', updateValues);
-        compressionSlider.addEventListener('input', updateValues);
-        runButton.addEventListener('click', runSimulation);
-        window.onload = updateValues;
-    </script>
+ // Event Listeners
+ massSlider.addEventListener('input', updateValues);
+ springConstSlider.addEventListener('input', updateValues);
+ compressionSlider.addEventListener('input', updateValues);
+ runButton.addEventListener('click', runSimulation);
+ window.onload = updateValues;
+ </script>
 
 </body>
 
