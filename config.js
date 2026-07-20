@@ -1,5 +1,4 @@
 window.APP_CONFIG = {
-  GEMINI_API_KEY: "AIzaSyAWnXVt_kQwo3gAjNWe5Hy4msbStjxAD8I",
   FIREBASE_API_KEY: "AIzaSyCO36JgPpNz8swADxTMVJUFVALWM5o171w",
   FIREBASE_AUTH_DOMAIN: "simulation-67cd3.firebaseapp.com",
   FIREBASE_PROJECT_ID: "simulation-67cd3",
