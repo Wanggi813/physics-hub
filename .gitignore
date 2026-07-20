@@ -33,3 +33,9 @@ Thumbs.db
 # 임시 파일
 *.tmp
 *.temp
+
+# main.js 카탈로그에서 빠진 로컬 보관용 시뮬레이션 (GitHub에는 올리지 않음)
+simul/양자거품.html
+simul/진자 리듬게임.html
+simul/탈출 속도.html
+simul/트랜지스터.html
